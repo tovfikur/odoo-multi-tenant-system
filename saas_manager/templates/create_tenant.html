@@ -1,0 +1,343 @@
+{% extends "base.html" %} {% block title %}Create Tenant - Odoo SaaS Platform{%
+endblock %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="fas fa-plus me-2"></i>Create New Tenant</h4>
+      </div>
+      <div class="card-body p-4">
+        <p class="text-muted mb-4">
+          Create a new Odoo instance for your organization. Each tenant gets its
+          own isolated environment.
+        </p>
+
+        <form method="POST" id="tenant-form">
+          {{ form.hidden_tag() }}
+
+          <div class="mb-4">
+            <label for="{{ form.name.id }}" class="form-label fw-bold">
+              <i class="fas fa-building me-2"></i>Organization Name
+            </label>
+            {{ form.name(class="form-control form-control-lg", placeholder="My
+            Company Ltd") }} {% if form.name.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.name.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div>This will be displayed in your Odoo interface</div>
+          </div>
+
+          <div class="mb-4">
+            <label for="{{ form.subdomain.id }}" class="form-label fw-bold">
+              <i class="fas fa-globe me-2"></i>Subdomain
+            </label>
+            <div class="input-group input-group-lg">
+              <span class="input-group-text">kdoo_</span>
+              {{ form.subdomain(class="form-control", placeholder="mycompany",
+              id="subdomain-input") }}
+              <span class="input-group-text">.<domain></span>
+            </div>
+            {% if form.subdomain.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.subdomain.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div>
+              <span id="url-preview" class="fw-bold text-primary"></span>
+              <br />Choose a unique subdomain (3-50 characters, letters,
+              numbers, and hyphens only)
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label for="{{ form.plan.id }}" class="form-label fw-bold">
+              <i class="fas fa-box me-2"></i>Subscription Plan
+            </label>
+            {{ form.plan(class="form-select form-select-lg", id="plan-select")
+            }}
+            <div>Choose the plan that best fits your needs</div>
+          </div>
+
+          <!-- Plan Details -->
+          <div class="row mb-4" id="plan-details">
+            <div class="col-md-12">
+              <div class="card bg-light">
+                <div class="card-body">
+                  <h6 class="card-title">Plan Features</h6>
+                  <div id="plan-info">
+                    <!-- Plan details will be populated by JavaScript -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="confirm-creation"
+                required
+              />
+              <label class="form-check-label" for="confirm-creation">
+                I understand that creating a tenant will provision a new Odoo
+                database and instance
+              </label>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button
+              type="submit"
+              class="btn btn-primary btn-lg"
+              id="create-btn"
+            >
+              <i class="fas fa-plus me-2"></i>Create Tenant
+            </button>
+            <a
+              href="{{ url_for('dashboard') }}"
+              class="btn btn-outline-secondary"
+            >
+              <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Pricing Information -->
+    <div class="card mt-4">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="fas fa-info-circle me-2"></i>Plan Comparison
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                <th class="text-center">Basic</th>
+                <th class="text-center">Professional</th>
+                <th class="text-center">Enterprise</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Max Users</td>
+                <td class="text-center">5</td>
+                <td class="text-center">25</td>
+                <td class="text-center">100</td>
+              </tr>
+              <tr>
+                <td>Storage</td>
+                <td class="text-center">1 GB</td>
+                <td class="text-center">5 GB</td>
+                <td class="text-center">20 GB</td>
+              </tr>
+              <tr>
+                <td>Custom Modules</td>
+                <td class="text-center">
+                  <i class="fas fa-times text-danger"></i>
+                </td>
+                <td class="text-center">
+                  <i class="fas fa-check text-success"></i>
+                </td>
+                <td class="text-center">
+                  <i class="fas fa-check text-success"></i>
+                </td>
+              </tr>
+              <tr>
+                <td>API Access</td>
+                <td class="text-center">
+                  <i class="fas fa-times text-danger"></i>
+                </td>
+                <td class="text-center">
+                  <i class="fas fa-check text-success"></i>
+                </td>
+                <td class="text-center">
+                  <i class="fas fa-check text-success"></i>
+                </td>
+              </tr>
+              <tr>
+                <td>Priority Support</td>
+                <td class="text-center">
+                  <i class="fas fa-times text-danger"></i>
+                </td>
+                <td class="text-center">
+                  <i class="fas fa-times text-danger"></i>
+                </td>
+                <td class="text-center">
+                  <i class="fas fa-check text-success"></i>
+                </td>
+              </tr>
+              <tr class="table-active">
+                <td><strong>Monthly Price</strong></td>
+                <td class="text-center"><strong>$29.99</strong></td>
+                <td class="text-center"><strong>$79.99</strong></td>
+                <td class="text-center"><strong>$199.99</strong></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+
+    // Utility function to format bytes
+    function formatBytes(bytes) {
+      if (bytes === 0) return '0 Bytes';
+      
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+  // Plan information
+    const planDetails = {{plans|tojson}};
+    const host = window.location.hostname;      // e.g. "localhost"
+    const port = window.location.port;          // e.g. "5000"
+    const protocol = window.location.protocol;  // "http:" or "https:"
+
+    // Function to format bytes to human-readable format
+    function formatBytes(bytes) {
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let value = bytes;
+      let unitIndex = 0;
+      while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex++;
+      }
+      return `${Math.round(value * 100) / 100} ${units[unitIndex]}`;
+    }
+
+    // Update URL preview
+    document
+      .getElementById("subdomain-input")
+      .addEventListener("input", function () {
+        const subdomain = this.value;
+        const preview = document.getElementById("url-preview");
+        if (subdomain) {
+          preview.textContent = `${protocol}//kdoo_${subdomain}.${host}${port ? `:${port}` : ""}`;
+        } else {
+          preview.textContent = "";
+        }
+      });
+
+    // Update plan details
+    document.getElementById("plan-select").addEventListener("change", function () {
+      const plan = this.value;
+      const details = planDetails.find((item) => item.name === plan);
+      console.log("Selected plan:", plan, details);
+      const infoDiv = document.getElementById("plan-info");
+
+      if (details) {
+        // Convert storage_limit (in MB) to human-readable format
+        const formattedStorage = formatBytes(details.storage_limit * 1024 * 1024); // Convert MB to bytes
+
+        infoDiv.innerHTML = `
+          <div class="row">
+            <div class="col-md-6">
+              <strong>Plan Details:</strong>
+              <ul class="list-unstyled mb-0">
+                <li><i class="fas fa-dollar-sign text-success me-2"></i>$${details.price}</li>
+                <li><i class="fas fa-users text-primary me-2"></i>${details.max_users}</li>
+                <li><i class="fas fa-hdd text-info me-2"></i>${formattedStorage}</li>
+              </ul>
+            </div>
+            <div class="col-md-6">
+              <strong>Features:</strong>
+              <ul class="list-unstyled mb-2 small">
+                ${Object.entries(details.features)
+                  .map(([key, value]) => {
+                    const formattedKey = key
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (c) => c.toUpperCase());
+                    return `<li><i class="fas fa-check text-success me-2"></i>${formattedKey}: ${value}</li>`;
+                  })
+                  .join("")}
+              </ul>
+              <strong>Modules:</strong>
+              <ul class="list-unstyled mb-0 small">
+                ${details.modules
+                  .map((module) => {
+                    const formattedModule = module
+                      .replace(/_/g, " ")
+                      .replace(/\b\w/g, (c) => c.toUpperCase());
+                    return `<li><i class="fas fa-cube text-primary me-2"></i>${formattedModule}</li>`;
+                  })
+                  .join("")}
+              </ul>
+            </div>
+          </div>
+        `;
+      } else {
+        infoDiv.innerHTML = '<div class="text-muted">No plan details available</div>';
+      }
+    });
+
+    // Auto-generate subdomain from name
+    document
+      .getElementById("{{ form.name.id }}")
+      .addEventListener("input", function () {
+        const name = this.value;
+        const subdomainInput = document.getElementById("subdomain-input");
+
+        if (name && !subdomainInput.value) {
+          // Generate subdomain from name
+          const subdomain = name
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, "") // Remove special characters
+            .replace(/\s+/g, "-") // Replace spaces with hyphens
+            .replace(/-+/g, "-") // Replace multiple hyphens with single
+            .replace(/^-|-$/g, "") // Remove leading/trailing hyphens
+            .substring(0, 50); // Limit length
+
+          subdomainInput.value = subdomain;
+          subdomainInput.dispatchEvent(new Event("input")); // Trigger URL preview update
+        }
+      });
+
+    // Initialize plan details on page load
+    document.getElementById("plan-select").dispatchEvent(new Event("change"));
+
+    // Form validation
+    document
+      .getElementById("tenant-form")
+      .addEventListener("submit", function (e) {
+        const createBtn = document.getElementById("create-btn");
+        createBtn.disabled = true;
+        createBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin me-2"></i>Creating Tenant...';
+      });
+
+    // Subdomain validation
+    document
+      .getElementById("subdomain-input")
+      .addEventListener("input", function () {
+        const subdomain = this.value;
+        const validPattern = /^[a-z0-9-]{3,50}$/;
+
+        if (subdomain && !validPattern.test(subdomain)) {
+          this.setCustomValidity(
+            "Subdomain must be 3-50 characters and contain only lowercase letters, numbers, and hyphens"
+          );
+        } else {
+          this.setCustomValidity("");
+        }
+      });
+</script>
+{% endblock %}

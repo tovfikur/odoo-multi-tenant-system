@@ -1,0 +1,182 @@
+{% extends "base.html" %} {% block title %}Dashboard - Odoo SaaS Platform{%
+endblock %} {% block content %}
+<div class="row mb-4">
+  <div class="col">
+    <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+    <p class="text-muted">Welcome back, {{ current_user.username }}!</p>
+  </div>
+</div>
+
+{% if current_user.is_admin and stats %}
+<!-- Admin Statistics -->
+<div class="row mb-5">
+  <div class="col-md-3">
+    <div class="card text-white bg-primary">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">{{ stats.total_tenants }}</h4>
+            <p class="card-text">Total Tenants</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-building fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-success">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">{{ stats.active_tenants }}</h4>
+            <p class="card-text">Active Tenants</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-check-circle fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-info">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">{{ stats.total_users }}</h4>
+            <p class="card-text">Total Users</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-users fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card text-white bg-warning">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">{{ stats.worker_instances }}</h4>
+            <p class="card-text">Worker Instances</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-server fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Tenants Section -->
+<div class="row">
+  <div class="col">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4><i class="fas fa-building me-2"></i>My Tenants</h4>
+      <a href="{{ url_for('create_tenant') }}" class="btn btn-primary">
+        <i class="fas fa-plus me-2"></i>Create New Tenant
+      </a>
+    </div>
+
+    {% if tenants %}
+    <div class="row">
+      {% for tenant in tenants %}
+      <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+              <h5 class="card-title mb-0">{{ tenant.name }}</h5>
+              <span
+                class="badge bg-{{ 'success' if tenant.is_active else 'warning' }}"
+              >
+                {{ 'Active' if tenant.is_active else 'Inactive' }}
+              </span>
+            </div>
+
+            <p class="card-text text-muted">
+              <i class="fas fa-globe me-2"></i>
+              <code>{{ tenant.db_name }}.<domain></code>
+            </p>
+
+            <div class="row text-center mb-3">
+              <div class="col">
+                <small class="text-muted">Plan</small>
+                <div class="fw-bold text-primary">
+                  {{ tenant.plan.title() }}
+                </div>
+              </div>
+              <div class="col">
+                <small class="text-muted">Max Users</small>
+                <div class="fw-bold">{{ tenant.max_users }}</div>
+              </div>
+              <div class="col">
+                <small class="text-muted">Storage</small>
+                <div class="fw-bold">{{ tenant.storage_limit }}MB</div>
+              </div>
+            </div>
+
+            <div class="text-muted small mb-3">
+              <i class="fas fa-calendar me-1"></i>
+              Created: {{ tenant.created_at if tenant.created_at else 'N/A' }}
+            </div>
+          </div>
+
+          <div class="card-footer bg-transparent">
+            <div class="btn-group w-100" role="group">
+              <a
+                data-tenant-db="kdoo_{{ tenant.subdomain }}"
+                class="btn btn-outline-primary btn-sm tenant-link"
+                target="_blank"
+              >
+                <i class="fas fa-external-link-alt me-1"></i>Open
+              </a>
+              <a
+                href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}"
+                class="btn btn-outline-secondary btn-sm"
+              >
+                <i class="fas fa-cog me-1"></i>Manage
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+      <i class="fas fa-building fa-4x text-muted mb-3"></i>
+      <h4 class="text-muted">No tenants yet</h4>
+      <p class="text-muted">
+        Get started by creating your first tenant instance.
+      </p>
+      <a href="{{ url_for('create_tenant') }}" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus me-2"></i>Create Your First Tenant
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  // Auto-refresh tenant status every 30 seconds
+  setInterval(function () {
+    $(".tenant-status").each(function () {
+      const tenantId = $(this).data("tenant-id");
+      $.get("/api/tenant/" + tenantId + "/status").done(function (data) {
+        // Update status badge
+        const badge = $(".tenant-" + tenantId + " .badge");
+        badge.removeClass("bg-success bg-warning bg-danger");
+        badge.addClass(
+          "bg-" + (data.status === "active" ? "success" : "warning")
+        );
+        badge.text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
+      });
+    });
+  }, 30000);
+</script>
+{% endblock %}

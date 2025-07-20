@@ -1,0 +1,792 @@
+{% extends "base.html" %} {% block title %}Admin - Users - Odoo SaaS Platform{%
+endblock %} {% block content %}
+<div class="row mb-4">
+  <div class="col">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">Admin</li>
+        <li class="breadcrumb-item active">Users</li>
+      </ol>
+    </nav>
+    <h2><i class="fas fa-users me-2"></i>User Management</h2>
+    <p class="text-muted">Manage all users across the platform</p>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-white bg-primary">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">{{ users|length }}</h4>
+            <p class="card-text">Total Users</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-users fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card text-white bg-success">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">
+              {{ users|selectattr("is_admin", "equalto", true)|list|length }}
+            </h4>
+            <p class="card-text">Admins</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-user-shield fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card text-white bg-info">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">
+              {{ users|selectattr("last_login")|list|length }}
+            </h4>
+            <p class="card-text">Active Users</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-user-check fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card text-white bg-warning">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">
+              {{ users|rejectattr("last_login")|list|length }}
+            </h4>
+            <p class="card-text">Never Logged In</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-user-clock fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input
+            type="text"
+            class="form-control"
+            id="searchUsers"
+            placeholder="Search users..."
+          />
+        </div>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" id="filterRole">
+          <option value="">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="user">User</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" id="filterStatus">
+          <option value="">All Status</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" id="sortBy">
+          <option value="created_desc">Newest First</option>
+          <option value="created_asc">Oldest First</option>
+          <option value="name_asc">Name A-Z</option>
+          <option value="name_desc">Name Z-A</option>
+          <option value="last_login_desc">Last Login</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button
+          class="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#addUserModal"
+        >
+          <i class="fas fa-plus me-1"></i>Add User
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Users Table -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="fas fa-list me-2"></i>All Users</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="usersTable">
+        <thead class="table-light">
+          <tr>
+            <th>
+              <input type="checkbox" id="selectAll" class="form-check-input" />
+            </th>
+            <th>User</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Tenants</th>
+            <th>Created</th>
+            <th>Last Login</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for user in users %}
+          <tr data-user-id="{{ user.id }}" class="user-row">
+            <td>
+              <input
+                type="checkbox"
+                class="form-check-input user-checkbox"
+                value="{{ user.id }}"
+              />
+            </td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div class="avatar-circle bg-primary text-white me-3">
+                  {{ user.username[0].upper() }}
+                </div>
+                <div>
+                  <strong>{{ user.username }}</strong>
+                  {% if user.is_admin %}
+                  <span class="badge bg-warning ms-2">Admin</span>
+                  {% endif %}
+                </div>
+              </div>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>
+              <span
+                class="badge bg-{{ 'warning' if user.is_admin else 'secondary' }}"
+              >
+                {{ 'Admin' if user.is_admin else 'User' }}
+              </span>
+            </td>
+            <td>
+              <span class="text-muted">{{ user.tenants|length }} tenants</span>
+            </td>
+            <td>
+              <small class="text-muted"
+                >{{ user.created_at.strftime('%Y-%m-%d') }}</small
+              >
+            </td>
+            <td>
+              {% if user.last_login %}
+              <small class="text-muted"
+                >{{ user.last_login.strftime('%Y-%m-%d %H:%M') }}</small
+              >
+              {% else %}
+              <span class="badge bg-light text-dark">Never</span>
+              {% endif %}
+            </td>
+            <td>
+              <div class="dropdown">
+                <button
+                  class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                >
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="#"
+                      onclick="editUser({{ user.id }})"
+                    >
+                      <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="#"
+                      onclick="viewUserTenants({{ user.id }})"
+                    >
+                      <i class="fas fa-building me-2"></i>View Tenants
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+                  {% if not user.is_admin %}
+                  <li>
+                    <a
+                      class="dropdown-item text-warning"
+                      href="#"
+                      onclick="makeAdmin({{ user.id }})"
+                    >
+                      <i class="fas fa-user-shield me-2"></i>Make Admin
+                    </a>
+                  </li>
+                  {% else %}
+                  <li>
+                    <a
+                      class="dropdown-item text-info"
+                      href="#"
+                      onclick="removeAdmin({{ user.id }})"
+                    >
+                      <i class="fas fa-user me-2"></i>Remove Admin
+                    </a>
+                  </li>
+                  {% endif %}
+                  <li>
+                    <a
+                      class="dropdown-item text-primary"
+                      href="#"
+                      onclick="resetPassword({{ user.id }})"
+                    >
+                      <i class="fas fa-key me-2"></i>Reset Password
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <a
+                      class="dropdown-item text-danger"
+                      href="#"
+                      onclick="deleteUser({{ user.id }}, '{{ user.username }}')"
+                    >
+                      <i class="fas fa-trash me-2"></i>Delete
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add User Modal -->
+<div class="modal fade" id="addUserModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-user-plus me-2"></i>Add New User
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <form id="addUserForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="newUsername" class="form-label">Username</label>
+            <input type="text" class="form-control" id="newUsername" required />
+          </div>
+          <div class="mb-3">
+            <label for="newEmail" class="form-label">Email</label>
+            <input type="email" class="form-control" id="newEmail" required />
+          </div>
+          <div class="mb-3">
+            <label for="newPassword" class="form-label">Password</label>
+            <input
+              type="password"
+              class="form-control"
+              id="newPassword"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="newIsAdmin" />
+              <label class="form-check-label" for="newIsAdmin">
+                Admin User
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">Add User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit User Modal -->
+<div class="modal fade" id="editUserModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit User</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <form id="editUserForm">
+        <div class="modal-body">
+          <input type="hidden" id="editUserId" />
+          <div class="mb-3">
+            <label for="editUsername" class="form-label">Username</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editUsername"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="editEmail" class="form-label">Email</label>
+            <input type="email" class="form-control" id="editEmail" required />
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="editIsAdmin"
+              />
+              <label class="form-check-label" for="editIsAdmin">
+                Admin User
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">Update User</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- User Tenants Modal -->
+<div class="modal fade" id="userTenantsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-building me-2"></i>User Tenants
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="userTenantsContent">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<style>
+  .avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+  }
+</style>
+
+<script>
+  // User management functions
+  function editUser(userId) {
+    // Fetch user data and populate edit modal
+    fetch(`/api/user/${userId}`)
+      .then((response) => response.json())
+      .then((user) => {
+        document.getElementById("editUserId").value = user.id;
+        document.getElementById("editUsername").value = user.username;
+        document.getElementById("editEmail").value = user.email;
+        document.getElementById("editIsAdmin").checked = user.is_admin;
+
+        new bootstrap.Modal(document.getElementById("editUserModal")).show();
+      })
+      .catch((error) => {
+        console.error("Error fetching user:", error);
+        alert("Failed to load user data");
+      });
+  }
+
+  function viewUserTenants(userId) {
+    // Fetch and display user tenants
+    fetch(`/api/user/${userId}/tenants`)
+      .then((response) => response.json())
+      .then((tenants) => {
+        let content = '<div class="list-group">';
+        if (tenants.length === 0) {
+          content +=
+            '<div class="alert alert-info">This user has no tenants.</div>';
+        } else {
+          tenants.forEach((tenant) => {
+            content += `
+            <div class="list-group-item">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <h6 class="mb-1">${tenant.name}</h6>
+                  <small class="text-muted">kdoo_${tenant.subdomain}.${
+              window.location.hostname
+            }</small>
+                </div>
+                <div>
+                  <span class="badge bg-${
+                    tenant.status === "active" ? "success" : "secondary"
+                  }">${tenant.status}</span>
+                  <span class="badge bg-info ms-1">${tenant.role}</span>
+                </div>
+              </div>
+            </div>
+          `;
+          });
+        }
+        content += "</div>";
+
+        document.getElementById("userTenantsContent").innerHTML = content;
+        new bootstrap.Modal(document.getElementById("userTenantsModal")).show();
+      })
+      .catch((error) => {
+        console.error("Error fetching user tenants:", error);
+        alert("Failed to load user tenants");
+      });
+  }
+
+  function makeAdmin(userId) {
+    if (confirm("Are you sure you want to make this user an admin?")) {
+      fetch(`/api/user/${userId}/make-admin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert("Failed to update user role");
+          }
+        })
+        .catch((error) => {
+          console.error("Error updating user role:", error);
+          alert("Failed to update user role");
+        });
+    }
+  }
+
+  function removeAdmin(userId) {
+    if (
+      confirm(
+        "Are you sure you want to remove admin privileges from this user?"
+      )
+    ) {
+      fetch(`/api/user/${userId}/remove-admin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert("Failed to update user role");
+          }
+        })
+        .catch((error) => {
+          console.error("Error updating user role:", error);
+          alert("Failed to update user role");
+        });
+    }
+  }
+
+  function resetPassword(userId) {
+    if (
+      confirm(
+        "Are you sure you want to reset this user's password? A new temporary password will be generated."
+      )
+    ) {
+      fetch(`/api/user/${userId}/reset-password`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            alert(
+              `Password reset successful. New temporary password: ${result.new_password}`
+            );
+          } else {
+            alert("Failed to reset password");
+          }
+        })
+        .catch((error) => {
+          console.error("Error resetting password:", error);
+          alert("Failed to reset password");
+        });
+    }
+  }
+
+  function deleteUser(userId, username) {
+    if (
+      confirm(
+        `Are you sure you want to delete user "${username}"? This action cannot be undone.`
+      )
+    ) {
+      fetch(`/api/user/${userId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert("Failed to delete user");
+          }
+        })
+        .catch((error) => {
+          console.error("Error deleting user:", error);
+          alert("Failed to delete user");
+        });
+    }
+  }
+
+  // Form submissions
+  document
+    .getElementById("addUserForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const formData = {
+        username: document.getElementById("newUsername").value,
+        email: document.getElementById("newEmail").value,
+        password: document.getElementById("newPassword").value,
+        is_admin: document.getElementById("newIsAdmin").checked,
+      };
+
+      fetch("/api/user", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert("Failed to add user: " + result.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error adding user:", error);
+          alert("Failed to add user");
+        });
+    });
+
+  document
+    .getElementById("editUserForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const userId = document.getElementById("editUserId").value;
+      const formData = {
+        username: document.getElementById("editUsername").value,
+        email: document.getElementById("editEmail").value,
+        is_admin: document.getElementById("editIsAdmin").checked,
+      };
+
+      fetch(`/api/user/${userId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert("Failed to update user: " + result.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error updating user:", error);
+          alert("Failed to update user");
+        });
+    });
+
+  // Search and filter functionality
+  document.getElementById("searchUsers").addEventListener("input", function () {
+    filterUsers();
+  });
+
+  document.getElementById("filterRole").addEventListener("change", function () {
+    filterUsers();
+  });
+
+  document
+    .getElementById("filterStatus")
+    .addEventListener("change", function () {
+      filterUsers();
+    });
+
+  document.getElementById("sortBy").addEventListener("change", function () {
+    sortUsers();
+  });
+
+  function filterUsers() {
+    const searchTerm = document
+      .getElementById("searchUsers")
+      .value.toLowerCase();
+    const roleFilter = document.getElementById("filterRole").value;
+    const statusFilter = document.getElementById("filterStatus").value;
+
+    const rows = document.querySelectorAll(".user-row");
+
+    rows.forEach((row) => {
+      const username = row.querySelector("strong").textContent.toLowerCase();
+      const email = row.cells[2].textContent.toLowerCase();
+      const isAdmin =
+        row.querySelector(".badge").textContent.toLowerCase() === "admin";
+      const hasLastLogin = !row.querySelector(".badge.bg-light");
+
+      let showRow = true;
+
+      // Search filter
+      if (
+        searchTerm &&
+        !username.includes(searchTerm) &&
+        !email.includes(searchTerm)
+      ) {
+        showRow = false;
+      }
+
+      // Role filter
+      if (roleFilter === "admin" && !isAdmin) {
+        showRow = false;
+      } else if (roleFilter === "user" && isAdmin) {
+        showRow = false;
+      }
+
+      // Status filter
+      if (statusFilter === "active" && !hasLastLogin) {
+        showRow = false;
+      } else if (statusFilter === "inactive" && hasLastLogin) {
+        showRow = false;
+      }
+
+      row.style.display = showRow ? "" : "none";
+    });
+  }
+
+  function sortUsers() {
+    const sortBy = document.getElementById("sortBy").value;
+    const tbody = document.querySelector("#usersTable tbody");
+    const rows = Array.from(tbody.querySelectorAll(".user-row"));
+
+    rows.sort((a, b) => {
+      let aVal, bVal;
+
+      switch (sortBy) {
+        case "name_asc":
+          aVal = a.querySelector("strong").textContent.toLowerCase();
+          bVal = b.querySelector("strong").textContent.toLowerCase();
+          return aVal.localeCompare(bVal);
+        case "name_desc":
+          aVal = a.querySelector("strong").textContent.toLowerCase();
+          bVal = b.querySelector("strong").textContent.toLowerCase();
+          return bVal.localeCompare(aVal);
+        case "created_asc":
+          aVal = new Date(a.cells[5].textContent);
+          bVal = new Date(b.cells[5].textContent);
+          return aVal - bVal;
+        case "created_desc":
+          aVal = new Date(a.cells[5].textContent);
+          bVal = new Date(b.cells[5].textContent);
+          return bVal - aVal;
+        case "last_login_desc":
+          aVal =
+            a.cells[6].textContent === "Never"
+              ? new Date(0)
+              : new Date(a.cells[6].textContent);
+          bVal =
+            b.cells[6].textContent === "Never"
+              ? new Date(0)
+              : new Date(b.cells[6].textContent);
+          return bVal - aVal;
+        default:
+          return 0;
+      }
+    });
+
+    rows.forEach((row) => tbody.appendChild(row));
+  }
+
+  // Select all checkbox functionality
+  document.getElementById("selectAll").addEventListener("change", function () {
+    const checkboxes = document.querySelectorAll(".user-checkbox");
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = this.checked;
+    });
+  });
+</script>
+{% endblock %}

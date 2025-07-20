@@ -1,0 +1,169 @@
+{% extends "base.html" %} {% block title %}Register - Odoo SaaS Platform{%
+endblock %} {% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6 col-lg-5">
+    <div class="card shadow">
+      <div class="card-body p-5">
+        <div class="text-center mb-4">
+          <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
+          <h3 class="card-title">Create Account</h3>
+          <p class="text-muted">Join the Odoo SaaS Platform</p>
+        </div>
+
+        <form method="POST">
+          {{ form.hidden_tag() }}
+
+          <div class="mb-3">
+            <label for="{{ form.username.id }}" class="form-label">
+              <i class="fas fa-user me-2"></i>Username
+            </label>
+            {{ form.username(class="form-control form-control-lg",
+            placeholder="Choose a username") }} {% if form.username.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.username.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div>3-50 characters, letters and numbers only</div>
+          </div>
+
+          <div class="mb-3">
+            <label for="{{ form.email.id }}" class="form-label">
+              <i class="fas fa-envelope me-2"></i>Email Address
+            </label>
+            {{ form.email(class="form-control form-control-lg",
+            placeholder="your@email.com") }} {% if form.email.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.email.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+          </div>
+
+          <div class="mb-4">
+            <label for="{{ form.password.id }}" class="form-label">
+              <i class="fas fa-lock me-2"></i>Password
+            </label>
+            {{ form.password(class="form-control form-control-lg",
+            placeholder="Choose a strong password") }} {% if
+            form.password.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in form.password.errors %}
+              <div>{{ error }}</div>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div>Minimum 6 characters</div>
+          </div>
+
+          <div class="mb-3">
+            <div class="form-check">
+              <input
+                class="form-check-input"
+                type="checkbox"
+                id="terms"
+                required
+              />
+              <label class="form-check-label" for="terms">
+                I agree to the
+                <a href="#" class="text-decoration-none">Terms of Service</a>
+                and <a href="#" class="text-decoration-none">Privacy Policy</a>
+              </label>
+            </div>
+          </div>
+
+          <div class="d-grid mb-3">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="fas fa-user-plus me-2"></i>Create Account
+            </button>
+          </div>
+
+          <div class="text-center">
+            <p class="text-muted">
+              Already have an account?
+              <a href="{{ url_for('login') }}" class="text-decoration-none">
+                Sign in here
+              </a>
+            </p>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Features -->
+    <div class="row mt-4">
+      <div class="col-md-4 text-center">
+        <i class="fas fa-cloud fa-2x text-primary mb-2"></i>
+        <h6>Cloud-Based</h6>
+        <small class="text-muted">Access from anywhere</small>
+      </div>
+      <div class="col-md-4 text-center">
+        <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
+        <h6>Secure</h6>
+        <small class="text-muted">Enterprise-grade security</small>
+      </div>
+      <div class="col-md-4 text-center">
+        <i class="fas fa-rocket fa-2x text-info mb-2"></i>
+        <h6>Fast Setup</h6>
+        <small class="text-muted">Ready in minutes</small>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  // Password strength indicator
+  document
+    .getElementById("{{ form.password.id }}")
+    .addEventListener("input", function () {
+      const password = this.value;
+      const strength = calculatePasswordStrength(password);
+      updatePasswordStrengthIndicator(strength);
+    });
+
+  function calculatePasswordStrength(password) {
+    let score = 0;
+    if (password.length >= 8) score++;
+    if (/[a-z]/.test(password)) score++;
+    if (/[A-Z]/.test(password)) score++;
+    if (/[0-9]/.test(password)) score++;
+    if (/[^A-Za-z0-9]/.test(password)) score++;
+    return score;
+  }
+
+  function updatePasswordStrengthIndicator(strength) {
+    const colors = [
+      "danger",
+      "danger",
+      "warning",
+      "info",
+      "success",
+      "success",
+    ];
+    const texts = [
+      "Very Weak",
+      "Weak",
+      "Fair",
+      "Good",
+      "Strong",
+      "Very Strong",
+    ];
+
+    let indicator = document.getElementById("password-strength");
+    if (!indicator) {
+      indicator = document.createElement("div");
+      indicator.id = "password-strength";
+      indicator.className = "mt-1 small";
+      document
+        .getElementById("{{ form.password.id }}")
+        .parentNode.appendChild(indicator);
+    }
+
+    indicator.className = `mt-1 small text-${colors[strength]}`;
+    indicator.textContent =
+      strength > 0 ? `Password strength: ${texts[strength]}` : "";
+  }
+</script>
+{% endblock %}

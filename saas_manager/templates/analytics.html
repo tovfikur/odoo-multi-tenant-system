@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Analytics</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <div class="container mt-5">
+      <h1>System Analytics</h1>
+      <p><strong>Total Users:</strong> {{ analytics.total_users }}</p>
+      <p><strong>Total Tenants:</strong> {{ analytics.total_tenants }}</p>
+      <p><strong>Active Tenants:</strong> {{ analytics.active_tenants }}</p>
+      <a
+        href="{{ url_for('master_admin.master_admin_dashboard') }}"
+        class="btn btn-primary"
+        >Back to Dashboard</a
+      >
+    </div>
+  </body>
+</html>

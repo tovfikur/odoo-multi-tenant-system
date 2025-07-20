@@ -1,0 +1,950 @@
+{% extends "base.html" %} {% block title %}Admin - Workers - Odoo SaaS
+Platform{% endblock %} {% block content %}
+<div class="row mb-4">
+  <div class="col">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item">Admin</li>
+        <li class="breadcrumb-item active">Workers</li>
+      </ol>
+    </nav>
+    <h2><i class="fas fa-server me-2"></i>Worker Management</h2>
+    <p class="text-muted">
+      Manage Odoo worker instances and monitor their performance
+    </p>
+  </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="card text-white bg-primary">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">{{ workers|length }}</h4>
+            <p class="card-text">Total Workers</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-server fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card text-white bg-success">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">
+              {{ workers|selectattr("status", "equalto", "running")|list|length
+              }}
+            </h4>
+            <p class="card-text">Running</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-play-circle fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card text-white bg-warning">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">
+              {{ workers|selectattr("status", "equalto", "stopped")|list|length
+              }}
+            </h4>
+            <p class="card-text">Stopped</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-stop-circle fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-3">
+    <div class="card text-white bg-info">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div>
+            <h4 class="card-title">
+              {{ workers|sum(attribute='current_tenants') }}
+            </h4>
+            <p class="card-text">Total Tenants</p>
+          </div>
+          <div class="align-self-center">
+            <i class="fas fa-building fa-2x"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Search and Filters -->
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row">
+      <div class="col-md-4">
+        <div class="input-group">
+          <span class="input-group-text"><i class="fas fa-search"></i></span>
+          <input
+            type="text"
+            class="form-control"
+            id="searchWorkers"
+            placeholder="Search workers..."
+          />
+        </div>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" id="filterStatus">
+          <option value="">All Status</option>
+          <option value="running">Running</option>
+          <option value="stopped">Stopped</option>
+          <option value="error">Error</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" id="filterLoad">
+          <option value="">All Load</option>
+          <option value="low">Low (< 50%)</option>
+          <option value="medium">Medium (50-80%)</option>
+          <option value="high">High (> 80%)</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <select class="form-select" id="sortBy">
+          <option value="created_desc">Newest First</option>
+          <option value="created_asc">Oldest First</option>
+          <option value="name_asc">Name A-Z</option>
+          <option value="name_desc">Name Z-A</option>
+          <option value="load_desc">Highest Load</option>
+          <option value="load_asc">Lowest Load</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button
+          class="btn btn-primary"
+          data-bs-toggle="modal"
+          data-bs-target="#addWorkerModal"
+        >
+          <i class="fas fa-plus me-1"></i>Add Worker
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Workers Table -->
+<div class="card">
+  <div class="card-header">
+    <h5 class="mb-0"><i class="fas fa-list me-2"></i>Worker Instances</h5>
+  </div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-hover mb-0" id="workersTable">
+        <thead class="table-light">
+          <tr>
+            <th>
+              <input type="checkbox" id="selectAll" class="form-check-input" />
+            </th>
+            <th>Worker</th>
+            <th>Container</th>
+            <th>Port</th>
+            <th>Status</th>
+            <th>Load</th>
+            <th>Health</th>
+            <th>Created</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for worker in workers %}
+          <tr data-worker-id="{{ worker.id }}" class="worker-row">
+            <td>
+              <input
+                type="checkbox"
+                class="form-check-input worker-checkbox"
+                value="{{ worker.id }}"
+              />
+            </td>
+            <td>
+              <div class="d-flex align-items-center">
+                <div
+                  class="status-indicator bg-{{ 'success' if worker.status == 'running' else 'danger' if worker.status == 'error' else 'warning' }} me-3"
+                ></div>
+                <div>
+                  <strong>{{ worker.name }}</strong>
+                </div>
+              </div>
+            </td>
+            <td>
+              <code>{{ worker.container_name }}</code>
+            </td>
+            <td>
+              <span class="badge bg-secondary">{{ worker.port }}</span>
+            </td>
+            <td>
+              <span
+                class="badge bg-{{ 'success' if worker.status == 'running' else 'danger' if worker.status == 'error' else 'warning' }}"
+              >
+                <i
+                  class="fas fa-{{ 'play' if worker.status == 'running' else 'exclamation-triangle' if worker.status == 'error' else 'pause' }}"
+                ></i>
+                {{ worker.status|title }}
+              </span>
+            </td>
+            <td>
+              {% set load_percent = (worker.current_tenants / worker.max_tenants
+              * 100) if worker.max_tenants > 0 else 0 %}
+              <div class="d-flex align-items-center">
+                <div class="progress me-2" style="width: 60px; height: 8px">
+                  <div
+                    class="progress-bar bg-{{ 'success' if load_percent < 50 else 'warning' if load_percent < 80 else 'danger' }}"
+                    style="width: {{ load_percent }}%"
+                  ></div>
+                </div>
+                <small class="text-muted"
+                  >{{ worker.current_tenants }}/{{ worker.max_tenants }}</small
+                >
+              </div>
+            </td>
+            <td>
+              {% if worker.last_health_check %} {% set health_hours =
+              ((moment().utcnow() - worker.last_health_check).total_seconds() /
+              3600) %} {% if health_hours < 1 %}
+              <span class="badge bg-success">
+                <i class="fas fa-heart"></i> Healthy
+              </span>
+              {% elif health_hours < 24 %}
+              <span class="badge bg-warning">
+                <i class="fas fa-clock"></i> {{ health_hours|int }}h ago
+              </span>
+              {% else %}
+              <span class="badge bg-danger">
+                <i class="fas fa-exclamation-triangle"></i> Stale
+              </span>
+              {% endif %} {% else %}
+              <span class="badge bg-secondary">
+                <i class="fas fa-question"></i> Unknown
+              </span>
+              {% endif %}
+            </td>
+            <td>
+              <small class="text-muted"
+                >{{ worker.created_at.strftime('%Y-%m-%d') }}</small
+              >
+            </td>
+            <td>
+              <div class="dropdown">
+                <button
+                  class="btn btn-sm btn-outline-secondary dropdown-toggle"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                >
+                  <i class="fas fa-ellipsis-v"></i>
+                </button>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="#"
+                      onclick="viewWorkerDetails({{ worker.id }})"
+                    >
+                      <i class="fas fa-info-circle me-2"></i>Details
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="#"
+                      onclick="checkWorkerHealth({{ worker.id }})"
+                    >
+                      <i class="fas fa-heartbeat me-2"></i>Health Check
+                    </a>
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+                  {% if worker.status == 'running' %}
+                  <li>
+                    <a
+                      class="dropdown-item text-warning"
+                      href="#"
+                      onclick="stopWorker({{ worker.id }})"
+                    >
+                      <i class="fas fa-stop me-2"></i>Stop
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class="dropdown-item text-info"
+                      href="#"
+                      onclick="restartWorker({{ worker.id }})"
+                    >
+                      <i class="fas fa-redo me-2"></i>Restart
+                    </a>
+                  </li>
+                  {% else %}
+                  <li>
+                    <a
+                      class="dropdown-item text-success"
+                      href="#"
+                      onclick="startWorker({{ worker.id }})"
+                    >
+                      <i class="fas fa-play me-2"></i>Start
+                    </a>
+                  </li>
+                  {% endif %}
+                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <a
+                      class="dropdown-item"
+                      href="#"
+                      onclick="editWorker({{ worker.id }})"
+                    >
+                      <i class="fas fa-edit me-2"></i>Edit
+                    </a>
+                  </li>
+                  <li>
+                    <a
+                      class="dropdown-item text-danger"
+                      href="#"
+                      onclick="deleteWorker({{ worker.id }}, '{{ worker.name }}')"
+                    >
+                      <i class="fas fa-trash me-2"></i>Delete
+                    </a>
+                  </li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Add Worker Modal -->
+<div class="modal fade" id="addWorkerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-server me-2"></i>Add New Worker
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <form id="addWorkerForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="newWorkerName" class="form-label">Worker Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="newWorkerName"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="newContainerName" class="form-label"
+              >Container Name</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="newContainerName"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="newPort" class="form-label">Port</label>
+            <input
+              type="number"
+              class="form-control"
+              id="newPort"
+              min="8000"
+              max="9999"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="newMaxTenants" class="form-label">Max Tenants</label>
+            <input
+              type="number"
+              class="form-control"
+              id="newMaxTenants"
+              min="1"
+              max="100"
+              value="10"
+              required
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">Add Worker</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Worker Modal -->
+<div class="modal fade" id="editWorkerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-edit me-2"></i>Edit Worker</h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <form id="editWorkerForm">
+        <div class="modal-body">
+          <input type="hidden" id="editWorkerId" />
+          <div class="mb-3">
+            <label for="editWorkerName" class="form-label">Worker Name</label>
+            <input
+              type="text"
+              class="form-control"
+              id="editWorkerName"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="editContainerName" class="form-label"
+              >Container Name</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="editContainerName"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="editPort" class="form-label">Port</label>
+            <input
+              type="number"
+              class="form-control"
+              id="editPort"
+              min="8000"
+              max="9999"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="editMaxTenants" class="form-label">Max Tenants</label>
+            <input
+              type="number"
+              class="form-control"
+              id="editMaxTenants"
+              min="1"
+              max="100"
+              required
+            />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            data-bs-dismiss="modal"
+          >
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary">Update Worker</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Worker Details Modal -->
+<div class="modal fade" id="workerDetailsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-info-circle me-2"></i>Worker Details
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="workerDetailsContent">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %} {% block scripts %}
+<style>
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .progress {
+    background-color: #e9ecef;
+    border-radius: 4px;
+  }
+</style>
+
+<script>
+  // Worker management functions
+  function viewWorkerDetails(workerId) {
+    fetch(`/api/worker/${workerId}`)
+      .then((response) => response.json())
+      .then((worker) => {
+        const loadPercent =
+          worker.max_tenants > 0
+            ? (worker.current_tenants / worker.max_tenants) * 100
+            : 0;
+
+        let content = `
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Basic Information</h6>
+            <table class="table table-sm">
+              <tr><td><strong>Name:</strong></td><td>${worker.name}</td></tr>
+              <tr><td><strong>Container:</strong></td><td><code>${
+                worker.container_name
+              }</code></td></tr>
+              <tr><td><strong>Port:</strong></td><td>${worker.port}</td></tr>
+              <tr><td><strong>Status:</strong></td><td><span class="badge bg-${
+                worker.status === "running" ? "success" : "danger"
+              }">${worker.status}</span></td></tr>
+              <tr><td><strong>Created:</strong></td><td>${new Date(
+                worker.created_at
+              ).toLocaleString()}</td></tr>
+            </table>
+          </div>
+          <div class="col-md-6">
+            <h6>Performance Metrics</h6>
+            <table class="table table-sm">
+              <tr><td><strong>Current Tenants:</strong></td><td>${
+                worker.current_tenants
+              }</td></tr>
+              <tr><td><strong>Max Tenants:</strong></td><td>${
+                worker.max_tenants
+              }</td></tr>
+              <tr><td><strong>Load:</strong></td><td>${loadPercent.toFixed(
+                1
+              )}%</td></tr>
+              <tr><td><strong>Last Health Check:</strong></td><td>${
+                worker.last_health_check
+                  ? new Date(worker.last_health_check).toLocaleString()
+                  : "Never"
+              }</td></tr>
+            </table>
+          </div>
+        </div>
+        
+        <div class="mt-3">
+          <h6>Load Distribution</h6>
+          <div class="progress" style="height: 20px;">
+            <div class="progress-bar bg-${
+              loadPercent < 50
+                ? "success"
+                : loadPercent < 80
+                ? "warning"
+                : "danger"
+            }" 
+                 style="width: ${loadPercent}%">${loadPercent.toFixed(1)}%</div>
+          </div>
+        </div>
+      `;
+
+        document.getElementById("workerDetailsContent").innerHTML = content;
+        new bootstrap.Modal(
+          document.getElementById("workerDetailsModal")
+        ).show();
+      })
+      .catch((error) => {
+        console.error("Error fetching worker details:", error);
+        alert("Failed to load worker details");
+      });
+  }
+
+  function checkWorkerHealth(workerId) {
+    fetch(`/api/worker/${workerId}/health-check`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          alert(`Health check completed. Status: ${result.status}`);
+          location.reload();
+        } else {
+          alert("Health check failed: " + result.error);
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking worker health:", error);
+        alert("Failed to perform health check");
+      });
+  }
+
+  function startWorker(workerId) {
+    if (confirm("Are you sure you want to start this worker?")) {
+      fetch(`/api/worker/${workerId}/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            alert("Worker started successfully");
+            location.reload();
+          } else {
+            alert("Failed to start worker: " + result.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error starting worker:", error);
+          alert("Failed to start worker");
+        });
+    }
+  }
+
+  function stopWorker(workerId) {
+    if (
+      confirm(
+        "Are you sure you want to stop this worker? This will affect all tenants running on it."
+      )
+    ) {
+      fetch(`/api/worker/${workerId}/stop`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            alert("Worker stopped successfully");
+            location.reload();
+          } else {
+            alert("Failed to stop worker: " + result.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error stopping worker:", error);
+          alert("Failed to stop worker");
+        });
+    }
+  }
+
+  function restartWorker(workerId) {
+    if (
+      confirm(
+        "Are you sure you want to restart this worker? This will temporarily affect all tenants running on it."
+      )
+    ) {
+      fetch(`/api/worker/${workerId}/restart`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            alert("Worker restarted successfully");
+            location.reload();
+          } else {
+            alert("Failed to restart worker: " + result.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error restarting worker:", error);
+          alert("Failed to restart worker");
+        });
+    }
+  }
+
+  function editWorker(workerId) {
+    fetch(`/api/worker/${workerId}`)
+      .then((response) => response.json())
+      .then((worker) => {
+        document.getElementById("editWorkerId").value = worker.id;
+        document.getElementById("editWorkerName").value = worker.name;
+        document.getElementById("editContainerName").value =
+          worker.container_name;
+        document.getElementById("editPort").value = worker.port;
+        document.getElementById("editMaxTenants").value = worker.max_tenants;
+
+        new bootstrap.Modal(document.getElementById("editWorkerModal")).show();
+      })
+      .catch((error) => {
+        console.error("Error fetching worker:", error);
+        alert("Failed to load worker data");
+      });
+  }
+
+  function deleteWorker(workerId, workerName) {
+    if (
+      confirm(
+        `Are you sure you want to delete worker "${workerName}"? This action cannot be undone and will affect all tenants running on it.`
+      )
+    ) {
+      fetch(`/api/worker/${workerId}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert("Failed to delete worker: " + result.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error deleting worker:", error);
+          alert("Failed to delete worker");
+        });
+    }
+  }
+
+  // Form submissions
+  document
+    .getElementById("addWorkerForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const formData = {
+        name: document.getElementById("newWorkerName").value,
+        container_name: document.getElementById("newContainerName").value,
+        port: parseInt(document.getElementById("newPort").value),
+        max_tenants: parseInt(document.getElementById("newMaxTenants").value),
+      };
+
+      fetch("/api/worker", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert("Failed to add worker: " + result.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error adding worker:", error);
+          alert("Failed to add worker");
+        });
+    });
+
+  document
+    .getElementById("editWorkerForm")
+    .addEventListener("submit", function (e) {
+      e.preventDefault();
+
+      const workerId = document.getElementById("editWorkerId").value;
+      const formData = {
+        name: document.getElementById("editWorkerName").value,
+        container_name: document.getElementById("editContainerName").value,
+        port: parseInt(document.getElementById("editPort").value),
+        max_tenants: parseInt(document.getElementById("editMaxTenants").value),
+      };
+
+      fetch(`/api/worker/${workerId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      })
+        .then((response) => response.json())
+        .then((result) => {
+          if (result.success) {
+            location.reload();
+          } else {
+            alert("Failed to update worker: " + result.error);
+          }
+        })
+        .catch((error) => {
+          console.error("Error updating worker:", error);
+          alert("Failed to update worker");
+        });
+    });
+
+  // Search and filter functionality
+  document
+    .getElementById("searchWorkers")
+    .addEventListener("input", function () {
+      filterWorkers();
+    });
+
+  document
+    .getElementById("filterStatus")
+    .addEventListener("change", function () {
+      filterWorkers();
+    });
+
+  document.getElementById("filterLoad").addEventListener("change", function () {
+    filterWorkers();
+  });
+
+  document.getElementById("sortBy").addEventListener("change", function () {
+    sortWorkers();
+  });
+
+  function filterWorkers() {
+    const searchTerm = document
+      .getElementById("searchWorkers")
+      .value.toLowerCase();
+    const statusFilter = document.getElementById("filterStatus").value;
+    const loadFilter = document.getElementById("filterLoad").value;
+
+    const rows = document.querySelectorAll(".worker-row");
+
+    rows.forEach((row) => {
+      const workerName = row.querySelector("strong").textContent.toLowerCase();
+      const containerName = row.querySelector("code").textContent.toLowerCase();
+      const status = row
+        .querySelector(".badge")
+        .textContent.toLowerCase()
+        .trim();
+
+      // Calculate load percentage from progress bar
+      const progressBar = row.querySelector(".progress-bar");
+      const loadPercent = parseFloat(progressBar.style.width) || 0;
+
+      let showRow = true;
+
+      // Search filter
+      if (
+        searchTerm &&
+        !workerName.includes(searchTerm) &&
+        !containerName.includes(searchTerm)
+      ) {
+        showRow = false;
+      }
+
+      // Status filter
+      if (statusFilter && !status.includes(statusFilter.toLowerCase())) {
+        showRow = false;
+      }
+
+      // Load filter
+      if (loadFilter) {
+        if (loadFilter === "low" && loadPercent >= 50) {
+          showRow = false;
+        } else if (
+          loadFilter === "medium" &&
+          (loadPercent < 50 || loadPercent > 80)
+        ) {
+          showRow = false;
+        } else if (loadFilter === "high" && loadPercent <= 80) {
+          showRow = false;
+        }
+      }
+
+      row.style.display = showRow ? "" : "none";
+    });
+  }
+
+  function sortWorkers() {
+    const sortBy = document.getElementById("sortBy").value;
+    const tbody = document.querySelector("#workersTable tbody");
+    const rows = Array.from(tbody.querySelectorAll(".worker-row"));
+
+    rows.sort((a, b) => {
+      let aVal, bVal;
+
+      switch (sortBy) {
+        case "name_asc":
+          aVal = a.querySelector("strong").textContent.toLowerCase();
+          bVal = b.querySelector("strong").textContent.toLowerCase();
+          return aVal.localeCompare(bVal);
+        case "name_desc":
+          aVal = a.querySelector("strong").textContent.toLowerCase();
+          bVal = b.querySelector("strong").textContent.toLowerCase();
+          return bVal.localeCompare(aVal);
+        case "created_asc":
+          aVal = new Date(a.cells[7].textContent);
+          bVal = new Date(b.cells[7].textContent);
+          return aVal - bVal;
+        case "created_desc":
+          aVal = new Date(a.cells[7].textContent);
+          bVal = new Date(b.cells[7].textContent);
+          return bVal - aVal;
+        case "load_asc":
+          aVal = parseFloat(a.querySelector(".progress-bar").style.width) || 0;
+          bVal = parseFloat(b.querySelector(".progress-bar").style.width) || 0;
+          return aVal - bVal;
+        case "load_desc":
+          aVal = parseFloat(a.querySelector(".progress-bar").style.width) || 0;
+          bVal = parseFloat(b.querySelector(".progress-bar").style.width) || 0;
+          return bVal - aVal;
+        default:
+          return 0;
+      }
+    });
+
+    rows.forEach((row) => tbody.appendChild(row));
+  }
+
+  // Select all checkbox functionality
+  document.getElementById("selectAll").addEventListener("change", function () {
+    const checkboxes = document.querySelectorAll(".worker-checkbox");
+    checkboxes.forEach((checkbox) => {
+      checkbox.checked = this.checked;
+    });
+  });
+
+  // Auto-refresh worker status every 30 seconds
+  setInterval(function () {
+    // Only refresh if not actively using modals
+    if (!document.querySelector(".modal.show")) {
+      location.reload();
+    }
+  }, 30000);
+</script>
+{% endblock %}
