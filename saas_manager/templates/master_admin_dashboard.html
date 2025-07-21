@@ -1333,60 +1333,233 @@
 
           plans.forEach((plan) => {
             const row = document.createElement("tr");
+
+            // Handle features - check if it's an object or array
+            let featuresHtml = "";
+            if (plan.features) {
+              if (Array.isArray(plan.features)) {
+                // If it's an array, use the original logic
+                featuresHtml = plan.features
+                  .slice(0, 3)
+                  .map(
+                    (f) => `<span class="badge bg-secondary me-1">${f}</span>`
+                  )
+                  .join("");
+                if (plan.features.length > 3) {
+                  featuresHtml += `<span class="text-muted">+${
+                    plan.features.length - 3
+                  } more</span>`;
+                }
+              } else if (typeof plan.features === "object") {
+                // If it's an object, convert to key-value display
+                const featureEntries = Object.entries(plan.features);
+                featuresHtml = featureEntries
+                  .slice(0, 3)
+                  .map(([key, value]) => {
+                    const displayValue =
+                      typeof value === "boolean" ? (value ? "✓" : "✗") : value;
+                    return `<span class="badge bg-secondary me-1">${key}: ${displayValue}</span>`;
+                  })
+                  .join("");
+                if (featureEntries.length > 3) {
+                  featuresHtml += `<span class="text-muted">+${
+                    featureEntries.length - 3
+                  } more</span>`;
+                }
+              }
+            }
+
             row.innerHTML = `
-                        <td><strong>${plan.name}</strong></td>
-                        <td>${plan.price}</td>
-                        <td>${plan.max_users}</td>
-                        <td>${plan.storage_limit} MB</td>
-                        <td>
-                            ${
-                              plan.features
-                                ? plan.features
-                                    .slice(0, 3)
-                                    .map(
-                                      (f) =>
-                                        `<span class="badge bg-secondary me-1">${f}</span>`
-                                    )
-                                    .join("")
-                                : ""
-                            }
-                            ${
-                              plan.features && plan.features.length > 3
-                                ? `<span class="text-muted">+${
-                                    plan.features.length - 3
-                                  } more</span>`
-                                : ""
-                            }
-                        </td>
-                        <td><span class="badge bg-info">${
-                          plan.tenant_count || 0
-                        }</span></td>
-                        <td>
-                            <span class="badge bg-${
-                              plan.is_active ? "success" : "danger"
-                            }">
-                                ${plan.is_active ? "Active" : "Inactive"}
-                            </span>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <button class="btn btn-sm btn-primary" 
-                                        onclick="Dashboard.editPlan(${plan.id})"
-                                        title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="btn btn-sm btn-danger" 
-                                        onclick="Dashboard.deletePlan(${
-                                          plan.id
-                                        })"
-                                        title="Delete">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    `;
+      <td><strong>${plan.name}</strong></td>
+      <td>$${plan.price}</td>
+      <td>${plan.max_users}</td>
+      <td>${plan.storage_limit} MB</td>
+      <td>${featuresHtml}</td>
+      <td><span class="badge bg-info">${plan.tenant_count || 0}</span></td>
+      <td>
+        <span class="badge bg-${plan.is_active ? "success" : "danger"}">
+          ${plan.is_active ? "Active" : "Inactive"}
+        </span>
+      </td>
+      <td>
+        <div class="action-buttons">
+          <button class="btn btn-sm btn-primary" 
+                  onclick="Dashboard.editPlan(${plan.id})"
+                  title="Edit">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-sm btn-danger" 
+                  onclick="Dashboard.deletePlan(${plan.id})"
+                  title="Delete">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      </td>
+    `;
             tbody.appendChild(row);
           });
+        },
+
+        // Add this function to the Dashboard object, after the createPlan function:
+
+        async editPlan(planId) {
+          try {
+            // First, get the plan data
+            const response = await fetch(`/master-admin/plan/${planId}/edit`);
+            const result = await response.json();
+
+            if (!result.success) {
+              this.showAlert(
+                "danger",
+                result.message || "Failed to load plan data"
+              );
+              return;
+            }
+
+            const plan = result.plan;
+
+            // Populate the form with existing data
+            const form = document.getElementById("createPlanForm");
+            form.querySelector('input[name="name"]').value = plan.name;
+            form.querySelector('input[name="price"]').value = plan.price;
+            form.querySelector('input[name="max_users"]').value =
+              plan.max_users;
+            form.querySelector('input[name="storage_limit"]').value =
+              plan.storage_limit;
+
+            // Handle features - convert object to comma-separated string if needed
+            let featuresText = "";
+            if (plan.features) {
+              if (Array.isArray(plan.features)) {
+                featuresText = plan.features.join(", ");
+              } else if (typeof plan.features === "object") {
+                featuresText = Object.entries(plan.features)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join(", ");
+              }
+            }
+            form.querySelector('textarea[name="features"]').value =
+              featuresText;
+
+            // Handle modules
+            const modulesText = Array.isArray(plan.modules)
+              ? plan.modules.join(", ")
+              : "";
+            form.querySelector('textarea[name="modules"]').value = modulesText;
+
+            form.querySelector('input[name="is_active"]').checked =
+              plan.is_active;
+
+            // Change modal title and button
+            document.querySelector(
+              "#createPlanModal .modal-title"
+            ).textContent = "Edit Plan";
+            document.querySelector("#createPlanModal .btn-primary").onclick =
+              () => this.updatePlan(planId);
+            document.querySelector(
+              "#createPlanModal .btn-primary"
+            ).textContent = "Update Plan";
+
+            // Show the modal
+            const modal = new bootstrap.Modal(
+              document.getElementById("createPlanModal")
+            );
+            modal.show();
+
+            // Reset modal when closed
+            document.getElementById("createPlanModal").addEventListener(
+              "hidden.bs.modal",
+              () => {
+                document.querySelector(
+                  "#createPlanModal .modal-title"
+                ).textContent = "Create New Plan";
+                document.querySelector(
+                  "#createPlanModal .btn-primary"
+                ).onclick = () => this.createPlan();
+                document.querySelector(
+                  "#createPlanModal .btn-primary"
+                ).textContent = "Create Plan";
+                form.reset();
+              },
+              { once: true }
+            );
+          } catch (error) {
+            console.error("Failed to edit plan:", error);
+            this.showAlert("danger", "Failed to load plan for editing");
+          }
+        },
+
+        async updatePlan(planId) {
+          try {
+            const form = document.getElementById("createPlanForm");
+            const formData = new FormData(form);
+
+            // Parse features back to appropriate format
+            const featuresText = formData.get("features");
+            let features = [];
+            if (featuresText) {
+              // Try to parse as key-value pairs, fallback to simple array
+              if (featuresText.includes(":")) {
+                features = {};
+                featuresText.split(",").forEach((item) => {
+                  const [key, value] = item.split(":").map((s) => s.trim());
+                  if (key && value !== undefined) {
+                    // Try to parse boolean values
+                    if (value === "true") features[key] = true;
+                    else if (value === "false") features[key] = false;
+                    else features[key] = value;
+                  }
+                });
+              } else {
+                features = featuresText
+                  .split(",")
+                  .map((f) => f.trim())
+                  .filter((f) => f);
+              }
+            }
+
+            const planData = {
+              name: formData.get("name"),
+              price: parseFloat(formData.get("price")),
+              max_users: parseInt(formData.get("max_users")),
+              storage_limit: parseInt(formData.get("storage_limit")),
+              features: features,
+              modules: formData.get("modules")
+                ? formData
+                    .get("modules")
+                    .split(",")
+                    .map((m) => m.trim())
+                    .filter((m) => m)
+                : [],
+              is_active: formData.has("is_active"),
+            };
+
+            this.showLoading();
+            const response = await fetch(
+              `/master-admin/plan/${planId}/update`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(planData),
+              }
+            );
+            const result = await response.json();
+
+            if (result.success) {
+              this.showAlert("success", result.message);
+              bootstrap.Modal.getInstance(
+                document.getElementById("createPlanModal")
+              ).hide();
+              await this.loadPlans();
+            } else {
+              this.showAlert("danger", result.message);
+            }
+          } catch (error) {
+            console.error("Failed to update plan:", error);
+            this.showAlert("danger", "Failed to update plan");
+          } finally {
+            this.hideLoading();
+          }
         },
 
         // Load analytics
@@ -1612,8 +1785,225 @@
           }
         },
 
-        viewUserDetails(userId) {
-          window.open(`/master-admin/user/${userId}/details`, "_blank");
+        // Replace the existing viewUserDetails function with this:
+        async viewUserDetails(userId) {
+          try {
+            this.showLoading();
+            const response = await fetch(
+              `/master-admin/user/${userId}/details`
+            );
+            const result = await response.json();
+
+            if (!result.success) {
+              this.showAlert(
+                "danger",
+                result.message || "Failed to load user details"
+              );
+              return;
+            }
+
+            const user = result.user;
+
+            // Create and show user details modal
+            this.showUserDetailsModal(user);
+          } catch (error) {
+            console.error("Failed to load user details:", error);
+            this.showAlert("danger", "Failed to load user details");
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        // Add this new function to create and show the user details modal:
+        showUserDetailsModal(user) {
+          // Create modal HTML
+          const modalHtml = `
+    <div class="modal fade" id="userDetailsModal" tabindex="-1">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-user"></i> User Details: ${user.username}
+              ${
+                user.is_admin
+                  ? '<span class="badge bg-primary ms-2">ADMIN</span>'
+                  : ""
+              }
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <div class="col-md-6">
+                <h6><i class="fas fa-info-circle"></i> Basic Information</h6>
+                <table class="table table-sm">
+                  <tr>
+                    <td><strong>Username:</strong></td>
+                    <td>${user.username}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Email:</strong></td>
+                    <td>${user.email}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Status:</strong></td>
+                    <td>
+                      <span class="badge bg-${
+                        user.is_active ? "success" : "danger"
+                      }">
+                        ${user.is_active ? "Active" : "Inactive"}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Role:</strong></td>
+                    <td>
+                      <span class="badge bg-${
+                        user.is_admin ? "primary" : "secondary"
+                      }">
+                        ${user.is_admin ? "Admin" : "User"}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Last Login:</strong></td>
+                    <td>${
+                      user.last_login
+                        ? new Date(user.last_login).toLocaleString()
+                        : "Never"
+                    }</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Created:</strong></td>
+                    <td>${
+                      user.created_at
+                        ? new Date(user.created_at).toLocaleString()
+                        : "Unknown"
+                    }</td>
+                  </tr>
+                </table>
+              </div>
+              <div class="col-md-6">
+                <h6><i class="fas fa-building"></i> Tenants (${
+                  user.tenants.length
+                })</h6>
+                ${
+                  user.tenants.length > 0
+                    ? `
+                  <div style="max-height: 200px; overflow-y: auto;">
+                    ${user.tenants
+                      .map(
+                        (tenant) => `
+                      <div class="border rounded p-2 mb-2">
+                        <div class="d-flex justify-content-between">
+                          <strong>${tenant.name}</strong>
+                          <span class="badge bg-${this.getStatusColor(
+                            tenant.status
+                          )}">${tenant.status}</span>
+                        </div>
+                        <small class="text-muted">${
+                          tenant.subdomain
+                        }</small><br>
+                        <small><strong>Role:</strong> ${tenant.role}</small><br>
+                        <small><strong>Plan:</strong> ${tenant.plan}</small>
+                      </div>
+                    `
+                      )
+                      .join("")}
+                  </div>
+                `
+                    : '<p class="text-muted">No tenants associated</p>'
+                }
+              </div>
+            </div>
+            
+            <hr>
+            
+            <h6><i class="fas fa-history"></i> Recent Activity (${
+              user.recent_activity.length
+            })</h6>
+            ${
+              user.recent_activity.length > 0
+                ? `
+              <div style="max-height: 250px; overflow-y: auto;">
+                <table class="table table-sm table-hover">
+                  <thead>
+                    <tr>
+                      <th>Date/Time</th>
+                      <th>Tenant</th>
+                      <th>IP Address</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${user.recent_activity
+                      .map(
+                        (activity) => `
+                      <tr>
+                        <td><small>${new Date(
+                          activity.accessed_at
+                        ).toLocaleString()}</small></td>
+                        <td><small>${activity.tenant_name}</small></td>
+                        <td><small>${activity.ip_address}</small></td>
+                        <td>
+                          <span class="badge bg-${
+                            activity.success ? "success" : "danger"
+                          }">
+                            ${activity.success ? "Success" : "Failed"}
+                          </span>
+                        </td>
+                      </tr>
+                    `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
+                : '<p class="text-muted">No recent activity</p>'
+            }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-warning" onclick="Dashboard.resetUserPassword(${
+              user.id
+            })">
+              <i class="fas fa-key"></i> Reset Password
+            </button>
+            <button type="button" class="btn btn-${
+              user.is_active ? "danger" : "success"
+            }" 
+                    onclick="Dashboard.toggleUserStatus(${user.id})">
+              <i class="fas fa-${user.is_active ? "pause" : "play"}"></i> 
+              ${user.is_active ? "Deactivate" : "Activate"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+          // Remove existing modal if present
+          const existingModal = document.getElementById("userDetailsModal");
+          if (existingModal) {
+            existingModal.remove();
+          }
+
+          // Add modal to body
+          document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+          // Show modal
+          const modal = new bootstrap.Modal(
+            document.getElementById("userDetailsModal")
+          );
+          modal.show();
+
+          // Clean up when modal is hidden
+          document
+            .getElementById("userDetailsModal")
+            .addEventListener("hidden.bs.modal", function () {
+              this.remove();
+            });
         },
 
         async resetUserPassword(userId) {
@@ -1676,8 +2066,430 @@
           }
         },
 
-        viewTenantDetails(tenantId) {
-          window.open(`/master-admin/tenant/${tenantId}/details`, "_blank");
+        // Replace the existing viewTenantDetails function with this:
+        async viewTenantDetails(tenantId) {
+          try {
+            this.showLoading();
+            const response = await fetch(
+              `/master-admin/tenant/${tenantId}/details`
+            );
+            const result = await response.json();
+
+            if (!result.success) {
+              this.showAlert(
+                "danger",
+                result.message || "Failed to load tenant details"
+              );
+              return;
+            }
+
+            const tenant = result.tenant;
+
+            // Create and show tenant details modal
+            this.showTenantDetailsModal(tenant);
+          } catch (error) {
+            console.error("Failed to load tenant details:", error);
+            this.showAlert("danger", "Failed to load tenant details");
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        // Add this new function to create and show the tenant details modal:
+        showTenantDetailsModal(tenant) {
+          // Create modal HTML
+          const modalHtml = `
+    <div class="modal fade" id="tenantDetailsModal" tabindex="-1">
+      <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">
+              <i class="fas fa-building"></i> Tenant Details: ${tenant.name}
+              <span class="badge bg-${this.getStatusColor(
+                tenant.status
+              )} ms-2">${tenant.status.toUpperCase()}</span>
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="row">
+              <!-- Basic Information -->
+              <div class="col-md-6">
+                <h6><i class="fas fa-info-circle"></i> Basic Information</h6>
+                <table class="table table-sm">
+                  <tr>
+                    <td><strong>Name:</strong></td>
+                    <td>${tenant.name}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Subdomain:</strong></td>
+                    <td>
+                      <code>${tenant.subdomain}</code>
+                      <a href="http://${tenant.subdomain}.${
+            window.location.hostname
+          }" target="_blank" class="ms-2">
+                        <i class="fas fa-external-link-alt"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Database:</strong></td>
+                    <td><code>${tenant.database_name}</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Admin Username:</strong></td>
+                    <td><code>${tenant.admin_username}</code></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Status:</strong></td>
+                    <td>
+                      <span class="badge bg-${this.getStatusColor(
+                        tenant.status
+                      )}">
+                        ${tenant.status.toUpperCase()}
+                      </span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Created:</strong></td>
+                    <td>${
+                      tenant.created_at
+                        ? new Date(tenant.created_at).toLocaleString()
+                        : "Unknown"
+                    }</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Last Updated:</strong></td>
+                    <td>${
+                      tenant.updated_at
+                        ? new Date(tenant.updated_at).toLocaleString()
+                        : "Unknown"
+                    }</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Plan & Resources -->
+              <div class="col-md-6">
+                <h6><i class="fas fa-tags"></i> Plan & Resources</h6>
+                <table class="table table-sm">
+                  <tr>
+                    <td><strong>Plan:</strong></td>
+                    <td>
+                      <span class="badge bg-primary">${tenant.plan.toUpperCase()}</span>
+                      ${
+                        tenant.plan_details
+                          ? `($${tenant.plan_details.price}/month)`
+                          : ""
+                      }
+                    </td>
+                  </tr>
+                  <tr>
+                    <td><strong>Max Users:</strong></td>
+                    <td>${
+                      tenant.max_users ||
+                      (tenant.plan_details
+                        ? tenant.plan_details.max_users
+                        : "N/A")
+                    }</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Storage Limit:</strong></td>
+                    <td>${
+                      tenant.storage_limit ||
+                      (tenant.plan_details
+                        ? tenant.plan_details.storage_limit + " MB"
+                        : "N/A")
+                    }</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Storage Used:</strong></td>
+                    <td>${tenant.storage_usage}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Current Users:</strong></td>
+                    <td>${tenant.user_count}</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Installed Apps:</strong></td>
+                    <td>${tenant.installed_apps.length} apps</td>
+                  </tr>
+                  ${
+                    tenant.plan_details && tenant.plan_details.features
+                      ? `
+                  <tr>
+                    <td><strong>Plan Features:</strong></td>
+                    <td>
+                      ${
+                        typeof tenant.plan_details.features === "object"
+                          ? Object.entries(tenant.plan_details.features)
+                              .map(
+                                ([key, value]) =>
+                                  `<small class="badge bg-secondary me-1">${key}: ${value}</small>`
+                              )
+                              .join("")
+                          : tenant.plan_details.features
+                              .map(
+                                (f) =>
+                                  `<small class="badge bg-secondary me-1">${f}</small>`
+                              )
+                              .join("")
+                      }
+                    </td>
+                  </tr>
+                  `
+                      : ""
+                  }
+                </table>
+              </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Users Tab -->
+            <div class="row">
+              <div class="col-md-6">
+                <h6><i class="fas fa-users"></i> Users (${
+                  tenant.user_count
+                })</h6>
+                ${
+                  tenant.users.length > 0
+                    ? `
+                  <div style="max-height: 250px; overflow-y: auto;">
+                    <table class="table table-sm table-hover">
+                      <thead>
+                        <tr>
+                          <th>Username</th>
+                          <th>Role</th>
+                          <th>Status</th>
+                          <th>Last Login</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${tenant.users
+                          .map(
+                            (user) => `
+                          <tr>
+                            <td>
+                              <strong>${user.username}</strong><br>
+                              <small class="text-muted">${user.email}</small>
+                            </td>
+                            <td>
+                              <span class="badge bg-${
+                                user.role === "admin" ? "primary" : "secondary"
+                              }">
+                                ${user.role.toUpperCase()}
+                              </span>
+                            </td>
+                            <td>
+                              <span class="badge bg-${
+                                user.is_active ? "success" : "danger"
+                              }">
+                                ${user.is_active ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td>
+                              <small>${
+                                user.last_login
+                                  ? new Date(user.last_login).toLocaleString()
+                                  : "Never"
+                              }</small>
+                            </td>
+                          </tr>
+                        `
+                          )
+                          .join("")}
+                      </tbody>
+                    </table>
+                  </div>
+                `
+                    : '<p class="text-muted">No users found</p>'
+                }
+              </div>
+              
+              <!-- Installed Apps -->
+              <div class="col-md-6">
+                <h6><i class="fas fa-puzzle-piece"></i> Installed Apps (${
+                  tenant.installed_apps.length
+                })</h6>
+                ${
+                  tenant.installed_apps.length > 0
+                    ? `
+                  <div style="max-height: 250px; overflow-y: auto;">
+                    <div class="row g-2">
+                      ${tenant.installed_apps
+                        .map(
+                          (app) => `
+                        <div class="col-6">
+                          <div class="border rounded p-2">
+                            <small><strong>${
+                              app.display_name || app.name
+                            }</strong></small><br>
+                            <small class="text-muted">${
+                              app.technical_name || app.name
+                            }</small><br>
+                            ${
+                              app.version
+                                ? `<small class="text-info">v${app.version}</small>`
+                                : ""
+                            }
+                          </div>
+                        </div>
+                      `
+                        )
+                        .join("")}
+                    </div>
+                  </div>
+                `
+                    : '<p class="text-muted">No apps installed or tenant inactive</p>'
+                }
+              </div>
+            </div>
+            
+            <hr>
+            
+            <!-- Access Logs -->
+            <h6><i class="fas fa-history"></i> Recent Access Logs (${
+              tenant.access_logs.length
+            })</h6>
+            ${
+              tenant.access_logs.length > 0
+                ? `
+              <div style="max-height: 300px; overflow-y: auto;">
+                <table class="table table-sm table-hover">
+                  <thead>
+                    <tr>
+                      <th>Date/Time</th>
+                      <th>User</th>
+                      <th>IP Address</th>
+                      <th>Status</th>
+                      <th>User Agent</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${tenant.access_logs
+                      .map(
+                        (log) => `
+                      <tr>
+                        <td><small>${new Date(
+                          log.accessed_at
+                        ).toLocaleString()}</small></td>
+                        <td><small>${log.username}</small></td>
+                        <td><small><code>${log.ip_address}</code></small></td>
+                        <td>
+                          <span class="badge bg-${
+                            log.success ? "success" : "danger"
+                          }">
+                            ${log.success ? "Success" : "Failed"}
+                          </span>
+                        </td>
+                        <td><small class="text-muted">${
+                          log.user_agent
+                            ? log.user_agent.substring(0, 50) + "..."
+                            : "N/A"
+                        }</small></td>
+                      </tr>
+                    `
+                      )
+                      .join("")}
+                  </tbody>
+                </table>
+              </div>
+            `
+                : '<p class="text-muted">No access logs found</p>'
+            }
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-info" onclick="Dashboard.resetTenantAdminPassword(${
+              tenant.id
+            })">
+              <i class="fas fa-key"></i> Reset Admin Password
+            </button>
+            <button type="button" class="btn btn-warning" onclick="Dashboard.backupTenant(${
+              tenant.id
+            })">
+              <i class="fas fa-download"></i> Backup
+            </button>
+            <button type="button" class="btn btn-${
+              tenant.status === "active" ? "danger" : "success"
+            }" 
+                    onclick="Dashboard.toggleTenantStatus(${tenant.id})">
+              <i class="fas fa-${
+                tenant.status === "active" ? "pause" : "play"
+              }"></i> 
+              ${tenant.status === "active" ? "Deactivate" : "Activate"}
+            </button>
+            ${
+              tenant.status === "pending"
+                ? `
+              <button type="button" class="btn btn-success" onclick="Dashboard.approveTenant(${tenant.id})">
+                <i class="fas fa-check"></i> Approve
+              </button>
+            `
+                : ""
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+          // Remove existing modal if present
+          const existingModal = document.getElementById("tenantDetailsModal");
+          if (existingModal) {
+            existingModal.remove();
+          }
+
+          // Add modal to body
+          document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+          // Show modal
+          const modal = new bootstrap.Modal(
+            document.getElementById("tenantDetailsModal")
+          );
+          modal.show();
+
+          // Clean up when modal is hidden
+          document
+            .getElementById("tenantDetailsModal")
+            .addEventListener("hidden.bs.modal", function () {
+              this.remove();
+            });
+        },
+
+        // Add this function for resetting tenant admin password:
+        async resetTenantAdminPassword(tenantId) {
+          if (
+            confirm(
+              "Are you sure you want to reset this tenant's admin password?"
+            )
+          ) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                `/master-admin/tenant/${tenantId}/reset_admin_password`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert(
+                  "success",
+                  `Admin password reset successfully. New password: ${result.new_password}`
+                );
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Failed to reset admin password");
+            } finally {
+              this.hideLoading();
+            }
+          }
         },
 
         async backupTenant(tenantId) {

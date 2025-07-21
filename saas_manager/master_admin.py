@@ -1024,6 +1024,7 @@ def user_details(user_id):
                 })
         recent_activity = CredentialAccess.query.filter_by(user_id=user_id)\
             .order_by(CredentialAccess.accessed_at.desc()).limit(20).all()
+        
         user_data = {
             'id': user.id,
             'username': user.username,
@@ -1037,14 +1038,18 @@ def user_details(user_id):
                 {
                     'accessed_at': activity.accessed_at.isoformat(),
                     'ip_address': activity.ip_address,
-                    'success': activity.success
+                    'success': activity.success,
+                    'tenant_name': activity.tenant.name if activity.tenant else 'Unknown'
                 } for activity in recent_activity
             ]
         }
-        return render_template('user_details.html', user=user_data)
+        
+        # Return JSON response instead of rendering template
+        return jsonify({'success': True, 'user': user_data})
+        
     except Exception as e:
         error_tracker.log_error(e, {'user_id': user_id})
-        return render_template('error.html', message='Failed to load user details.'), 500
+        return jsonify({'success': False, 'message': 'Failed to load user details'}), 500
 
 @master_admin_bp.route('/master-admin/user/<int:user_id>/impersonate', methods=['POST'])
 @login_required
@@ -1103,25 +1108,87 @@ def tenant_details(tenant_id):
             odoo_url=os.environ.get('ODOO_URL', 'http://odoo_master:8069'),
             master_pwd=os.environ.get('ODOO_MASTER_PASSWORD', 'admin123')
         )
-        installed_apps = odoo.get_installed_applications(
-            tenant.database_name, tenant.admin_username, tenant.get_admin_password()
-        ) if tenant.status == 'active' else []
-        storage_usage = odoo.get_database_storage_usage(tenant.database_name).get('total_size_human', 'N/A') if tenant.status == 'active' else 'N/A'
-        access_logs = CredentialAccess.query.filter_by(tenant_id=tenant.id).order_by(CredentialAccess.accessed_at.desc()).limit(10).all()
+        
+        # Get tenant users
+        tenant_users = TenantUser.query.filter_by(tenant_id=tenant_id).all()
+        users = []
+        for tu in tenant_users:
+            user = SaasUser.query.get(tu.user_id)
+            if user:
+                users.append({
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'role': tu.role,
+                    'is_active': user.is_active,
+                    'last_login': user.last_login.isoformat() if user.last_login else None
+                })
+        
+        # Get installed apps only if tenant is active
+        installed_apps = []
+        storage_usage = 'N/A'
+        if tenant.status == 'active':
+            try:
+                installed_apps = odoo.get_installed_applications(
+                    tenant.database_name, tenant.admin_username, tenant.get_admin_password()
+                )
+                storage_data = odoo.get_database_storage_usage(tenant.database_name)
+                storage_usage = storage_data.get('total_size_human', 'N/A')
+            except Exception as e:
+                logger.warning(f"Failed to get Odoo data for tenant {tenant_id}: {e}")
+        
+        # Get access logs
+        access_logs = CredentialAccess.query.filter_by(tenant_id=tenant.id)\
+            .order_by(CredentialAccess.accessed_at.desc()).limit(20).all()
+        
+        # Get subscription plan details
+        plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
+        plan_details = None
+        if plan:
+            plan_details = {
+                'name': plan.name,
+                'price': float(plan.price),
+                'max_users': plan.max_users,
+                'storage_limit': plan.storage_limit,
+                'features': plan.features,
+                'modules': plan.modules
+            }
+        
         tenant_data = {
             'id': tenant.id,
             'name': tenant.name,
             'subdomain': tenant.subdomain,
+            'database_name': tenant.database_name,
             'status': tenant.status,
             'plan': tenant.plan,
+            'plan_details': plan_details,
+            'admin_username': tenant.admin_username,
+            'created_at': tenant.created_at.isoformat() if tenant.created_at else None,
+            'updated_at': tenant.updated_at.isoformat() if tenant.updated_at else None,
+            'is_active': tenant.is_active,
+            'max_users': tenant.max_users,
+            'storage_limit': tenant.storage_limit,
+            'users': users,
+            'user_count': len(users),
             'installed_apps': installed_apps,
             'storage_usage': storage_usage,
-            'access_logs': [{'accessed_at': log.accessed_at.isoformat(), 'ip_address': log.ip_address, 'success': log.success} for log in access_logs]
+            'access_logs': [
+                {
+                    'accessed_at': log.accessed_at.isoformat(),
+                    'ip_address': log.ip_address,
+                    'success': log.success,
+                    'user_agent': log.user_agent,
+                    'username': log.user.username if log.user else 'Unknown'
+                } for log in access_logs
+            ]
         }
-        return render_template('tenant_details.html', tenant=tenant_data)
+        
+        # Return JSON response instead of rendering template
+        return jsonify({'success': True, 'tenant': tenant_data})
+        
     except Exception as e:
         error_tracker.log_error(e, {'tenant_id': tenant_id})
-        return render_template('error.html', message='Failed to load tenant details.'), 500
+        return jsonify({'success': False, 'message': 'Failed to load tenant details'}), 500
 
 @master_admin_bp.route('/master-admin/tenant/<int:tenant_id>/suspend', methods=['POST'])
 @login_required
@@ -1199,7 +1266,43 @@ def export_tenants():
         ])
     output.seek(0)
     return send_file(io.BytesIO(output.getvalue().encode()), download_name="tenants.csv", as_attachment=True, mimetype='text/csv')
-
+@master_admin_bp.route('/master-admin/api/admin/users/list', methods=['GET'])
+@login_required
+@require_admin()
+@track_errors('api_users_list')
+def api_users_list():
+    """API endpoint for users table"""
+    try:
+        users = SaasUser.query.all()
+        users_data = []
+        
+        for user in users:
+            # Get tenant count for this user
+            tenant_count = TenantUser.query.filter_by(user_id=user.id).count()
+            
+            # Get recent activity
+            recent_activity = CredentialAccess.query.filter_by(user_id=user.id)\
+                .order_by(CredentialAccess.accessed_at.desc()).first()
+            
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'is_admin': user.is_admin,
+                'is_active': user.is_active,
+                'tenant_count': tenant_count,
+                'last_login': user.last_login.isoformat() if user.last_login else 'Never',
+                'last_activity': recent_activity.accessed_at.isoformat() if recent_activity else 'No activity',
+                'created_at': user.created_at.isoformat() if user.created_at else '',
+                'status_badge': 'success' if user.is_active else 'danger',
+                'role_badge': 'primary' if user.is_admin else 'secondary'
+            })
+        
+        return jsonify({'success': True, 'users': users_data})
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return jsonify({'success': False, 'message': 'Failed to fetch users'}), 500
+    
 # Bulk actions (from original file)
 @master_admin_bp.route('/master-admin/users/bulk_action', methods=['POST'])
 @login_required
@@ -1412,7 +1515,7 @@ def api_analytics():
         
         # Get last 6 months of user data
         user_growth_data = []
-        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
+        months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
         
         # Simplified approach - just get total users for now
         total_users = SaasUser.query.count()
@@ -1437,7 +1540,7 @@ def api_analytics():
                 current_revenue += plan.price
         
         # Generate 6 months of revenue data
-        revenue_values = [max(100, current_revenue // 6 * i) for i in range(1, 7)]
+        revenue_values = [max(100, current_revenue // 12 * i) for i in range(1, 7)]
         revenue_values[-1] = current_revenue
         
         # Storage growth (simplified)
