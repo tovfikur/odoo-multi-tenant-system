@@ -45,6 +45,8 @@ from utils import error_tracker, logger, track_errors
 from db import db
 from models import SaasUser, Tenant, TenantUser, SubscriptionPlan, WorkerInstance, UserPublicKey, CredentialAccess, Report, AuditLog
 from billing import BillingService
+from cache_manager import get_cached_user_tenants, get_cached_admin_stats, invalidate_tenant_cache, invalidate_user_cache, create_cache_manager
+from websocket_handler import WebSocketManager, setup_websocket_handlers, UpdateTrigger
 
 try:
     from .master_admin import master_admin_bp
@@ -60,6 +62,9 @@ try:
     from .TenantLogManager import TenantLogManager
 except ImportError:
     from TenantLogManager import TenantLogManager
+
+
+
 
 def run_async_in_background(coro):
     """Helper function to run an async coroutine in the background."""
@@ -104,7 +109,7 @@ else:
 if redis_client:
     limiter = Limiter(
         key_func=get_remote_address,
-        default_limits=["200 per day", "50 per hour"],
+        default_limits=["2000000 per day", "6000 per hour"],
         storage_uri=os.environ.get('REDIS_URL', 'redis://redis:6379/0')
     )
     limiter.init_app(app)
@@ -123,6 +128,21 @@ except docker.errors.DockerException as e:
 except Exception as e:
     error_tracker.log_error(e, {'component': 'docker_initialization'})
     docker_client = None
+
+# Initialize SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+
+# Initialize cache manager
+cache_manager = create_cache_manager(redis_client)
+app.cache_manager = cache_manager
+
+# Initialize WebSocket manager
+ws_manager = WebSocketManager(socketio, redis_client)
+update_trigger = UpdateTrigger(cache_manager, ws_manager)
+
+# Setup WebSocket handlers
+setup_websocket_handlers(socketio, ws_manager)
+
 
 from flask_migrate import Migrate
 migrate = Migrate(app, db)
@@ -250,62 +270,6 @@ def admin_required(f):
             return redirect(url_for('login'))
     return decorated_function
 
-# Caching helper functions
-def get_cached_user_tenants(user_id):
-    if not redis_client:
-        return fetch_user_tenants_from_db(user_id)
-    cache_key = f"user_tenants:{user_id}"
-    try:
-        cached_data = redis_client.get(cache_key)
-        if cached_data:
-            return json.loads(cached_data)
-    except Exception as e:
-        logger.warning(f"Redis error in get_cached_user_tenants: {e}")
-    tenant_data = fetch_user_tenants_from_db(user_id)
-    try:
-        redis_client.setex(cache_key, 300, json.dumps(tenant_data))  # Cache for 5 minutes
-    except Exception as e:
-        logger.warning(f"Failed to cache user tenants: {e}")
-    return tenant_data
-
-def fetch_user_tenants_from_db(user_id):
-    tenants = db.session.query(Tenant).join(TenantUser).filter(TenantUser.user_id == user_id).all()
-    return [
-        {
-            'id': t.id,
-            'name': t.name,
-            'subdomain': t.subdomain,
-            'status': t.status,
-            'plan': t.plan,
-            'created_at': t.created_at.strftime('%Y-%m-%d') if t.created_at else None
-        }
-        for t in tenants
-    ]
-
-def get_cached_admin_stats():
-    if not redis_client:
-        return fetch_admin_stats_from_db()
-    cache_key = "admin_stats"
-    try:
-        cached_data = redis_client.get(cache_key)
-        if cached_data:
-            return json.loads(cached_data)
-    except Exception as e:
-        logger.warning(f"Redis error in get_cached_admin_stats: {e}")
-    stats = fetch_admin_stats_from_db()
-    try:
-        redis_client.setex(cache_key, 300, json.dumps(stats))  # Cache for 5 minutes
-    except Exception as e:
-        logger.warning(f"Failed to cache admin stats: {e}")
-    return stats
-
-def fetch_admin_stats_from_db():
-    return {
-        'total_tenants': Tenant.query.count(),
-        'active_tenants': Tenant.query.filter_by(status='active').count(),
-        'total_users': SaasUser.query.count(),
-        'worker_instances': WorkerInstance.query.count()
-    }
 
 @track_errors('database_creation')
 async def create_database(db_name, username='admin', password='admin', modules=None):
@@ -620,6 +584,12 @@ def register():
             )
             db.session.add(user)
             db.session.commit()
+            
+            try:
+                update_trigger.user_stats_changed()
+            except Exception as e:
+                logger.warning(f"Failed to update user stats cache: {e}")
+            
             flash('Registration successful! Please log in.', 'success')
             return redirect(url_for('login'))
         except Exception as e:
@@ -641,10 +611,10 @@ def logout():
 @track_errors('dashboard_route')
 def dashboard():
     try:
-        user_tenants = get_cached_user_tenants(current_user.id)
+        user_tenants = cache_manager.get_user_tenants(current_user.id)
         stats = {}
         if current_user.is_admin:
-            stats = get_cached_admin_stats()
+            stats = cache_manager.get_admin_stats()
         return render_template('dashboard.html', tenants=user_tenants, stats=stats)
     except Exception as e:
         error_tracker.log_error(e, {'user_id': current_user.id})
@@ -710,6 +680,23 @@ def create_tenant():
             db.session.add(tenant_user)
             worker.current_tenants += 1
             db.session.commit()
+
+            try:
+                # Prepare tenant data for broadcast
+                tenant_data = {
+                    'id': tenant.id,
+                    'name': tenant.name,
+                    'subdomain': tenant.subdomain,
+                    'status': tenant.status,
+                    'plan': tenant.plan
+                }
+                
+                # Trigger cache updates and real-time notifications
+                update_trigger.tenant_created(tenant_data, [current_user.id])
+                
+            except Exception as e:
+                logger.warning(f"Failed to update cache after tenant creation: {e}")
+            
             
             payment_url = BillingService.initiate_payment(tenant_id=tenant.id, user_id=current_user.id, plan=tenant.plan)
             return redirect(payment_url)
@@ -1331,6 +1318,23 @@ def toggle_tenant(tenant_id):
             tenant.is_active = True
             db.session.commit()
             flash(f'Tenant {tenant.name} activated successfully.', 'success')
+        
+        try:
+            tenant_users = TenantUser.query.filter_by(tenant_id=tenant.id).all()
+            user_ids = [tu.user_id for tu in tenant_users]
+            
+            tenant_data = {
+                'id': tenant.id,
+                'name': tenant.name,
+                'subdomain': tenant.subdomain,
+                'status': 'active' if tenant.is_active else 'inactive'
+            }
+            
+            update_trigger.tenant_status_changed(tenant_data, user_ids)
+            
+        except Exception as e:
+            logger.warning(f"Failed to update cache after tenant toggle: {e}")
+        
     except Exception as e:
         flash(f'Toggle failed: {e}', 'danger')
     return redirect(request.referrer)
@@ -1368,11 +1372,29 @@ def delete_tenant(tenant_id):
     tenant = Tenant.query.get_or_404(tenant_id)
     try:
         logger.info(f"Deleting tenant: {tenant.name} (ID: {tenant.id})")
+        
+        try:
+            # Get affected users before deletion
+            tenant_users = TenantUser.query.filter_by(tenant_id=tenant.id).all()
+            user_ids = [tu.user_id for tu in tenant_users]
+            
+            tenant_data = {
+                'id': tenant.id,
+                'name': tenant.name,
+                'subdomain': tenant.subdomain
+            }
+            
+            # Trigger cache updates and real-time notifications
+            update_trigger.tenant_deleted(tenant_data, user_ids)
+            
+        except Exception as e:
+            logger.warning(f"Failed to update cache before tenant deletion: {e}")
+        
         TenantUser.query.filter_by(tenant_id=tenant.id).delete()
         CredentialAccess.query.filter_by(tenant_id=tenant.id).delete()
         db.session.delete(tenant)
         db.session.commit()
-        odoo.delete(tenant.database_name)
+        odoo.delete(tenant.database_name)                  
         flash('Tenant deleted successfully.', 'success')
     except Exception as e:
         flash(f'Deletion failed: {e}', 'danger')
@@ -1381,5 +1403,5 @@ def delete_tenant(tenant_id):
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     debug = os.environ.get('FLASK_ENV') == 'development'
-    logger.info(f"Starting Flask application on port {port}")
-    app.run(host='0.0.0.0', port=port, debug=debug)
+    logger.info(f"Starting Flask application with SocketIO on port {port}")
+    socketio.run(app, host='0.0.0.0', port=port, debug=debug, allow_unsafe_werkzeug=True)

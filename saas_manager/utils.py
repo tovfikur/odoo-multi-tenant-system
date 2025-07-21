@@ -1,5 +1,7 @@
 # utils.py
 import logging
+import secrets
+import string
 import sys
 import traceback
 import inspect
@@ -100,3 +102,30 @@ def track_errors(context_name=None):
                 raise type(e)(f"Error in {func.__name__}: {str(e)}") from e
         return wrapper
     return decorator
+
+def generate_password(length: int = 12) -> str:
+    """Generate a secure password with mixed case, numbers, and symbols"""
+    if length < 8:
+        length = 8
+    
+    # Ensure we have at least one of each character type
+    lowercase = string.ascii_lowercase
+    uppercase = string.ascii_uppercase
+    digits = string.digits
+    symbols = "!@#$%^&*"
+    
+    password = [
+        secrets.choice(lowercase),
+        secrets.choice(uppercase),
+        secrets.choice(digits),
+        secrets.choice(symbols)
+    ]
+    
+    # Fill the rest with random characters
+    all_chars = lowercase + uppercase + digits + symbols
+    for _ in range(length - 4):
+        password.append(secrets.choice(all_chars))
+    
+    # Shuffle the password
+    secrets.SystemRandom().shuffle(password)
+    return ''.join(password)

@@ -1,7 +1,11 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Master Admin Dashboard</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Master Admin Dashboard - Functional</title>
+
+    <!-- CSS Dependencies -->
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
       rel="stylesheet"
@@ -10,106 +14,247 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
       rel="stylesheet"
     />
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
     <style>
-      .admin-stats {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border-radius: 10px;
-        padding: 20px;
-        margin-bottom: 20px;
+      :root {
+        --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        --success-color: #28a745;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --info-color: #17a2b8;
       }
+
+      body {
+        font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+        background-color: #f8f9fa;
+      }
+
+      .admin-header {
+        background: var(--primary-gradient);
+        color: white;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 30px;
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+      }
+
       .stat-card {
-        background: rgba(255, 255, 255, 0.1);
-        border-radius: 8px;
-        padding: 15px;
+        background: rgba(255, 255, 255, 0.15);
+        border-radius: 12px;
+        padding: 20px;
         text-align: center;
         backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: transform 0.3s ease;
       }
+
+      .stat-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .stat-card h4 {
+        font-size: 2rem;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+      }
+
+      .card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        transition: box-shadow 0.3s ease;
+      }
+
+      .nav-tabs .nav-link.active {
+        background: var(--primary-gradient);
+        border-color: transparent;
+        color: white;
+        font-weight: 600;
+      }
+
+      .table thead th {
+        background: #343a40;
+        color: white;
+        font-weight: 600;
+        border: none;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .btn-primary {
+        background: var(--primary-gradient);
+        border: none;
+      }
+
+      .loading {
+        opacity: 0.6;
+        pointer-events: none;
+      }
+
+      .health-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+      }
+
+      .health-excellent {
+        background-color: var(--success-color);
+      }
+      .health-good {
+        background-color: var(--warning-color);
+      }
+      .health-poor {
+        background-color: var(--danger-color);
+      }
+
+      .metric-bar {
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 4px;
+        overflow: hidden;
+        margin-top: 8px;
+      }
+
+      .metric-fill {
+        height: 100%;
+        transition: width 0.8s ease;
+        border-radius: 4px;
+      }
+
+      #alerts-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        max-width: 400px;
+      }
+
       .action-buttons {
         display: flex;
         gap: 5px;
         flex-wrap: wrap;
       }
-      .tenant-health {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-right: 5px;
+
+      .action-buttons .btn {
+        font-size: 0.8rem;
+        padding: 4px 8px;
       }
-      .health-excellent {
-        background-color: #28a745;
-      }
-      .health-good {
-        background-color: #ffc107;
-      }
-      .health-poor {
-        background-color: #dc3545;
-      }
-      .nav-tabs .nav-link.active {
-        background-color: #667eea;
-        border-color: #667eea;
-        color: white;
-      }
-      .table-responsive {
-        max-height: 600px;
-        overflow-y: auto;
-      }
-      .filter-section {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 8px;
-        margin-bottom: 20px;
-      }
+
       .chart-container {
         position: relative;
         height: 300px;
         margin-bottom: 20px;
       }
+
+      @media (max-width: 768px) {
+        .stat-card h4 {
+          font-size: 1.5rem;
+        }
+        .action-buttons {
+          flex-direction: column;
+        }
+      }
     </style>
   </head>
+
   <body>
+    <!-- Alerts Container -->
+    <div id="alerts-container"></div>
+
+    <!-- Loading Spinner -->
+    <div
+      id="loading-spinner"
+      class="position-fixed top-50 start-50 translate-middle d-none"
+      style="z-index: 9999"
+    >
+      <div
+        class="spinner-border text-primary"
+        style="width: 3rem; height: 3rem"
+        role="status"
+      >
+        <span class="visually-hidden">Loading...</span>
+      </div>
+    </div>
+
     <div class="container-fluid mt-3">
       <!-- Header Stats -->
-      <div class="admin-stats">
-        <div class="row">
-          <div class="col-md-3">
-            <div class="stat-card">
-              <h4><i class="fas fa-users"></i> {{ stats.total_users }}</h4>
-              <p>Total Users</p>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="stat-card">
-              <h4><i class="fas fa-building"></i> {{ stats.total_tenants }}</h4>
-              <p>Total Tenants</p>
-            </div>
-          </div>
-          <div class="col-md-3">
+      <div class="admin-header">
+        <div class="row g-4">
+          <div class="col-md-2">
             <div class="stat-card">
               <h4>
-                <i class="fas fa-check-circle"></i> {{ stats.active_tenants }}
+                <i class="fas fa-users"></i> <span id="total-users">0</span>
               </h4>
-              <p>Active Tenants</p>
+              <p>Total Users</p>
+              <small><span id="active-users">0</span> active</small>
             </div>
           </div>
-          <div class="col-md-3">
+          <div class="col-md-2">
             <div class="stat-card">
               <h4>
-                <i class="fas fa-dollar-sign"></i> ${{ stats.total_revenue }}
+                <i class="fas fa-building"></i>
+                <span id="total-tenants">0</span>
+              </h4>
+              <p>Total Tenants</p>
+              <small><span id="active-tenants">0</span> active</small>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="stat-card">
+              <h4>
+                <i class="fas fa-dollar-sign"></i> $<span id="total-revenue"
+                  >0</span
+                >
               </h4>
               <p>Monthly Revenue</p>
+              <small>MRR</small>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="stat-card">
+              <h4>
+                <i class="fas fa-server"></i>
+                <span id="running-workers">0</span>
+              </h4>
+              <p>Active Workers</p>
+              <small
+                ><span id="current-load">0</span>/<span id="total-capacity"
+                  >0</span
+                ></small
+              >
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="stat-card">
+              <h4>
+                <i class="fas fa-clock"></i> <span id="pending-tenants">0</span>
+              </h4>
+              <p>Pending</p>
+              <small>Need attention</small>
+            </div>
+          </div>
+          <div class="col-md-2">
+            <div class="stat-card">
+              <h4>
+                <i class="fas fa-shield-alt"></i>
+                <span id="admin-users">0</span>
+              </h4>
+              <p>Admins</p>
+              <small>System access</small>
             </div>
           </div>
         </div>
       </div>
 
-      <h1><i class="fas fa-crown"></i> Master Admin Control Center</h1>
+      <h1 class="mb-4">
+        <i class="fas fa-crown text-warning"></i> Master Admin Control Center
+      </h1>
 
       <!-- Navigation Tabs -->
-      <ul class="nav nav-tabs" id="adminTabs" role="tablist">
+      <ul class="nav nav-tabs mb-4" id="adminTabs" role="tablist">
         <li class="nav-item">
           <a
             class="nav-link active"
@@ -129,7 +274,7 @@
             href="#users"
             role="tab"
           >
-            <i class="fas fa-users"></i> Users Management
+            <i class="fas fa-users"></i> Users (<span id="users-count">0</span>)
           </a>
         </li>
         <li class="nav-item">
@@ -140,7 +285,20 @@
             href="#tenants"
             role="tab"
           >
-            <i class="fas fa-building"></i> Tenants Management
+            <i class="fas fa-building"></i> Tenants (<span id="tenants-count"
+              >0</span
+            >)
+          </a>
+        </li>
+        <li class="nav-item">
+          <a
+            class="nav-link"
+            id="plans-tab"
+            data-bs-toggle="tab"
+            href="#plans"
+            role="tab"
+          >
+            <i class="fas fa-tags"></i> Plans
           </a>
         </li>
         <li class="nav-item">
@@ -165,22 +323,369 @@
             <i class="fas fa-cogs"></i> Operations
           </a>
         </li>
-        <li class="nav-item">
-          <a
-            class="nav-link"
-            id="security-tab"
-            data-bs-toggle="tab"
-            href="#security"
-            role="tab"
-          >
-            <i class="fas fa-shield-alt"></i> Security
-          </a>
-        </li>
       </ul>
+
+      <!-- Tab Content -->
       <div class="tab-content" id="adminTabContent">
         <!-- Overview Tab -->
         <div class="tab-pane fade show active" id="overview" role="tabpanel">
+          <div class="row">
+            <!-- System Metrics -->
+            <div class="col-md-4">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h5><i class="fas fa-server"></i> System Metrics</h5>
+                  <button
+                    class="btn btn-sm btn-outline-primary float-end"
+                    onclick="Dashboard.refreshSystemMetrics()"
+                  >
+                    <i class="fas fa-sync"></i>
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                      <span
+                        ><i class="fas fa-microchip me-2"></i>CPU Usage</span
+                      >
+                      <span class="fw-bold" id="cpu-usage">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                      <div
+                        class="metric-fill bg-primary"
+                        id="cpu-bar"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                      <span
+                        ><i class="fas fa-memory me-2"></i>Memory Usage</span
+                      >
+                      <span class="fw-bold" id="memory-usage">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                      <div
+                        class="metric-fill bg-info"
+                        id="memory-bar"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                  </div>
+                  <div>
+                    <div class="d-flex justify-content-between">
+                      <span><i class="fas fa-hdd me-2"></i>Disk Usage</span>
+                      <span class="fw-bold" id="disk-usage">0%</span>
+                    </div>
+                    <div class="metric-bar">
+                      <div
+                        class="metric-fill bg-warning"
+                        id="disk-bar"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="col-md-8">
+              <div class="card h-100">
+                <div class="card-header">
+                  <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                  <div class="row g-3">
+                    <div class="col-md-6">
+                      <button
+                        class="btn btn-primary w-100"
+                        onclick="Dashboard.performHealthCheck()"
+                      >
+                        <i class="fas fa-heartbeat"></i> System Health Check
+                      </button>
+                    </div>
+                    <div class="col-md-6">
+                      <button
+                        class="btn btn-warning w-100"
+                        onclick="Dashboard.performDatabaseBackup()"
+                      >
+                        <i class="fas fa-download"></i> Database Backup
+                      </button>
+                    </div>
+                    <div class="col-md-6">
+                      <button
+                        class="btn btn-info w-100"
+                        onclick="Dashboard.refreshAll()"
+                      >
+                        <i class="fas fa-sync"></i> Refresh All Data
+                      </button>
+                    </div>
+                    <div class="col-md-6">
+                      <button
+                        class="btn btn-success w-100"
+                        onclick="Dashboard.exportFullSystem()"
+                      >
+                        <i class="fas fa-download"></i> Export System Data
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity -->
           <div class="row mt-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                  <h5><i class="fas fa-clock"></i> Recent Activity</h5>
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    onclick="Dashboard.loadAuditLogs()"
+                  >
+                    <i class="fas fa-sync"></i> Refresh
+                  </button>
+                </div>
+                <div class="card-body">
+                  <div
+                    id="recent-activity"
+                    style="max-height: 300px; overflow-y: auto"
+                  >
+                    <!-- Activity will be loaded here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Users Tab -->
+        <div class="tab-pane fade" id="users" role="tabpanel">
+          <!-- User Filters -->
+          <div class="card mb-3">
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="userSearch"
+                    placeholder="Search users..."
+                    onkeyup="Dashboard.filterUsers()"
+                  />
+                </div>
+                <div class="col-md-2">
+                  <select
+                    class="form-select"
+                    id="userStatusFilter"
+                    onchange="Dashboard.filterUsers()"
+                  >
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <select
+                    class="form-select"
+                    id="userAdminFilter"
+                    onchange="Dashboard.filterUsers()"
+                  >
+                    <option value="">All Users</option>
+                    <option value="admin">Admins Only</option>
+                    <option value="user">Regular Users</option>
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <div class="d-flex gap-2">
+                    <button
+                      class="btn btn-success"
+                      onclick="Dashboard.exportUsers()"
+                    >
+                      <i class="fas fa-download"></i> Export
+                    </button>
+                    <button
+                      class="btn btn-primary"
+                      onclick="Dashboard.bulkUserActions()"
+                    >
+                      <i class="fas fa-tasks"></i> Bulk Actions
+                    </button>
+                    <button
+                      class="btn btn-info"
+                      onclick="Dashboard.loadUsers()"
+                    >
+                      <i class="fas fa-sync"></i> Refresh
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Users Table -->
+          <div class="card">
+            <div class="table-responsive" style="max-height: 600px">
+              <table class="table table-hover mb-0" id="usersTable">
+                <thead>
+                  <tr>
+                    <th width="40">
+                      <input
+                        type="checkbox"
+                        id="selectAllUsers"
+                        onchange="Dashboard.toggleAllUsers()"
+                      />
+                    </th>
+                    <th>User</th>
+                    <th>Status</th>
+                    <th>Last Login</th>
+                    <th>Tenants</th>
+                    <th>Registration</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="usersTableBody">
+                  <!-- Users will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tenants Tab -->
+        <div class="tab-pane fade" id="tenants" role="tabpanel">
+          <!-- Tenant Filters -->
+          <div class="card mb-3">
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <input
+                    type="text"
+                    class="form-control"
+                    id="tenantSearch"
+                    placeholder="Search tenants..."
+                    onkeyup="Dashboard.filterTenants()"
+                  />
+                </div>
+                <div class="col-md-2">
+                  <select
+                    class="form-select"
+                    id="tenantStatusFilter"
+                    onchange="Dashboard.filterTenants()"
+                  >
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                    <option value="pending">Pending</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </div>
+                <div class="col-md-2">
+                  <select
+                    class="form-select"
+                    id="tenantPlanFilter"
+                    onchange="Dashboard.filterTenants()"
+                  >
+                    <option value="">All Plans</option>
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <div class="d-flex gap-2">
+                    <button
+                      class="btn btn-success"
+                      onclick="Dashboard.exportTenants()"
+                    >
+                      <i class="fas fa-download"></i> Export
+                    </button>
+                    <button
+                      class="btn btn-primary"
+                      onclick="Dashboard.bulkTenantActions()"
+                    >
+                      <i class="fas fa-tasks"></i> Bulk Actions
+                    </button>
+                    <button
+                      class="btn btn-info"
+                      onclick="Dashboard.loadTenants()"
+                    >
+                      <i class="fas fa-sync"></i> Refresh
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tenants Table -->
+          <div class="card">
+            <div class="table-responsive" style="max-height: 600px">
+              <table class="table table-hover mb-0" id="tenantsTable">
+                <thead>
+                  <tr>
+                    <th width="40">
+                      <input
+                        type="checkbox"
+                        id="selectAllTenants"
+                        onchange="Dashboard.toggleAllTenants()"
+                      />
+                    </th>
+                    <th>Tenant</th>
+                    <th>Status</th>
+                    <th>Plan</th>
+                    <th>Health</th>
+                    <th>Usage</th>
+                    <th>Revenue</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="tenantsTableBody">
+                  <!-- Tenants will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plans Tab -->
+        <div class="tab-pane fade" id="plans" role="tabpanel">
+          <div class="row mb-3">
+            <div class="col-12">
+              <button
+                class="btn btn-primary"
+                onclick="Dashboard.showCreatePlanModal()"
+              >
+                <i class="fas fa-plus"></i> Create New Plan
+              </button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0" id="plansTable">
+                <thead>
+                  <tr>
+                    <th>Plan Name</th>
+                    <th>Price</th>
+                    <th>Max Users</th>
+                    <th>Storage Limit</th>
+                    <th>Features</th>
+                    <th>Tenant Count</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="plansTableBody">
+                  <!-- Plans will be loaded here -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Analytics Tab -->
+        <div class="tab-pane fade" id="analytics" role="tabpanel">
+          <div class="row">
             <div class="col-md-6">
               <div class="card">
                 <div class="card-header">
@@ -196,358 +701,17 @@
             <div class="col-md-6">
               <div class="card">
                 <div class="card-header">
-                  <h5><i class="fas fa-chart-pie"></i> Tenant Distribution</h5>
+                  <h5><i class="fas fa-chart-pie"></i> Plan Distribution</h5>
                 </div>
                 <div class="card-body">
                   <div class="chart-container">
-                    <canvas id="tenantDistributionChart"></canvas>
+                    <canvas id="planDistributionChart"></canvas>
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="row mt-4">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header">
-                  <h5>
-                    <i class="fas fa-exclamation-triangle"></i> System Alerts
-                  </h5>
-                </div>
-                <div class="card-body">
-                  <div class="alert alert-warning" role="alert">
-                    <i class="fas fa-database"></i> Database backup scheduled
-                    for tonight at 2 AM
-                  </div>
-                  <div class="alert alert-info" role="alert">
-                    <i class="fas fa-update"></i> System update available -
-                    Version 2.1.0
-                  </div>
-                  <div class="alert alert-danger" role="alert">
-                    <i class="fas fa-server"></i> Server disk usage at 85% -
-                    Consider cleanup
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Users Management Tab -->
-        <div class="tab-pane fade" id="users" role="tabpanel">
-          <div class="filter-section">
-            <div class="row">
-              <div class="col-md-3">
-                <input
-                  type="text"
-                  class="form-control"
-                  id="userSearch"
-                  placeholder="Search users..."
-                  onkeyup="filterUsers()"
-                />
-              </div>
-              <div class="col-md-2">
-                <select
-                  class="form-select"
-                  id="userStatusFilter"
-                  onchange="filterUsers()"
-                >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <select
-                  class="form-select"
-                  id="userAdminFilter"
-                  onchange="filterUsers()"
-                >
-                  <option value="">All Users</option>
-                  <option value="admin">Admins Only</option>
-                  <option value="user">Regular Users</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <button class="btn btn-success" onclick="exportUsers()">
-                  <i class="fas fa-download"></i> Export Users
-                </button>
-                <button class="btn btn-primary" onclick="bulkActions()">
-                  <i class="fas fa-tasks"></i> Bulk Actions
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table class="table table-striped table-hover" id="usersTable">
-              <thead class="table-dark">
-                <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      id="selectAllUsers"
-                      onchange="toggleAllUsers()"
-                    />
-                  </th>
-                  <th>Username</th>
-                  <th>Email</th>
-                  <th>Admin</th>
-                  <th>Status</th>
-                  <th>Last Login</th>
-                  <th>Tenants</th>
-                  <th>Registration</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for user in users %}
-                <tr>
-                  <td>
-                    <input
-                      type="checkbox"
-                      class="user-checkbox"
-                      value="{{ user.id }}"
-                    />
-                  </td>
-                  <td>
-                    <strong>{{ user.username }}</strong>
-                    {% if user.is_admin %}
-                    <span class="badge bg-primary">ADMIN</span>
-                    {% endif %}
-                  </td>
-                  <td>{{ user.email }}</td>
-                  <td>
-                    <span
-                      class="badge bg-{{ 'success' if user.is_admin else 'secondary' }}"
-                    >
-                      {{ 'Yes' if user.is_admin else 'No' }}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      class="badge bg-{{ 'success' if user.is_active else 'danger' }}"
-                    >
-                      {{ 'Active' if user.is_active else 'Inactive' }}
-                    </span>
-                  </td>
-                  <td>{{ user.last_login or 'Never' }}</td>
-                  <td>
-                    <span class="badge bg-info">{{ user.tenant_count }}</span>
-                    {% for tenant in user.tenants %}
-                    <small class="d-block"
-                      >{{ tenant.name }} ({{ tenant.subdomain }})</small
-                    >
-                    {% endfor %}
-                  </td>
-                  <td>{{ user.created_at }}</td>
-                  <td>
-                    <div class="action-buttons">
-                      <button
-                        class="btn btn-sm btn-{{ 'danger' if user.is_active else 'success' }}"
-                        onclick="toggleUserStatus({{ user.id }})"
-                      >
-                        <i
-                          class="fas fa-{{ 'ban' if user.is_active else 'check' }}"
-                        ></i>
-                        {{ 'Deactivate' if user.is_active else 'Activate' }}
-                      </button>
-                      <button
-                        class="btn btn-sm btn-warning"
-                        onclick="resetUserPassword({{ user.id }})"
-                      >
-                        <i class="fas fa-key"></i> Reset Password
-                      </button>
-                      <button
-                        class="btn btn-sm btn-info"
-                        onclick="viewUserDetails({{ user.id }})"
-                      >
-                        <i class="fas fa-eye"></i> Details
-                      </button>
-                      <button
-                        class="btn btn-sm btn-secondary"
-                        onclick="impersonateUser({{ user.id }})"
-                      >
-                        <i class="fas fa-user-secret"></i> Impersonate
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Tenants Management Tab -->
-        <div class="tab-pane fade" id="tenants" role="tabpanel">
-          <div class="filter-section">
-            <div class="row">
-              <div class="col-md-3">
-                <input
-                  type="text"
-                  class="form-control"
-                  id="tenantSearch"
-                  placeholder="Search tenants..."
-                  onkeyup="filterTenants()"
-                />
-              </div>
-              <div class="col-md-2">
-                <select
-                  class="form-select"
-                  id="tenantStatusFilter"
-                  onchange="filterTenants()"
-                >
-                  <option value="">All Status</option>
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="suspended">Suspended</option>
-                </select>
-              </div>
-              <div class="col-md-2">
-                <select
-                  class="form-select"
-                  id="tenantPlanFilter"
-                  onchange="filterTenants()"
-                >
-                  <option value="">All Plans</option>
-                  <option value="basic">Basic</option>
-                  <option value="pro">Pro</option>
-                  <option value="enterprise">Enterprise</option>
-                </select>
-              </div>
-              <div class="col-md-3">
-                <button class="btn btn-success" onclick="exportTenants()">
-                  <i class="fas fa-download"></i> Export Tenants
-                </button>
-                <button class="btn btn-primary" onclick="bulkTenantActions()">
-                  <i class="fas fa-tasks"></i> Bulk Actions
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="table-responsive">
-            <table class="table table-striped table-hover" id="tenantsTable">
-              <thead class="table-dark">
-                <tr>
-                  <th>
-                    <input
-                      type="checkbox"
-                      id="selectAllTenants"
-                      onchange="toggleAllTenants()"
-                    />
-                  </th>
-                  <th>Name</th>
-                  <th>Subdomain</th>
-                  <th>Status</th>
-                  <th>Plan</th>
-                  <th>Health</th>
-                  <th>Storage</th>
-                  <th>Users</th>
-                  <th>Revenue</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {% for tenant in tenants %}
-                <tr>
-                  <td>
-                    <input
-                      type="checkbox"
-                      class="tenant-checkbox"
-                      value="{{ tenant.id }}"
-                    />
-                  </td>
-                  <td>
-                    <strong>{{ tenant.name }}</strong>
-                    <small class="d-block text-muted"
-                      >{{ tenant.created_at }}</small
-                    >
-                  </td>
-                  <td>
-                    <a
-                      href="https://{{ tenant.subdomain }}.yourdomain.com"
-                      target="_blank"
-                    >
-                      {{ tenant.subdomain }}
-                    </a>
-                  </td>
-                  <td>
-                    <span
-                      class="badge bg-{{ 'success' if tenant.status == 'active' else 'danger' if tenant.status == 'suspended' else 'warning' }}"
-                    >
-                      {{ tenant.status.upper() }}
-                    </span>
-                  </td>
-                  <td>
-                    <span class="badge bg-primary"
-                      >{{ tenant.plan.upper() }}</span
-                    >
-                  </td>
-                  <td>
-                    <span
-                      class="tenant-health health-{{ tenant.health }}"
-                    ></span>
-                    {{ tenant.health.title() }}
-                  </td>
-                  <td>
-                    <small>{{ tenant.storage_usage }}</small>
-                    <div class="progress" style="height: 5px">
-                      <div
-                        class="progress-bar"
-                        style="width: {{ tenant.storage_percentage }}%"
-                      ></div>
-                    </div>
-                  </td>
-                  <td>
-                    <span class="badge bg-info">{{ tenant.user_count }}</span>
-                  </td>
-                  <td>
-                    <strong>${{ tenant.monthly_revenue }}</strong>
-                  </td>
-                  <td>
-                    <div class="action-buttons">
-                      <button
-                        class="btn btn-sm btn-{{ 'danger' if tenant.status == 'active' else 'success' }}"
-                        onclick="toggleTenantStatus({{ tenant.id }})"
-                      >
-                        <i
-                          class="fas fa-{{ 'stop' if tenant.status == 'active' else 'play' }}"
-                        ></i>
-                        {{ 'Disable' if tenant.status == 'active' else 'Enable'
-                        }}
-                      </button>
-                      <button
-                        class="btn btn-sm btn-warning"
-                        onclick="suspendTenant({{ tenant.id }})"
-                      >
-                        <i class="fas fa-pause"></i> Suspend
-                      </button>
-                      <button
-                        class="btn btn-sm btn-info"
-                        onclick="viewTenantDetails({{ tenant.id }})"
-                      >
-                        <i class="fas fa-eye"></i> Details
-                      </button>
-                      <button
-                        class="btn btn-sm btn-secondary"
-                        onclick="backupTenant({{ tenant.id }})"
-                      >
-                        <i class="fas fa-download"></i> Backup
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Analytics Tab -->
-        <div class="tab-pane fade" id="analytics" role="tabpanel">
           <div class="row mt-4">
             <div class="col-md-6">
               <div class="card">
@@ -574,108 +738,43 @@
               </div>
             </div>
           </div>
-
-          <div class="row mt-4">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header">
-                  <h5><i class="fas fa-table"></i> Detailed Analytics</h5>
-                </div>
-                <div class="card-body">
-                  <div class="row">
-                    <div class="col-md-3">
-                      <div class="card text-center">
-                        <div class="card-body">
-                          <h4 class="text-primary">
-                            {{ analytics.total_users }}
-                          </h4>
-                          <p>Total Users</p>
-                          <small class="text-success"
-                            >+{{ analytics.new_users_today }} today</small
-                          >
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="card text-center">
-                        <div class="card-body">
-                          <h4 class="text-success">
-                            {{ analytics.active_tenants }}
-                          </h4>
-                          <p>Active Tenants</p>
-                          <small class="text-info"
-                            >{{ analytics.tenant_uptime }}% uptime</small
-                          >
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="card text-center">
-                        <div class="card-body">
-                          <h4 class="text-warning">
-                            {{ analytics.total_storage }}
-                          </h4>
-                          <p>Total Storage</p>
-                          <small class="text-danger"
-                            >{{ analytics.storage_growth }}% growth</small
-                          >
-                        </div>
-                      </div>
-                    </div>
-                    <div class="col-md-3">
-                      <div class="card text-center">
-                        <div class="card-body">
-                          <h4 class="text-info">
-                            ${{ analytics.monthly_revenue }}
-                          </h4>
-                          <p>Monthly Revenue</p>
-                          <small class="text-success"
-                            >+{{ analytics.revenue_growth }}% from last
-                            month</small
-                          >
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
 
         <!-- Operations Tab -->
         <div class="tab-pane fade" id="operations" role="tabpanel">
-          <div class="row mt-4">
+          <div class="row">
             <div class="col-md-6">
               <div class="card">
                 <div class="card-header">
                   <h5><i class="fas fa-database"></i> Database Operations</h5>
                 </div>
                 <div class="card-body">
-                  <button
-                    class="btn btn-primary mb-2"
-                    onclick="performDatabaseBackup()"
-                  >
-                    <i class="fas fa-download"></i> Full System Backup</button
-                  ><br />
-                  <button
-                    class="btn btn-warning mb-2"
-                    onclick="performDatabaseOptimization()"
-                  >
-                    <i class="fas fa-wrench"></i> Optimize Database</button
-                  ><br />
-                  <button
-                    class="btn btn-info mb-2"
-                    onclick="performDatabaseCleanup()"
-                  >
-                    <i class="fas fa-broom"></i> Clean Database</button
-                  ><br />
-                  <button
-                    class="btn btn-success mb-2"
-                    onclick="performDatabaseMigration()"
-                  >
-                    <i class="fas fa-sync"></i> Run Migrations
-                  </button>
+                  <div class="d-grid gap-2">
+                    <button
+                      class="btn btn-primary"
+                      onclick="Dashboard.performDatabaseBackup()"
+                    >
+                      <i class="fas fa-download"></i> Full System Backup
+                    </button>
+                    <button
+                      class="btn btn-warning"
+                      onclick="Dashboard.optimizeDatabase()"
+                    >
+                      <i class="fas fa-wrench"></i> Optimize Database
+                    </button>
+                    <button
+                      class="btn btn-info"
+                      onclick="Dashboard.cleanDatabase()"
+                    >
+                      <i class="fas fa-broom"></i> Clean Database
+                    </button>
+                    <button
+                      class="btn btn-success"
+                      onclick="Dashboard.runMigrations()"
+                    >
+                      <i class="fas fa-sync"></i> Run Migrations
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -685,144 +784,56 @@
                   <h5><i class="fas fa-cogs"></i> System Operations</h5>
                 </div>
                 <div class="card-body">
+                  <div class="d-grid gap-2">
+                    <button
+                      class="btn btn-primary"
+                      onclick="Dashboard.clearCache()"
+                    >
+                      <i class="fas fa-trash"></i> Clear Cache
+                    </button>
+                    <button
+                      class="btn btn-warning"
+                      onclick="Dashboard.restartServices()"
+                    >
+                      <i class="fas fa-redo"></i> Restart Services
+                    </button>
+                    <button
+                      class="btn btn-info"
+                      onclick="Dashboard.updateSystem()"
+                    >
+                      <i class="fas fa-upload"></i> Update System
+                    </button>
+                    <button
+                      class="btn btn-success"
+                      onclick="Dashboard.performHealthCheck()"
+                    >
+                      <i class="fas fa-heartbeat"></i> Health Check
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Audit Logs -->
+          <div class="row mt-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header d-flex justify-content-between">
+                  <h5><i class="fas fa-list"></i> Audit Logs</h5>
                   <button
-                    class="btn btn-primary mb-2"
-                    onclick="clearSystemCache()"
+                    class="btn btn-sm btn-outline-primary"
+                    onclick="Dashboard.loadAuditLogs()"
                   >
-                    <i class="fas fa-trash"></i> Clear Cache</button
-                  ><br />
-                  <button
-                    class="btn btn-warning mb-2"
-                    onclick="restartServices()"
-                  >
-                    <i class="fas fa-redo"></i> Restart Services</button
-                  ><br />
-                  <button class="btn btn-info mb-2" onclick="updateSystem()">
-                    <i class="fas fa-upload"></i> Update System</button
-                  ><br />
-                  <button
-                    class="btn btn-success mb-2"
-                    onclick="performHealthCheck()"
-                  >
-                    <i class="fas fa-heartbeat"></i> Health Check
+                    <i class="fas fa-sync"></i> Refresh
                   </button>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="row mt-4">
-            <div class="col-md-12">
-              <div class="card">
-                <div class="card-header">
-                  <h5><i class="fas fa-list"></i> System Logs</h5>
-                </div>
                 <div class="card-body">
-                  <div class="table-responsive" style="max-height: 300px">
-                    <table class="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>Timestamp</th>
-                          <th>Level</th>
-                          <th>Message</th>
-                          <th>User</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>2024-01-15 10:30:00</td>
-                          <td><span class="badge bg-success">INFO</span></td>
-                          <td>System backup completed successfully</td>
-                          <td>system</td>
-                        </tr>
-                        <tr>
-                          <td>2024-01-15 10:25:00</td>
-                          <td><span class="badge bg-warning">WARN</span></td>
-                          <td>High memory usage detected</td>
-                          <td>system</td>
-                        </tr>
-                        <tr>
-                          <td>2024-01-15 10:20:00</td>
-                          <td><span class="badge bg-danger">ERROR</span></td>
-                          <td>Database connection timeout</td>
-                          <td>system</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Security Tab -->
-        <div class="tab-pane fade" id="security" role="tabpanel">
-          <div class="row mt-4">
-            <div class="col-md-6">
-              <div class="card">
-                <div class="card-header">
-                  <h5><i class="fas fa-shield-alt"></i> Security Alerts</h5>
-                </div>
-                <div class="card-body">
-                  <div class="alert alert-danger">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    5 failed login attempts detected from IP: 192.168.1.100
-                  </div>
-                  <div class="alert alert-warning">
-                    <i class="fas fa-key"></i>
-                    Password policy violations: 3 users with weak passwords
-                  </div>
-                  <div class="alert alert-info">
-                    <i class="fas fa-clock"></i>
-                    2 users haven't logged in for 90+ days
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="card">
-                <div class="card-header">
-                  <h5><i class="fas fa-ban"></i> IP Blocking</h5>
-                </div>
-                <div class="card-body">
-                  <div class="mb-3">
-                    <label class="form-label">Block IP Address</label>
-                    <div class="input-group">
-                      <input
-                        type="text"
-                        class="form-control"
-                        placeholder="Enter IP address"
-                      />
-                      <button class="btn btn-danger" onclick="blockIP()">
-                        <i class="fas fa-ban"></i> Block
-                      </button>
-                    </div>
-                  </div>
-                  <div class="table-responsive" style="max-height: 200px">
-                    <table class="table table-sm">
-                      <thead>
-                        <tr>
-                          <th>IP Address</th>
-                          <th>Blocked At</th>
-                          <th>Action</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        <tr>
-                          <td>192.168.1.100</td>
-                          <td>2024-01-15 10:30:00</td>
-                          <td>
-                            <button
-                              class="btn btn-sm btn-success"
-                              onclick="unblockIP('192.168.1.100')"
-                            >
-                              <i class="fas fa-check"></i> Unblock
-                            </button>
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
+                  <div
+                    id="audit-logs-container"
+                    style="max-height: 400px; overflow-y: auto"
+                  >
+                    <!-- Audit logs will be loaded here -->
                   </div>
                 </div>
               </div>
@@ -832,567 +843,1651 @@
       </div>
     </div>
 
+    <!-- Modals -->
+    <!-- Create Plan Modal -->
+    <div class="modal fade" id="createPlanModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Create New Plan</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="createPlanForm">
+              <div class="mb-3">
+                <label class="form-label">Plan Name</label>
+                <input type="text" class="form-control" name="name" required />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Price ($)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="price"
+                  step="0.01"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Max Users</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="max_users"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Storage Limit (MB)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="storage_limit"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Features (comma-separated)</label>
+                <textarea
+                  class="form-control"
+                  name="features"
+                  rows="3"
+                ></textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Modules (comma-separated)</label>
+                <textarea
+                  class="form-control"
+                  name="modules"
+                  rows="2"
+                ></textarea>
+              </div>
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  name="is_active"
+                  checked
+                />
+                <label class="form-check-label">Active</label>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="Dashboard.createPlan()"
+            >
+              Create Plan
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
     <script>
-      // Initialize Charts
-      function initCharts() {
+      // Dashboard Controller - Real Data Integration
+      const Dashboard = {
+        data: {
+          users: [],
+          tenants: [],
+          plans: [],
+          stats: {},
+          analytics: {},
+        },
+        charts: {},
+        refreshInterval: null,
+
+        // Initialize dashboard
+        async init() {
+          try {
+            this.showLoading();
+            await this.loadAllData();
+            this.initCharts();
+            this.setupEventListeners();
+            this.startAutoRefresh();
+            this.showAlert("success", "Dashboard loaded successfully!");
+          } catch (error) {
+            console.error("Dashboard initialization failed:", error);
+            this.showAlert(
+              "danger",
+              "Failed to load dashboard: " + error.message
+            );
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        // Load all data from APIs
+        async loadAllData() {
+          try {
+            // Load stats first
+            await this.loadStats();
+
+            // Load other data in parallel
+            await Promise.all([
+              this.loadUsers(),
+              this.loadTenants(),
+              this.loadPlans(),
+              this.loadAnalytics(),
+            ]);
+          } catch (error) {
+            throw new Error("Failed to load data: " + error.message);
+          }
+        },
+
+        // Load statistics
+        async loadStats() {
+          try {
+            const response = await fetch("/master-admin/api/admin/stats");
+            const result = await response.json();
+
+            if (!result.success) {
+              throw new Error(result.message || "Failed to load stats");
+            }
+
+            this.data.stats = result.stats;
+            this.updateHeaderStats(result.stats);
+            this.updateSystemMetrics(result.stats.system);
+          } catch (error) {
+            console.error("Failed to load stats:", error);
+            throw error;
+          }
+        },
+
+        // Update header statistics
+        updateHeaderStats(stats) {
+          document.getElementById("total-users").textContent =
+            stats.users?.total || 0;
+          document.getElementById("active-users").textContent =
+            stats.users?.active || 0;
+          document.getElementById("total-tenants").textContent =
+            stats.tenants?.total || 0;
+          document.getElementById("active-tenants").textContent =
+            stats.tenants?.active || 0;
+          document.getElementById("total-revenue").textContent =
+            stats.revenue?.monthly_total || 0;
+          document.getElementById("running-workers").textContent =
+            stats.worker_stats?.running_workers || 0;
+          document.getElementById("current-load").textContent =
+            stats.worker_stats?.current_load || 0;
+          document.getElementById("total-capacity").textContent =
+            stats.worker_stats?.total_capacity || 0;
+          document.getElementById("pending-tenants").textContent =
+            stats.tenants?.pending || 0;
+          document.getElementById("admin-users").textContent =
+            stats.users?.admin_users || 0;
+
+          // Update tab counts
+          document.getElementById("users-count").textContent =
+            stats.users?.total || 0;
+          document.getElementById("tenants-count").textContent =
+            stats.tenants?.total || 0;
+        },
+
+        // Update system metrics
+        updateSystemMetrics(system) {
+          if (!system) return;
+
+          const cpuPercent = Math.round(system.cpu_percent || 0);
+          const memoryPercent = Math.round(system.memory?.percent || 0);
+          const diskPercent = Math.round(system.disk?.percent || 0);
+
+          document.getElementById("cpu-usage").textContent = cpuPercent + "%";
+          document.getElementById("memory-usage").textContent =
+            memoryPercent + "%";
+          document.getElementById("disk-usage").textContent = diskPercent + "%";
+
+          document.getElementById("cpu-bar").style.width = cpuPercent + "%";
+          document.getElementById("memory-bar").style.width =
+            memoryPercent + "%";
+          document.getElementById("disk-bar").style.width = diskPercent + "%";
+        },
+
+        // Load users
+        async loadUsers() {
+          try {
+            const response = await fetch("/master-admin/api/admin/users/list");
+            const result = await response.json();
+
+            if (!result.success) {
+              throw new Error(result.message || "Failed to load users");
+            }
+
+            this.data.users = result.users;
+            this.renderUsers(result.users);
+          } catch (error) {
+            console.error("Failed to load users:", error);
+            this.showAlert("danger", "Failed to load users");
+          }
+        },
+
+        // Render users table
+        renderUsers(users) {
+          const tbody = document.getElementById("usersTableBody");
+          tbody.innerHTML = "";
+
+          users.forEach((user) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                        <td>
+                            <input type="checkbox" class="user-checkbox" value="${
+                              user.id
+                            }">
+                        </td>
+                        <td>
+                            <div>
+                                <strong>${user.username}</strong>
+                                ${
+                                  user.is_admin
+                                    ? '<span class="badge bg-primary ms-2">ADMIN</span>'
+                                    : ""
+                                }
+                            </div>
+                            <small class="text-muted">${user.email}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-${
+                              user.is_active ? "success" : "danger"
+                            }">
+                                ${user.is_active ? "Active" : "Inactive"}
+                            </span>
+                        </td>
+                        <td><small>${user.last_login}</small></td>
+                        <td><span class="badge bg-info">${
+                          user.tenant_count
+                        }</span></td>
+                        <td><small>${user.created_at}</small></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-${
+                                  user.is_active ? "warning" : "success"
+                                }" 
+                                        onclick="Dashboard.toggleUserStatus(${
+                                          user.id
+                                        })" 
+                                        title="${
+                                          user.is_active
+                                            ? "Deactivate"
+                                            : "Activate"
+                                        }">
+                                    <i class="fas fa-${
+                                      user.is_active ? "pause" : "play"
+                                    }"></i>
+                                </button>
+                                <button class="btn btn-sm btn-info" 
+                                        onclick="Dashboard.viewUserDetails(${
+                                          user.id
+                                        })" 
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary" 
+                                        onclick="Dashboard.resetUserPassword(${
+                                          user.id
+                                        })" 
+                                        title="Reset Password">
+                                    <i class="fas fa-key"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+            tbody.appendChild(row);
+          });
+        },
+
+        // Load tenants
+        async loadTenants() {
+          try {
+            const response = await fetch(
+              "/master-admin/api/admin/tenants/list"
+            );
+            const result = await response.json();
+
+            if (!result.success) {
+              throw new Error(result.message || "Failed to load tenants");
+            }
+
+            this.data.tenants = result.tenants;
+            this.renderTenants(result.tenants);
+            this.updatePlanFilter();
+          } catch (error) {
+            console.error("Failed to load tenants:", error);
+            this.showAlert("danger", "Failed to load tenants");
+          }
+        },
+
+        // Render tenants table
+        renderTenants(tenants) {
+          const tbody = document.getElementById("tenantsTableBody");
+          tbody.innerHTML = "";
+
+          tenants.forEach((tenant) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                        <td>
+                            <input type="checkbox" class="tenant-checkbox" value="${
+                              tenant.id
+                            }">
+                        </td>
+                        <td>
+                            <div>
+                                <strong>${tenant.name}</strong>
+                                ${
+                                  tenant.status === "pending"
+                                    ? '<span class="badge bg-warning ms-2">PENDING</span>'
+                                    : ""
+                                }
+                            </div>
+                            <small class="text-muted">${
+                              tenant.subdomain
+                            }</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-${this.getStatusColor(
+                              tenant.status
+                            )}">
+                                ${tenant.status.toUpperCase()}
+                            </span>
+                        </td>
+                        <td><span class="badge bg-primary">${tenant.plan.toUpperCase()}</span></td>
+                        <td>
+                            <span class="health-indicator health-${
+                              tenant.health
+                            }"></span>
+                            ${tenant.health}
+                        </td>
+                        <td>
+                            <div>${tenant.storage_usage}</div>
+                            <div class="progress mt-1" style="height: 5px;">
+                                <div class="progress-bar" style="width: ${
+                                  tenant.storage_percentage
+                                }%"></div>
+                            </div>
+                            <small class="text-muted">${
+                              tenant.user_count
+                            } users</small>
+                        </td>
+                        <td><strong>${tenant.monthly_revenue}</strong></td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-${
+                                  tenant.status === "active"
+                                    ? "warning"
+                                    : "success"
+                                }" 
+                                        onclick="Dashboard.toggleTenantStatus(${
+                                          tenant.id
+                                        })"
+                                        title="${
+                                          tenant.status === "active"
+                                            ? "Deactivate"
+                                            : "Activate"
+                                        }">
+                                    <i class="fas fa-${
+                                      tenant.status === "active"
+                                        ? "pause"
+                                        : "play"
+                                    }"></i>
+                                </button>
+                                <button class="btn btn-sm btn-info" 
+                                        onclick="Dashboard.viewTenantDetails(${
+                                          tenant.id
+                                        })"
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-secondary" 
+                                        onclick="Dashboard.backupTenant(${
+                                          tenant.id
+                                        })"
+                                        title="Backup">
+                                    <i class="fas fa-download"></i>
+                                </button>
+                                ${
+                                  tenant.status === "pending"
+                                    ? `
+                                    <button class="btn btn-sm btn-success" 
+                                            onclick="Dashboard.approveTenant(${tenant.id})"
+                                            title="Approve">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                `
+                                    : ""
+                                }
+                            </div>
+                        </td>
+                    `;
+            tbody.appendChild(row);
+          });
+        },
+
+        // Get status color for badges
+        getStatusColor(status) {
+          switch (status) {
+            case "active":
+              return "success";
+            case "pending":
+              return "warning";
+            case "suspended":
+              return "danger";
+            default:
+              return "secondary";
+          }
+        },
+
+        // Update plan filter options
+        updatePlanFilter() {
+          const planFilter = document.getElementById("tenantPlanFilter");
+          const plans = [...new Set(this.data.tenants.map((t) => t.plan))];
+
+          // Clear existing options except "All Plans"
+          planFilter.innerHTML = '<option value="">All Plans</option>';
+
+          plans.forEach((plan) => {
+            const option = document.createElement("option");
+            option.value = plan;
+            option.textContent = plan.charAt(0).toUpperCase() + plan.slice(1);
+            planFilter.appendChild(option);
+          });
+        },
+
+        // Load plans
+        async loadPlans() {
+          try {
+            const response = await fetch("/master-admin/plans");
+            const result = await response.json();
+
+            if (!result.success) {
+              throw new Error(result.message || "Failed to load plans");
+            }
+
+            this.data.plans = result.plans;
+            this.renderPlans(result.plans);
+          } catch (error) {
+            console.error("Failed to load plans:", error);
+            this.showAlert("danger", "Failed to load plans");
+          }
+        },
+
+        // Render plans table
+        renderPlans(plans) {
+          const tbody = document.getElementById("plansTableBody");
+          tbody.innerHTML = "";
+
+          plans.forEach((plan) => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                        <td><strong>${plan.name}</strong></td>
+                        <td>${plan.price}</td>
+                        <td>${plan.max_users}</td>
+                        <td>${plan.storage_limit} MB</td>
+                        <td>
+                            ${
+                              plan.features
+                                ? plan.features
+                                    .slice(0, 3)
+                                    .map(
+                                      (f) =>
+                                        `<span class="badge bg-secondary me-1">${f}</span>`
+                                    )
+                                    .join("")
+                                : ""
+                            }
+                            ${
+                              plan.features && plan.features.length > 3
+                                ? `<span class="text-muted">+${
+                                    plan.features.length - 3
+                                  } more</span>`
+                                : ""
+                            }
+                        </td>
+                        <td><span class="badge bg-info">${
+                          plan.tenant_count || 0
+                        }</span></td>
+                        <td>
+                            <span class="badge bg-${
+                              plan.is_active ? "success" : "danger"
+                            }">
+                                ${plan.is_active ? "Active" : "Inactive"}
+                            </span>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn btn-sm btn-primary" 
+                                        onclick="Dashboard.editPlan(${plan.id})"
+                                        title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" 
+                                        onclick="Dashboard.deletePlan(${
+                                          plan.id
+                                        })"
+                                        title="Delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+            tbody.appendChild(row);
+          });
+        },
+
+        // Load analytics
+        async loadAnalytics() {
+          try {
+            const response = await fetch("/master-admin/api/admin/analytics");
+            const result = await response.json();
+
+            if (!result.success) {
+              throw new Error(result.message || "Failed to load analytics");
+            }
+
+            this.data.analytics = result.analytics;
+          } catch (error) {
+            console.error("Failed to load analytics:", error);
+            this.showAlert("warning", "Failed to load analytics data");
+          }
+        },
+
+        // Initialize charts
+        initCharts() {
+          try {
+            this.initUserGrowthChart();
+            this.initPlanDistributionChart();
+            this.initRevenueChart();
+            this.initStorageChart();
+          } catch (error) {
+            console.error("Failed to initialize charts:", error);
+          }
+        },
+
         // User Growth Chart
-          const userGrowthCtx = document.getElementById("userGrowthChart").getContext("2d");
-          const userGrowthData = {{ analytics.users_per_month | tojson }};
-          new Chart(userGrowthCtx, {
+        initUserGrowthChart() {
+          const ctx = document
+            .getElementById("userGrowthChart")
+            .getContext("2d");
+          const data = this.data.analytics.userGrowth || {
+            labels: [],
+            data: [],
+          };
+
+          this.charts.userGrowth = new Chart(ctx, {
             type: "line",
             data: {
-              labels: Object.keys(userGrowthData),
+              labels: data.labels,
               datasets: [
                 {
                   label: "Users",
-                  data: Object.values(userGrowthData),
+                  data: data.data,
                   borderColor: "#667eea",
                   backgroundColor: "rgba(102, 126, 234, 0.1)",
                   fill: true,
+                  tension: 0.4,
                 },
               ],
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
               scales: {
-                y: {
-                  beginAtZero: true,
-                  title: {
-                    display: true,
-                    text: "Number of Users",
-                  },
-                },
-                x: {
-                  title: {
-                    display: true,
-                    text: "Month",
-                  },
-                },
+                y: { beginAtZero: true },
               },
             },
           });
-        // Tenant Distribution Chart
-        const tenantDistCtx = document
-          .getElementById("tenantDistributionChart")
-          .getContext("2d");
-          const tenantDistData = {{ analytics.plan_usage | tojson }};
-        new Chart(tenantDistCtx, {
-          type: "doughnut",
-          data: {
-            labels: Object.keys(tenantDistData),
-            datasets: [
-              {
-                data: Object.values(tenantDistData),
-                backgroundColor: ["#28a745", "#ffc107", "#dc3545"],
-              },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-          },
-        });
+        },
+
+        // Plan Distribution Chart
+        initPlanDistributionChart() {
+          const ctx = document
+            .getElementById("planDistributionChart")
+            .getContext("2d");
+          const data = this.data.analytics.planDistribution || {
+            labels: ["No Data"],
+            data: [1],
+          };
+
+          this.charts.planDistribution = new Chart(ctx, {
+            type: "doughnut",
+            data: {
+              labels: data.labels,
+              datasets: [
+                {
+                  data: data.data,
+                  backgroundColor: [
+                    "#28a745",
+                    "#ffc107",
+                    "#dc3545",
+                    "#17a2b8",
+                    "#6f42c1",
+                  ],
+                  borderWidth: 0,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { position: "bottom" } },
+            },
+          });
+        },
 
         // Revenue Chart
-        const revenueCtx = document
-          .getElementById("revenueChart")
-          .getContext("2d");
-        new Chart(revenueCtx, {
-          type: "bar",
-          data: {
-            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-            datasets: [
-              {
-                label: "Revenue",
-                data: [1200, 1800, 2400, 3200, 4100, 5000],
-                backgroundColor: "#667eea",
+        initRevenueChart() {
+          const ctx = document.getElementById("revenueChart").getContext("2d");
+          const data = this.data.analytics.revenue || { labels: [], data: [] };
+
+          this.charts.revenue = new Chart(ctx, {
+            type: "bar",
+            data: {
+              labels: data.labels,
+              datasets: [
+                {
+                  label: "Revenue ($)",
+                  data: data.data,
+                  backgroundColor: "#667eea",
+                  borderRadius: 8,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: true },
               },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-          },
-        });
+            },
+          });
+        },
 
         // Storage Chart
-        const storageCtx = document
-          .getElementById("storageChart")
-          .getContext("2d");
-        new Chart(storageCtx, {
-          type: "line",
-          data: {
-            labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-            datasets: [
-              {
-                label: "Storage (GB)",
-                data: [50, 75, 100, 140, 180, 220],
-                borderColor: "#28a745",
-                backgroundColor: "rgba(40, 167, 69, 0.1)",
-                fill: true,
+        initStorageChart() {
+          const ctx = document.getElementById("storageChart").getContext("2d");
+          const data = this.data.analytics.storage || { labels: [], data: [] };
+
+          this.charts.storage = new Chart(ctx, {
+            type: "line",
+            data: {
+              labels: data.labels,
+              datasets: [
+                {
+                  label: "Storage (TB)",
+                  data: data.data,
+                  borderColor: "#28a745",
+                  backgroundColor: "rgba(40, 167, 69, 0.1)",
+                  fill: true,
+                  tension: 0.4,
+                },
+              ],
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false } },
+              scales: {
+                y: { beginAtZero: true },
               },
-            ],
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-          },
-        });
-      }
+            },
+          });
+        },
 
-      // User Management Functions
-      function toggleUserStatus(userId) {
-        if (confirm("Are you sure you want to change this user's status?")) {
-          fetch(`/master-admin/user/${userId}/toggle_status`, {
-            method: "POST",
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                location.reload();
-              } else {
-                alert(data.message);
-              }
+        // Event listeners
+        setupEventListeners() {
+          // Tab switching
+          document.querySelectorAll('[data-bs-toggle="tab"]').forEach((tab) => {
+            tab.addEventListener("shown.bs.tab", (e) => {
+              const tabId = e.target.getAttribute("href").substring(1);
+              this.onTabSwitch(tabId);
             });
-        }
-      }
+          });
 
-      function resetUserPassword(userId) {
-        if (confirm("Are you sure you want to reset this user's password?")) {
-          fetch(`/master-admin/user/${userId}/reset_password`, {
-            method: "POST",
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert(
-                  `Password reset successfully. New password: ${data.new_password}`
-                );
-              } else {
-                alert(data.message);
+          // Keyboard shortcuts
+          document.addEventListener("keydown", (e) => {
+            if (e.ctrlKey || e.metaKey) {
+              switch (e.key) {
+                case "r":
+                  e.preventDefault();
+                  this.refreshAll();
+                  break;
               }
-            });
-        }
-      }
-
-      function viewUserDetails(userId) {
-        window.open(`/master-admin/user/${userId}/details`, "_blank");
-      }
-
-      function impersonateUser(userId) {
-        if (confirm("Are you sure you want to impersonate this user?")) {
-          fetch(`/master-admin/user/${userId}/impersonate`, { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                window.open(data.redirect_url, "_blank");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function filterUsers() {
-        const searchTerm = document
-          .getElementById("userSearch")
-          .value.toLowerCase();
-        const statusFilter = document.getElementById("userStatusFilter").value;
-        const adminFilter = document.getElementById("userAdminFilter").value;
-        const table = document.getElementById("usersTable");
-        const rows = table
-          .getElementsByTagName("tbody")[0]
-          .getElementsByTagName("tr");
-
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
-          const username = row.cells[1].textContent.toLowerCase();
-          const email = row.cells[2].textContent.toLowerCase();
-          const status = row.cells[4].textContent.toLowerCase();
-          const isAdmin = row.cells[3].textContent.toLowerCase() === "yes";
-
-          let showRow = true;
-
-          // Text search
-          if (
-            searchTerm &&
-            !username.includes(searchTerm) &&
-            !email.includes(searchTerm)
-          ) {
-            showRow = false;
-          }
-
-          // Status filter
-          if (statusFilter && !status.includes(statusFilter)) {
-            showRow = false;
-          }
-
-          // Admin filter
-          if (adminFilter === "admin" && !isAdmin) {
-            showRow = false;
-          } else if (adminFilter === "user" && isAdmin) {
-            showRow = false;
-          }
-
-          row.style.display = showRow ? "" : "none";
-        }
-      }
-
-      function toggleAllUsers() {
-        const checkboxes = document.querySelectorAll(".user-checkbox");
-        const selectAll = document.getElementById("selectAllUsers");
-        checkboxes.forEach(
-          (checkbox) => (checkbox.checked = selectAll.checked)
-        );
-      }
-
-      function exportUsers() {
-        window.open("/master-admin/export/users", "_blank");
-      }
-
-      function bulkActions() {
-        const selected = Array.from(
-          document.querySelectorAll(".user-checkbox:checked")
-        ).map((cb) => cb.value);
-        if (selected.length === 0) {
-          alert("Please select users first");
-          return;
-        }
-
-        const action = prompt("Enter action (activate/deactivate/delete):");
-        if (
-          action &&
-          confirm(
-            `Are you sure you want to ${action} ${selected.length} users?`
-          )
-        ) {
-          fetch("/master-admin/users/bulk_action", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, user_ids: selected }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                location.reload();
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      // Tenant Management Functions
-      function toggleTenantStatus(tenantId) {
-        if (confirm("Are you sure you want to change this tenant's status?")) {
-          fetch(`/master-admin/tenant/${tenantId}/toggle_status`, {
-            method: "POST",
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                location.reload();
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function suspendTenant(tenantId) {
-        if (confirm("Are you sure you want to suspend this tenant?")) {
-          fetch(`/master-admin/tenant/${tenantId}/suspend`, { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                location.reload();
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function viewTenantDetails(tenantId) {
-        window.open(`/master-admin/tenant/${tenantId}/details`, "_blank");
-      }
-
-      function backupTenant(tenantId) {
-        if (confirm("Are you sure you want to backup this tenant?")) {
-          fetch(`/master-admin/tenant/${tenantId}/backup`, { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("Backup initiated successfully");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function filterTenants() {
-        const searchTerm = document
-          .getElementById("tenantSearch")
-          .value.toLowerCase();
-        const statusFilter =
-          document.getElementById("tenantStatusFilter").value;
-        const planFilter = document.getElementById("tenantPlanFilter").value;
-        const table = document.getElementById("tenantsTable");
-        const rows = table
-          .getElementsByTagName("tbody")[0]
-          .getElementsByTagName("tr");
-
-        for (let i = 0; i < rows.length; i++) {
-          const row = rows[i];
-          const name = row.cells[1].textContent.toLowerCase();
-          const subdomain = row.cells[2].textContent.toLowerCase();
-          const status = row.cells[3].textContent.toLowerCase();
-          const plan = row.cells[4].textContent.toLowerCase();
-
-          let showRow = true;
-
-          // Text search
-          if (
-            searchTerm &&
-            !name.includes(searchTerm) &&
-            !subdomain.includes(searchTerm)
-          ) {
-            showRow = false;
-          }
-
-          // Status filter
-          if (statusFilter && !status.includes(statusFilter)) {
-            showRow = false;
-          }
-
-          // Plan filter
-          if (planFilter && !plan.includes(planFilter)) {
-            showRow = false;
-          }
-
-          row.style.display = showRow ? "" : "none";
-        }
-      }
-
-      function toggleAllTenants() {
-        const checkboxes = document.querySelectorAll(".tenant-checkbox");
-        const selectAll = document.getElementById("selectAllTenants");
-        checkboxes.forEach(
-          (checkbox) => (checkbox.checked = selectAll.checked)
-        );
-      }
-
-      function exportTenants() {
-        window.open("/master-admin/export/tenants", "_blank");
-      }
-
-      function bulkTenantActions() {
-        const selected = Array.from(
-          document.querySelectorAll(".tenant-checkbox:checked")
-        ).map((cb) => cb.value);
-        if (selected.length === 0) {
-          alert("Please select tenants first");
-          return;
-        }
-
-        const action = prompt(
-          "Enter action (activate/deactivate/suspend/backup):"
-        );
-        if (
-          action &&
-          confirm(
-            `Are you sure you want to ${action} ${selected.length} tenants?`
-          )
-        ) {
-          fetch("/master-admin/tenants/bulk_action", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action, tenant_ids: selected }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                location.reload();
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      // Operations Functions
-      function performDatabaseBackup() {
-        if (confirm("Are you sure you want to perform a full system backup?")) {
-          fetch("/master-admin/operations/database_backup", { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("Database backup initiated successfully");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function performDatabaseOptimization() {
-        if (confirm("Are you sure you want to optimize the database?")) {
-          fetch("/master-admin/operations/database_optimize", {
-            method: "POST",
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("Database optimization completed");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function performDatabaseCleanup() {
-        if (confirm("Are you sure you want to clean the database?")) {
-          fetch("/master-admin/operations/database_cleanup", { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("Database cleanup completed");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function performDatabaseMigration() {
-        if (confirm("Are you sure you want to run database migrations?")) {
-          fetch("/master-admin/operations/database_migrate", { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("Database migrations completed");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function clearSystemCache() {
-        if (confirm("Are you sure you want to clear system cache?")) {
-          fetch("/master-admin/operations/clear_cache", { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("System cache cleared successfully");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function restartServices() {
-        if (confirm("Are you sure you want to restart services?")) {
-          fetch("/master-admin/operations/restart_services", { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("Services restarted successfully");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function updateSystem() {
-        if (confirm("Are you sure you want to update the system?")) {
-          fetch("/master-admin/operations/update_system", { method: "POST" })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("System update initiated");
-              } else {
-                alert(data.message);
-              }
-            });
-        }
-      }
-
-      function performHealthCheck() {
-        fetch("/master-admin/operations/health_check", { method: "POST" })
-          .then((response) => response.json())
-          .then((data) => {
-            if (data.success) {
-              alert(
-                `Health Check Results:\n${JSON.stringify(
-                  data.results,
-                  null,
-                  2
-                )}`
-              );
-            } else {
-              alert(data.message);
             }
           });
-      }
+        },
 
-      // Security Functions
-      function blockIP() {
-        const ipInput = document.querySelector(
-          'input[placeholder="Enter IP address"]'
-        );
-        const ip = ipInput.value.trim();
+        // Tab switch handler
+        onTabSwitch(tabId) {
+          // Resize charts when analytics tab is shown
+          if (tabId === "analytics") {
+            setTimeout(() => {
+              Object.values(this.charts).forEach((chart) => {
+                if (chart && chart.resize) chart.resize();
+              });
+            }, 100);
+          }
+        },
 
-        if (!ip) {
-          alert("Please enter an IP address");
-          return;
-        }
-
-        if (confirm(`Are you sure you want to block IP: ${ip}?`)) {
-          fetch("/master-admin/security/block_ip", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ip_address: ip }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("IP blocked successfully");
-                location.reload();
-              } else {
-                alert(data.message);
+        // User Actions
+        async toggleUserStatus(userId) {
+          try {
+            this.showLoading();
+            const response = await fetch(
+              `/master-admin/user/${userId}/toggle_status`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
               }
-            });
-        }
-      }
+            );
+            const result = await response.json();
 
-      function unblockIP(ip) {
-        if (confirm(`Are you sure you want to unblock IP: ${ip}?`)) {
-          fetch("/master-admin/security/unblock_ip", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ip_address: ip }),
-          })
-            .then((response) => response.json())
-            .then((data) => {
-              if (data.success) {
-                alert("IP unblocked successfully");
-                location.reload();
+            if (result.success) {
+              this.showAlert("success", result.message);
+              await this.loadUsers();
+              await this.loadStats();
+            } else {
+              this.showAlert("danger", result.message);
+            }
+          } catch (error) {
+            this.showAlert("danger", "Failed to update user status");
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        viewUserDetails(userId) {
+          window.open(`/master-admin/user/${userId}/details`, "_blank");
+        },
+
+        async resetUserPassword(userId) {
+          if (confirm("Are you sure you want to reset this user's password?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                `/master-admin/user/${userId}/reset_password`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert(
+                  "success",
+                  `Password reset successfully. New password: ${result.new_password}`
+                );
               } else {
-                alert(data.message);
+                this.showAlert("danger", result.message);
               }
-            });
-        }
-      }
+            } catch (error) {
+              this.showAlert("danger", "Failed to reset password");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
 
-      // Initialize everything when page loads
+        // Tenant Actions
+        async toggleTenantStatus(tenantId) {
+          if (
+            confirm("Are you sure you want to change this tenant's status?")
+          ) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                `/master-admin/tenant/${tenantId}/toggle_status`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+                await this.loadTenants();
+                await this.loadStats();
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Failed to update tenant status");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        viewTenantDetails(tenantId) {
+          window.open(`/master-admin/tenant/${tenantId}/details`, "_blank");
+        },
+
+        async backupTenant(tenantId) {
+          if (confirm("Are you sure you want to backup this tenant?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                `/master-admin/tenant/${tenantId}/backup`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Failed to backup tenant");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        async approveTenant(tenantId) {
+          if (confirm("Are you sure you want to approve this tenant?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                `/master-admin/tenant/${tenantId}/force_activate`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ reason: "Manual approval by admin" }),
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+                await this.loadTenants();
+                await this.loadStats();
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Failed to approve tenant");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        // Plan Actions
+        showCreatePlanModal() {
+          const modal = new bootstrap.Modal(
+            document.getElementById("createPlanModal")
+          );
+          modal.show();
+        },
+
+        async createPlan() {
+          try {
+            const form = document.getElementById("createPlanForm");
+            const formData = new FormData(form);
+
+            const planData = {
+              name: formData.get("name"),
+              price: parseFloat(formData.get("price")),
+              max_users: parseInt(formData.get("max_users")),
+              storage_limit: parseInt(formData.get("storage_limit")),
+              features: formData.get("features")
+                ? formData
+                    .get("features")
+                    .split(",")
+                    .map((f) => f.trim())
+                : [],
+              modules: formData.get("modules")
+                ? formData
+                    .get("modules")
+                    .split(",")
+                    .map((m) => m.trim())
+                : [],
+              is_active: formData.has("is_active"),
+            };
+
+            this.showLoading();
+            const response = await fetch("/master-admin/plan/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(planData),
+            });
+            const result = await response.json();
+
+            if (result.success) {
+              this.showAlert("success", result.message);
+              bootstrap.Modal.getInstance(
+                document.getElementById("createPlanModal")
+              ).hide();
+              form.reset();
+              await this.loadPlans();
+            } else {
+              this.showAlert("danger", result.message);
+            }
+          } catch (error) {
+            this.showAlert("danger", "Failed to create plan");
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        async deletePlan(planId) {
+          if (
+            confirm(
+              "Are you sure you want to delete this plan? This action cannot be undone."
+            )
+          ) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                `/master-admin/plan/${planId}/delete`,
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+                await this.loadPlans();
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Failed to delete plan");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        // System Operations
+        async performHealthCheck() {
+          try {
+            this.showLoading();
+            const response = await fetch(
+              "/master-admin/operations/health_check",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+            const result = await response.json();
+
+            if (result.success) {
+              this.showAlert(
+                "success",
+                `Health Check Complete: CPU ${result.results.cpu_percent}%, Memory ${result.results.memory.percent}%`
+              );
+            } else {
+              this.showAlert("danger", result.message);
+            }
+          } catch (error) {
+            this.showAlert("danger", "Health check failed");
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        async performDatabaseBackup() {
+          if (
+            confirm("Are you sure you want to perform a full database backup?")
+          ) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                "/master-admin/operations/database_backup",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Database backup failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        async optimizeDatabase() {
+          if (confirm("Are you sure you want to optimize the database?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                "/master-admin/operations/database_optimize",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Database optimization failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        async cleanDatabase() {
+          if (confirm("Are you sure you want to clean the database?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                "/master-admin/operations/database_cleanup",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Database cleanup failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        async runMigrations() {
+          if (confirm("Are you sure you want to run database migrations?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                "/master-admin/operations/database_migrate",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Database migration failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        async clearCache() {
+          if (confirm("Are you sure you want to clear system cache?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                "/master-admin/operations/clear_cache",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Cache clear failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        async restartServices() {
+          if (confirm("Are you sure you want to restart services?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                "/master-admin/operations/restart_services",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Service restart failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        async updateSystem() {
+          if (confirm("Are you sure you want to update the system?")) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                "/master-admin/operations/update_system",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "System update failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        // Load audit logs
+        async loadAuditLogs() {
+          try {
+            const response = await fetch("/master-admin/audit-logs");
+            const result = await response.json();
+
+            if (result.success) {
+              this.renderAuditLogs(result.logs);
+              this.renderRecentActivity(result.logs.slice(0, 10));
+            } else {
+              this.showAlert("warning", "Failed to load audit logs");
+            }
+          } catch (error) {
+            console.error("Failed to load audit logs:", error);
+          }
+        },
+
+        // Render audit logs
+        renderAuditLogs(logs) {
+          const container = document.getElementById("audit-logs-container");
+          container.innerHTML = "";
+
+          if (logs.length === 0) {
+            container.innerHTML =
+              '<p class="text-muted">No audit logs found.</p>';
+            return;
+          }
+
+          logs.forEach((log) => {
+            const logElement = document.createElement("div");
+            logElement.className =
+              "border-start border-4 border-primary p-3 mb-2 bg-light";
+            logElement.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <strong>${log.action}</strong>
+                            <small class="text-muted">${log.created_at}</small>
+                        </div>
+                        <div class="mt-1">
+                            <small><strong>User:</strong> ${
+                              log.username
+                            }</small>
+                            ${
+                              log.tenant_name
+                                ? `<small class="ms-3"><strong>Tenant:</strong> ${log.tenant_name}</small>`
+                                : ""
+                            }
+                        </div>
+                        ${
+                          log.details
+                            ? `<div class="mt-1"><small class="text-muted">${JSON.stringify(
+                                log.details
+                              )}</small></div>`
+                            : ""
+                        }
+                    `;
+            container.appendChild(logElement);
+          });
+        },
+
+        // Render recent activity
+        renderRecentActivity(logs) {
+          const container = document.getElementById("recent-activity");
+          container.innerHTML = "";
+
+          if (logs.length === 0) {
+            container.innerHTML =
+              '<p class="text-muted">No recent activity.</p>';
+            return;
+          }
+
+          logs.forEach((log) => {
+            const activityElement = document.createElement("div");
+            activityElement.className = "border-bottom pb-2 mb-2";
+            activityElement.innerHTML = `
+                        <div class="d-flex justify-content-between">
+                            <span>${log.action}</span>
+                            <small class="text-muted">${log.created_at}</small>
+                        </div>
+                        <small class="text-muted">by ${log.username}</small>
+                    `;
+            container.appendChild(activityElement);
+          });
+        },
+
+        // Filtering functions
+        filterUsers() {
+          const searchTerm = document
+            .getElementById("userSearch")
+            .value.toLowerCase();
+          const statusFilter =
+            document.getElementById("userStatusFilter").value;
+          const adminFilter = document.getElementById("userAdminFilter").value;
+
+          const rows = document.querySelectorAll("#usersTable tbody tr");
+
+          rows.forEach((row) => {
+            const username = row
+              .querySelector("td:nth-child(2) strong")
+              .textContent.toLowerCase();
+            const email = row
+              .querySelector("td:nth-child(2) small")
+              .textContent.toLowerCase();
+            const status = row
+              .querySelector("td:nth-child(3) .badge")
+              .textContent.toLowerCase();
+            const isAdmin = row.querySelector(".badge.bg-primary") !== null;
+
+            let showRow = true;
+
+            if (
+              searchTerm &&
+              !username.includes(searchTerm) &&
+              !email.includes(searchTerm)
+            ) {
+              showRow = false;
+            }
+
+            if (statusFilter && !status.includes(statusFilter)) {
+              showRow = false;
+            }
+
+            if (adminFilter === "admin" && !isAdmin) {
+              showRow = false;
+            } else if (adminFilter === "user" && isAdmin) {
+              showRow = false;
+            }
+
+            row.style.display = showRow ? "" : "none";
+          });
+        },
+
+        filterTenants() {
+          const searchTerm = document
+            .getElementById("tenantSearch")
+            .value.toLowerCase();
+          const statusFilter =
+            document.getElementById("tenantStatusFilter").value;
+          const planFilter = document.getElementById("tenantPlanFilter").value;
+
+          const rows = document.querySelectorAll("#tenantsTable tbody tr");
+
+          rows.forEach((row) => {
+            const name = row
+              .querySelector("td:nth-child(2) strong")
+              .textContent.toLowerCase();
+            const subdomain = row
+              .querySelector("td:nth-child(2) small")
+              .textContent.toLowerCase();
+            const status = row
+              .querySelector("td:nth-child(3) .badge")
+              .textContent.toLowerCase();
+            const plan = row
+              .querySelector("td:nth-child(4) .badge")
+              .textContent.toLowerCase();
+
+            let showRow = true;
+
+            if (
+              searchTerm &&
+              !name.includes(searchTerm) &&
+              !subdomain.includes(searchTerm)
+            ) {
+              showRow = false;
+            }
+
+            if (statusFilter && !status.includes(statusFilter)) {
+              showRow = false;
+            }
+
+            if (planFilter && !plan.includes(planFilter)) {
+              showRow = false;
+            }
+
+            row.style.display = showRow ? "" : "none";
+          });
+        },
+
+        // Toggle selection functions
+        toggleAllUsers() {
+          const selectAll = document.getElementById("selectAllUsers");
+          const checkboxes = document.querySelectorAll(".user-checkbox");
+          checkboxes.forEach((cb) => (cb.checked = selectAll.checked));
+        },
+
+        toggleAllTenants() {
+          const selectAll = document.getElementById("selectAllTenants");
+          const checkboxes = document.querySelectorAll(".tenant-checkbox");
+          checkboxes.forEach((cb) => (cb.checked = selectAll.checked));
+        },
+
+        // Bulk actions
+        async bulkUserActions() {
+          const selected = Array.from(
+            document.querySelectorAll(".user-checkbox:checked")
+          ).map((cb) => cb.value);
+          if (selected.length === 0) {
+            this.showAlert("warning", "Please select users first");
+            return;
+          }
+
+          const action = prompt("Enter action (activate/deactivate/delete):");
+          if (
+            action &&
+            confirm(
+              `Are you sure you want to ${action} ${selected.length} users?`
+            )
+          ) {
+            try {
+              this.showLoading();
+              const response = await fetch("/master-admin/users/bulk_action", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action, user_ids: selected }),
+              });
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+                await this.loadUsers();
+                await this.loadStats();
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Bulk action failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        async bulkTenantActions() {
+          const selected = Array.from(
+            document.querySelectorAll(".tenant-checkbox:checked")
+          ).map((cb) => cb.value);
+          if (selected.length === 0) {
+            this.showAlert("warning", "Please select tenants first");
+            return;
+          }
+
+          const action = prompt(
+            "Enter action (activate/deactivate/suspend/backup):"
+          );
+          if (
+            action &&
+            confirm(
+              `Are you sure you want to ${action} ${selected.length} tenants?`
+            )
+          ) {
+            try {
+              this.showLoading();
+              const response = await fetch(
+                "/master-admin/tenants/bulk_action",
+                {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action, tenant_ids: selected }),
+                }
+              );
+              const result = await response.json();
+
+              if (result.success) {
+                this.showAlert("success", result.message);
+                await this.loadTenants();
+                await this.loadStats();
+              } else {
+                this.showAlert("danger", result.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Bulk action failed");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        // Export functions
+        async exportUsers() {
+          try {
+            this.showLoading();
+            window.location.href = "/master-admin/export/users";
+            this.showAlert("success", "Users export initiated");
+          } catch (error) {
+            this.showAlert("danger", "Failed to export users");
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        async exportTenants() {
+          try {
+            this.showLoading();
+            window.location.href = "/master-admin/export/tenants";
+            this.showAlert("success", "Tenants export initiated");
+          } catch (error) {
+            this.showAlert("danger", "Failed to export tenants");
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        async exportFullSystem() {
+          if (confirm("This will export all system data. Continue?")) {
+            try {
+              this.showLoading();
+              window.location.href = "/master-admin/export/full_system";
+              this.showAlert("success", "Full system export initiated");
+            } catch (error) {
+              this.showAlert("danger", "Failed to export system data");
+            } finally {
+              this.hideLoading();
+            }
+          }
+        },
+
+        // Refresh functions
+        async refreshSystemMetrics() {
+          try {
+            await this.loadStats();
+            this.showAlert("info", "System metrics refreshed");
+          } catch (error) {
+            this.showAlert("danger", "Failed to refresh metrics");
+          }
+        },
+
+        async refreshAll() {
+          try {
+            this.showLoading();
+            await this.loadAllData();
+
+            // Update charts
+            this.updateCharts();
+
+            this.showAlert("success", "All data refreshed successfully");
+          } catch (error) {
+            this.showAlert("danger", "Failed to refresh data");
+          } finally {
+            this.hideLoading();
+          }
+        },
+
+        // Update charts with new data
+        updateCharts() {
+          try {
+            // Update user growth chart
+            if (this.charts.userGrowth && this.data.analytics.userGrowth) {
+              this.charts.userGrowth.data.labels =
+                this.data.analytics.userGrowth.labels;
+              this.charts.userGrowth.data.datasets[0].data =
+                this.data.analytics.userGrowth.data;
+              this.charts.userGrowth.update();
+            }
+
+            // Update plan distribution chart
+            if (
+              this.charts.planDistribution &&
+              this.data.analytics.planDistribution
+            ) {
+              this.charts.planDistribution.data.labels =
+                this.data.analytics.planDistribution.labels;
+              this.charts.planDistribution.data.datasets[0].data =
+                this.data.analytics.planDistribution.data;
+              this.charts.planDistribution.update();
+            }
+
+            // Update revenue chart
+            if (this.charts.revenue && this.data.analytics.revenue) {
+              this.charts.revenue.data.labels =
+                this.data.analytics.revenue.labels;
+              this.charts.revenue.data.datasets[0].data =
+                this.data.analytics.revenue.data;
+              this.charts.revenue.update();
+            }
+
+            // Update storage chart
+            if (this.charts.storage && this.data.analytics.storage) {
+              this.charts.storage.data.labels =
+                this.data.analytics.storage.labels;
+              this.charts.storage.data.datasets[0].data =
+                this.data.analytics.storage.data;
+              this.charts.storage.update();
+            }
+          } catch (error) {
+            console.error("Failed to update charts:", error);
+          }
+        },
+
+        // Auto refresh
+        startAutoRefresh() {
+          // Refresh every 30 seconds
+          this.refreshInterval = setInterval(async () => {
+            try {
+              await this.loadStats();
+            } catch (error) {
+              console.warn("Auto refresh failed:", error);
+            }
+          }, 30000);
+        },
+
+        stopAutoRefresh() {
+          if (this.refreshInterval) {
+            clearInterval(this.refreshInterval);
+            this.refreshInterval = null;
+          }
+        },
+
+        // UI Helpers
+        showLoading() {
+          document.getElementById("loading-spinner").classList.remove("d-none");
+          document.body.classList.add("loading");
+        },
+
+        hideLoading() {
+          document.getElementById("loading-spinner").classList.add("d-none");
+          document.body.classList.remove("loading");
+        },
+
+        showAlert(type, message) {
+          const alertsContainer = document.getElementById("alerts-container");
+
+          const alertEl = document.createElement("div");
+          alertEl.className = `alert alert-${type} alert-dismissible fade show`;
+          alertEl.innerHTML = `
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                `;
+
+          alertsContainer.appendChild(alertEl);
+
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            if (alertEl.parentNode) {
+              alertEl.remove();
+            }
+          }, 5000);
+        },
+      };
+
+      // Initialize dashboard when DOM is loaded
       document.addEventListener("DOMContentLoaded", function () {
-        initCharts();
+        Dashboard.init();
+      });
+
+      // Cleanup on page unload
+      window.addEventListener("beforeunload", function () {
+        Dashboard.stopAutoRefresh();
+      });
+
+      // Global error handler
+      window.addEventListener("error", function (event) {
+        console.error("Dashboard error:", event.error);
+        Dashboard.showAlert("danger", "An unexpected error occurred");
       });
     </script>
   </body>
