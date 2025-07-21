@@ -312,3 +312,32 @@ class TenantBackup(db.Model):
     
     tenant = db.relationship('Tenant', backref='backups')
     initiator = db.relationship('SaasUser')
+
+
+def add_helper_methods_to_models():
+    """Add helper methods to existing models"""
+    
+    # Add to WorkerInstance model
+    @property
+    def load_percentage(self):
+        if self.max_tenants == 0:
+            return 0
+        return (self.current_tenants / self.max_tenants) * 100
+    
+    @property
+    def is_overloaded(self):
+        return self.current_tenants > self.max_tenants
+    
+    # Add to Tenant model
+    @property
+    def resource_usage_score(self):
+        """Calculate resource usage score for load balancing"""
+        # This is a simplified calculation
+        base_score = 1
+        if hasattr(self, 'storage_usage') and self.storage_usage:
+            base_score += self.storage_usage / 1000  # Adjust based on storage
+        
+        user_count = TenantUser.query.filter_by(tenant_id=self.id).count()
+        base_score += user_count * 0.1  # Adjust based on user count
+        
+        return base_score

@@ -5,150 +5,308 @@
 <div class="row mb-4">
   <div class="col">
     <nav aria-label="breadcrumb">
-      <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
-        <li class="breadcrumb-item active">{{ tenant.name }}</li>
+      <ol class="breadcrumb" style="background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); padding: 1rem 1.5rem; border-radius: 12px; border: 1px solid var(--border-primary); box-shadow: var(--shadow-sm);">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('dashboard') }}" style="color: var(--primary); text-decoration: none; font-weight: 500;">Dashboard</a>
+        </li>
+        <li class="breadcrumb-item active" style="color: var(--text-primary); font-weight: 600;">{{ tenant.name }}</li>
       </ol>
     </nav>
-    <h2><i class="fas fa-cog me-2"></i>Manage Tenant: {{ tenant.name }}</h2>
+    <h2 style="color: var(--text-primary); margin-top: 1.5rem;"><i class="fas fa-cog me-2 text-primary"></i>Manage Tenant: {{ tenant.name }}</h2>
   </div>
 </div>
 
-<!-- Tenant Overview -->
+<!-- Tenant Overview - Redesigned -->
 <div class="row mb-4">
   <div class="col-md-8">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Tenant Information</h5>
-      </div>
-      <div class="card-body">
-        <div class="row">
-          <div class="col-md-6">
-            <dl class="row">
-              <dt class="col-sm-4">Name:</dt>
-              <dd class="col-sm-8">{{ tenant.name }}</dd>
-              
-              <dt class="col-sm-4">Subdomain:</dt>
-              <dd class="col-sm-8">
-                <a data-tenant-db="{{ tenant.db_name }}" target="_blank" class="text-decoration-none tenant-link">
-                  {{ tenant.db_name }}.<domain>
-                  <i class="fas fa-external-link-alt ms-1"></i>
-                </a>
-              </dd>
-              
-              <dt class="col-sm-4">Status:</dt>
-              <dd class="col-sm-8">
-                <span class="badge bg-{{ 'success' if tenant.status == 'active' else 'warning' if tenant.status == 'inactive' else 'danger' }}">
-                  {{ tenant.status.title() }}
-                </span>
-              </dd>
-              
-              <dt class="col-sm-4">Plan:</dt>
-              <dd class="col-sm-8">
-                <span class="badge bg-primary">{{ tenant.plan.title() }}</span>
-              </dd>
-            </dl>
-          </div>
-          <div class="col-md-6">
-            <dl class="row">
-              <dt class="col-sm-4">Max Users:</dt>
-              <dd class="col-sm-8">{{ tenant.max_users }}</dd>
-              
-              <dt class="col-sm-4">Storage Limit:</dt>
-              <dd class="col-sm-8">{{ tenant.storage_limit }} MB</dd>
-              
-              <dt class="col-sm-4">Created:</dt>
-              <dd class="col-sm-8">{{ tenant.created_at.strftime('%Y-%m-%d %H:%M') }}</dd>
-              
-              <dt class="col-sm-4">Last Updated:</dt>
-              <dd class="col-sm-8">{{ tenant.updated_at.strftime('%Y-%m-%d %H:%M') }}</dd>
-            </dl>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="card shadow-lg border-0">
-        <div class="card-body p-3">
-            <div class="row g-2">
-                <!-- Admin Username -->
-                <div class="col-md-4 col-sm-12">
-                    <div class="d-flex align-items-center justify-content-between border rounded p-2 bg-light">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-user-shield text-primary me-3"></i>
-                            <code class="text-dark">{{tenant.admin_username}}</code>
-                        </div>
-                        <button class="btn btn-sm btn-outline-primary  bg-dark" onclick="copyText('{{tenant.admin_username}}')" title="Copy username">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Database Name -->
-                <div class="col-md-4 col-sm-12">
-                    <div class="d-flex align-items-center justify-content-between border rounded p-2 bg-light">
-                        <div class="d-flex align-items-center">
-                            <i class="fas fa-database text-success me-3"></i>
-                            <code class="text-dark">{{tenant.database_name}}</code>
-                        </div>
-                        <button class="btn btn-sm btn-outline-primary  bg-dark" onclick="copyText('{{tenant.database_name}}')" title="Copy database name">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </div>
-                
-                <!-- Admin Password -->
-                <div class="col-md-4 col-sm-12">
-                    <div class="d-flex align-items-center justify-content-between border rounded p-2 bg-light">
-                        <div class="d-flex align-items-center flex-grow-1">
-                            <i class="fas fa-key text-warning me-3"></i>
-                            <input type="password" class="form-control border-0 bg-transparent" value="{{tenant.admin_password}}" readonly id="passwordField">
-                        </div>
-                        <div class="d-flex">
-                            <button class="btn btn-sm btn-outline-secondary me-1" type="button" onclick="togglePassword()" id="toggleBtn">
-                                <i class="fas fa-eye" id="eyeIcon"></i>
-                            </button>
-                            <button class="btn btn-sm btn-outline-primary bg-dark" type="button" onclick="copyPassword()" title="Copy password">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    <!-- Main Tenant Information Card -->
+    <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
+      <div class="card-header border-0" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 16px 16px 0 0;">
+        <div class="d-flex align-items-center justify-content-between w-100">
+          <div class="d-flex align-items-center">
+            <div class="p-3 rounded-circle me-3" style="background: rgba(255, 255, 255, 0.2);">
+              <i class="fas fa-building text-white fa-lg"></i>
             </div>
+            <div>
+              <h4 class="mb-1 text-white fw-bold">{{ tenant.name }}</h4>
+              <p class="mb-0" style="color: rgba(255, 255, 255, 0.8);">Tenant Configuration & Management</p>
+            </div>
+          </div>
+          <div>
+            <span class="badge bg-{{ 'success' if tenant.status == 'active' else 'warning' if tenant.status == 'inactive' else 'danger' }}" 
+                  style="padding: 0.75rem 1.25rem; border-radius: 20px; font-weight: 600; font-size: 0.9rem;">
+              <i class="fas fa-circle me-2" style="font-size: 0.6rem;"></i>
+              {{ tenant.status.title() }}
+            </span>
+          </div>
         </div>
-        <div class="card-footer bg-light text-center py-2">
-            <small class="text-muted">
-                <i class="fas fa-shield-alt me-1"></i>
-                Keep these credentials secure
-            </small>
+      </div>
+      
+      <div class="card-body p-4">
+        <div class="row g-4">
+          <!-- Left Column - Basic Info -->
+          <div class="col-md-6">
+            <div class="mb-4">
+              <h6 class="fw-bold mb-3" style="color: var(--text-primary); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="fas fa-info-circle text-primary me-2"></i>Basic Information
+              </h6>
+              
+              <div class="mb-3">
+                <div class="d-flex align-items-start">
+                  <div class="me-3 mt-1">
+                    <i class="fas fa-tag text-primary" style="font-size: 1.1rem;"></i>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold mb-1" style="color: var(--text-secondary); font-size: 0.9rem;">Tenant Name</div>
+                    <div class="fw-bold" style="color: var(--text-primary); font-size: 1.1rem;">{{ tenant.name }}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex align-items-start">
+                  <div class="me-3 mt-1">
+                    <i class="fas fa-link text-info" style="font-size: 1.1rem;"></i>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold mb-1" style="color: var(--text-secondary); font-size: 0.9rem;">Subdomain</div>
+                    <div>
+                      <a data-tenant-db="{{ tenant.db_name }}" target="_blank" 
+                         class="text-decoration-none tenant-link fw-bold" 
+                         style="color: var(--primary); font-size: 1rem;">
+                        {{ tenant.db_name }}.<domain>
+                        <i class="fas fa-external-link-alt ms-1" style="font-size: 0.8rem;"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mb-3">
+                <div class="d-flex align-items-start">
+                  <div class="me-3 mt-1">
+                    <i class="fas fa-crown text-warning" style="font-size: 1.1rem;"></i>
+                  </div>
+                  <div class="flex-grow-1">
+                    <div class="fw-semibold mb-1" style="color: var(--text-secondary); font-size: 0.9rem;">Subscription Plan</div>
+                    <div>
+                      <span class="badge bg-primary" style="padding: 0.6rem 1.2rem; border-radius: 15px; font-weight: 600; font-size: 0.85rem;">
+                        {{ tenant.plan.title() }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Right Column - Resources & Timeline -->
+          <div class="col-md-6">
+            <div class="mb-4">
+              <h6 class="fw-bold mb-3" style="color: var(--text-primary); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="fas fa-chart-bar text-success me-2"></i>Resource Usage
+              </h6>
+              
+              <div class="mb-3">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-users text-success me-3" style="font-size: 1.1rem;"></i>
+                    <div>
+                      <div class="fw-semibold" style="color: var(--text-secondary); font-size: 0.9rem;">Users</div>
+                      <div class="fw-bold" style="color: var(--text-primary); font-size: 1.1rem;">{{ tenant.max_users }} max</div>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="progress mb-1" style="width: 80px; height: 8px;">
+                      <div class="progress-bar bg-success" style="width: 65%;"></div>
+                    </div>
+                    <small class="fw-semibold" style="color: var(--text-secondary);">65% used</small>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mb-4">
+                <div class="d-flex align-items-center justify-content-between">
+                  <div class="d-flex align-items-center">
+                    <i class="fas fa-hdd text-info me-3" style="font-size: 1.1rem;"></i>
+                    <div>
+                      <div class="fw-semibold" style="color: var(--text-secondary); font-size: 0.9rem;">Storage</div>
+                      <div class="fw-bold" style="color: var(--text-primary); font-size: 1.1rem;">{{ tenant.storage_limit }} MB</div>
+                    </div>
+                  </div>
+                  <div class="text-end">
+                    <div class="progress mb-1" style="width: 80px; height: 8px;">
+                      <div class="progress-bar bg-info" style="width: 40%;"></div>
+                    </div>
+                    <small class="fw-semibold" style="color: var(--text-secondary);">40% used</small>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h6 class="fw-bold mb-3" style="color: var(--text-primary); font-size: 1rem; text-transform: uppercase; letter-spacing: 0.5px;">
+                <i class="fas fa-history text-secondary me-2"></i>Timeline
+              </h6>
+              
+              <div class="row">
+                <div class="col-6">
+                  <div class="text-center p-3 rounded-3" style="background: var(--bg-secondary);">
+                    <i class="fas fa-calendar-plus text-primary mb-2 d-block" style="font-size: 1.5rem;"></i>
+                    <div class="fw-semibold mb-1" style="color: var(--text-secondary); font-size: 0.85rem;">Created</div>
+                    <div class="fw-bold" style="color: var(--text-primary); font-size: 0.95rem;">{{ tenant.created_at.strftime('%b %d, %Y') }}</div>
+                  </div>
+                </div>
+                <div class="col-6">
+                  <div class="text-center p-3 rounded-3" style="background: var(--bg-secondary);">
+                    <i class="fas fa-sync-alt text-success mb-2 d-block" style="font-size: 1.5rem;"></i>
+                    <div class="fw-semibold mb-1" style="color: var(--text-secondary); font-size: 0.85rem;">Updated</div>
+                    <div class="fw-bold" style="color: var(--text-primary); font-size: 0.95rem;">{{ tenant.updated_at.strftime('%b %d, %Y') }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
     </div>
 
-  </div>
-  <div class="col-md-4">
-    <div class="card shadow-sm">
-        <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="fas fa-tools me-2"></i>Quick Actions</h5>
+    <!-- Access Credentials Card -->
+    <div class="card shadow-lg border-0" style="border-radius: 16px;">
+      <div class="card-header border-0" style="background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border-radius: 16px 16px 0 0;">
+        <div class="d-flex align-items-center">
+          <div class="p-2 rounded-circle me-3" style="background: rgba(113, 75, 103, 0.2); color: var(--primary);">
+            <i class="fas fa-key"></i>
+          </div>
+          <div>
+            <h5 class="mb-0 fw-semibold" style="color: var(--text-primary);">Access Credentials</h5>
+          </div>
         </div>
-        <div class="card-body">
+      </div>
+      
+      <div class="card-body p-3">
+        <div class="row g-2">
+          <!-- Admin Username -->
+          <div class="col-md-4 col-sm-12">
+            <div class="rounded-3 p-3" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border: 1px solid var(--border-primary); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+              <!-- Header with icon and label -->
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center">
+                  <div class="p-2 rounded-circle me-3" style="background: rgba(113, 75, 103, 0.2); color: var(--primary);">
+                    <i class="fas fa-user-shield"></i>
+                  </div>
+                  <small class="fw-semibold" style="color: var(--text-secondary);">Username</small>
+                </div>
+                <button class="btn btn-sm btn-outline-primary" onclick="copyText('{{tenant.admin_username}}')" title="Copy username" style="border-radius: 8px;">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              
+              <!-- Full width content field -->
+              <div class="w-100">
+                <div class="p-2" style="background: rgba(255, 255, 255, 0.1); border-radius: 6px;">
+                  <code style="background: transparent; color: var(--text-primary); font-size: 0.9rem; word-break: break-all;">{{tenant.admin_username}}</code>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Database Name -->
+          <div class="col-md-4 col-sm-12">
+            <div class="rounded-3 p-3" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border: 1px solid var(--border-primary); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+              <!-- Header with icon and label -->
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center">
+                  <div class="p-2 rounded-circle me-3" style="background: rgba(40, 167, 69, 0.2); color: var(--success);">
+                    <i class="fas fa-database"></i>
+                  </div>
+                  <small class="fw-semibold" style="color: var(--text-secondary);">Database</small>
+                </div>
+                <button class="btn btn-sm btn-outline-primary" onclick="copyText('{{tenant.database_name}}')" title="Copy database name" style="border-radius: 8px;">
+                  <i class="fas fa-copy"></i>
+                </button>
+              </div>
+              
+              <!-- Full width content field -->
+              <div class="w-100">
+                <div class="p-2" style="background: rgba(255, 255, 255, 0.1); border-radius: 6px;">
+                  <code style="background: transparent; color: var(--text-primary); font-size: 0.9rem; word-break: break-all;">{{tenant.database_name}}</code>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Admin Password -->
+          <div class="col-md-4 col-sm-12">
+            <div class="rounded-3 p-3" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border: 1px solid var(--border-primary); transition: all 0.3s ease;" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+              <!-- Header with icon and label -->
+              <div class="d-flex align-items-center justify-content-between mb-3">
+                <div class="d-flex align-items-center">
+                  <div class="p-2 rounded-circle me-3" style="background: rgba(255, 193, 7, 0.2); color: var(--warning);">
+                    <i class="fas fa-key"></i>
+                  </div>
+                  <small class="fw-semibold" style="color: var(--text-secondary);">Password</small>
+                </div>
+                <div class="d-flex gap-1">
+                  <button class="btn btn-sm btn-outline-primary" type="button" onclick="copyPassword()" title="Copy password" style="border-radius: 8px;">
+                    <i class="fas fa-copy"></i>
+                  </button>
+                </div>
+              </div>
+              
+              <!-- Full width password field -->
+              <div class="d-flex w-100">
+                <input type="password" 
+                      class="form-control border-0 p-2 flex-grow-1" 
+                      style="background: rgba(255, 255, 255, 0.1); color: var(--text-primary); font-family: monospace; font-size: 0.9rem; border-radius: 6px; word-break: break-all;" 
+                      value="{{tenant.admin_password}}" 
+                      readonly 
+                      id="passwordField">
+                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="togglePassword()" id="toggleBtn" style="border-radius: 8px;">
+                        <i class="fas fa-eye" id="eyeIcon"></i>
+                      </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="card-footer text-center py-3 border-0" style="background: linear-gradient(135deg, rgba(13, 202, 240, 0.1) 0%, rgba(13, 202, 240, 0.05) 100%); border-radius: 0 0 16px 16px; border-top: 1px solid var(--border-primary);">
+        <small style="color: var(--info);">
+          <i class="fas fa-shield-alt me-1"></i>
+          Keep these credentials secure
+        </small>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Right column content (unchanged) -->
+  <div class="col-md-4">
+    <!-- Quick Actions card remains the same -->
+    <div class="card shadow-sm border-0" style="border-radius: 16px;">
+        <div class="card-header text-white border-0" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 16px 16px 0 0;">
+            <h5 class="mb-0 fw-semibold"><i class="fas fa-tools me-2"></i>Quick Actions</h5>
+        </div>
+        <div class="card-body p-4">
             <div class="d-grid gap-3">
                 <!-- Open Tenant -->
-                <a data-tenant-db="kdoo_{{ tenant.subdomain }}" target="_blank" class="btn btn-primary db-action-btn tenant-link">
+                <a data-tenant-db="kdoo_{{ tenant.subdomain }}" target="_blank" class="btn btn-primary db-action-btn tenant-link" style="border-radius: 12px; padding: 1rem; font-weight: 500;">
                     <i class="fas fa-external-link-alt me-2"></i>Open Tenant
                 </a>
                 
                 <!-- Database Status Toggle -->
-                <div class="db-toggle-form border rounded p-3 bg-light">
+                <div class="db-toggle-form rounded-3 p-4" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border: 1px solid var(--border-primary);">
                     <div class="d-flex justify-content-between align-items-center">
                         <div class="d-flex align-items-center">
                             <div class="db-status-{{ 'active' if tenant.is_active else 'inactive' }} me-3">
-                            
-                                <i class="fas {{ 'fa-running' if tenant.is_active else 'fa-ban' }} db-status-icon fs-4"></i>
+                                <div class="p-3 rounded-circle" style="background: {{ 'rgba(40, 167, 69, 0.2)' if tenant.is_active else 'rgba(220, 53, 69, 0.2)' }}; color: {{ 'var(--success)' if tenant.is_active else 'var(--danger)' }};">
+                                  <i class="fas {{ 'fa-running' if tenant.is_active else 'fa-ban' }} db-status-icon"></i>
+                                </div>
                             </div>
                             <div>
-                                <div class="db-status-text">Database Status</div>
-                                <small class="text-muted">
-                                    <span class="badge bg-{{ 'success' if tenant.is_active else 'danger' }} db-status-badge">
+                                <div class="db-status-text fw-semibold" style="color: var(--text-primary);">Database Status</div>
+                                <small>
+                                    <span class="badge bg-{{ 'success' if tenant.is_active else 'danger' }} db-status-badge" style="font-size: 0.75rem;">
                                         <i class="fas fa-circle me-1"></i>{{ 'Active' if tenant.is_active else 'Inactive' }}
                                     </span>
                                 </small>
@@ -163,29 +321,26 @@
                     </div>
                 </div>
                 
-                <!-- Restart -->
+                <!-- Other action buttons remain the same -->
                 <form method="POST" action="{{ url_for('restart_tenant', tenant_id=tenant.id) }}">
-                    <button type="submit" class="btn btn-outline-warning w-100 db-action-btn">
+                    <button type="submit" class="btn btn-outline-warning w-100 db-action-btn" style="border-radius: 12px; padding: 1rem; font-weight: 500;">
                         <i class="fas fa-redo me-2"></i>Restart Instance
                     </button>
                 </form>
                 
-                <!-- Backup -->
                 <form method="POST" action="{{ url_for('backup_tenant', tenant_id=tenant.id) }}">
-                    <button type="submit" class="btn btn-outline-info w-100 db-action-btn">
+                    <button type="submit" class="btn btn-outline-info w-100 db-action-btn" style="border-radius: 12px; padding: 1rem; font-weight: 500;">
                         <i class="fas fa-download me-2"></i>Create Backup
                     </button>
                 </form>
                 
-                <!-- Settings (Modal Trigger) -->
-                <button class="btn btn-outline-secondary w-100 db-action-btn" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                <button class="btn btn-outline-secondary w-100 db-action-btn" data-bs-toggle="modal" data-bs-target="#settingsModal" style="border-radius: 12px; padding: 1rem; font-weight: 500;">
                     <i class="fas fa-cog me-2"></i>Settings
                 </button>
                 
-                <!-- Delete (Admin Only) -->
                 {% if current_user.is_admin %}
                 <form method="POST" action="{{ url_for('delete_tenant', tenant_id=tenant.id) }}" onsubmit="return confirm('Are you sure you want to delete this tenant? This action cannot be undone.')">
-                    <button type="submit" class="btn btn-outline-danger w-100 db-action-btn">
+                    <button type="submit" class="btn btn-outline-danger w-100 db-action-btn" style="border-radius: 12px; padding: 1rem; font-weight: 500;">
                         <i class="fas fa-trash me-2"></i>Delete Tenant
                     </button>
                 </form>
@@ -194,178 +349,182 @@
         </div>
     </div>
   </div>
-
-  </div>
 </div>
 
 <!-- Usage Statistics -->
-<div class="row mb-4">
-  <div class="col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-          <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#appManagementModal">
-        <i class="fab fa-uncharted fa-2x text-primary mb-2"></i>
-    </button>
-        <h4 class="card-title">{{ modules }}</h4>
-        <p class="card-text text-muted">Installed Applications</p>
+<div class="row mb-4 g-4">
+  <div class="col-lg-3 col-md-6">
+    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+        <button type="button" class="btn btn-outline-primary mb-3" data-bs-toggle="modal" data-bs-target="#appManagementModal" style="border-radius: 12px; padding: 0.75rem 1rem; width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
+          <i class="fab fa-uncharted fa-2x text-primary"></i>
+        </button>
+        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{ modules }}</h3>
+        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Installed Applications</p>
       </div>
     </div>
   </div>
   
-  <div class="col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <i class="fas fa-hdd fa-2x text-info mb-2"></i>
-        <h4 class="card-title">{{storage_usage}}</h4>
-        <p class="card-text text-muted">Storage Used</p>
+  <div class="col-lg-3 col-md-6">
+    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-hdd fa-2x text-info"></i>
+        </div>
+        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{storage_usage}}</h3>
+        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Storage Used</p>
       </div>
     </div>
   </div>
   
-  <div class="col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <i class="fas fa-chart-line fa-2x text-success mb-2"></i>
-        <h4 class="card-title">{{uptime}}</h4>
-        <p class="card-text text-muted">Uptime</p>
+  <div class="col-lg-3 col-md-6">
+    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-chart-line fa-2x text-success"></i>
+        </div>
+        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{uptime}}</h3>
+        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Uptime</p>
       </div>
     </div>
   </div>
   
-  <div class="col-md-3">
-    <div class="card text-center">
-      <div class="card-body">
-        <i class="fas fa-users fa-2x text-warning mb-2"></i>
-        <h4 class="card-title">{{odoo_user}}</h4>
-        <p class="card-text text-muted">Total Users</p>
+  <div class="col-lg-3 col-md-6">
+    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-users fa-2x text-warning"></i>
+        </div>
+        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{odoo_user}}</h3>
+        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Total Users</p>
       </div>
     </div>
   </div>
 </div>
 
-        <!-- Log Statistics -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="log-stats">
-                    <div class="row">
-                        <div class="col-md-2 col-6">
-                            <div class="stat-item">
-                                <span class="stat-number" id="total-logs">0</span>
-                                <span class="stat-label">Total Logs</span>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6">
-                            <div class="stat-item">
-                                <span class="stat-number text-danger" id="error-count">0</span>
-                                <span class="stat-label">Errors</span>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6">
-                            <div class="stat-item">
-                                <span class="stat-number text-warning" id="warning-count">0</span>
-                                <span class="stat-label">Warnings</span>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6">
-                            <div class="stat-item">
-                                <span class="stat-number text-info" id="info-count">0</span>
-                                <span class="stat-label">Info</span>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6">
-                            <div class="stat-item">
-                                <span class="stat-number text-success" id="success-count">0</span>
-                                <span class="stat-label">Success</span>
-                            </div>
-                        </div>
-                        <div class="col-md-2 col-6">
-                            <div class="stat-item">
-                                <span class="stat-number" id="last-update">--</span>
-                                <span class="stat-label">Last Update</span>
-                            </div>
-                        </div>
+<!-- Log Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="log-stats">
+            <div class="row">
+                <div class="col-md-2 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number" id="total-logs">0</span>
+                        <span class="stat-label">Total Logs</span>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number text-danger" id="error-count">0</span>
+                        <span class="stat-label">Errors</span>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number text-warning" id="warning-count">0</span>
+                        <span class="stat-label">Warnings</span>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number text-info" id="info-count">0</span>
+                        <span class="stat-label">Info</span>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number text-success" id="success-count">0</span>
+                        <span class="stat-label">Success</span>
+                    </div>
+                </div>
+                <div class="col-md-2 col-6">
+                    <div class="stat-item">
+                        <span class="stat-number" id="last-update">--</span>
+                        <span class="stat-label">Last Update</span>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Log Controls -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="log-controls">
-                            <div class="row align-items-center">
-                                <div class="col-md-4">
-                                    <div class="log-search">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" class="form-control" id="log-search" placeholder="Search logs...">
-                                    </div>
-                                </div>
-                                <div class="col-md-8">
-                                    <div class="d-flex flex-wrap">
-                                      <button class="btn btn-outline-secondary service-filter active" data-service="all">All Services</button>
-                                      <button class="btn btn-outline-secondary service-filter" data-service="odoomulti-tenantsystem-odoo_master-1">Master</button>
-                                      <button class="btn btn-outline-secondary service-filter" data-service="odoomulti-tenantsystem-odoo_worker1-1">Workers</button>
-                                      <button class="btn btn-outline-secondary service-filter" data-service="postgres">PostgreSQL</button>
-                                      <button class="btn btn-outline-secondary service-filter" data-service="nginx">Nginx</button>
-                                      <button class="btn btn-outline-secondary" id="refresh-logs"><i class="fas fa-sync-alt"></i> Refresh</button>
-                                    </div>
-                                </div>
+<!-- Log Controls -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-body p-4">
+                <div class="log-controls">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <div class="log-search position-relative">
+                                <i class="fas fa-search position-absolute" style="left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); z-index: 2;"></i>
+                                <input type="text" class="form-control ps-5" id="log-search" placeholder="Search logs..." style="border-radius: 12px; border: 1px solid var(--border-primary); background-color: var(--bg-secondary);">
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="d-flex flex-wrap gap-2">
+                              <button class="btn btn-outline-secondary service-filter active" data-service="all" style="border-radius: 8px;">All Services</button>
+                              <button class="btn btn-outline-secondary service-filter" data-service="odoomulti-tenantsystem-odoo_master-1" style="border-radius: 8px;">Master</button>
+                              <button class="btn btn-outline-secondary service-filter" data-service="odoomulti-tenantsystem-odoo_worker1-1" style="border-radius: 8px;">Workers</button>
+                              <button class="btn btn-outline-secondary service-filter" data-service="postgres" style="border-radius: 8px;">PostgreSQL</button>
+                              <button class="btn btn-outline-secondary service-filter" data-service="nginx" style="border-radius: 8px;">Nginx</button>
+                              <button class="btn btn-primary" id="refresh-logs" style="border-radius: 8px;"><i class="fas fa-sync-alt"></i> Refresh</button>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+</div>
 
-        <!-- Recent Activity and Alerts -->
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <h5 class="mb-0"><i class="fas fa-history me-2"></i>Recent Logs</h5>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                Filter Level
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item log-level-filter" href="#" data-level="all">All Levels</a></li>
-                                <li><a class="dropdown-item log-level-filter" href="#" data-level="error">Errors Only</a></li>
-                                <li><a class="dropdown-item log-level-filter" href="#" data-level="warning">Warnings Only</a></li>
-                                <li><a class="dropdown-item log-level-filter" href="#" data-level="info">Info Only</a></li>
-                                <li><a class="dropdown-item log-level-filter" href="#" data-level="debug">Debug Only</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                    <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-                        <div class="timeline" id="log-timeline">
-                            <!-- Logs will be populated here -->
-                        </div>
-                    </div>
+<!-- Recent Activity and Alerts -->
+<div class="row">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header d-flex justify-content-between align-items-center border-0" style="background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border-radius: 16px 16px 0 0;">
+                <h5 class="mb-0 fw-semibold" style="color: var(--text-primary);"><i class="fas fa-history me-2 text-primary"></i>Recent Logs</h5>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" style="border-radius: 8px;">
+                        Filter Level
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item log-level-filter" href="#" data-level="all">All Levels</a></li>
+                        <li><a class="dropdown-item log-level-filter" href="#" data-level="error">Errors Only</a></li>
+                        <li><a class="dropdown-item log-level-filter" href="#" data-level="warning">Warnings Only</a></li>
+                        <li><a class="dropdown-item log-level-filter" href="#" data-level="info">Info Only</a></li>
+                        <li><a class="dropdown-item log-level-filter" href="#" data-level="debug">Debug Only</a></li>
+                    </ul>
                 </div>
             </div>
-            
-            <div class="col-md-4">
-                <div class="card mb-3">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Critical Alerts</h5>
-                    </div>
-                    <div class="card-body" id="alerts-container">
-                        <!-- Alerts will be populated here -->
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h5 class="mb-0"><i class="fas fa-server me-2"></i>Service Status</h5>
-                    </div>
-                    <div class="card-body" id="service-status">
-                        <!-- Service status will be populated here -->
-                    </div>
+            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
+                <div class="timeline" id="log-timeline">
+                    <!-- Logs will be populated here -->
                 </div>
             </div>
         </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-3 border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header border-0" style="background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border-radius: 16px 16px 0 0;">
+                <h5 class="mb-0 fw-semibold" style="color: var(--text-primary);"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Critical Alerts</h5>
+            </div>
+            <div class="card-body" id="alerts-container">
+                <!-- Alerts will be populated here -->
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
+            <div class="card-header border-0" style="background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border-radius: 16px 16px 0 0;">
+                <h5 class="mb-0 fw-semibold" style="color: var(--text-primary);"><i class="fas fa-server me-2 text-info"></i>Service Status</h5>
+            </div>
+            <div class="card-body" id="service-status">
+                <!-- Service status will be populated here -->
+            </div>
+        </div>
+    </div>
+</div>
 
 <!-- Modals -->
 <!-- Restart Modal -->
@@ -493,44 +652,43 @@
   </div>
 </div>
 
-    <!-- Single Button to Open Combined Modal -->
-    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#appManagementModal">
-        Manage Applications
-    </button>
+<!-- Single Button to Open Combined Modal -->
+<button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#appManagementModal">
+    Manage Applications
+</button>
 
-    <!-- Combined Apps Modal -->
-    <div class="modal fade" id="appManagementModal" tabindex="-1" aria-labelledby="appManagementModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-xl">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="appManagementModalLabel">Application Management</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="row">
-                        <!-- Left Side: Available Apps -->
-                        <div class="col-md-6 border-end app-scroll-container">
-                            <h6 class="text-center mb-3">Available Applications</h6>
-                            <div class="row" id="availableAppsList">
-                                <!-- Available apps will be populated dynamically -->
-                            </div>
+<!-- Combined Apps Modal -->
+<div class="modal fade" id="appManagementModal" tabindex="-1" aria-labelledby="appManagementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="appManagementModalLabel">Application Management</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <!-- Left Side: Available Apps -->
+                    <div class="col-md-6 border-end app-scroll-container">
+                        <h6 class="text-center mb-3" style="color: var(--text-primary);">Available Applications</h6>
+                        <div class="row" id="availableAppsList">
+                            <!-- Available apps will be populated dynamically -->
                         </div>
-                        <!-- Right Side: Installed Apps -->
-                        <div class="col-md-6 app-scroll-container">
-                            <h6 class="text-center mb-3">Installed Applications</h6>
-                            <div class="row" id="installedAppsList">
-                                <!-- Installed apps will be populated dynamically -->
-                            </div>
+                    </div>
+                    <!-- Right Side: Installed Apps -->
+                    <div class="col-md-6 app-scroll-container">
+                        <h6 class="text-center mb-3" style="color: var(--text-primary);">Installed Applications</h6>
+                        <div class="row" id="installedAppsList">
+                            <!-- Installed apps will be populated dynamically -->
                         </div>
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
             </div>
         </div>
     </div>
-
+</div>
 
 {% endif %}
 {% endblock %}
@@ -555,7 +713,6 @@ document.getElementById('confirmDelete')?.addEventListener('input', function() {
     const tenantName = '{{ tenant.name }}';
     confirmBtn.disabled = this.value !== tenantName;
 });
-
 
 function copyText(text) {
     navigator.clipboard.writeText(text);
@@ -599,97 +756,93 @@ function copyPassword() {
     }, 2000);
 }
 
-
-  document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const tenantId = "{{ tenant.id | safe }}";
     if (!tenantId || tenantId === "undefined") {
-      console.error('Tenant ID is undefined. Ensure tenant.id is passed correctly in manage_tenant.html');
-      AppUtils.showNotification('Error: Tenant ID not found', 'danger');
-      return;
+        console.error('Tenant ID is undefined. Ensure tenant.id is passed correctly in manage_tenant.html');
+        AppUtils.showNotification('Error: Tenant ID not found', 'danger');
+        return;
     }
     window.tenantId = tenantId;
     // Trigger log fetching and SocketIO initialization
     fetchLogs(tenantId);
     initSocketIO(tenantId);
-  });
+});
 
-
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // Function to fetch and populate apps with animation
-            function populateApps(endpoint, containerId) {
-                fetch(endpoint, {
-                    headers: {
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) {
-                        throw new Error('Failed to fetch apps');
-                    }
-                    return response.json();
-                })
-                .then(data => {
-                    const container = document.getElementById(containerId);
-                    container.innerHTML = ''; // Clear existing content
-                    
-                    if (data.apps && data.apps.length > 0) {
-                        data.apps.forEach((app, index) => {
-                            console.log('Debug: App data:', app); // Debug log for app data
-                            const appCard = document.createElement('div');
-                            appCard.className = 'col-md-6 mb-3';
-                            appCard.style.opacity = '0';
-                            appCard.style.transform = 'scale(0.7)';
-                            appCard.innerHTML = `
-                                <div class="card h-100 shadow-sm border-0">
-                                    <div class="card-body text-center">
-                                        <img src="${window.location.protocol}//{{tenant.database_name}}.${window.location.host}${app.icon || '/base/static/description/icon.png'}" 
-                                             alt="${app.name}" 
-                                             class="img-fluid mb-3 app-icon" 
-                                             style="max-width: 64px; max-height: 64px;">
-                                        <h5 class="card-title">${app.name}</h5>
-                                        <p class="card-text text-muted small">${app.summary || 'No description available'}</p>
-                                        <p class="card-text small">
-                                            <strong>Category:</strong> ${app.category || 'Uncategorized'}<br>
-                                            <strong>Version:</strong> ${app.version || 'N/A'}
-                                        </p>
-                                        ${app.can_install !== undefined ? `
-                                            <button class="btn btn-sm ${app.can_install ? 'btn-primary' : 'btn-secondary disabled'} install-btn" 
-                                                    data-app="${app.technical_name}"
-                                                    ${!app.can_install ? 'disabled' : ''}>
-                                                ${app.can_install ? 'Install' : 'Not Installable'}
-                                            </button>
-                                        ` : ''}
-                                    </div>
-                                </div>
-                            `;
-                            container.appendChild(appCard);
-
-                            // Add pop animation with slight delay for each card
-                            setTimeout(() => {
-                                appCard.style.transition = 'all 0.3s ease-in-out';
-                                appCard.style.opacity = '1';
-                                appCard.style.transform = 'scale(1)';
-                            }, index * 100);
-                        });
-                    } else {
-                        container.innerHTML = '<p class="text-muted text-center">No applications available.</p>';
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching apps:', error);
-                    const container = document.getElementById(containerId);
-                    container.innerHTML = '<p class="text-danger text-center">Failed to load applications.</p>';
-                });
+document.addEventListener('DOMContentLoaded', function() {
+    // Function to fetch and populate apps with animation
+    function populateApps(endpoint, containerId) {
+        fetch(endpoint, {
+            headers: {
+                'Accept': 'application/json'
             }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Failed to fetch apps');
+            }
+            return response.json();
+        })
+        .then(data => {
+            const container = document.getElementById(containerId);
+            container.innerHTML = ''; // Clear existing content
+            
+            if (data.apps && data.apps.length > 0) {
+                data.apps.forEach((app, index) => {
+                    console.log('Debug: App data:', app); // Debug log for app data
+                    const appCard = document.createElement('div');
+                    appCard.className = 'col-md-6 mb-3';
+                    appCard.style.opacity = '0';
+                    appCard.style.transform = 'scale(0.7)';
+                    appCard.innerHTML = `
+                        <div class="card h-100 shadow-sm border-0">
+                            <div class="card-body text-center">
+                                <img src="${window.location.protocol}//{{tenant.database_name}}.${window.location.host}${app.icon || '/base/static/description/icon.png'}" 
+                                     alt="${app.name}" 
+                                     class="img-fluid mb-3 app-icon" 
+                                     style="max-width: 64px; max-height: 64px;">
+                                <h5 class="card-title">${app.name}</h5>
+                                <p class="card-text small" style="color: var(--text-muted);">${app.summary || 'No description available'}</p>
+                                <p class="card-text small">
+                                    <strong>Category:</strong> ${app.category || 'Uncategorized'}<br>
+                                    <strong>Version:</strong> ${app.version || 'N/A'}
+                                </p>
+                                ${app.can_install !== undefined ? `
+                                    <button class="btn btn-sm ${app.can_install ? 'btn-primary' : 'btn-secondary disabled'} install-btn" 
+                                            data-app="${app.technical_name}"
+                                            ${!app.can_install ? 'disabled' : ''}>
+                                        ${app.can_install ? 'Install' : 'Not Installable'}
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(appCard);
 
-            // Populate both available and installed apps when modal is shown
-            const appManagementModal = document.getElementById('appManagementModal');
-            appManagementModal.addEventListener('show.bs.modal', function() {
-                populateApps(`/api/tenant/${tenantId}/apps/available`, 'availableAppsList');
-                populateApps(`/api/tenant/${tenantId}/apps/installed`, 'installedAppsList');
-            });
+                    // Add pop animation with slight delay for each card
+                    setTimeout(() => {
+                        appCard.style.transition = 'all 0.3s ease-in-out';
+                        appCard.style.opacity = '1';
+                        appCard.style.transform = 'scale(1)';
+                    }, index * 100);
+                });
+            } else {
+                container.innerHTML = '<p style="color: var(--text-muted);" class="text-center">No applications available.</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching apps:', error);
+            const container = document.getElementById(containerId);
+            container.innerHTML = '<p class="text-danger text-center">Failed to load applications.</p>';
         });
+    }
 
+    // Populate both available and installed apps when modal is shown
+    const appManagementModal = document.getElementById('appManagementModal');
+    appManagementModal.addEventListener('show.bs.modal', function() {
+        populateApps(`/api/tenant/${tenantId}/apps/available`, 'availableAppsList');
+        populateApps(`/api/tenant/${tenantId}/apps/installed`, 'installedAppsList');
+    });
+});
 </script>
 {% endblock %}

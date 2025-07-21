@@ -439,7 +439,6 @@ links.forEach((link) => {
   link.href = url;
 });
 
-link.href = fullUrl;
 document.body.innerHTML = document.body.innerHTML.replace(
   /<domain>/g,
   window.location.host

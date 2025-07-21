@@ -54,6 +54,11 @@ except ImportError:
     from master_admin import master_admin_bp
     
 try:
+    from .system_admin import system_admin_bp
+except ImportError:
+    from system_admin import system_admin_bp
+    
+try:
     from .OdooDatabaseManager import OdooDatabaseManager
 except ImportError:
     from OdooDatabaseManager import OdooDatabaseManager
@@ -78,6 +83,7 @@ def run_async_in_background(coro):
 app = create_app()
 init_db(app)
 app.register_blueprint(master_admin_bp)
+app.register_blueprint(system_admin_bp)
 
 # Initialize Odoo manager and other services
 odoo = OdooDatabaseManager(odoo_url="http://odoo_master:8069", master_pwd=os.environ.get('ODOO_MASTER_PASSWORD', 'admin123'))

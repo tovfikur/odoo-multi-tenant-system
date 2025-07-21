@@ -1,72 +1,60 @@
-{% extends "base.html" %} {% block title %}Dashboard - Odoo SaaS Platform{%
-endblock %} {% block content %}
-<div class="row mb-4">
-  <div class="col">
-    <h2><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
-    <p class="text-muted">Welcome back, {{ current_user.username }}!</p>
-  </div>
+{% extends "base.html" %}
+{% block title %}Dashboard - Odoo SaaS Platform{% endblock %}
+
+{% block content %}
+<!-- Welcome Header -->
+<div class="system-header">
+  <h1><i class="fas fa-tachometer-alt me-3"></i>Dashboard</h1>
+  <p>Welcome back, {{ current_user.username }}! Manage your Odoo instances with ease.</p>
 </div>
 
 {% if current_user.is_admin and stats %}
-<!-- Admin Statistics -->
-<div class="row mb-5">
-  <div class="col-md-3">
-    <div class="card text-white bg-primary">
-      <div class="card-body">
-        <div class="d-flex justify-content-between">
-          <div>
-            <h4 class="card-title">{{ stats.total_tenants }}</h4>
-            <p class="card-text">Total Tenants</p>
-          </div>
-          <div class="align-self-center">
-            <i class="fas fa-building fa-2x"></i>
-          </div>
-        </div>
+<!-- Admin Statistics Grid -->
+<div class="system-status-grid">
+  <div class="metric-card">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <span class="metric-value">{{ stats.total_tenants }}</span>
+        <div class="metric-label">Total Tenants</div>
+      </div>
+      <div class="text-primary">
+        <i class="fas fa-building fa-3x"></i>
       </div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card text-white bg-success">
-      <div class="card-body">
-        <div class="d-flex justify-content-between">
-          <div>
-            <h4 class="card-title">{{ stats.active_tenants }}</h4>
-            <p class="card-text">Active Tenants</p>
-          </div>
-          <div class="align-self-center">
-            <i class="fas fa-check-circle fa-2x"></i>
-          </div>
-        </div>
+  
+  <div class="metric-card">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <span class="metric-value text-success">{{ stats.active_tenants }}</span>
+        <div class="metric-label">Active Tenants</div>
+      </div>
+      <div class="text-success">
+        <i class="fas fa-check-circle fa-3x"></i>
       </div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card text-white bg-info">
-      <div class="card-body">
-        <div class="d-flex justify-content-between">
-          <div>
-            <h4 class="card-title">{{ stats.total_users }}</h4>
-            <p class="card-text">Total Users</p>
-          </div>
-          <div class="align-self-center">
-            <i class="fas fa-users fa-2x"></i>
-          </div>
-        </div>
+  
+  <div class="metric-card">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <span class="metric-value text-info">{{ stats.total_users }}</span>
+        <div class="metric-label">Total Users</div>
+      </div>
+      <div class="text-info">
+        <i class="fas fa-users fa-3x"></i>
       </div>
     </div>
   </div>
-  <div class="col-md-3">
-    <div class="card text-white bg-warning">
-      <div class="card-body">
-        <div class="d-flex justify-content-between">
-          <div>
-            <h4 class="card-title">{{ stats.worker_instances }}</h4>
-            <p class="card-text">Worker Instances</p>
-          </div>
-          <div class="align-self-center">
-            <i class="fas fa-server fa-2x"></i>
-          </div>
-        </div>
+  
+  <div class="metric-card">
+    <div class="d-flex justify-content-between align-items-center">
+      <div>
+        <span class="metric-value text-warning">{{ stats.worker_instances }}</span>
+        <div class="metric-label">Worker Instances</div>
+      </div>
+      <div class="text-warning">
+        <i class="fas fa-server fa-3x"></i>
       </div>
     </div>
   </div>
@@ -74,73 +62,90 @@ endblock %} {% block content %}
 {% endif %}
 
 <!-- Tenants Section -->
-<div class="row">
-  <div class="col">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-      <h4><i class="fas fa-building me-2"></i>My Tenants</h4>
-      <a href="{{ url_for('create_tenant') }}" class="btn btn-primary">
-        <i class="fas fa-plus me-2"></i>Create New Tenant
-      </a>
+<div class="card">
+  <div class="card-header">
+    <div class="d-flex justify-content-between align-items-center">
+      <h4 class="mb-0">
+        <i class="fas fa-building me-2"></i>My Tenants
+      </h4>
     </div>
-
+  </div>
+  
+  <div class="card-body">
     {% if tenants %}
-    <div class="row">
+    <div class="row g-4">
       {% for tenant in tenants %}
-      <div class="col-md-6 col-lg-4 mb-4">
-        <div class="card h-100">
+      <div class="col-lg-4 col-md-6">
+        <div class="card h-100 tenant-card">
           <div class="card-body">
+            <!-- Tenant Header -->
             <div class="d-flex justify-content-between align-items-start mb-3">
-              <h5 class="card-title mb-0">{{ tenant.name }}</h5>
-              <span
-                class="badge bg-{{ 'success' if tenant.is_active else 'warning' }}"
-              >
+              <h5 class="card-title mb-0 fw-bold">{{ tenant.name }}</h5>
+              <span class="badge {{ 'bg-success' if tenant.is_active else 'bg-warning' }}">
+                <i class="fas {{ 'fa-check-circle' if tenant.is_active else 'fa-clock' }} me-1"></i>
                 {{ 'Active' if tenant.is_active else 'Inactive' }}
               </span>
             </div>
 
-            <p class="card-text text-muted">
-              <i class="fas fa-globe me-2"></i>
-              <code>{{ tenant.db_name }}.<domain></code>
-            </p>
-
-            <div class="row text-center mb-3">
-              <div class="col">
-                <small class="text-muted">Plan</small>
-                <div class="fw-bold text-primary">
-                  {{ tenant.plan.title() }}
-                </div>
-              </div>
-              <div class="col">
-                <small class="text-muted">Max Users</small>
-                <div class="fw-bold">{{ tenant.max_users }}</div>
-              </div>
-              <div class="col">
-                <small class="text-muted">Storage</small>
-                <div class="fw-bold">{{ tenant.storage_limit }}MB</div>
+            <!-- Tenant URL -->
+            <div class="mb-3">
+              <small class="d-block mb-2" style="color: var(--text-muted);">
+                <i class="fas fa-globe me-1"></i>Instance URL
+              </small>
+              <div class="p-2 rounded" style="background-color: var(--bg-tertiary); border: 1px solid var(--border-primary);">
+                <code style="background: transparent; padding: 0; color: var(--text-primary);">{{ tenant.db_name }}.<domain></code>
               </div>
             </div>
 
-            <div class="text-muted small mb-3">
-              <i class="fas fa-calendar me-1"></i>
+            <!-- Tenant Stats -->
+            <div class="row text-center mb-3 g-0">
+              <div class="col-4">
+                <div class="pe-2" style="border-right: 1px solid var(--border-primary);">
+                  <small class="d-block mb-1" style="color: var(--text-muted);">Plan</small>
+                  <div class="fw-bold text-primary small">{{ tenant.plan.title() }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="px-2" style="border-right: 1px solid var(--border-primary);">
+                  <small class="d-block mb-1" style="color: var(--text-muted);">Users</small>
+                  <div class="fw-bold small" style="color: var(--text-primary);">{{ tenant.max_users }}</div>
+                </div>
+              </div>
+              <div class="col-4">
+                <div class="ps-2">
+                  <small class="d-block mb-1" style="color: var(--text-muted);">Storage</small>
+                  <div class="fw-bold small" style="color: var(--text-primary);">{{ tenant.storage_limit }}MB</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Creation Date -->
+            <div class="small mb-3" style="color: var(--text-muted);">
+              <i class="fas fa-calendar-alt me-1"></i>
               Created: {{ tenant.created_at if tenant.created_at else 'N/A' }}
             </div>
           </div>
 
-          <div class="card-footer bg-transparent">
-            <div class="btn-group w-100" role="group">
-              <a
-                data-tenant-db="kdoo_{{ tenant.subdomain }}"
-                class="btn btn-outline-primary btn-sm tenant-link"
-                target="_blank"
-              >
-                <i class="fas fa-external-link-alt me-1"></i>Open
-              </a>
-              <a
-                href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}"
-                class="btn btn-outline-secondary btn-sm"
-              >
-                <i class="fas fa-cog me-1"></i>Manage
-              </a>
+          <!-- Action Buttons -->
+          <div class="card-footer bg-transparent border-0 pt-0">
+            <div class="row g-2">
+              <div class="col-6">
+                <a data-tenant-db="kdoo_{{ tenant.subdomain }}" 
+                   class="btn btn-outline-primary btn-sm tenant-link w-100" 
+                   target="_blank">
+                  <i class="fas fa-external-link-alt me-1"></i>
+                  <span class="d-none d-md-inline">Open</span>
+                  <span class="d-md-none">Open</span>
+                </a>
+              </div>
+              <div class="col-6">
+                <a href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}" 
+                   class="btn btn-outline-secondary btn-sm w-100">
+                  <i class="fas fa-cog me-1"></i>
+                  <span class="d-none d-md-inline">Manage</span>
+                  <span class="d-md-none">Manage</span>
+                </a>
+              </div>
             </div>
           </div>
         </div>
@@ -148,35 +153,120 @@ endblock %} {% block content %}
       {% endfor %}
     </div>
     {% else %}
+    <!-- Empty State -->
     <div class="text-center py-5">
-      <i class="fas fa-building fa-4x text-muted mb-3"></i>
-      <h4 class="text-muted">No tenants yet</h4>
-      <p class="text-muted">
-        Get started by creating your first tenant instance.
+      <div class="mb-4">
+        <i class="fas fa-building fa-5x mb-3 float-animation" style="color: var(--text-muted);"></i>
+      </div>
+      <h4 class="mb-3" style="color: var(--text-muted);">No tenants yet</h4>
+      <p class="mb-4" style="color: var(--text-muted);">
+        Get started by creating your first Odoo tenant instance.<br>
+        It only takes a few minutes to set up.
       </p>
-      <a href="{{ url_for('create_tenant') }}" class="btn btn-primary btn-lg">
-        <i class="fas fa-plus me-2"></i>Create Your First Tenant
+      <a href="{{ url_for('create_tenant') }}" class="btn btn-primary btn-lg btn-action">
+        <i class="fas fa-plus me-2"></i>
+        Create Your First Tenant
       </a>
     </div>
     {% endif %}
   </div>
 </div>
-{% endblock %} {% block scripts %}
+
+<!-- Quick Actions Card (if user has tenants) -->
+{% if tenants %}
+<div class="card mt-4">
+  <div class="card-header">
+    <h5 class="mb-0">
+      <i class="fas fa-bolt me-2"></i>Quick Actions
+    </h5>
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <a href="{{ url_for('create_tenant') }}" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+          <i class="fas fa-plus fa-2x mb-2"></i>
+          <span class="fw-bold">New Tenant</span>
+          <small class="mt-1" style="color: var(--text-muted);">Create another instance</small>
+        </a>
+      </div>
+      {% if current_user.is_admin %}
+      <div class="col-md-4">
+        <a href="{{ url_for('admin_tenants') }}" class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+          <i class="fas fa-tools fa-2x mb-2"></i>
+          <span class="fw-bold">Admin Panel</span>
+          <small class="mt-1" style="color: var(--text-muted);">Manage all tenants</small>
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="{{ url_for('system_admin.dashboard') }}" class="btn btn-outline-info w-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+          <i class="fas fa-server fa-2x mb-2"></i>
+          <span class="fw-bold">System Admin</span>
+          <small class="mt-1" style="color: var(--text-muted);">System management</small>
+        </a>
+      </div>
+      {% else %}
+      <div class="col-md-8">
+        <div class="alert alert-info mb-0 d-flex align-items-center" style="min-height: 120px;">
+          <div class="me-3">
+            <i class="fas fa-info-circle fa-2x"></i>
+          </div>
+          <div>
+            <h6 class="mb-2">Need Help?</h6>
+            <p class="mb-0">Check our documentation or contact support for assistance with your Odoo instances.</p>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
 <script>
-  // Auto-refresh tenant status every 30 seconds
-  setInterval(function () {
-    $(".tenant-status").each(function () {
-      const tenantId = $(this).data("tenant-id");
-      $.get("/api/tenant/" + tenantId + "/status").done(function (data) {
-        // Update status badge
-        const badge = $(".tenant-" + tenantId + " .badge");
-        badge.removeClass("bg-success bg-warning bg-danger");
-        badge.addClass(
-          "bg-" + (data.status === "active" ? "success" : "warning")
-        );
-        badge.text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
-      });
-    });
-  }, 30000);
+// Auto-refresh tenant status every 30 seconds
+setInterval(function() {
+  document.querySelectorAll(".tenant-card").forEach(function(card) {
+    const badge = card.querySelector(".badge");
+    if (badge) {
+      // Add subtle pulse animation to active badges
+      if (badge.classList.contains("bg-success")) {
+        badge.classList.add("pulse-animation");
+      }
+    }
+  });
+}, 30000);
+
+// Add loading states to tenant links
+document.querySelectorAll(".tenant-link").forEach(function(link) {
+  link.addEventListener("click", function() {
+    const icon = this.querySelector("i");
+    const originalClass = icon.className;
+    icon.className = "fas fa-spinner fa-spin me-1";
+    
+    // Reset after 3 seconds (fallback)
+    setTimeout(function() {
+      icon.className = originalClass;
+    }, 3000);
+  });
+});
+
+// Enhance quick action buttons with hover effects
+document.querySelectorAll(".btn-outline-primary, .btn-outline-secondary, .btn-outline-info").forEach(function(btn) {
+  btn.addEventListener("mouseenter", function() {
+    const icon = this.querySelector("i.fa-2x");
+    if (icon) {
+      icon.style.transform = "scale(1.1) rotate(5deg)";
+    }
+  });
+  
+  btn.addEventListener("mouseleave", function() {
+    const icon = this.querySelector("i.fa-2x");
+    if (icon) {
+      icon.style.transform = "scale(1) rotate(0deg)";
+    }
+  });
+});
 </script>
 {% endblock %}

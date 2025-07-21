@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Admin - Infrastructure Control</title>
+
+    <!-- CSS Dependencies -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <style>
+      :root {
+        --primary-color: #1e3d59;
+        --secondary-color: #f5c842;
+        --success-color: #28a745;
+        --warning-color: #ffc107;
+        --danger-color: #dc3545;
+        --info-color: #17a2b8;
+        --dark-color: #343a40;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .main-container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        margin: 20px;
+        padding: 30px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+      }
+
+      .system-header {
+        background: linear-gradient(
+          135deg,
+          var(--primary-color) 0%,
+          var(--dark-color) 100%
+        );
+        color: white;
+        padding: 25px;
+        border-radius: 15px;
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .metric-card {
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+      }
+
+      .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
+
+      .metric-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+
+      .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+      }
+
+      .status-healthy {
+        background-color: var(--success-color);
+      }
+      .status-warning {
+        background-color: var(--warning-color);
+      }
+      .status-critical {
+        background-color: var(--danger-color);
+      }
+      .status-offline {
+        background-color: #6c757d;
+      }
+
+      .progress-modern {
+        height: 8px;
+        background: #e9ecef;
+        border-radius: 10px;
+        overflow: hidden;
+      }
+
+      .progress-bar-modern {
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.8s ease;
+      }
+
+      .worker-card {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        background: white;
+        transition: border-color 0.3s ease;
+      }
+
+      .worker-card.running {
+        border-color: var(--success-color);
+        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1);
+      }
+
+      .worker-card.stopped {
+        border-color: var(--danger-color);
+        box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+      }
+
+      .log-container {
+        background: #2d3748;
+        color: #e2e8f0;
+        border-radius: 8px;
+        padding: 15px;
+        font-family: "Courier New", monospace;
+        font-size: 0.85rem;
+        max-height: 300px;
+        overflow-y: auto;
+      }
+
+      .nav-pills .nav-link {
+        border-radius: 25px;
+        margin: 0 5px;
+        transition: all 0.3s ease;
+      }
+
+      .nav-pills .nav-link.active {
+        background: var(--primary-color);
+        color: white;
+      }
+
+      .btn-action {
+        border-radius: 20px;
+        padding: 8px 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+      }
+
+      .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      }
+
+      .system-status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+      }
+
+      .resource-chart {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+      }
+
+      .circular-progress {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .circular-progress-text {
+        position: absolute;
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--primary-color);
+      }
+
+      .table-modern {
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .table-modern thead {
+        background: var(--primary-color);
+        color: white;
+      }
+
+      .table-modern tbody tr:hover {
+        background-color: #f8f9fa;
+      }
+
+      .alert-system {
+        border-radius: 12px;
+        border: none;
+        padding: 20px;
+        margin-bottom: 20px;
+      }
+
+      .loading-spinner {
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .code-block {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 15px;
+        font-family: "Courier New", monospace;
+        font-size: 0.9rem;
+        white-space: pre-wrap;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+
+      @media (max-width: 768px) {
+        .main-container {
+          margin: 10px;
+          padding: 20px;
+        }
+
+        .metric-value {
+          font-size: 2rem;
+        }
+
+        .system-status-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="main-container">
+      <!-- Header -->
+      <div class="system-header">
+        <h1><i class="fas fa-server me-3"></i>System Infrastructure Control</h1>
+        <p class="mb-0">Complete system monitoring and management console</p>
+      </div>
+
+      <!-- System Overview -->
+      <div class="system-status-grid" id="systemOverview">
+        <div class="metric-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="metric-value" id="cpuUsage">0%</div>
+              <div class="metric-label">CPU Usage</div>
+            </div>
+            <div class="circular-progress">
+              <canvas id="cpuChart" width="100" height="100"></canvas>
+              <div class="circular-progress-text" id="cpuText">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="metric-value" id="memoryUsage">0%</div>
+              <div class="metric-label">Memory Usage</div>
+            </div>
+            <div class="circular-progress">
+              <canvas id="memoryChart" width="100" height="100"></canvas>
+              <div class="circular-progress-text" id="memoryText">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <div class="metric-value" id="diskUsage">0%</div>
+              <div class="metric-label">Disk Usage</div>
+            </div>
+            <div class="circular-progress">
+              <canvas id="diskChart" width="100" height="100"></canvas>
+              <div class="circular-progress-text" id="diskText">0%</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div>
+            <div class="metric-value" id="activeWorkers">0</div>
+            <div class="metric-label">Active Workers</div>
+            <div class="mt-2">
+              <small class="text-muted"
+                >Load Balance:
+                <span id="loadBalance" class="fw-bold">Checking...</span></small
+              >
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <ul class="nav nav-pills justify-content-center mb-4" id="mainTabs">
+        <li class="nav-item">
+          <a class="nav-link active" data-bs-toggle="pill" href="#workers">
+            <i class="fas fa-cogs me-2"></i>Workers
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="pill" href="#redis">
+            <i class="fas fa-database me-2"></i>Redis
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="pill" href="#postgres">
+            <i class="fas fa-server me-2"></i>PostgreSQL
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="pill" href="#nginx">
+            <i class="fas fa-globe me-2"></i>Nginx
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" data-bs-toggle="pill" href="#monitoring">
+            <i class="fas fa-chart-line me-2"></i>Monitoring
+          </a>
+        </li>
+      </ul>
+
+      <!-- Tab Content -->
+      <div class="tab-content">
+        <!-- Workers Tab -->
+        <div class="tab-pane fade show active" id="workers">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <h3><i class="fas fa-cogs me-2"></i>Worker Management</h3>
+            <div>
+              <button
+                class="btn btn-primary btn-action me-2"
+                onclick="SystemAdmin.createWorker()"
+              >
+                <i class="fas fa-plus me-2"></i>Create Worker
+              </button>
+              <button
+                class="btn btn-warning btn-action"
+                onclick="SystemAdmin.rebalanceLoad()"
+              >
+                <i class="fas fa-balance-scale me-2"></i>Rebalance Load
+              </button>
+            </div>
+          </div>
+
+          <div id="workersContainer">
+            <div class="text-center py-4">
+              <div class="loading-spinner"></div>
+              <p class="mt-2">Loading workers...</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Redis Tab -->
+        <div class="tab-pane fade" id="redis">
+          <h3><i class="fas fa-database me-2"></i>Redis Management</h3>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="metric-card">
+                <h5>Server Information</h5>
+                <div id="redisInfo">
+                  <div class="loading-spinner"></div>
+                  Loading Redis info...
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="metric-card">
+                <h5>Memory Usage</h5>
+                <div id="redisMemory">
+                  <div class="loading-spinner"></div>
+                  Loading memory info...
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5>Redis Keys</h5>
+              <button
+                class="btn btn-danger btn-action"
+                onclick="SystemAdmin.flushRedis()"
+              >
+                <i class="fas fa-trash me-2"></i>Flush All
+              </button>
+            </div>
+            <div class="mb-3">
+              <input
+                type="text"
+                class="form-control"
+                id="redisKeyPattern"
+                placeholder="Search pattern (e.g., user:*, cache:*)"
+                value="*"
+              />
+              <button
+                class="btn btn-info mt-2"
+                onclick="SystemAdmin.searchRedisKeys()"
+              >
+                <i class="fas fa-search me-2"></i>Search Keys
+              </button>
+            </div>
+            <div id="redisKeys" class="code-block">
+              Click "Search Keys" to view Redis keys
+            </div>
+          </div>
+        </div>
+
+        <!-- PostgreSQL Tab -->
+        <div class="tab-pane fade" id="postgres">
+          <h3><i class="fas fa-server me-2"></i>PostgreSQL Management</h3>
+
+          <div class="row">
+            <div class="col-md-4">
+              <div class="metric-card">
+                <h5>Databases</h5>
+                <div id="postgresDatabases">
+                  <div class="loading-spinner"></div>
+                  Loading databases...
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="metric-card">
+                <h5>Connections</h5>
+                <div id="postgresConnections">
+                  <div class="loading-spinner"></div>
+                  Loading connections...
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <div class="metric-card">
+                <h5>Table Sizes</h5>
+                <div id="postgresTables">
+                  <div class="loading-spinner"></div>
+                  Loading tables...
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <h5>Query Console</h5>
+            <div class="mb-3">
+              <textarea
+                class="form-control"
+                id="postgresQuery"
+                rows="4"
+                placeholder="Enter SELECT query (only SELECT statements allowed)..."
+              >
+SELECT * FROM tenants LIMIT 10;</textarea
+              >
+            </div>
+            <button
+              class="btn btn-primary btn-action"
+              onclick="SystemAdmin.executePostgresQuery()"
+            >
+              <i class="fas fa-play me-2"></i>Execute Query
+            </button>
+            <div id="postgresQueryResult" class="mt-3"></div>
+          </div>
+        </div>
+
+        <!-- Nginx Tab -->
+        <div class="tab-pane fade" id="nginx">
+          <h3><i class="fas fa-globe me-2"></i>Nginx Management</h3>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="metric-card">
+                <h5>Nginx Status</h5>
+                <div id="nginxStatus">
+                  <div class="loading-spinner"></div>
+                  Loading Nginx status...
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="metric-card">
+                <h5>Actions</h5>
+                <div class="d-grid gap-2">
+                  <button
+                    class="btn btn-warning btn-action"
+                    onclick="SystemAdmin.reloadNginx()"
+                  >
+                    <i class="fas fa-sync me-2"></i>Reload Configuration
+                  </button>
+                  <button
+                    class="btn btn-info btn-action"
+                    onclick="SystemAdmin.refreshNginxStatus()"
+                  >
+                    <i class="fas fa-refresh me-2"></i>Refresh Status
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <h5>Recent Logs</h5>
+            <div id="nginxLogs" class="log-container">
+              Loading Nginx logs...
+            </div>
+          </div>
+        </div>
+
+        <!-- Monitoring Tab -->
+        <div class="tab-pane fade" id="monitoring">
+          <h3><i class="fas fa-chart-line me-2"></i>System Monitoring</h3>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="metric-card">
+                <h5>Resource Usage</h5>
+                <div id="resourceMonitoring">
+                  <div class="loading-spinner"></div>
+                  Loading resource data...
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="metric-card">
+                <h5>Container Resource Usage</h5>
+                <div id="topProcesses">
+                  <div class="loading-spinner"></div>
+                  Loading processes...
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="metric-card">
+            <h5>Load Balancing Status</h5>
+            <div id="loadBalancingStatus">
+              <div class="loading-spinner"></div>
+              Loading load balancing status...
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modals -->
+    <!-- Create Worker Modal -->
+    <div class="modal fade" id="createWorkerModal" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Create New Odoo Worker</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <form id="createWorkerForm">
+              <div class="mb-3">
+                <label class="form-label">Worker Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  name="name"
+                  placeholder="odoo_worker_custom_01"
+                  value="odoo_worker_"
+                  required
+                  disabled
+                />
+                <small class="form-text text-muted"
+                  >Format: odoo_worker_[name] (e.g., odoo_worker_production,
+                  odoo_worker_backup)</small
+                >
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Port (Internal)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  name="port"
+                  value="8069"
+                  readonly
+                />
+                <small class="form-text text-muted"
+                  >Odoo default port (internal container port)</small
+                >
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Max Tenants</label>
+                <select class="form-control" name="max_tenants" required>
+                  <option value="5">5 tenants (Light load)</option>
+                  <option value="10" selected>10 tenants (Standard)</option>
+                  <option value="15">15 tenants (Medium load)</option>
+                  <option value="20">20 tenants (Heavy load)</option>
+                  <option value="25">25 tenants (Maximum)</option>
+                </select>
+                <small class="form-text text-muted"
+                  >Recommended: 10-15 tenants per worker for optimal
+                  performance</small
+                >
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Worker Type</label>
+                <select
+                  class="form-control"
+                  name="worker_type"
+                  onchange="updateWorkerSettings()"
+                >
+                  <option value="standard" selected>Standard Worker</option>
+                  <option value="high_performance">High Performance</option>
+                  <option value="backup">Backup/Failover</option>
+                  <option value="development">Development</option>
+                </select>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              onclick="SystemAdmin.submitCreateWorker()"
+            >
+              <i class="fas fa-plus me-2"></i>Create Odoo Worker
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      const SystemAdmin = {
+        init() {
+          this.loadSystemResources();
+          this.loadWorkers();
+          this.setupAutoRefresh();
+          this.setupEventListeners();
+        },
+
+        setupEventListeners() {
+          // Tab change events
+          document
+            .querySelectorAll('[data-bs-toggle="pill"]')
+            .forEach((tab) => {
+              tab.addEventListener("shown.bs.tab", (e) => {
+                const target = e.target.getAttribute("href").substring(1);
+                this.onTabChange(target);
+              });
+            });
+        },
+
+        onTabChange(tabId) {
+          switch (tabId) {
+            case "redis":
+              this.loadRedisInfo();
+              break;
+            case "postgres":
+              this.loadPostgresInfo();
+              break;
+            case "nginx":
+              this.loadNginxStatus();
+              break;
+            case "monitoring":
+              this.loadMonitoringData();
+              break;
+          }
+        },
+
+        async loadSystemResources() {
+          try {
+            const response = await fetch("/system-admin/api/system/resources");
+            const data = await response.json();
+
+            if (data.success) {
+              this.updateResourceMetrics(data);
+              this.drawCircularCharts(data);
+            }
+          } catch (error) {
+            console.error("Failed to load system resources:", error);
+          }
+        },
+
+        updateResourceMetrics(data) {
+          document.getElementById(
+            "cpuUsage"
+          ).textContent = `${data.cpu.percent}%`;
+          document.getElementById(
+            "memoryUsage"
+          ).textContent = `${data.memory.percent}%`;
+          document.getElementById(
+            "diskUsage"
+          ).textContent = `${data.disk.percent}%`;
+
+          document.getElementById(
+            "cpuText"
+          ).textContent = `${data.cpu.percent}%`;
+          document.getElementById(
+            "memoryText"
+          ).textContent = `${data.memory.percent}%`;
+          document.getElementById(
+            "diskText"
+          ).textContent = `${data.disk.percent}%`;
+        },
+
+        drawCircularCharts(data) {
+          this.drawCircularChart("cpuChart", data.cpu.percent, "#17a2b8");
+          this.drawCircularChart("memoryChart", data.memory.percent, "#28a745");
+          this.drawCircularChart("diskChart", data.disk.percent, "#ffc107");
+        },
+
+        drawCircularChart(canvasId, percentage, color) {
+          const canvas = document.getElementById(canvasId);
+          const ctx = canvas.getContext("2d");
+          const centerX = canvas.width / 2;
+          const centerY = canvas.height / 2;
+          const radius = 35;
+
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Background circle
+          ctx.beginPath();
+          ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
+          ctx.strokeStyle = "#e9ecef";
+          ctx.lineWidth = 8;
+          ctx.stroke();
+
+          // Progress arc
+          ctx.beginPath();
+          ctx.arc(
+            centerX,
+            centerY,
+            radius,
+            -Math.PI / 2,
+            (percentage / 100) * 2 * Math.PI - Math.PI / 2
+          );
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 8;
+          ctx.lineCap = "round";
+          ctx.stroke();
+        },
+
+        async loadWorkers() {
+          try {
+            const response = await fetch("/system-admin/api/workers/list");
+            const data = await response.json();
+
+            if (data.success) {
+              this.renderWorkers(data.workers);
+              document.getElementById("activeWorkers").textContent =
+                data.workers.filter((w) => w.status === "running").length;
+            }
+          } catch (error) {
+            console.error("Failed to load workers:", error);
+            document.getElementById("workersContainer").innerHTML =
+              '<div class="alert alert-danger">Failed to load workers</div>';
+          }
+        },
+
+        renderWorkers(workers) {
+          const container = document.getElementById("workersContainer");
+
+          if (workers.length === 0) {
+            container.innerHTML =
+              '<div class="alert alert-info">No workers found</div>';
+            return;
+          }
+
+          const workersHtml = workers
+            .map(
+              (worker) => `
+                    <div class="worker-card ${worker.status}">
+                        <div class="row align-items-center">
+                            <div class="col-md-3">
+                                <h5>
+                                    <span class="status-indicator status-${
+                                      worker.health_check
+                                        ? "healthy"
+                                        : "critical"
+                                    }"></span>
+                                    ${worker.container_name}
+                                </h5>
+                                <small class="text-muted">ID: ${
+                                  worker.container_id
+                                }</small>
+                            </div>
+                            <div class="col-md-3">
+                                <div><strong>Status:</strong> ${
+                                  worker.status
+                                }</div>
+                                <div><strong>CPU:</strong> ${
+                                  worker.cpu_percent
+                                }%</div>
+                                <div><strong>Memory:</strong> ${
+                                  worker.memory_percent
+                                }%</div>
+                            </div>
+                            <div class="col-md-3">
+                                <div><strong>Tenants:</strong> ${
+                                  worker.db_current_tenants
+                                }/${worker.db_max_tenants}</div>
+                                <div class="progress-modern mt-2">
+                                    <div class="progress-bar-modern bg-info" 
+                                         style="width: ${
+                                           (worker.db_current_tenants /
+                                             worker.db_max_tenants) *
+                                           100
+                                         }%"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-success" onclick="SystemAdmin.workerAction('${
+                                      worker.container_name
+                                    }', 'start')" 
+                                            ${
+                                              worker.status === "running"
+                                                ? "disabled"
+                                                : ""
+                                            }>
+                                        <i class="fas fa-play"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-warning" onclick="SystemAdmin.workerAction('${
+                                      worker.container_name
+                                    }', 'restart')">
+                                        <i class="fas fa-redo"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="SystemAdmin.workerAction('${
+                                      worker.container_name
+                                    }', 'stop')" 
+                                            ${
+                                              worker.status === "exited"
+                                                ? "disabled"
+                                                : ""
+                                            }>
+                                        <i class="fas fa-stop"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-info" onclick="SystemAdmin.showWorkerLogs('${
+                                      worker.container_name
+                                    }')">
+                                        <i class="fas fa-file-alt"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <h6>Recent Logs:</h6>
+                            <div class="log-container" style="max-height: 100px;">
+                                ${worker.recent_logs.slice(-5).join("\n")}
+                            </div>
+                        </div>
+                    </div>
+                `
+            )
+            .join("");
+
+          container.innerHTML = workersHtml;
+        },
+
+        async workerAction(containerName, action) {
+          try {
+            const response = await fetch(
+              `/system-admin/api/workers/${containerName}/action`,
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action }),
+              }
+            );
+
+            const data = await response.json();
+            if (data.success) {
+              this.showAlert("success", data.message);
+              setTimeout(() => this.loadWorkers(), 2000);
+            } else {
+              this.showAlert("danger", data.message);
+            }
+          } catch (error) {
+            this.showAlert("danger", "Worker action failed");
+          }
+        },
+
+        createWorker() {
+          const modal = new bootstrap.Modal(
+            document.getElementById("createWorkerModal")
+          );
+          modal.show();
+        },
+
+        async submitCreateWorker() {
+          try {
+            const form = document.getElementById("createWorkerForm");
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData);
+
+            const response = await fetch("/system-admin/api/workers/create", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            if (result.success) {
+              this.showAlert("success", result.message);
+              bootstrap.Modal.getInstance(
+                document.getElementById("createWorkerModal")
+              ).hide();
+              form.reset();
+              setTimeout(() => this.loadWorkers(), 3000);
+            } else {
+              this.showAlert("danger", result.message);
+            }
+          } catch (error) {
+            this.showAlert("danger", "Failed to create worker");
+          }
+        },
+
+        async rebalanceLoad() {
+          try {
+            const response = await fetch(
+              "/system-admin/api/load-balancing/rebalance",
+              {
+                method: "POST",
+              }
+            );
+
+            const data = await response.json();
+            if (data.success) {
+              this.showAlert("success", data.message);
+              this.loadWorkers();
+            } else {
+              this.showAlert("danger", data.message);
+            }
+          } catch (error) {
+            this.showAlert("danger", "Load rebalancing failed");
+          }
+        },
+
+        async loadRedisInfo() {
+          try {
+            const response = await fetch("/system-admin/api/redis/info");
+            const data = await response.json();
+
+            if (data.success) {
+              document.getElementById("redisInfo").innerHTML = `
+                            <div><strong>Version:</strong> ${data.server_info.version}</div>
+                            <div><strong>Uptime:</strong> ${data.server_info.uptime_days} days</div>
+                            <div><strong>Connected Clients:</strong> ${data.server_info.connected_clients}</div>
+                            <div><strong>Commands Processed:</strong> ${data.server_info.total_commands_processed}</div>
+                        `;
+
+              document.getElementById("redisMemory").innerHTML = `
+                            <div><strong>Used Memory:</strong> ${
+                              data.memory_info.used_memory_human
+                            }</div>
+                            <div><strong>Peak Memory:</strong> ${
+                              data.memory_info.used_memory_peak_human
+                            }</div>
+                            <div><strong>Hit Rate:</strong> ${Math.round(
+                              (data.server_info.keyspace_hits /
+                                (data.server_info.keyspace_hits +
+                                  data.server_info.keyspace_misses)) *
+                                100
+                            )}%</div>
+                        `;
+            }
+          } catch (error) {
+            document.getElementById("redisInfo").innerHTML =
+              '<div class="alert alert-danger">Failed to load Redis info</div>';
+          }
+        },
+
+        async searchRedisKeys() {
+          try {
+            const pattern =
+              document.getElementById("redisKeyPattern").value || "*";
+            const response = await fetch(
+              `/system-admin/api/redis/keys?pattern=${encodeURIComponent(
+                pattern
+              )}`
+            );
+            const data = await response.json();
+
+            if (data.success) {
+              const keysHtml = data.keys
+                .map(
+                  (key) =>
+                    `${key.key} (${key.type}) ${
+                      key.ttl ? `TTL: ${key.ttl}s` : ""
+                    }`
+                )
+                .join("\n");
+
+              document.getElementById("redisKeys").textContent =
+                keysHtml || "No keys found matching pattern";
+            }
+          } catch (error) {
+            document.getElementById("redisKeys").textContent =
+              "Failed to search Redis keys";
+          }
+        },
+
+        async flushRedis() {
+          if (
+            confirm(
+              "Are you sure you want to flush ALL Redis data? This cannot be undone!"
+            )
+          ) {
+            try {
+              const response = await fetch("/system-admin/api/redis/flush", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ database: "all" }),
+              });
+
+              const data = await response.json();
+              if (data.success) {
+                this.showAlert("success", data.message);
+                this.searchRedisKeys();
+              } else {
+                this.showAlert("danger", data.message);
+              }
+            } catch (error) {
+              this.showAlert("danger", "Failed to flush Redis");
+            }
+          }
+        },
+
+        async loadPostgresInfo() {
+          try {
+            const response = await fetch("/system-admin/api/postgres/info");
+            const data = await response.json();
+
+            if (data.success) {
+              document.getElementById("postgresDatabases").innerHTML =
+                data.databases
+                  .map((db) => `<div>${db.name} (${db.size})</div>`)
+                  .join("");
+
+              document.getElementById("postgresConnections").innerHTML =
+                data.connections
+                  .map((conn) => `<div>${conn.state}: ${conn.count}</div>`)
+                  .join("");
+
+              document.getElementById("postgresTables").innerHTML = data.tables
+                .slice(0, 10)
+                .map((table) => `<div>${table.table} (${table.size})</div>`)
+                .join("");
+            }
+          } catch (error) {
+            document.getElementById("postgresDatabases").innerHTML =
+              '<div class="alert alert-danger">Failed to load PostgreSQL info</div>';
+          }
+        },
+
+        async executePostgresQuery() {
+          try {
+            const query = document.getElementById("postgresQuery").value;
+            const response = await fetch("/system-admin/api/postgres/query", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ query }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+              let resultHtml = `<div class="alert alert-success">Query executed successfully. ${data.row_count} rows returned.</div>`;
+
+              if (data.rows.length > 0) {
+                resultHtml +=
+                  '<div class="table-responsive"><table class="table table-sm table-striped">';
+                resultHtml +=
+                  "<thead><tr>" +
+                  data.columns.map((col) => `<th>${col}</th>`).join("") +
+                  "</tr></thead>";
+                resultHtml += "<tbody>";
+
+                data.rows.slice(0, 50).forEach((row) => {
+                  resultHtml +=
+                    "<tr>" +
+                    data.columns
+                      .map((col) => `<td>${row[col] || ""}</td>`)
+                      .join("") +
+                    "</tr>";
+                });
+
+                resultHtml += "</tbody></table></div>";
+
+                if (data.rows.length > 50) {
+                  resultHtml +=
+                    '<div class="alert alert-info">Showing first 50 rows only</div>';
+                }
+              }
+
+              document.getElementById("postgresQueryResult").innerHTML =
+                resultHtml;
+            } else {
+              document.getElementById(
+                "postgresQueryResult"
+              ).innerHTML = `<div class="alert alert-danger">Query failed: ${data.message}</div>`;
+            }
+          } catch (error) {
+            document.getElementById("postgresQueryResult").innerHTML =
+              '<div class="alert alert-danger">Failed to execute query</div>';
+          }
+        },
+
+        async loadNginxStatus() {
+          try {
+            const response = await fetch("/system-admin/api/nginx/status");
+            const data = await response.json();
+
+            if (data.success) {
+              document.getElementById("nginxStatus").innerHTML = `
+                            <div><strong>Container ID:</strong> ${
+                              data.container_id
+                            }</div>
+                            <div><strong>Status:</strong> <span class="badge bg-success">${
+                              data.status
+                            }</span></div>
+                            <div><strong>Image:</strong> ${data.image}</div>
+                            <div><strong>CPU:</strong> ${
+                              data.cpu_percent
+                            }%</div>
+                            <div><strong>Memory:</strong> ${Math.round(
+                              data.memory_usage / 1024 / 1024
+                            )} MB</div>
+                        `;
+
+              document.getElementById("nginxLogs").textContent =
+                data.logs.join("\n") || "No recent logs";
+            }
+          } catch (error) {
+            document.getElementById("nginxStatus").innerHTML =
+              '<div class="alert alert-danger">Failed to load Nginx status</div>';
+          }
+        },
+
+        async reloadNginx() {
+          try {
+            const response = await fetch("/system-admin/api/nginx/reload", {
+              method: "POST",
+            });
+
+            const data = await response.json();
+            if (data.success) {
+              this.showAlert("success", data.message);
+            } else {
+              this.showAlert("danger", data.message);
+            }
+          } catch (error) {
+            this.showAlert("danger", "Failed to reload Nginx");
+          }
+        },
+
+        refreshNginxStatus() {
+          this.loadNginxStatus();
+        },
+
+        async loadMonitoringData() {
+          try {
+            // Load resource monitoring
+            const resourceResponse = await fetch(
+              "/system-admin/api/system/resources"
+            );
+            const resourceData = await resourceResponse.json();
+
+            if (resourceData.success) {
+              // System resource information
+              document.getElementById("resourceMonitoring").innerHTML = `
+       <div class="row">
+         <div class="col-6">
+           <div><strong>CPU Cores:</strong> ${resourceData.cpu.count}</div>
+           <div><strong>Load Average:</strong> ${resourceData.cpu.load_avg.join(
+             ", "
+           )}</div>
+           <div><strong>Total Memory:</strong> ${
+             resourceData.memory.total_gb
+           } GB</div>
+           <div><strong>Available Memory:</strong> ${
+             resourceData.memory.available_gb
+           } GB</div>
+         </div>
+         <div class="col-6">
+           <div><strong>Total Disk:</strong> ${
+             resourceData.disk.total_gb
+           } GB</div>
+           <div><strong>Free Disk:</strong> ${
+             resourceData.disk.free_gb
+           } GB</div>
+           <div><strong>Network Sent:</strong> ${Math.round(
+             resourceData.network.bytes_sent / 1024 / 1024
+           )} MB</div>
+           <div><strong>Network Received:</strong> ${Math.round(
+             resourceData.network.bytes_recv / 1024 / 1024
+           )} MB</div>
+         </div>
+       </div>
+       ${
+         resourceData.container_summary
+           ? `
+       <hr>
+       <div class="row mt-3">
+         <div class="col-12">
+           <h6>Container Summary</h6>
+           <div class="row">
+             <div class="col-md-3">
+               <small><strong>Total Containers:</strong> ${resourceData.container_summary.total_containers}</small>
+             </div>
+             <div class="col-md-3">
+               <small><strong>Running:</strong> ${resourceData.container_summary.running_containers}</small>
+             </div>
+             <div class="col-md-3">
+               <small><strong>Total CPU:</strong> ${resourceData.container_summary.total_cpu_usage}%</small>
+             </div>
+             <div class="col-md-3">
+               <small><strong>Total Memory:</strong> ${resourceData.container_summary.total_memory_mb} MB</small>
+             </div>
+           </div>
+         </div>
+       </div>
+       `
+           : ""
+       }
+     `;
+
+              // Container resource usage table
+              let containersHtml = `
+       <div class="table-responsive">
+         <table class="table table-sm table-hover">
+           <thead class="table-dark">
+             <tr>
+               <th>Container</th>
+               <th>Type</th>
+               <th>Status</th>
+               <th>CPU%</th>
+               <th>Memory</th>
+               <th>Disk I/O</th>
+               <th>Network I/O</th>
+               <th>Uptime</th>
+             </tr>
+           </thead>
+           <tbody>
+     `;
+
+              if (
+                resourceData.top_containers &&
+                resourceData.top_containers.length > 0
+              ) {
+                resourceData.top_containers.forEach((container) => {
+                  // Determine badge colors based on usage
+                  const cpuBadgeClass =
+                    container.cpu_percent > 50
+                      ? "danger"
+                      : container.cpu_percent > 20
+                      ? "warning"
+                      : "success";
+                  const memoryBadgeClass =
+                    container.memory_percent > 80
+                      ? "danger"
+                      : container.memory_percent > 50
+                      ? "warning"
+                      : "info";
+                  const statusBadgeClass =
+                    container.status === "running"
+                      ? "success"
+                      : container.status === "exited"
+                      ? "danger"
+                      : "secondary";
+
+                  // Container type badge
+                  const typeBadgeClass =
+                    {
+                      worker: "primary",
+                      master: "warning",
+                      database: "success",
+                      cache: "info",
+                      proxy: "secondary",
+                      odoo: "primary",
+                      other: "light",
+                      unknown: "dark",
+                    }[container.type] || "secondary";
+
+                  containersHtml += `
+           <tr>
+             <td>
+               <span title="${container.name}" style="font-size: 0.9rem;">
+                 ${container.name}
+               </span>
+             </td>
+             <td>
+               <span class="badge bg-${typeBadgeClass}" style="font-size: 0.7rem;">
+                 ${container.type}
+               </span>
+             </td>
+             <td>
+               <span class="badge bg-${statusBadgeClass}" style="font-size: 0.7rem;">
+                 ${container.status}
+               </span>
+             </td>
+             <td>
+               <span class="badge bg-${cpuBadgeClass}">
+                 ${container.cpu_percent}%
+               </span>
+             </td>
+             <td>
+               <div style="font-size: 0.85rem;">
+                 <span class="badge bg-${memoryBadgeClass}">
+                   ${container.memory_percent}%
+                 </span>
+                 <br>
+                 <small class="text-muted">${container.memory_mb} MB</small>
+               </div>
+             </td>
+             <td style="font-size: 0.8rem;">
+               <div>
+                 <i class="fas fa-arrow-down text-success"></i> ${container.disk_read_mb}
+                 <i class="fas fa-arrow-up text-danger"></i> ${container.disk_write_mb}
+               </div>
+               <small class="text-muted">MB</small>
+             </td>
+             <td style="font-size: 0.8rem;">
+               <div>
+                 <i class="fas fa-download text-primary"></i> ${container.net_rx_mb}
+                 <i class="fas fa-upload text-warning"></i> ${container.net_tx_mb}
+               </div>
+               <small class="text-muted">MB</small>
+             </td>
+             <td style="font-size: 0.8rem;">
+               <span class="text-muted">${container.uptime}</span>
+             </td>
+           </tr>
+         `;
+                });
+              } else {
+                containersHtml += `
+         <tr>
+           <td colspan="8" class="text-center text-muted">
+             <i class="fas fa-info-circle me-2"></i>No container data available
+           </td>
+         </tr>
+       `;
+              }
+
+              containersHtml += `
+           </tbody>
+         </table>
+       </div>
+     `;
+
+              document.getElementById("topProcesses").innerHTML =
+                containersHtml;
+            }
+
+            // Load load balancing status
+            const balanceResponse = await fetch(
+              "/system-admin/api/load-balancing/status"
+            );
+            const balanceData = await balanceResponse.json();
+
+            if (balanceData.success) {
+              let balanceHtml = `
+       <div class="row mb-3">
+         <div class="col-md-3">
+           <div class="metric-value">${balanceData.overall_load}%</div>
+           <div class="metric-label">Overall Load</div>
+         </div>
+         <div class="col-md-3">
+           <div class="metric-value">${balanceData.total_tenants}</div>
+           <div class="metric-label">Total Tenants</div>
+         </div>
+         <div class="col-md-3">
+           <div class="metric-value">${balanceData.total_capacity}</div>
+           <div class="metric-label">Total Capacity</div>
+         </div>
+         <div class="col-md-3">
+           <div class="metric-value">
+             <span class="badge bg-${
+               balanceData.is_balanced ? "success" : "warning"
+             }">
+               ${balanceData.is_balanced ? "Balanced" : "Unbalanced"}
+             </span>
+           </div>
+           <div class="metric-label">Status</div>
+         </div>
+       </div>
+     `;
+
+              balanceHtml += '<div class="row">';
+              balanceData.workers.forEach((worker) => {
+                const statusClass = worker.is_healthy ? "success" : "danger";
+                const loadClass =
+                  worker.load_percent > 80
+                    ? "danger"
+                    : worker.load_percent > 60
+                    ? "warning"
+                    : "success";
+
+                balanceHtml += `
+         <div class="col-md-6 mb-3">
+           <div class="border rounded p-3">
+             <h6>
+               <span class="status-indicator status-${
+                 worker.is_healthy ? "healthy" : "critical"
+               }"></span>
+               ${worker.worker_name}
+             </h6>
+             <div class="d-flex justify-content-between">
+               <span>Load: ${worker.current_tenants}/${
+                  worker.max_tenants
+                }</span>
+               <span class="badge bg-${loadClass}">${
+                  worker.load_percent
+                }%</span>
+             </div>
+             <div class="progress-modern mt-2">
+               <div class="progress-bar-modern bg-${loadClass}" style="width: ${
+                  worker.load_percent
+                }%"></div>
+             </div>
+             <small class="text-muted">
+               Status: <span class="badge bg-${statusClass} badge-sm">${
+                  worker.status
+                }</span>
+               ${
+                 worker.last_health_check
+                   ? `| Last Check: ${new Date(
+                       worker.last_health_check
+                     ).toLocaleTimeString()}`
+                   : ""
+               }
+             </small>
+           </div>
+         </div>
+       `;
+              });
+              balanceHtml += "</div>";
+
+              document.getElementById("loadBalancingStatus").innerHTML =
+                balanceHtml;
+              document.getElementById("loadBalance").textContent =
+                balanceData.is_balanced ? "Balanced" : "Unbalanced";
+            }
+          } catch (error) {
+            console.error("Failed to load monitoring data:", error);
+
+            // Show error message
+            document.getElementById("resourceMonitoring").innerHTML =
+              '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Failed to load resource monitoring data</div>';
+            document.getElementById("topProcesses").innerHTML =
+              '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Failed to load container data</div>';
+            document.getElementById("loadBalancingStatus").innerHTML =
+              '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Failed to load load balancing data</div>';
+          }
+        },
+
+        async showWorkerLogs(containerName) {
+          try {
+            const response = await fetch(
+              `/system-admin/api/workers/${containerName}/logs`
+            );
+            const data = await response.json();
+
+            if (data.success) {
+              const logsModal = `
+                            <div class="modal fade" id="logsModal" tabindex="-1">
+                                <div class="modal-dialog modal-lg">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Logs: ${containerName}</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <div class="log-container" style="max-height: 400px;">
+                                                ${data.logs.join("\n")}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+
+              // Remove existing modal
+              const existingModal = document.getElementById("logsModal");
+              if (existingModal) existingModal.remove();
+
+              document.body.insertAdjacentHTML("beforeend", logsModal);
+              const modal = new bootstrap.Modal(
+                document.getElementById("logsModal")
+              );
+              modal.show();
+            }
+          } catch (error) {
+            this.showAlert("danger", "Failed to load worker logs");
+          }
+        },
+
+        setupAutoRefresh() {
+          // Refresh system resources every 10 seconds
+          setInterval(() => {
+            this.loadSystemResources();
+          }, 10000);
+
+          // Refresh workers every 30 seconds
+          setInterval(() => {
+            const activeTab = document.querySelector(".nav-link.active");
+            if (activeTab && activeTab.getAttribute("href") === "#workers") {
+              this.loadWorkers();
+            }
+          }, 30000);
+        },
+
+        showAlert(type, message) {
+          const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+                         style="top: 20px; right: 20px; z-index: 9999; max-width: 400px;">
+                        ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                `;
+
+          document.body.insertAdjacentHTML("beforeend", alertHtml);
+
+          // Auto-remove after 5 seconds
+          setTimeout(() => {
+            const alerts = document.querySelectorAll(".alert");
+            if (alerts.length > 0) {
+              alerts[alerts.length - 1].remove();
+            }
+          }, 5000);
+        },
+      };
+
+      // Initialize when DOM is loaded
+      document.addEventListener("DOMContentLoaded", () => {
+        SystemAdmin.init();
+      });
+
+      function updateWorkerSettings() {
+        const workerType = document.querySelector(
+          'select[name="worker_type"]'
+        ).value;
+        const nameInput = document.querySelector('input[name="name"]');
+        const maxTenantsSelect = document.querySelector(
+          'select[name="max_tenants"]'
+        );
+
+        switch (workerType) {
+          case "standard":
+            nameInput.value = "odoo_worker_standard_";
+            maxTenantsSelect.value = "10";
+            break;
+          case "high_performance":
+            nameInput.value = "odoo_worker_hp_";
+            maxTenantsSelect.value = "20";
+            break;
+          case "backup":
+            nameInput.value = "odoo_worker_backup_";
+            maxTenantsSelect.value = "5";
+            break;
+          case "development":
+            nameInput.value = "odoo_worker_dev_";
+            maxTenantsSelect.value = "5";
+            break;
+        }
+
+        // Add timestamp for uniqueness
+        nameInput.value += new Date().getTime().toString().slice(-6);
+      }
+    </script>
+  </body>
+</html>
