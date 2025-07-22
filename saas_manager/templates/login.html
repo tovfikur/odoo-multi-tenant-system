@@ -1,63 +1,411 @@
 {% extends "base.html" %} {% block title %}Login - Odoo SaaS Platform{% endblock
 %} {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-4">
-    <div class="card shadow">
-      <div class="card-body p-5">
-        <div class="text-center mb-4">
-          <i class="fas fa-cloud fa-3x text-primary mb-3"></i>
-          <h3 class="card-title">Sign In</h3>
-          <p class="text-muted">Welcome back to Odoo SaaS Platform</p>
+<div class="container-fluid">
+  <div class="row min-vh-100">
+    <!-- Left Side - Minimal Welcome Section -->
+    <div
+      class="col-lg-4 d-none d-lg-flex align-items-center justify-content-center"
+      style="
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+      "
+    >
+      <div class="text-center text-white px-4">
+        <i
+          class="fas fa-cloud"
+          style="font-size: 3.5rem; margin-bottom: 2rem; opacity: 0.9"
+        ></i>
+        <h2 class="fw-bold mb-3">Welcome Back</h2>
+        <p class="mb-4" style="opacity: 0.8; font-size: 1.1rem">
+          Access your Odoo dashboard
+        </p>
+
+        <div class="d-flex justify-content-center align-items-center">
+          <div class="text-warning me-2">
+            <i class="fas fa-star"></i>
+            <i class="fas fa-star"></i>
+            <i class="fas fa-star"></i>
+            <i class="fas fa-star"></i>
+            <i class="fas fa-star"></i>
+          </div>
+          <small style="opacity: 0.8">Trusted platform</small>
         </div>
+      </div>
+    </div>
 
-        <form method="POST">
-          {{ form.hidden_tag() }}
-
-          <div class="mb-3">
-            <label for="{{ form.username.id }}" class="form-label">
-              <i class="fas fa-user me-2"></i>Username
-            </label>
-            {{ form.username(class="form-control form-control-lg") }} {% if
-            form.username.errors %}
-            <div class="text-danger small mt-1">
-              {% for error in form.username.errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-            </div>
-            {% endif %}
+    <!-- Right Side - Login Form -->
+    <div class="col-lg-8" style="background: var(--bg-primary); padding: 3rem">
+      <div class="row justify-content-center h-100 align-items-center">
+        <div class="col-xl-6 col-lg-8 col-md-8">
+          <!-- Mobile Header -->
+          <div class="text-center mb-5 d-lg-none">
+            <i
+              class="fas fa-cloud text-primary"
+              style="font-size: 3rem; margin-bottom: 1rem"
+            ></i>
+            <h2 class="fw-bold" style="color: var(--text-primary)">Sign In</h2>
           </div>
 
-          <div class="mb-4">
-            <label for="{{ form.password.id }}" class="form-label">
-              <i class="fas fa-lock me-2"></i>Password
-            </label>
-            {{ form.password(class="form-control form-control-lg") }} {% if
-            form.password.errors %}
-            <div class="text-danger small mt-1">
-              {% for error in form.password.errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-            </div>
-            {% endif %}
-          </div>
-
-          <div class="d-grid mb-3">
-            <button type="submit" class="btn btn-primary btn-lg">
-              <i class="fas fa-sign-in-alt me-2"></i>Sign In
-            </button>
-          </div>
-
-          <div class="text-center">
-            <p class="text-muted">
-              Don't have an account?
-              <a href="{{ url_for('register') }}" class="text-decoration-none">
-                Sign up here
-              </a>
+          <!-- Main Header -->
+          <div class="text-center mb-5">
+            <h2
+              class="display-6 fw-bold mb-3"
+              style="color: var(--text-primary)"
+            >
+              Sign In
+            </h2>
+            <p class="fs-5" style="color: var(--text-secondary)">
+              Access your account
             </p>
           </div>
-        </form>
+
+          <!-- Login Form -->
+          <form method="POST" id="login-form">
+            {{ form.hidden_tag() }}
+
+            <!-- Username -->
+            <div class="mb-4">
+              <label
+                for="{{ form.username.id }}"
+                class="form-label fw-bold mb-3"
+                style="color: var(--text-primary); font-size: 1.1rem"
+              >
+                <i class="fas fa-user text-primary me-2"></i>Username or Email
+              </label>
+              {{ form.username(class="form-control", placeholder="Enter your
+              username or email", style="font-size: 1.1rem; padding: 1rem
+              1.25rem; border-radius: 12px; height: auto;") }} {% if
+              form.username.errors %} {% for error in form.username.errors %}
+              <div
+                class="alert alert-danger border-0 mt-3 py-3"
+                style="border-radius: 12px"
+              >
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+              </div>
+              {% endfor %} {% endif %}
+            </div>
+
+            <!-- Password -->
+            <div class="mb-4">
+              <div
+                class="d-flex justify-content-between align-items-center mb-3"
+              >
+                <label
+                  for="{{ form.password.id }}"
+                  class="form-label fw-bold mb-0"
+                  style="color: var(--text-primary); font-size: 1.1rem"
+                >
+                  <i class="fas fa-lock text-primary me-2"></i>Password
+                </label>
+                <a
+                  href="#"
+                  class="text-decoration-none"
+                  style="color: var(--primary); font-weight: 500"
+                  >Forgot password?</a
+                >
+              </div>
+              <div class="input-group" style="border-radius: 12px">
+                {{ form.password(class="form-control", placeholder="Enter your
+                password", id="password-input", style="font-size: 1.1rem;
+                padding: 1rem 1.25rem; border-right: none; border-radius: 12px 0
+                0 12px; height: auto;") }}
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  onclick="togglePasswordVisibility()"
+                  style="
+                    border-left: none;
+                    border-radius: 0 12px 12px 0;
+                    padding: 1rem 1.25rem;
+                  "
+                >
+                  <i class="fas fa-eye" id="password-toggle-icon"></i>
+                </button>
+              </div>
+              {% if form.password.errors %} {% for error in form.password.errors
+              %}
+              <div
+                class="alert alert-danger border-0 mt-3 py-3"
+                style="border-radius: 12px"
+              >
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+              </div>
+              {% endfor %} {% endif %}
+            </div>
+
+            <!-- Remember Me -->
+            <div class="mb-5">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="remember-me"
+                  style="transform: scale(1.3); margin-top: 0.1rem"
+                />
+                <label
+                  class="form-check-label ms-2 fw-medium"
+                  for="remember-me"
+                  style="color: var(--text-primary); font-size: 1rem"
+                >
+                  <i class="fas fa-history me-1"></i>Remember me
+                </label>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid mb-4">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="login-btn"
+                style="
+                  font-size: 1.2rem;
+                  font-weight: 700;
+                  padding: 1.25rem;
+                  border-radius: 12px;
+                  background: linear-gradient(
+                    135deg,
+                    var(--primary) 0%,
+                    var(--primary-dark) 100%
+                  );
+                  border: none;
+                "
+              >
+                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+              </button>
+            </div>
+
+            <!-- Register Link -->
+            <div class="text-center">
+              <p class="fs-5" style="color: var(--text-muted)">
+                Don't have an account?
+                <a
+                  href="{{ url_for('register') }}"
+                  style="
+                    color: var(--primary);
+                    text-decoration: none;
+                    font-weight: 600;
+                  "
+                >
+                  Create one here <i class="fas fa-user-plus ms-1"></i>
+                </a>
+              </p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mobile Trust Indicators -->
+  <div class="row py-4 d-lg-none" style="background: var(--bg-secondary)">
+    <div class="col-12 text-center">
+      <div class="d-flex justify-content-center align-items-center">
+        <div class="text-warning me-2" style="font-size: 1.2rem">
+          <i class="fas fa-star"></i>
+          <i class="fas fa-star"></i>
+          <i class="fas fa-star"></i>
+          <i class="fas fa-star"></i>
+          <i class="fas fa-star"></i>
+        </div>
+        <span style="color: var(--text-primary); font-weight: 500"
+          >Trusted by 10,000+ companies worldwide</span
+        >
       </div>
     </div>
   </div>
 </div>
+
+{% endblock %} {% block scripts %}
+<script>
+  // Password visibility toggle
+  function togglePasswordVisibility() {
+    const passwordInput = document.getElementById("password-input");
+    const toggleIcon = document.getElementById("password-toggle-icon");
+
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      toggleIcon.classList.remove("fa-eye");
+      toggleIcon.classList.add("fa-eye-slash");
+    } else {
+      passwordInput.type = "password";
+      toggleIcon.classList.remove("fa-eye-slash");
+      toggleIcon.classList.add("fa-eye");
+    }
+  }
+
+  // Form submission handling
+  function handleFormSubmit(e) {
+    const loginBtn = document.getElementById("login-btn");
+    const username = document.getElementById("{{ form.username.id }}").value;
+
+    if (!username.trim()) {
+      e.preventDefault();
+      if (window.showNotification) {
+        window.showNotification(
+          "⚠️ Please enter your username or email",
+          "warning"
+        );
+      }
+      return false;
+    }
+
+    loginBtn.disabled = true;
+    loginBtn.innerHTML =
+      '<i class="fas fa-spinner fa-spin me-2"></i>Signing In...';
+
+    if (window.showNotification) {
+      window.showNotification("🔓 Signing you in...", "info");
+    }
+  }
+
+  // Real-time validation feedback
+  function addValidationFeedback(input) {
+    input.addEventListener("blur", function () {
+      if (this.checkValidity() && this.value.trim()) {
+        this.style.borderColor = "var(--success)";
+        this.style.borderWidth = "2px";
+      } else if (this.value.trim()) {
+        this.style.borderColor = "var(--danger)";
+        this.style.borderWidth = "2px";
+      }
+    });
+
+    input.addEventListener("input", function () {
+      if (this.style.borderColor) {
+        this.style.borderColor = "";
+        this.style.borderWidth = "";
+      }
+    });
+
+    // Enhanced focus states
+    input.addEventListener("focus", function () {
+      this.style.borderColor = "var(--primary)";
+      this.style.borderWidth = "2px";
+      this.style.boxShadow = `0 0 0 0.2rem rgba(var(--primary-rgb), 0.25)`;
+    });
+
+    input.addEventListener("blur", function () {
+      if (!this.value.trim()) {
+        this.style.boxShadow = "";
+      }
+    });
+  }
+
+  // Auto-focus username field
+  function autoFocusUsername() {
+    const usernameInput = document.getElementById("{{ form.username.id }}");
+    if (usernameInput && !usernameInput.value) {
+      setTimeout(() => {
+        usernameInput.focus();
+      }, 500);
+    }
+  }
+
+  // Enhanced keyboard navigation
+  function setupKeyboardShortcuts() {
+    document.addEventListener("keydown", function (e) {
+      // Enter key from username field moves to password
+      if (e.key === "Enter" && e.target.id === "{{ form.username.id }}") {
+        e.preventDefault();
+        document.getElementById("password-input").focus();
+      }
+
+      // Ctrl/Cmd + Enter submits form
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        document.getElementById("login-form").submit();
+      }
+    });
+  }
+
+  // Remember me functionality enhancement
+  function setupRememberMe() {
+    const rememberCheckbox = document.getElementById("remember-me");
+    const usernameInput = document.getElementById("{{ form.username.id }}");
+
+    // Load remembered username
+    const rememberedUsername = localStorage.getItem("remembered_username");
+    if (rememberedUsername && rememberCheckbox) {
+      usernameInput.value = rememberedUsername;
+      rememberCheckbox.checked = true;
+    }
+
+    // Save username when checkbox is checked
+    if (rememberCheckbox) {
+      rememberCheckbox.addEventListener("change", function () {
+        if (this.checked && usernameInput.value.trim()) {
+          localStorage.setItem(
+            "remembered_username",
+            usernameInput.value.trim()
+          );
+        } else {
+          localStorage.removeItem("remembered_username");
+        }
+      });
+    }
+
+    // Update remembered username on input change
+    usernameInput.addEventListener("blur", function () {
+      if (rememberCheckbox && rememberCheckbox.checked && this.value.trim()) {
+        localStorage.setItem("remembered_username", this.value.trim());
+      }
+    });
+  }
+
+  // Initialize everything
+  document.addEventListener("DOMContentLoaded", function () {
+    // Form submission
+    document
+      .getElementById("login-form")
+      .addEventListener("submit", handleFormSubmit);
+
+    // Add validation feedback to inputs
+    const inputs = document.querySelectorAll(
+      'input[type="text"], input[type="email"], input[type="password"]'
+    );
+    inputs.forEach(addValidationFeedback);
+
+    // Form validation feedback
+    inputs.forEach((input) => {
+      input.addEventListener("invalid", function () {
+        if (window.showNotification) {
+          window.showNotification(
+            "⚠️ Please check your login credentials",
+            "warning"
+          );
+        }
+      });
+    });
+
+    // Setup additional features
+    autoFocusUsername();
+    setupKeyboardShortcuts();
+    setupRememberMe();
+
+    // Welcome back message for returning users
+    const rememberedUsername = localStorage.getItem("remembered_username");
+    if (rememberedUsername && window.showNotification) {
+      setTimeout(() => {
+        window.showNotification(
+          `👋 Welcome back, ${rememberedUsername}!`,
+          "info",
+          3000
+        );
+      }, 1000);
+    }
+  });
+
+  // Handle browser back button and session management
+  window.addEventListener("pageshow", function (e) {
+    if (e.persisted) {
+      // Reset form state if coming from cache
+      const loginBtn = document.getElementById("login-btn");
+      loginBtn.disabled = false;
+      loginBtn.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Sign In';
+    }
+  });
+</script>
 {% endblock %}

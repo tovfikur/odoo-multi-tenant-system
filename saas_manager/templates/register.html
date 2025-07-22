@@ -1,139 +1,528 @@
 {% extends "base.html" %} {% block title %}Register - Odoo SaaS Platform{%
 endblock %} {% block content %}
-<div class="row justify-content-center">
-  <div class="col-md-6 col-lg-5">
-    <div class="card shadow">
-      <div class="card-body p-5">
-        <div class="text-center mb-4">
-          <i class="fas fa-user-plus fa-3x text-primary mb-3"></i>
-          <h3 class="card-title">Create Account</h3>
-          <p class="text-muted">Join the Odoo SaaS Platform</p>
+<div class="container-fluid">
+  <div class="row min-vh-100">
+    <!-- Left Side - Welcome Section -->
+    <div
+      class="col-lg-5 d-none d-lg-flex align-items-center"
+      style="
+        background: linear-gradient(
+          135deg,
+          var(--primary) 0%,
+          var(--primary-dark) 100%
+        );
+        padding: 4rem 3rem;
+      "
+    >
+      <div class="w-100 text-white">
+        <div class="text-center mb-5">
+          <i
+            class="fas fa-rocket"
+            style="font-size: 4rem; margin-bottom: 2rem; opacity: 0.9"
+          ></i>
+          <h1 class="display-5 fw-bold mb-4">Join 10,000+ Companies</h1>
+          <p class="lead fs-4 mb-0" style="opacity: 0.9; line-height: 1.6">
+            Transform your business with the most trusted Odoo hosting platform
+          </p>
         </div>
 
-        <form method="POST">
-          {{ form.hidden_tag() }}
-
-          <div class="mb-3">
-            <label for="{{ form.username.id }}" class="form-label">
-              <i class="fas fa-user me-2"></i>Username
-            </label>
-            {{ form.username(class="form-control form-control-lg",
-            placeholder="Choose a username") }} {% if form.username.errors %}
-            <div class="text-danger small mt-1">
-              {% for error in form.username.errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            <div>3-50 characters, letters and numbers only</div>
-          </div>
-
-          <div class="mb-3">
-            <label for="{{ form.email.id }}" class="form-label">
-              <i class="fas fa-envelope me-2"></i>Email Address
-            </label>
-            {{ form.email(class="form-control form-control-lg",
-            placeholder="your@email.com") }} {% if form.email.errors %}
-            <div class="text-danger small mt-1">
-              {% for error in form.email.errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-            </div>
-            {% endif %}
-          </div>
-
-          <div class="mb-4">
-            <label for="{{ form.password.id }}" class="form-label">
-              <i class="fas fa-lock me-2"></i>Password
-            </label>
-            {{ form.password(class="form-control form-control-lg",
-            placeholder="Choose a strong password") }} {% if
-            form.password.errors %}
-            <div class="text-danger small mt-1">
-              {% for error in form.password.errors %}
-              <div>{{ error }}</div>
-              {% endfor %}
-            </div>
-            {% endif %}
-            <div>Minimum 6 characters</div>
-          </div>
-
-          <div class="mb-3">
-            <div class="form-check">
-              <input
-                class="form-check-input"
-                type="checkbox"
-                id="terms"
-                required
-              />
-              <label class="form-check-label" for="terms">
-                I agree to the
-                <a href="#" class="text-decoration-none">Terms of Service</a>
-                and <a href="#" class="text-decoration-none">Privacy Policy</a>
-              </label>
+        <!-- Benefits -->
+        <div class="row g-4">
+          <div class="col-12">
+            <div class="d-flex align-items-center">
+              <div
+                class="me-4"
+                style="
+                  background: rgba(255, 255, 255, 0.2);
+                  width: 70px;
+                  height: 70px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <i class="fas fa-bolt" style="font-size: 1.5rem"></i>
+              </div>
+              <div>
+                <h5 class="mb-2 fw-bold">5-Minute Setup</h5>
+                <p class="mb-0 fs-5" style="opacity: 0.8">
+                  Get your Odoo instance running instantly
+                </p>
+              </div>
             </div>
           </div>
-
-          <div class="d-grid mb-3">
-            <button type="submit" class="btn btn-primary btn-lg">
-              <i class="fas fa-user-plus me-2"></i>Create Account
-            </button>
+          <div class="col-12">
+            <div class="d-flex align-items-center">
+              <div
+                class="me-4"
+                style="
+                  background: rgba(255, 255, 255, 0.2);
+                  width: 70px;
+                  height: 70px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <i class="fas fa-shield-alt" style="font-size: 1.5rem"></i>
+              </div>
+              <div>
+                <h5 class="mb-2 fw-bold">Enterprise Security</h5>
+                <p class="mb-0 fs-5" style="opacity: 0.8">
+                  Bank-level encryption and security
+                </p>
+              </div>
+            </div>
           </div>
-
-          <div class="text-center">
-            <p class="text-muted">
-              Already have an account?
-              <a href="{{ url_for('login') }}" class="text-decoration-none">
-                Sign in here
-              </a>
-            </p>
+          <div class="col-12">
+            <div class="d-flex align-items-center">
+              <div
+                class="me-4"
+                style="
+                  background: rgba(255, 255, 255, 0.2);
+                  width: 70px;
+                  height: 70px;
+                  border-radius: 50%;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <i class="fas fa-headset" style="font-size: 1.5rem"></i>
+              </div>
+              <div>
+                <h5 class="mb-2 fw-bold">24/7 Expert Support</h5>
+                <p class="mb-0 fs-5" style="opacity: 0.8">
+                  Help when you need it most
+                </p>
+              </div>
+            </div>
           </div>
-        </form>
+        </div>
+
+        <!-- Social Proof -->
+        <div
+          class="text-center mt-5 pt-4"
+          style="border-top: 1px solid rgba(255, 255, 255, 0.2)"
+        >
+          <div class="d-flex justify-content-center align-items-center mb-3">
+            <div class="text-warning me-3" style="font-size: 1.5rem">
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+              <i class="fas fa-star"></i>
+            </div>
+            <span class="fs-5" style="opacity: 0.9">4.9/5 rating</span>
+          </div>
+          <blockquote class="fs-5 fst-italic" style="opacity: 0.8">
+            "Best Odoo hosting platform we've ever used!"
+          </blockquote>
+        </div>
       </div>
     </div>
 
-    <!-- Features -->
-    <div class="row mt-4">
-      <div class="col-md-4 text-center">
-        <i class="fas fa-cloud fa-2x text-primary mb-2"></i>
-        <h6>Cloud-Based</h6>
-        <small class="text-muted">Access from anywhere</small>
+    <!-- Right Side - Registration Form -->
+    <div class="col-lg-7" style="background: var(--bg-primary); padding: 3rem">
+      <div class="row justify-content-center h-100 align-items-center">
+        <div class="col-xl-8 col-lg-10">
+          <!-- Mobile Header -->
+          <div class="text-center mb-5 d-lg-none">
+            <i
+              class="fas fa-cloud text-primary"
+              style="font-size: 4rem; margin-bottom: 1rem"
+            ></i>
+            <h2 class="fw-bold" style="color: var(--text-primary)">
+              Join Odoo SaaS
+            </h2>
+          </div>
+
+          <!-- Main Header -->
+          <div class="text-center mb-5">
+            <h2
+              class="display-6 fw-bold mb-3"
+              style="color: var(--text-primary)"
+            >
+              Create Your Account
+            </h2>
+            <p class="fs-5" style="color: var(--text-secondary)">
+              Start your Odoo journey in just 2 minutes
+            </p>
+          </div>
+
+          <!-- Registration Form -->
+          <form method="POST" id="register-form">
+            {{ form.hidden_tag() }}
+
+            <!-- Username -->
+            <div class="mb-4">
+              <label
+                for="{{ form.username.id }}"
+                class="form-label fw-bold mb-3"
+                style="color: var(--text-primary); font-size: 1.1rem"
+              >
+                <i class="fas fa-user text-primary me-2"></i>Username
+              </label>
+              {{ form.username(class="form-control", placeholder="Choose a
+              unique username", style="font-size: 1.1rem; padding: 1rem 1.25rem;
+              border-radius: 12px; height: auto;") }} {% if form.username.errors
+              %} {% for error in form.username.errors %}
+              <div
+                class="alert alert-danger border-0 mt-3 py-3"
+                style="border-radius: 12px"
+              >
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+              </div>
+              {% endfor %} {% endif %}
+              <div class="form-text mt-2" style="font-size: 1rem">
+                <i class="fas fa-info-circle me-1"></i>3-50 characters, letters
+                and numbers only
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-4">
+              <label
+                for="{{ form.email.id }}"
+                class="form-label fw-bold mb-3"
+                style="color: var(--text-primary); font-size: 1.1rem"
+              >
+                <i class="fas fa-envelope text-primary me-2"></i>Email Address
+              </label>
+              {{ form.email(class="form-control",
+              placeholder="your@company.com", style="font-size: 1.1rem; padding:
+              1rem 1.25rem; border-radius: 12px; height: auto;") }} {% if
+              form.email.errors %} {% for error in form.email.errors %}
+              <div
+                class="alert alert-danger border-0 mt-3 py-3"
+                style="border-radius: 12px"
+              >
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+              </div>
+              {% endfor %} {% endif %}
+              <div class="form-text mt-2" style="font-size: 1rem">
+                <i class="fas fa-shield-alt me-1"></i>We'll never share your
+                email address
+              </div>
+            </div>
+
+            <!-- Password -->
+            <div class="mb-4">
+              <label
+                for="{{ form.password.id }}"
+                class="form-label fw-bold mb-3"
+                style="color: var(--text-primary); font-size: 1.1rem"
+              >
+                <i class="fas fa-lock text-primary me-2"></i>Password
+              </label>
+              <div class="input-group" style="border-radius: 12px">
+                {{ form.password(class="form-control", placeholder="Create a
+                strong password", id="password-input", style="font-size: 1.1rem;
+                padding: 1rem 1.25rem; border-right: none; border-radius: 12px 0
+                0 12px; height: auto;") }}
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  onclick="togglePasswordVisibility('password-input', 'password-toggle-icon')"
+                  style="
+                    border-left: none;
+                    border-radius: 0 12px 12px 0;
+                    padding: 1rem 1.25rem;
+                  "
+                >
+                  <i class="fas fa-eye" id="password-toggle-icon"></i>
+                </button>
+              </div>
+              {% if form.password.errors %} {% for error in form.password.errors
+              %}
+              <div
+                class="alert alert-danger border-0 mt-3 py-3"
+                style="border-radius: 12px"
+              >
+                <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+              </div>
+              {% endfor %} {% endif %}
+
+              <!-- Password Strength Indicator -->
+              <div class="mt-3">
+                <div class="d-flex align-items-center mb-2">
+                  <span
+                    class="me-3"
+                    style="color: var(--text-primary); font-weight: 500"
+                    >Strength:</span
+                  >
+                  <div
+                    class="progress flex-grow-1"
+                    style="height: 8px; border-radius: 4px"
+                  >
+                    <div
+                      class="progress-bar"
+                      id="password-strength-bar"
+                      style="border-radius: 4px"
+                    ></div>
+                  </div>
+                </div>
+                <div
+                  id="password-strength-text"
+                  class="form-text"
+                  style="font-size: 1rem"
+                ></div>
+              </div>
+            </div>
+
+            <!-- Confirm Password -->
+            <div class="mb-4">
+              <label
+                for="confirm-password"
+                class="form-label fw-bold mb-3"
+                style="color: var(--text-primary); font-size: 1.1rem"
+              >
+                <i class="fas fa-lock-open text-primary me-2"></i>Confirm
+                Password
+              </label>
+              <div class="input-group" style="border-radius: 12px">
+                <input
+                  type="password"
+                  class="form-control"
+                  id="confirm-password-input"
+                  name="confirm_password"
+                  placeholder="Confirm your password"
+                  required
+                  style="
+                    font-size: 1.1rem;
+                    padding: 1rem 1.25rem;
+                    border-right: none;
+                    border-radius: 12px 0 0 12px;
+                    height: auto;
+                  "
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  onclick="togglePasswordVisibility('confirm-password-input', 'confirm-password-toggle-icon')"
+                  style="
+                    border-left: none;
+                    border-radius: 0 12px 12px 0;
+                    padding: 1rem 1.25rem;
+                  "
+                >
+                  <i class="fas fa-eye" id="confirm-password-toggle-icon"></i>
+                </button>
+              </div>
+
+              <!-- Password Match Indicator -->
+              <div
+                class="mt-3"
+                id="password-match-indicator"
+                style="display: none"
+              >
+                <div class="d-flex align-items-center">
+                  <i id="password-match-icon" class="me-2"></i>
+                  <span
+                    id="password-match-text"
+                    style="font-size: 1rem; font-weight: 500"
+                  ></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Terms and Conditions -->
+            <div class="mb-5">
+              <div
+                class="card border-0"
+                style="
+                  background: linear-gradient(
+                    135deg,
+                    rgba(113, 75, 103, 0.1) 0%,
+                    rgba(113, 75, 103, 0.05) 100%
+                  );
+                  border-radius: 12px;
+                "
+              >
+                <div class="card-body p-4">
+                  <div class="form-check">
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      id="terms"
+                      required
+                      style="transform: scale(1.5); margin-top: 0.1rem"
+                    />
+                    <label
+                      class="form-check-label ms-3"
+                      for="terms"
+                      style="
+                        color: var(--text-primary);
+                        font-size: 1rem;
+                        font-weight: 500;
+                      "
+                    >
+                      I agree to the
+                      <a
+                        href="#"
+                        style="
+                          color: var(--primary);
+                          text-decoration: none;
+                          font-weight: 600;
+                        "
+                        >Terms of Service</a
+                      >
+                      and
+                      <a
+                        href="#"
+                        style="
+                          color: var(--primary);
+                          text-decoration: none;
+                          font-weight: 600;
+                        "
+                        >Privacy Policy</a
+                      >
+                    </label>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-grid mb-4">
+              <button
+                type="submit"
+                class="btn btn-primary"
+                id="register-btn"
+                style="
+                  font-size: 1.2rem;
+                  font-weight: 700;
+                  padding: 1.25rem;
+                  border-radius: 12px;
+                  background: linear-gradient(
+                    135deg,
+                    var(--success) 0%,
+                    #2d8f47 100%
+                  );
+                  border: none;
+                "
+              >
+                <i class="fas fa-rocket me-2"></i>Create My Account
+              </button>
+            </div>
+
+            <!-- Login Link -->
+            <div class="text-center">
+              <p class="fs-5" style="color: var(--text-muted)">
+                Already have an account?
+                <a
+                  href="{{ url_for('login') }}"
+                  style="
+                    color: var(--primary);
+                    text-decoration: none;
+                    font-weight: 600;
+                  "
+                >
+                  Sign in here <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+              </p>
+            </div>
+          </form>
+        </div>
       </div>
-      <div class="col-md-4 text-center">
-        <i class="fas fa-shield-alt fa-2x text-success mb-2"></i>
-        <h6>Secure</h6>
-        <small class="text-muted">Enterprise-grade security</small>
+    </div>
+  </div>
+
+  <!-- Mobile Features -->
+  <div class="row py-5 d-lg-none" style="background: var(--bg-secondary)">
+    <div class="col-4 text-center">
+      <div class="p-3">
+        <i class="fas fa-bolt text-primary mb-3" style="font-size: 2.5rem"></i>
+        <h6 class="fw-bold mb-2" style="color: var(--text-primary)">
+          Fast Setup
+        </h6>
+        <p class="mb-0" style="color: var(--text-muted)">Ready in 5 minutes</p>
       </div>
-      <div class="col-md-4 text-center">
-        <i class="fas fa-rocket fa-2x text-info mb-2"></i>
-        <h6>Fast Setup</h6>
-        <small class="text-muted">Ready in minutes</small>
+    </div>
+    <div class="col-4 text-center">
+      <div class="p-3">
+        <i
+          class="fas fa-shield-alt text-success mb-3"
+          style="font-size: 2.5rem"
+        ></i>
+        <h6 class="fw-bold mb-2" style="color: var(--text-primary)">Secure</h6>
+        <p class="mb-0" style="color: var(--text-muted)">Enterprise-grade</p>
+      </div>
+    </div>
+    <div class="col-4 text-center">
+      <div class="p-3">
+        <i class="fas fa-headset text-info mb-3" style="font-size: 2.5rem"></i>
+        <h6 class="fw-bold mb-2" style="color: var(--text-primary)">Support</h6>
+        <p class="mb-0" style="color: var(--text-muted)">24/7 available</p>
       </div>
     </div>
   </div>
 </div>
+
 {% endblock %} {% block scripts %}
 <script>
-  // Password strength indicator
-  document
-    .getElementById("{{ form.password.id }}")
-    .addEventListener("input", function () {
-      const password = this.value;
-      const strength = calculatePasswordStrength(password);
-      updatePasswordStrengthIndicator(strength);
-    });
+  // Password visibility toggle
+  function togglePasswordVisibility(inputId, iconId) {
+    const passwordInput = document.getElementById(inputId);
+    const toggleIcon = document.getElementById(iconId);
 
-  function calculatePasswordStrength(password) {
-    let score = 0;
-    if (password.length >= 8) score++;
-    if (/[a-z]/.test(password)) score++;
-    if (/[A-Z]/.test(password)) score++;
-    if (/[0-9]/.test(password)) score++;
-    if (/[^A-Za-z0-9]/.test(password)) score++;
-    return score;
+    if (passwordInput.type === "password") {
+      passwordInput.type = "text";
+      toggleIcon.classList.remove("fa-eye");
+      toggleIcon.classList.add("fa-eye-slash");
+    } else {
+      passwordInput.type = "password";
+      toggleIcon.classList.remove("fa-eye-slash");
+      toggleIcon.classList.add("fa-eye");
+    }
   }
 
-  function updatePasswordStrengthIndicator(strength) {
+  // Password strength calculation
+  function calculatePasswordStrength(password) {
+    let score = 0;
+    let feedback = [];
+
+    if (password.length >= 8) {
+      score++;
+    } else {
+      feedback.push("at least 8 characters");
+    }
+
+    if (/[a-z]/.test(password)) {
+      score++;
+    } else {
+      feedback.push("lowercase letters");
+    }
+
+    if (/[A-Z]/.test(password)) {
+      score++;
+    } else {
+      feedback.push("uppercase letters");
+    }
+
+    if (/[0-9]/.test(password)) {
+      score++;
+    } else {
+      feedback.push("numbers");
+    }
+
+    if (/[^A-Za-z0-9]/.test(password)) {
+      score++;
+    } else {
+      feedback.push("special characters");
+    }
+
+    return { score, feedback };
+  }
+
+  // Update password strength indicator
+  function updatePasswordStrengthIndicator(password) {
+    const { score, feedback } = calculatePasswordStrength(password);
+    const strengthBar = document.getElementById("password-strength-bar");
+    const strengthText = document.getElementById("password-strength-text");
+
     const colors = [
       "danger",
       "danger",
@@ -150,20 +539,155 @@ endblock %} {% block content %}
       "Strong",
       "Very Strong",
     ];
+    const widths = [15, 30, 50, 70, 85, 100];
 
-    let indicator = document.getElementById("password-strength");
-    if (!indicator) {
-      indicator = document.createElement("div");
-      indicator.id = "password-strength";
-      indicator.className = "mt-1 small";
-      document
-        .getElementById("{{ form.password.id }}")
-        .parentNode.appendChild(indicator);
+    if (password.length === 0) {
+      strengthBar.style.width = "0%";
+      strengthBar.className = "progress-bar";
+      strengthText.innerHTML = "";
+      return;
     }
 
-    indicator.className = `mt-1 small text-${colors[strength]}`;
-    indicator.textContent =
-      strength > 0 ? `Password strength: ${texts[strength]}` : "";
+    strengthBar.style.width = widths[score] + "%";
+    strengthBar.className = `progress-bar bg-${colors[score]}`;
+
+    if (score < 3 && feedback.length > 0) {
+      strengthText.innerHTML = `<i class="fas fa-info-circle me-1"></i>Add: ${feedback
+        .slice(0, 2)
+        .join(", ")}`;
+      strengthText.style.color = "var(--warning)";
+    } else {
+      strengthText.innerHTML = `<i class="fas fa-check-circle me-1"></i>Password strength: ${texts[score]}`;
+      strengthText.style.color =
+        score >= 3 ? "var(--success)" : "var(--warning)";
+    }
   }
+
+  // Check password match
+  function checkPasswordMatch() {
+    const password = document.getElementById("password-input").value;
+    const confirmPassword = document.getElementById(
+      "confirm-password-input"
+    ).value;
+    const indicator = document.getElementById("password-match-indicator");
+    const icon = document.getElementById("password-match-icon");
+    const text = document.getElementById("password-match-text");
+    const confirmInput = document.getElementById("confirm-password-input");
+
+    if (confirmPassword === "") {
+      indicator.style.display = "none";
+      confirmInput.style.borderColor = "";
+      confirmInput.style.borderWidth = "";
+      return;
+    }
+
+    indicator.style.display = "block";
+
+    if (password === confirmPassword && password !== "") {
+      icon.className = "fas fa-check-circle text-success me-2";
+      text.textContent = "Passwords match";
+      text.style.color = "var(--success)";
+      confirmInput.style.borderColor = "var(--success)";
+      confirmInput.style.borderWidth = "2px";
+      confirmInput.setCustomValidity("");
+    } else {
+      icon.className = "fas fa-times-circle text-danger me-2";
+      text.textContent = "Passwords do not match";
+      text.style.color = "var(--danger)";
+      confirmInput.style.borderColor = "var(--danger)";
+      confirmInput.style.borderWidth = "2px";
+      confirmInput.setCustomValidity("Passwords do not match");
+    }
+  }
+
+  // Form submission handling
+  function handleFormSubmit(e) {
+    const password = document.getElementById("password-input").value;
+    const confirmPassword = document.getElementById(
+      "confirm-password-input"
+    ).value;
+
+    // Check password match before submission
+    if (password !== confirmPassword) {
+      e.preventDefault();
+      if (window.showNotification) {
+        window.showNotification("⚠️ Passwords do not match!", "warning");
+      }
+      return false;
+    }
+
+    const registerBtn = document.getElementById("register-btn");
+    registerBtn.disabled = true;
+    registerBtn.innerHTML =
+      '<i class="fas fa-spinner fa-spin me-2"></i>Creating Account...';
+
+    if (window.showNotification) {
+      window.showNotification("🚀 Creating your account...", "info");
+    }
+  }
+
+  // Real-time validation feedback
+  function addValidationFeedback(input) {
+    input.addEventListener("blur", function () {
+      if (this.checkValidity()) {
+        this.style.borderColor = "var(--success)";
+        this.style.borderWidth = "2px";
+      } else {
+        this.style.borderColor = "var(--danger)";
+        this.style.borderWidth = "2px";
+      }
+    });
+
+    input.addEventListener("input", function () {
+      if (this.style.borderColor && this.id !== "confirm-password-input") {
+        this.style.borderColor = "";
+        this.style.borderWidth = "";
+      }
+    });
+  }
+
+  // Initialize everything
+  document.addEventListener("DOMContentLoaded", function () {
+    // Password strength monitoring
+    const passwordInput = document.getElementById("password-input");
+    const confirmPasswordInput = document.getElementById(
+      "confirm-password-input"
+    );
+
+    passwordInput.addEventListener("input", function () {
+      updatePasswordStrengthIndicator(this.value);
+      checkPasswordMatch(); // Also check match when main password changes
+    });
+
+    // Password match checking
+    confirmPasswordInput.addEventListener("input", checkPasswordMatch);
+    confirmPasswordInput.addEventListener("blur", checkPasswordMatch);
+
+    // Form submission
+    document
+      .getElementById("register-form")
+      .addEventListener("submit", handleFormSubmit);
+
+    // Add validation feedback to all inputs
+    const inputs = document.querySelectorAll(
+      'input[type="text"], input[type="email"], input[type="password"]'
+    );
+    inputs.forEach(addValidationFeedback);
+
+    // Form validation feedback
+    inputs.forEach((input) => {
+      input.addEventListener("invalid", function () {
+        if (window.showNotification) {
+          window.showNotification(
+            "⚠️ Please check the form for errors",
+            "warning"
+          );
+        }
+      });
+    });
+
+    // Initial password strength check
+    updatePasswordStrengthIndicator("");
+  });
 </script>
 {% endblock %}
