@@ -4,15 +4,17 @@ import logging
 import requests
 import json
 import hashlib
+import asyncio
 from decimal import Decimal
 from datetime import datetime
+from concurrent.futures import ThreadPoolExecutor
 from flask import url_for, redirect, flash, jsonify, request
 from flask_login import current_user, login_required
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from db import db  # Import db from db.py
-from utils import error_tracker, track_errors, logger  # Import error_tracker and logger from utils.py
-from models import Tenant, SaasUser, SubscriptionPlan  # Import models
+from utils import error_tracker, track_errors, generate_random_alphanumeric, logger  # Import error_tracker and logger from utils.py
+from models import Tenant, SaasUser, SubscriptionPlan, TenantUser, CredentialAccess, WorkerInstance  # Import models
 
 # SSLCommerz Sandbox Credentials
 SSLCOMMERZ_STORE_ID = "kendr686995fcc52be"
@@ -55,6 +57,14 @@ class PaymentTransaction(db.Model):
     
     def __repr__(self):
         return f"<PaymentTransaction {self.transaction_id} - {self.status}>"
+
+def run_async_in_background(coro):
+    """Helper function to run an async coroutine in the background."""
+    loop = asyncio.new_event_loop()
+    try:
+        loop.run_until_complete(coro)
+    finally:
+        loop.close()
 
 class BillingService:
     """Service class to handle billing and payment operations with SSLCommerz"""
@@ -144,10 +154,10 @@ class BillingService:
                 'cus_phone': 'N/A',
                 'shipping_method': 'NO',
                 'product_name': f"{plan} Plan Subscription",
-                'product_category': 'SaaS',
+                'product_category': 'SaaS-odoo',
                 'product_profile': 'general',
                 'num_of_item': 1,
-                'value_a': str(tenant_id),
+                'value_a': generate_random_alphanumeric(),
                 'value_b': str(user_id),
                 'value_c': plan,
                 'value_d': transaction_id
@@ -204,50 +214,16 @@ class BillingService:
             if not transaction:
                 logger.error(f"Transaction {transaction_id} not found for tenant {tenant_id}")
                 return False
-
-            val_id = validation_id or transaction.validation_id
-            if not val_id:
-                logger.error(f"No validation ID available for transaction {transaction_id}")
+            if transaction.validation_id and validation_id != transaction.validation_id:
+                logger.error(f"Validation ID mismatch for transaction {transaction_id} (expected {transaction.validation_id}, got {validation_id})")
                 return False
-
-            payload = {
-                'val_id': val_id,
-                'store_id': SSLCOMMERZ_STORE_ID,
-                'store_passwd': SSLCOMMERZ_STORE_PASSWORD,
-                'format': 'json'
-            }
-
-            headers = {'Accept': 'application/json'}
-            BillingService._log_sslcommerz_request('GET', SSLCOMMERZ_VALIDATION_API, headers, payload)
-            response = requests.get(SSLCOMMERZ_VALIDATION_API, params=payload, headers=headers, timeout=30)
-            BillingService._log_sslcommerz_response(response)
-            validation_data = response.json()
-
-            if response.status_code == 200 and validation_data.get('status') == 'VALIDATED':
-                transaction.status = 'COMPLETED'
-                transaction.response_data = str(validation_data)[:2000]
-                transaction.updated_at = datetime.utcnow()
-
-                tenant = Tenant.query.get(tenant_id)
-                tenant.status = 'active'
-                tenant.updated_at = datetime.utcnow()
-
-                db.session.commit()
-                logger.info(f"Payment validated and tenant {tenant_id} activated for transaction {transaction_id}")
-                return True
-            else:
-                transaction.status = 'FAILED'
-                transaction.response_data = str(validation_data)[:2000]
-                db.session.commit()
-                logger.error(f"Payment validation failed for transaction {transaction_id}: {validation_data.get('error', 'Unknown error')}")
-                return False
+            return True
 
         except Exception as e:
             db.session.rollback()
             error_tracker.log_error(e, {
                 'transaction_id': transaction_id,
                 'tenant_id': tenant_id,
-                'validation_id': val_id,
                 'function': 'validate_payment'
             })
             return False
@@ -295,10 +271,62 @@ class BillingService:
     @staticmethod
     @track_errors('handle_payment_success')
     def handle_payment_success(tenant_id, transaction_id, validation_id=None):
-        """Handle successful payment callback"""
+        """Handle successful payment callback and create database"""
         try:
             if BillingService.validate_payment(transaction_id, tenant_id, validation_id):
-                flash('Payment processing. Tenant will be activated soon.', 'success')
+                # Update transaction status to SUCCESS
+                transaction = PaymentTransaction.query.filter_by(
+                    transaction_id=transaction_id,
+                    tenant_id=tenant_id
+                ).first()
+                
+                if transaction:
+                    transaction.status = 'SUCCESS'
+                    transaction.updated_at = datetime.utcnow()
+                    db.session.commit()
+
+                # Get tenant and create database NOW (after successful payment)
+                tenant = Tenant.query.get(tenant_id)
+                if tenant and tenant.status == 'pending':
+                    logger.info(f"Payment successful for tenant {tenant.name}. Creating Odoo database.")
+                    
+                    # Get plan modules
+                    subscription_plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
+                    plan_modules = subscription_plan.modules if subscription_plan.modules else []
+                    
+                    # Import create_database function
+                    try:
+                        from app import create_database
+                        from flask import current_app
+                        
+                        # Create database in background after successful payment
+                        executor = ThreadPoolExecutor(max_workers=1)
+                        executor.submit(
+                            run_async_in_background, 
+                            create_database(
+                                tenant.database_name, 
+                                tenant.admin_username, 
+                                tenant.get_admin_password(), 
+                                plan_modules,
+                                current_app._get_current_object()  # Pass app instance
+                            )
+                        )
+                        executor.shutdown(wait=False)
+                        
+                        # Update tenant status to 'creating' to indicate database creation is in progress
+                        tenant.status = 'creating'
+                        db.session.commit()
+                        
+                        logger.info(f"Database creation initiated for tenant {tenant.name}")
+                        
+                    except ImportError as e:
+                        logger.error(f"Failed to import create_database function: {e}")
+                        flash('Payment successful, but database creation failed to start. Please contact support.', 'warning')
+                    except Exception as e:
+                        logger.error(f"Failed to start database creation: {e}")
+                        flash('Payment successful, but database creation failed to start. Please contact support.', 'warning')
+                
+                flash('Payment successful! Your Odoo instance is being created and will be ready shortly.', 'success')
                 return redirect(url_for('dashboard'))
             else:
                 flash('Payment validation failed.', 'error')
@@ -317,8 +345,9 @@ class BillingService:
     @staticmethod
     @track_errors('handle_payment_fail')
     def handle_payment_fail(tenant_id, transaction_id):
-        """Handle failed payment callback"""
+        """Handle failed payment callback with tenant cleanup (no database created yet)"""
         try:
+            # Update transaction status first
             transaction = PaymentTransaction.query.filter_by(
                 transaction_id=transaction_id,
                 tenant_id=tenant_id
@@ -329,23 +358,70 @@ class BillingService:
                 transaction.updated_at = datetime.utcnow()
                 db.session.commit()
 
-            flash('Payment failed. Please try again.', 'error')
+            # Get tenant for cleanup - NOTE: No database was created yet, so only clean up tenant record
+            tenant = Tenant.query.get(tenant_id)
+            
+            if tenant:
+                logger.info(f"Payment failed for tenant {tenant.name} (ID: {tenant_id}). Cleaning up tenant record.")
+                
+                try:
+                    # Update worker tenant count if applicable (decrement since we're removing the tenant)
+                    workers = WorkerInstance.query.filter(WorkerInstance.current_tenants > 0).all()
+                    for worker in workers:
+                        if worker.current_tenants > 0:
+                            worker.current_tenants -= 1
+                            logger.info(f"Decremented tenant count for worker {worker.name}")
+                    
+                    # Delete tenant-related records in proper order
+                    TenantUser.query.filter_by(tenant_id=tenant_id).delete()
+                    logger.info(f"Deleted TenantUser records for tenant {tenant_id}")
+                    
+                    # Delete credential access logs if any
+                    CredentialAccess.query.filter_by(tenant_id=tenant_id).delete()
+                    logger.info(f"Deleted CredentialAccess records for tenant {tenant_id}")
+                    
+                    # Delete payment transactions for this tenant
+                    PaymentTransaction.query.filter_by(tenant_id=tenant_id).delete()
+                    logger.info(f"Deleted PaymentTransaction records for tenant {tenant_id}")
+                    
+                    # Delete the tenant itself
+                    db.session.delete(tenant)
+                    db.session.commit()
+                    logger.info(f"Successfully deleted tenant {tenant.name} (ID: {tenant_id})")
+                    
+                    flash('Payment failed. The tenant registration has been cancelled.', 'error')
+                    
+                except Exception as cleanup_error:
+                    db.session.rollback()
+                    logger.error(f"Error during tenant cleanup: {cleanup_error}")
+                    error_tracker.log_error(cleanup_error, {
+                        'tenant_id': tenant_id,
+                        'transaction_id': transaction_id,
+                        'cleanup_phase': 'tenant_deletion'
+                    })
+                    flash('Payment failed. There was an issue cleaning up. Please contact support.', 'error')
+            else:
+                logger.warning(f"Tenant {tenant_id} not found during payment failure cleanup")
+                flash('Payment failed.', 'error')
+
             return redirect(url_for('dashboard'))
 
         except Exception as e:
+            db.session.rollback()
             error_tracker.log_error(e, {
                 'tenant_id': tenant_id,
                 'transaction_id': transaction_id,
                 'function': 'handle_payment_fail'
             })
-            flash('Error processing payment failure.', 'error')
+            flash('Error processing payment failure. Please contact support.', 'error')
             return redirect(url_for('dashboard'))
 
     @staticmethod
     @track_errors('handle_payment_cancel')
     def handle_payment_cancel(tenant_id, transaction_id):
-        """Handle cancelled payment callback"""
+        """Handle cancelled payment callback with tenant cleanup"""
         try:
+            # Update transaction status first
             transaction = PaymentTransaction.query.filter_by(
                 transaction_id=transaction_id,
                 tenant_id=tenant_id
@@ -356,10 +432,39 @@ class BillingService:
                 transaction.updated_at = datetime.utcnow()
                 db.session.commit()
 
-            flash('Payment was cancelled.', 'warning')
+            # Same cleanup as payment fail since no database was created
+            tenant = Tenant.query.get(tenant_id)
+            
+            if tenant:
+                logger.info(f"Payment cancelled for tenant {tenant.name} (ID: {tenant_id}). Cleaning up tenant record.")
+                
+                try:
+                    # Update worker tenant count
+                    workers = WorkerInstance.query.filter(WorkerInstance.current_tenants > 0).all()
+                    for worker in workers:
+                        if worker.current_tenants > 0:
+                            worker.current_tenants -= 1
+                    
+                    # Delete tenant-related records
+                    TenantUser.query.filter_by(tenant_id=tenant_id).delete()
+                    CredentialAccess.query.filter_by(tenant_id=tenant_id).delete()
+                    PaymentTransaction.query.filter_by(tenant_id=tenant_id).delete()
+                    db.session.delete(tenant)
+                    db.session.commit()
+                    
+                    flash('Payment was cancelled. The tenant registration has been cancelled.', 'warning')
+                    
+                except Exception as cleanup_error:
+                    db.session.rollback()
+                    logger.error(f"Error during tenant cleanup after cancellation: {cleanup_error}")
+                    flash('Payment cancelled. There was an issue cleaning up. Please contact support.', 'warning')
+            else:
+                flash('Payment was cancelled.', 'warning')
+
             return redirect(url_for('dashboard'))
 
         except Exception as e:
+            db.session.rollback()
             error_tracker.log_error(e, {
                 'tenant_id': tenant_id,
                 'transaction_id': transaction_id,
@@ -403,9 +508,31 @@ def register_billing_routes(app):
         logger.debug(f"Success Callback Received:\n"
                      f"  Query Params: {json.dumps(request.args.to_dict(), indent=2)}\n"
                      f"  Form Data: {json.dumps(request.form.to_dict(), indent=2)}")
-        transaction_id = request.args.get('tran_id') or request.args.get('value_d')
-        validation_id = request.args.get('val_id')
+        
+        transaction_id = request.form.get('tran_id') or request.form.get('value_d')
+        validation_id = request.form.get('val_id')
         logger.debug(f"Extracted Parameters: transaction_id={transaction_id}, validation_id={validation_id}")
+
+        if not validation_id:
+            logger.error(
+                f"No validation ID in query params: {request.args.to_dict()}, "
+                f"for tenant {tenant_id}"
+            )
+            flash('Invalid validation ID. Please contact support.', 'error')
+            return redirect(url_for('dashboard'))
+        else:
+            transaction = PaymentTransaction.query.filter_by(
+                tenant_id=tenant_id
+            ).first()
+            if transaction:
+                logger.info(f"Found transaction with validation ID {validation_id} for tenant {tenant_id}")
+                transaction_id = transaction.transaction_id
+            else:
+                logger.error(
+                    f"No transaction found with validation ID {validation_id} for tenant {tenant_id}"
+                )
+                flash('Invalid validation ID. Payment is being processed via notification.', 'warning')
+                return redirect(url_for('dashboard'))
 
         if not transaction_id:
             transaction = PaymentTransaction.query.filter_by(
@@ -428,13 +555,30 @@ def register_billing_routes(app):
         logger.debug(f"Fail Callback Received:\n"
                      f"  Query Params: {json.dumps(request.args.to_dict(), indent=2)}\n"
                      f"  Form Data: {json.dumps(request.form.to_dict(), indent=2)}")
-        transaction_id = request.args.get('tran_id') or request.args.get('value_d')
+        
+        # Get transaction ID from either args or form data
+        transaction_id = (request.args.get('tran_id') or 
+                         request.args.get('value_d') or 
+                         request.form.get('tran_id') or 
+                         request.form.get('value_d'))
+        
         logger.debug(f"Extracted Parameter: transaction_id={transaction_id}")
 
         if not transaction_id:
-            logger.error(f"No transaction ID in query params: {request.args.to_dict()}")
-            flash('Invalid transaction ID.', 'error')
+            logger.error(f"No transaction ID in request. Args: {request.args.to_dict()}, Form: {request.form.to_dict()}")
+            
+            # Even without transaction_id, clean up pending tenant
+            try:
+                tenant = Tenant.query.get(tenant_id)
+                if tenant and tenant.status == 'pending':
+                    logger.warning(f"Cleaning up pending tenant {tenant_id} even without transaction_id")
+                    return BillingService.handle_payment_fail(tenant_id, None)
+            except Exception as e:
+                logger.error(f"Error in fallback cleanup: {e}")
+            
+            flash('Payment failed. Invalid transaction information.', 'error')
             return redirect(url_for('dashboard'))
+        
         return BillingService.handle_payment_fail(tenant_id, transaction_id)
 
     @app.route('/billing/<int:tenant_id>/cancel', methods=['GET', 'POST'])
@@ -448,8 +592,17 @@ def register_billing_routes(app):
 
         if not transaction_id:
             logger.error(f"No transaction ID in query params: {request.args.to_dict()}")
+            # Clean up pending tenant even without transaction_id
+            try:
+                tenant = Tenant.query.get(tenant_id)
+                if tenant and tenant.status == 'pending':
+                    return BillingService.handle_payment_cancel(tenant_id, None)
+            except Exception as e:
+                logger.error(f"Error in cancel cleanup: {e}")
+            
             flash('Invalid transaction ID.', 'error')
             return redirect(url_for('dashboard'))
+        
         return BillingService.handle_payment_cancel(tenant_id, transaction_id)
 
     @app.route('/billing/ipn', methods=['POST'])
@@ -480,6 +633,14 @@ def register_billing_routes(app):
                 logger.error(f"IPN hash validation failed for transaction {transaction_id}")
                 return jsonify({'status': 'error', 'message': 'Invalid IPN hash'}), 400
 
+            # For IPN success, also trigger database creation
+            if data.get('status') == 'VALID':
+                try:
+                    BillingService.handle_payment_success(tenant_id, transaction_id, validation_id)
+                    logger.info(f"IPN triggered database creation for transaction {transaction_id}, tenant {tenant_id}")
+                except Exception as e:
+                    logger.error(f"IPN database creation failed: {e}")
+
             if BillingService.validate_payment(transaction_id, tenant_id, validation_id):
                 logger.info(f"IPN validated for transaction {transaction_id}, tenant {tenant_id}")
                 return jsonify({'status': 'success'}), 200
@@ -493,3 +654,25 @@ def register_billing_routes(app):
                 'data': {k: '[REDACTED]' if k == 'store_passwd' else v for k, v in request.form.to_dict().items()}
             })
             return jsonify({'status': 'error', 'message': 'IPN processing failed'}), 500
+    
+    @staticmethod
+    @track_errors('update_tenant_status_to_failed')
+    def _update_tenant_status_to_failed(db_name, error_message, app=None):
+        """Update tenant status to failed when database creation fails"""
+        try:
+            from models import Tenant
+            from flask import current_app
+            app_to_use = app if app else current_app
+            
+            # Create application context for background thread
+            with app_to_use.app_context():
+                tenant = Tenant.query.filter_by(database_name=db_name).first()
+                if tenant:
+                    tenant.status = 'failed'
+                    db.session.commit()
+                    logger.error(f"Updated tenant {tenant.id} status to failed: {error_message}")
+                else:
+                    logger.error(f"Could not find tenant with database_name {db_name} to update to failed status")
+        except Exception as e:
+            logger.error(f"Failed to update tenant status to failed: {e}")
+            error_tracker.log_error(e, {'database_name': db_name, 'error_message': error_message})

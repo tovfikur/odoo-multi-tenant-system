@@ -48,7 +48,7 @@
       href="{{ url_for('static', filename='css/style.css') }}"
       rel="stylesheet"
     />
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
     {% block head %}{% endblock %}
   </head>
 
@@ -60,7 +60,12 @@
           class="navbar-brand float-animation"
           href="{{ url_for('dashboard') }}"
         >
-          <i class="fas fa-cloud me-2"></i>
+          <div class="logo-square">
+            <img
+              src="{{ url_for('static', filename='img/kdoo-logo.png') }}"
+              alt="Odoo SaaS"
+            />
+          </div>
           <span>Odoo SaaS</span>
         </a>
 
@@ -116,28 +121,12 @@
                 <li>
                   <a
                     class="dropdown-item"
-                    href="{{ url_for('admin_tenants') }}"
+                    href="{{ url_for('master_admin.master_admin_dashboard') }}"
                   >
                     <i class="fas fa-building"></i>
-                    <span>Manage Tenants</span>
+                    <span>Master Admin</span>
                   </a>
                 </li>
-                <li>
-                  <a class="dropdown-item" href="{{ url_for('admin_users') }}">
-                    <i class="fas fa-users"></i>
-                    <span>Manage Users</span>
-                  </a>
-                </li>
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('admin_workers') }}"
-                  >
-                    <i class="fas fa-server"></i>
-                    <span>Worker Management</span>
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider" /></li>
                 <li>
                   <a
                     class="dropdown-item"
@@ -268,7 +257,12 @@
         <div class="row align-items-center">
           <div class="col-md-6">
             <div class="d-flex align-items-center mb-3 mb-md-0">
-              <i class="fas fa-cloud fa-2x text-primary me-3"></i>
+              <div class="footer-logo">
+                <img
+                  src="{{ url_for('static', filename='img/kdoo-logo.png') }}"
+                  alt="Odoo SaaS"
+                />
+              </div>
               <div>
                 <h6 class="mb-1">Odoo SaaS Platform</h6>
                 <p class="mb-0 text-muted small">
@@ -341,25 +335,6 @@
     </footer>
 
     <!-- Back to Top Button -->
-    <button
-      id="back-to-top"
-      class="btn btn-primary"
-      style="
-        position: fixed;
-        bottom: 30px;
-        right: 30px;
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        display: none;
-        z-index: 1040;
-        box-shadow: var(--shadow-lg);
-        backdrop-filter: blur(10px);
-      "
-      data-tooltip="Back to Top"
-    >
-      <i class="fas fa-chevron-up"></i>
-    </button>
 
     <!-- Scripts -->
     <script
@@ -428,32 +403,8 @@
     <script>
       // Back to top functionality
       document.addEventListener("DOMContentLoaded", function () {
-        const backToTop = document.getElementById("back-to-top");
-
-        // Show/hide back to top button
-        window.addEventListener("scroll", function () {
-          if (window.pageYOffset > 300) {
-            backToTop.style.display = "flex";
-            backToTop.style.alignItems = "center";
-            backToTop.style.justifyContent = "center";
-          } else {
-            backToTop.style.display = "none";
-          }
-        });
-
-        // Smooth scroll to top
-        backToTop.addEventListener("click", function (e) {
-          e.preventDefault();
-          window.scrollTo({
-            top: 0,
-            behavior: "smooth",
-          });
-        });
-
         // Add floating animation to cloud icon in footer
-        document
-          .querySelector("footer .fa-cloud")
-          .classList.add("float-animation");
+        document.classList.add("float-animation");
 
         // Enhanced navbar responsiveness
         const navbarToggler = document.querySelector(".navbar-toggler");
@@ -620,6 +571,123 @@
       window.addEventListener("offline", function () {
         if (window.showNotification) {
           window.showNotification("You are currently offline.", "warning");
+        }
+      });
+
+      // Service Worker Registration
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker
+            .register("/sw.js", {
+              scope: "/",
+            })
+            .then((registration) => {
+              console.log(
+                "Service Worker registered successfully:",
+                registration.scope
+              );
+
+              // Check for updates
+              registration.addEventListener("updatefound", () => {
+                const newWorker = registration.installing;
+                console.log("New service worker installing...");
+
+                newWorker.addEventListener("statechange", () => {
+                  if (
+                    newWorker.state === "installed" &&
+                    navigator.serviceWorker.controller
+                  ) {
+                    console.log("New service worker installed, refreshing...");
+                    // Show update notification
+                    if (window.showNotification) {
+                      window.showNotification(
+                        "App updated! Refreshing...",
+                        "success",
+                        2000
+                      );
+                    }
+                    // Refresh after a short delay
+                    setTimeout(() => window.location.reload(), 2000);
+                  }
+                });
+              });
+
+              // Listen for messages from service worker
+              navigator.serviceWorker.addEventListener("message", (event) => {
+                if (event.data && event.data.type === "CACHE_UPDATED") {
+                  console.log("Cache updated:", event.data.url);
+                }
+              });
+
+              // Register for background sync if supported
+              if ("sync" in window.ServiceWorkerRegistration.prototype) {
+                registration.sync.register("background-sync").catch((err) => {
+                  console.log("Background sync registration failed:", err);
+                });
+              }
+
+              // Request notification permission if supported
+              if ("Notification" in window && "PushManager" in window) {
+                if (Notification.permission === "default") {
+                  // Don't ask immediately, wait for user interaction
+                  setTimeout(() => {
+                    Notification.requestPermission().then((permission) => {
+                      console.log("Notification permission:", permission);
+                    });
+                  }, 30000); // Ask after 30 seconds
+                }
+              }
+            })
+            .catch((error) => {
+              console.error("Service Worker registration failed:", error);
+            });
+        });
+
+        // Handle service worker updates
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener("controllerchange", () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
+        });
+      } else {
+        console.log("Service Worker not supported");
+      }
+
+      // PWA Install prompt
+      let deferredPrompt;
+      const installButton = document.getElementById("pwa-install-btn");
+
+      window.addEventListener("beforeinstallprompt", (e) => {
+        console.log("PWA install prompt available");
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Show install button if it exists
+        if (installButton) {
+          installButton.style.display = "block";
+          installButton.addEventListener("click", async () => {
+            if (deferredPrompt) {
+              deferredPrompt.prompt();
+              const { outcome } = await deferredPrompt.userChoice;
+              console.log(`PWA install prompt outcome: ${outcome}`);
+              deferredPrompt = null;
+              installButton.style.display = "none";
+            }
+          });
+        }
+      });
+
+      // PWA installed
+      window.addEventListener("appinstalled", () => {
+        console.log("PWA installed successfully");
+        if (window.showNotification) {
+          window.showNotification("App installed successfully! 🎉", "success");
+        }
+        deferredPrompt = null;
+        if (installButton) {
+          installButton.style.display = "none";
         }
       });
     </script>

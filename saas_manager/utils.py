@@ -8,6 +8,9 @@ import inspect
 from datetime import datetime
 from functools import wraps
 from werkzeug.routing import BuildError
+import time
+import random
+
 class ErrorTracker:
     def __init__(self, logger):
         self.logger = logger
@@ -129,3 +132,16 @@ def generate_password(length: int = 12) -> str:
     # Shuffle the password
     secrets.SystemRandom().shuffle(password)
     return ''.join(password)
+
+def generate_random_alphanumeric():
+    # Get current timestamp as seed
+    timestamp = int(time.time() * 1000)  # Milliseconds for better uniqueness
+    random.seed(timestamp)
+    
+    # Define characters to choose from
+    characters = string.ascii_letters + string.digits  # a-z, A-Z, 0-9
+    
+    # Generate 16-character alphanumeric string
+    result = ''.join(random.choice(characters) for _ in range(16))
+    
+    return result

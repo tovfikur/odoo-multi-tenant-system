@@ -39,7 +39,7 @@
   /* Light Theme Text Colors */
   --text-primary: var(--gray-900);
   --text-secondary: var(--gray-700);
-  --text-muted: var(--gray-500);
+  --text-muted: var(--gray-500) !important;
   --text-inverse: var(--white);
 
   /* Light Theme Border Colors */
@@ -69,6 +69,10 @@
   --transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
 /* Dark Theme - Auto Detection via System Preference */
 @media (prefers-color-scheme: dark) {
   :root {
@@ -81,7 +85,7 @@
     /* Dark Theme Text Colors */
     --text-primary: var(--gray-50);
     --text-secondary: var(--gray-300);
-    --text-muted: var(--gray-400);
+    --text-muted: var(--gray-400) !important;
     --text-inverse: var(--gray-900);
 
     /* Dark Theme Border Colors */
@@ -103,6 +107,10 @@
       0 4px 6px -2px rgba(0, 0, 0, 0.3);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.4),
       0 10px 10px -5px rgba(0, 0, 0, 0.3);
+  }
+
+  .text-muted {
+    color: var(--text-muted) !important;
   }
 
   /* Dark mode specific adjustments for better contrast */
@@ -229,6 +237,10 @@ main {
   min-height: calc(100vh - 140px);
 }
 
+.text-muted {
+  color: var(--text-muted) !important;
+}
+
 /* Navigation Bar */
 .navbar {
   background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
@@ -277,6 +289,46 @@ main {
   color: var(--white) !important;
   background-color: rgba(255, 255, 255, 0.2);
   font-weight: 600;
+}
+
+/* Square Logo Styling */
+.logo-square {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  margin-right: 0.75rem;
+  transition: var(--transition-fast);
+}
+
+.logo-square img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: var(--transition-fast);
+}
+
+.navbar-brand:hover .logo-square {
+  transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.navbar-brand:hover .logo-square img {
+  transform: scale(1.1);
+}
+
+/* Mobile responsiveness */
+@media (max-width: 576px) {
+  .logo-square {
+    width: 35px;
+    height: 35px;
+  }
 }
 
 /* Dropdown Menus */
@@ -1603,6 +1655,21 @@ footer a {
 footer a:hover {
   color: var(--primary);
   transform: translateY(-1px);
+}
+
+.footer-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  margin-right: 1rem;
+  border: 2px solid var(--primary);
+}
+
+.footer-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 /* Responsive Design */

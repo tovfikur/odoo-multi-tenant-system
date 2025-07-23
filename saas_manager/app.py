@@ -136,8 +136,32 @@ except Exception as e:
     docker_client = None
 
 # Initialize SocketIO
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='threading')
+# Initialize SocketIO with proper configuration
+socketio = SocketIO(
+    app, 
+    cors_allowed_origins="*", 
+    async_mode='threading',
+    logger=False,
+    engineio_logger=False,
+    ping_timeout=60,
+    ping_interval=25
+)
 
+# Socket.io error handlers
+@socketio.on_error_default
+def default_error_handler(e):
+    logger.error(f"Socket.io error: {e}")
+    error_tracker.log_error(e, {'component': 'socketio'})
+
+@socketio.on('connect_error')
+def connect_error():
+    logger.warning("Socket.io connection error")
+    
+# Configure Socket.io fallback for development
+if os.environ.get('FLASK_ENV') == 'development':
+    app.config['SOCKETIO_FALLBACK'] = True
+    logger.info("Socket.io fallback enabled for development")
+    
 # Initialize cache manager
 cache_manager = create_cache_manager(redis_client)
 app.cache_manager = cache_manager
@@ -277,14 +301,15 @@ def admin_required(f):
     return decorated_function
 
 
+
+
+
+
+
+
 @track_errors('database_creation')
-async def create_database(db_name, username='admin', password='admin', modules=None):
-    if redis_client:
-        cache_key = f"db_creation_status:{db_name}"
-        try:
-            redis_client.set(cache_key, "pending")
-        except Exception as e:
-            logger.warning(f"Failed to set Redis status for {db_name}: {e}")
+async def create_database(db_name, username='admin', password='admin',  modules=None, app=None):
+    """Create Odoo database ONLY after successful payment"""
     
     default_modules = ['base', 'web', 'auth_signup']
     if modules is None:
@@ -293,10 +318,9 @@ async def create_database(db_name, username='admin', password='admin', modules=N
         modules = list(set(modules) | set(default_modules))
     
     try:
-        if redis_client:
-            redis_client.set(cache_key, "in_progress")
+        logger.info(f"Creating database {db_name} after successful payment")
         
-        logger.info(f"Creating database {db_name}")
+        # Create database via Odoo HTTP API
         response = requests.post(
             f"{os.environ.get('ODOO_URL', 'http://odoo_master:8069')}/web/database/create",
             data={
@@ -314,23 +338,24 @@ async def create_database(db_name, username='admin', password='admin', modules=N
         
         if response.status_code != 200:
             logger.error(f"Failed to create database {db_name}: {response.status_code} - {response.text}")
-            if redis_client:
-                redis_client.set(cache_key, "failed")
+            # Update tenant status to failed
+            BillingService._update_tenant_status_to_failed(db_name, f"Database creation failed: {response.status_code}", app)
             return False
         
         logger.info(f"Database {db_name} created successfully")
             
+        # Authenticate with the new database
         common = xmlrpc.client.ServerProxy(f"{os.environ.get('ODOO_URL', 'http://odoo_master:8069')}/xmlrpc/2/common")
         uid = common.authenticate(db_name, username, password, {})
         
         if not uid:
             logger.error(f"Authentication failed for database {db_name}")
-            if redis_client:
-                redis_client.set(cache_key, "failed")
+            BillingService._update_tenant_status_to_failed(db_name, "Authentication failed after database creation", app)
             return False
         
         models = xmlrpc.client.ServerProxy(f"{os.environ.get('ODOO_URL', 'http://odoo_master:8069')}/xmlrpc/2/object")
         
+        # Install additional modules
         logger.info(f"Installing modules: {', '.join(modules)}")
         for module in modules:
             try:
@@ -352,6 +377,7 @@ async def create_database(db_name, username='admin', password='admin', modules=N
                 logger.warning(f"Failed to install module {module}: {str(e)}")
                 error_tracker.log_error(e, {'database_name': db_name, 'module': module})
         
+        # Set company logo
         company_id = 1
         logo_path = os.path.join('static', 'img', 'kdoo-logo.png')
         try:
@@ -371,6 +397,7 @@ async def create_database(db_name, username='admin', password='admin', modules=N
             logger.error(f"Failed to set company logo for {db_name}: {str(e)}")
             error_tracker.log_error(e, {'database_name': db_name, 'function': 'set_company_logo'})
         
+        # Helper function to check if field exists
         def check_field_exists(model, field):
             try:
                 fields = models.execute_kw(
@@ -382,7 +409,9 @@ async def create_database(db_name, username='admin', password='admin', modules=N
             except Exception as e:
                 logger.warning(f"Failed to check field {field} in {model}: {str(e)}")
                 return False
+        print("[✓] Odoo Database created successfully.")
 
+        # Disable signup
         try:
             signup_field = 'auth_signup_uninvited'
             version_info = common.version()
@@ -407,7 +436,9 @@ async def create_database(db_name, username='admin', password='admin', modules=N
         except xmlrpc.client.Fault as e:
             logger.warning(f"Failed to disable signup for {db_name}: {str(e)}")
             error_tracker.log_error(e, {'database_name': db_name, 'function': 'disable_signup'})
-        
+            
+        print("[✓] Signup disabled for Odoo database.")
+        # Set primary color if web_debranding module is available
         try:
             module_ids = models.execute_kw(
                 db_name, uid, password,
@@ -432,24 +463,83 @@ async def create_database(db_name, username='admin', password='admin', modules=N
             logger.warning(f"Failed to set primary color for {db_name}: {str(e)}")
             error_tracker.log_error(e, {'database_name': db_name, 'function': 'set_primary_color'})
         
-        logger.info(f"Database {db_name} created and configured successfully")
-        if redis_client:
-            redis_client.set(cache_key, "completed")
+        print("[✓] Odoo Database created.")
+
+        # UPDATE TENANT STATUS TO ACTIVE after successful database creation
+        try:
+            from models import Tenant
+            from flask import current_app
+            app_to_use = app if app else current_app
+            
+            # Create application context for background thread
+            with app_to_use.app_context():
+                tenant = Tenant.query.filter_by(database_name=db_name).first()
+                if tenant:
+                    tenant.status = 'active'  # Change from 'creating' to 'active'
+                    db.session.commit()
+                    logger.info(f"Updated tenant {tenant.id} status to active after successful database creation")
+                    
+                    # Trigger real-time update (also needs app context)
+                    try:
+                        tenant_users = TenantUser.query.filter_by(tenant_id=tenant.id).all()
+                        user_ids = [tu.user_id for tu in tenant_users]
+                        
+                        tenant_data = {
+                            'id': tenant.id,
+                            'name': tenant.name,
+                            'subdomain': tenant.subdomain,
+                            'status': 'active'
+                        }
+                        
+                        update_trigger.tenant_status_changed(tenant_data, user_ids)
+                        
+                    except Exception as cache_error:
+                        logger.warning(f"Failed to update cache after tenant activation: {cache_error}")
+                else:
+                    logger.error(f"Could not find tenant with database_name {db_name} to update status")
+                
+                # Trigger real-time update
+                try:
+                    tenant_users = TenantUser.query.filter_by(tenant_id=tenant.id).all()
+                    user_ids = [tu.user_id for tu in tenant_users]
+                    
+                    tenant_data = {
+                        'id': tenant.id,
+                        'name': tenant.name,
+                        'subdomain': tenant.subdomain,
+                        'status': 'active'
+                    }
+                    
+                    update_trigger.tenant_status_changed(tenant_data, user_ids)
+                    
+                except Exception as cache_error:
+                    logger.warning(f"Failed to update cache after tenant activation: {cache_error}")
+                    
+                
+        except Exception as e:
+            logger.error(f"Failed to update tenant status to active: {e}")
+            error_tracker.log_error(e, {'database_name': db_name, 'function': 'update_tenant_status'})
+            # Don't fail the entire process for this error
+        
+        logger.info(f"Database {db_name} created and configured successfully - Tenant is now ACTIVE")
         return True
     
     except requests.exceptions.Timeout:
         logger.error(f"Database creation timed out for {db_name}")
         error_tracker.log_error(Exception("Database creation timeout"), {'database_name': db_name})
-        if redis_client:
-            redis_client.set(cache_key, "failed")
+        BillingService._update_tenant_status_to_failed(db_name, "Database creation timed out", app)
         return False
         
     except Exception as e:
         logger.error(f"Error creating database {db_name}: {str(e)}")
         error_tracker.log_error(e, {'database_name': db_name})
-        if redis_client:
-            redis_client.set(cache_key, "failed")
+        BillingService._update_tenant_status_to_failed(db_name, f"Database creation error: {str(e)}", app)
         return False
+
+
+
+
+
 
 @track_errors('odoo_user_credentials_update')
 def update_odoo_user_credentials(database_name, current_username, current_password, new_username, new_password):
@@ -529,6 +619,92 @@ def favicon():
 @track_errors('serve_service_worker')
 def serve_service_worker():
     return send_file(os.path.join('static', 'js', 'pwa-worker.js'), mimetype='application/javascript')
+
+
+@app.route('/sw.js')
+@track_errors('serve_sw_js')
+def serve_sw_js():
+    """Serve the main service worker file"""
+    response = make_response(send_file(os.path.join('static', 'js', 'sw.js'), mimetype='application/javascript'))
+    # Add headers for proper service worker caching
+    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '0'
+    return response
+
+@app.route('/robots.txt')
+@track_errors('serve_robots')
+def serve_robots():
+    """Serve robots.txt for SEO"""
+    robots_content = """User-agent: *
+Allow: /login
+Allow: /register
+Disallow: /admin/
+Disallow: /api/
+Disallow: /tenant/*/manage
+Disallow: /billing/
+
+Sitemap: {}/sitemap.xml
+""".format(request.url_root.rstrip('/'))
+    
+    response = make_response(robots_content)
+    response.headers['Content-Type'] = 'text/plain'
+    return response
+
+@app.route('/sitemap.xml')
+@track_errors('serve_sitemap')
+def serve_sitemap():
+    """Serve sitemap for SEO"""
+    sitemap_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>{request.url_root.rstrip('/')}/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>{request.url_root.rstrip('/')}/login</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>{request.url_root.rstrip('/')}/register</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+</urlset>"""
+    
+    response = make_response(sitemap_content)
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+@app.route('/static/browserconfig.xml')
+@track_errors('serve_browserconfig')
+def serve_browserconfig():
+    """Serve browserconfig.xml for Windows tiles"""
+    return send_file(os.path.join('static', 'browserconfig.xml'), mimetype='application/xml')
+
+# Add PWA-specific headers to key routes
+@app.after_request
+def add_pwa_headers(response):
+    """Add PWA-friendly headers"""
+    # Add security headers
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    response.headers['X-XSS-Protection'] = '1; mode=block'
+    
+    # Add HTTPS redirect header for production
+    if not app.debug and request.headers.get('X-Forwarded-Proto') != 'https':
+        response.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
+    
+    # Add cache headers for static assets
+    if request.endpoint == 'static':
+        response.headers['Cache-Control'] = 'public, max-age=31536000'  # 1 year
+    elif request.endpoint in ['serve_manifest', 'serve_sw_js']:
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    
+    return response
+
 
 @app.route('/offline.html')
 @track_errors('serve_offline_page')
@@ -627,6 +803,7 @@ def dashboard():
         flash('Error loading dashboard. Please try again.', 'error')
         return render_template('dashboard.html', tenants=[], stats={})
 
+
 @app.route('/tenant/create', methods=['GET', 'POST'])
 @login_required
 @track_errors('create_tenant_route')
@@ -662,29 +839,23 @@ def create_tenant():
             admin_username = f"admin_{form.subdomain.data}"
             admin_password = generate_secure_password()
             
-            subscription_plan = SubscriptionPlan.query.filter_by(name=form.plan.data).first()
-            plan_modules = subscription_plan.modules if subscription_plan.modules else []
-            
-            executor = ThreadPoolExecutor(max_workers=1)
-            executor.submit(run_async_in_background, create_database(db_name, admin_username, admin_password, plan_modules))
-            executor.shutdown(wait=False)
-            
+            # Create tenant record with pending status - NO DATABASE CREATION YET
             tenant = Tenant(
                 name=form.name.data,
                 subdomain=form.subdomain.data,
                 database_name=db_name,
                 plan=form.plan.data,
                 admin_username=admin_username,
-                status='pending'
+                status='pending'  # Will change to 'creating' after payment, then 'active' after DB creation
             )
             tenant.set_admin_password(admin_password)
             
             db.session.add(tenant)
-            db.session.flush()
+            db.session.flush()  # Get the tenant ID
             
             tenant_user = TenantUser(tenant_id=tenant.id, user_id=current_user.id, role='admin')
             db.session.add(tenant_user)
-            worker.current_tenants += 1
+            worker.current_tenants += 1  # Will be decremented if payment fails
             db.session.commit()
 
             try:
@@ -703,9 +874,10 @@ def create_tenant():
             except Exception as e:
                 logger.warning(f"Failed to update cache after tenant creation: {e}")
             
-            
+            # Redirect to payment - database will be created ONLY after successful payment
             payment_url = BillingService.initiate_payment(tenant_id=tenant.id, user_id=current_user.id, plan=tenant.plan)
             return redirect(payment_url)
+            
         except Exception as e:
             db.session.rollback()
             error_tracker.log_error(e, {
@@ -716,6 +888,7 @@ def create_tenant():
             })
             flash('Error creating tenant. Please try again.', 'error')
     return render_template('create_tenant.html', form=form, plans=plans_data)
+
 
 @app.route('/tenant/<int:tenant_id>/manage')
 @login_required
@@ -732,7 +905,13 @@ def manage_tenant(tenant_id):
         storage_usage = odoo.get_database_storage_usage(tenant.database_name)['total_size_human']
         uptime = odoo.get_tenant_uptime(tenant.database_name)['uptime_human']
         odoo_user = odoo.get_users_count(tenant.database_name, tenant.admin_username, tenant.get_admin_password())['total_users']
-        return render_template('manage_tenant.html', tenant=tenant, modules=modules, storage_usage=storage_usage, uptime=uptime, odoo_user=odoo_user)
+        return render_template('manage_tenant.html', 
+                      tenant=tenant, 
+                      modules=modules, 
+                      storage_usage=storage_usage, 
+                      uptime=uptime, 
+                      odoo_user=odoo_user,
+                      tenant_id=tenant_id)
     except Exception as e:
         error_tracker.log_error(e, {'tenant_id': tenant_id, 'user_id': current_user.id})
         flash('Error accessing tenant. Please try again.', 'error')
@@ -1410,4 +1589,11 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))
     debug = os.environ.get('FLASK_ENV') == 'development'
     logger.info(f"Starting Flask application with SocketIO on port {port}")
-    socketio.run(app, host='0.0.0.0', port=port, debug=debug, allow_unsafe_werkzeug=True)
+    socketio.run(
+        app, 
+        host='0.0.0.0', 
+        port=port, 
+        debug=debug, 
+        allow_unsafe_werkzeug=True,
+        use_reloader=False  # Prevent double initialization in debug mode
+    )

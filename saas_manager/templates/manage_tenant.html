@@ -16,6 +16,57 @@
   </div>
 </div>
 
+<!-- Usage Statistics -->
+<div class="row mb-4 g-4">
+  <div class="col-lg-3 col-md-6">
+    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+        <button type="button" class="btn btn-outline-primary mb-3" data-bs-toggle="modal" data-bs-target="#appManagementModal" style="border-radius: 12px; padding: 0.75rem 1rem; width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
+          <i class="fab fa-uncharted fa-2x text-primary"></i>
+        </button>
+        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{ modules }}</h3>
+        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Installed Applications</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-hdd fa-2x text-info"></i>
+        </div>
+        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{storage_usage}}</h3>
+        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Storage Used</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-chart-line fa-2x text-success"></i>
+        </div>
+        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{uptime}}</h3>
+        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Uptime</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-3 col-md-6">
+    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
+      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
+        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
+          <i class="fas fa-users fa-2x text-warning"></i>
+        </div>
+        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{odoo_user}}</h3>
+        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Total Users</p>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Tenant Overview - Redesigned -->
 <div class="row mb-4">
   <div class="col-md-8">
@@ -97,6 +148,11 @@
                   </div>
                 </div>
               </div>
+              <!-- Single Button to Open Combined Modal -->
+              <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#appManagementModal">
+                  Manage Applications
+              </button>
+
             </div>
           </div>
           
@@ -258,11 +314,11 @@
               <div class="d-flex w-100">
                 <input type="password" 
                       class="form-control border-0 p-2 flex-grow-1" 
-                      style="background: rgba(255, 255, 255, 0.1); color: var(--text-primary); font-family: monospace; font-size: 0.9rem; border-radius: 6px; word-break: break-all;" 
+                      style="background: rgba(255, 255, 255, 0.1); color: var(--text-primary); font-family: monospace; font-size: 0.9rem; border-radius: 8px 0px 0px 8px; word-break: break-all;" 
                       value="{{tenant.admin_password}}" 
                       readonly 
                       id="passwordField">
-                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="togglePassword()" id="toggleBtn" style="border-radius: 8px;">
+                      <button class="btn btn-sm btn-outline-secondary" type="button" onclick="togglePassword()" id="toggleBtn" style="border-radius: 0px 8px 8px 0px;">
                         <i class="fas fa-eye" id="eyeIcon"></i>
                       </button>
               </div>
@@ -351,180 +407,6 @@
   </div>
 </div>
 
-<!-- Usage Statistics -->
-<div class="row mb-4 g-4">
-  <div class="col-lg-3 col-md-6">
-    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
-      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
-        <button type="button" class="btn btn-outline-primary mb-3" data-bs-toggle="modal" data-bs-target="#appManagementModal" style="border-radius: 12px; padding: 0.75rem 1rem; width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
-          <i class="fab fa-uncharted fa-2x text-primary"></i>
-        </button>
-        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{ modules }}</h3>
-        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Installed Applications</p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-lg-3 col-md-6">
-    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
-      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
-        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
-          <i class="fas fa-hdd fa-2x text-info"></i>
-        </div>
-        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{storage_usage}}</h3>
-        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Storage Used</p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-lg-3 col-md-6">
-    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
-      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
-        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
-          <i class="fas fa-chart-line fa-2x text-success"></i>
-        </div>
-        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{uptime}}</h3>
-        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Uptime</p>
-      </div>
-    </div>
-  </div>
-  
-  <div class="col-lg-3 col-md-6">
-    <div class="card text-center border-0 shadow-sm h-100" style="border-radius: 16px; transition: all 0.3s ease; min-height: 200px;" onmouseover="this.style.transform='translateY(-5px)'; this.style.boxShadow='var(--shadow-lg)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='var(--shadow-sm)'">
-      <div class="card-body p-4 d-flex flex-column justify-content-center align-items-center">
-        <div class="mb-3" style="width: 80px; height: 60px; display: flex; align-items: center; justify-content: center;">
-          <i class="fas fa-users fa-2x text-warning"></i>
-        </div>
-        <h3 class="card-title fw-bold mb-2" style="color: var(--text-primary); font-size: 2rem;">{{odoo_user}}</h3>
-        <p class="card-text mb-0" style="color: var(--text-muted); font-size: 0.9rem; font-weight: 500;">Total Users</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Log Statistics -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="log-stats">
-            <div class="row">
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-number" id="total-logs">0</span>
-                        <span class="stat-label">Total Logs</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-number text-danger" id="error-count">0</span>
-                        <span class="stat-label">Errors</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-number text-warning" id="warning-count">0</span>
-                        <span class="stat-label">Warnings</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-number text-info" id="info-count">0</span>
-                        <span class="stat-label">Info</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-number text-success" id="success-count">0</span>
-                        <span class="stat-label">Success</span>
-                    </div>
-                </div>
-                <div class="col-md-2 col-6">
-                    <div class="stat-item">
-                        <span class="stat-number" id="last-update">--</span>
-                        <span class="stat-label">Last Update</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Log Controls -->
-<div class="row mb-4">
-    <div class="col-12">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-body p-4">
-                <div class="log-controls">
-                    <div class="row align-items-center">
-                        <div class="col-md-4">
-                            <div class="log-search position-relative">
-                                <i class="fas fa-search position-absolute" style="left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); z-index: 2;"></i>
-                                <input type="text" class="form-control ps-5" id="log-search" placeholder="Search logs..." style="border-radius: 12px; border: 1px solid var(--border-primary); background-color: var(--bg-secondary);">
-                            </div>
-                        </div>
-                        <div class="col-md-8">
-                            <div class="d-flex flex-wrap gap-2">
-                              <button class="btn btn-outline-secondary service-filter active" data-service="all" style="border-radius: 8px;">All Services</button>
-                              <button class="btn btn-outline-secondary service-filter" data-service="odoomulti-tenantsystem-odoo_master-1" style="border-radius: 8px;">Master</button>
-                              <button class="btn btn-outline-secondary service-filter" data-service="odoomulti-tenantsystem-odoo_worker1-1" style="border-radius: 8px;">Workers</button>
-                              <button class="btn btn-outline-secondary service-filter" data-service="postgres" style="border-radius: 8px;">PostgreSQL</button>
-                              <button class="btn btn-outline-secondary service-filter" data-service="nginx" style="border-radius: 8px;">Nginx</button>
-                              <button class="btn btn-primary" id="refresh-logs" style="border-radius: 8px;"><i class="fas fa-sync-alt"></i> Refresh</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Recent Activity and Alerts -->
-<div class="row">
-    <div class="col-md-8">
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header d-flex justify-content-between align-items-center border-0" style="background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border-radius: 16px 16px 0 0;">
-                <h5 class="mb-0 fw-semibold" style="color: var(--text-primary);"><i class="fas fa-history me-2 text-primary"></i>Recent Logs</h5>
-                <div class="dropdown">
-                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" style="border-radius: 8px;">
-                        Filter Level
-                    </button>
-                    <ul class="dropdown-menu">
-                        <li><a class="dropdown-item log-level-filter" href="#" data-level="all">All Levels</a></li>
-                        <li><a class="dropdown-item log-level-filter" href="#" data-level="error">Errors Only</a></li>
-                        <li><a class="dropdown-item log-level-filter" href="#" data-level="warning">Warnings Only</a></li>
-                        <li><a class="dropdown-item log-level-filter" href="#" data-level="info">Info Only</a></li>
-                        <li><a class="dropdown-item log-level-filter" href="#" data-level="debug">Debug Only</a></li>
-                    </ul>
-                </div>
-            </div>
-            <div class="card-body" style="max-height: 600px; overflow-y: auto;">
-                <div class="timeline" id="log-timeline">
-                    <!-- Logs will be populated here -->
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="col-md-4">
-        <div class="card mb-3 border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header border-0" style="background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border-radius: 16px 16px 0 0;">
-                <h5 class="mb-0 fw-semibold" style="color: var(--text-primary);"><i class="fas fa-exclamation-triangle me-2 text-warning"></i>Critical Alerts</h5>
-            </div>
-            <div class="card-body" id="alerts-container">
-                <!-- Alerts will be populated here -->
-            </div>
-        </div>
-        
-        <div class="card border-0 shadow-sm" style="border-radius: 16px;">
-            <div class="card-header border-0" style="background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%); border-radius: 16px 16px 0 0;">
-                <h5 class="mb-0 fw-semibold" style="color: var(--text-primary);"><i class="fas fa-server me-2 text-info"></i>Service Status</h5>
-            </div>
-            <div class="card-body" id="service-status">
-                <!-- Service status will be populated here -->
-            </div>
-        </div>
-    </div>
-</div>
 
 <!-- Modals -->
 <!-- Restart Modal -->
@@ -652,11 +534,6 @@
   </div>
 </div>
 
-<!-- Single Button to Open Combined Modal -->
-<button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#appManagementModal">
-    Manage Applications
-</button>
-
 <!-- Combined Apps Modal -->
 <div class="modal fade" id="appManagementModal" tabindex="-1" aria-labelledby="appManagementModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl">
@@ -757,8 +634,8 @@ function copyPassword() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    const tenantId = "{{ tenant.id | safe }}";
-    if (!tenantId || tenantId === "undefined") {
+    const tenantId = {{ tenant_id | tojson }};
+    if (!tenantId || tenantId === "undefined" || tenantId === null) {
         console.error('Tenant ID is undefined. Ensure tenant.id is passed correctly in manage_tenant.html');
         AppUtils.showNotification('Error: Tenant ID not found', 'danger');
         return;

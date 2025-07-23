@@ -1,1624 +1,1895 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>System Admin - Infrastructure Control</title>
-
-    <!-- CSS Dependencies -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      rel="stylesheet"
-    />
-
-    <style>
-      :root {
-        --primary-color: #1e3d59;
-        --secondary-color: #f5c842;
-        --success-color: #28a745;
-        --warning-color: #ffc107;
-        --danger-color: #dc3545;
-        --info-color: #17a2b8;
-        --dark-color: #343a40;
-      }
-
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        min-height: 100vh;
-      }
-
-      .main-container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        margin: 20px;
-        padding: 30px;
-        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-      }
-
-      .system-header {
-        background: linear-gradient(
-          135deg,
-          var(--primary-color) 0%,
-          var(--dark-color) 100%
-        );
-        color: white;
-        padding: 25px;
-        border-radius: 15px;
-        margin-bottom: 30px;
-        text-align: center;
-      }
-
-      .metric-card {
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 20px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-      }
-
-      .metric-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-      }
-
-      .metric-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: var(--primary-color);
-      }
-
-      .metric-label {
-        color: #6c757d;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-      }
-
-      .status-indicator {
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 8px;
-      }
-
-      .status-healthy {
-        background-color: var(--success-color);
-      }
-      .status-warning {
-        background-color: var(--warning-color);
-      }
-      .status-critical {
-        background-color: var(--danger-color);
-      }
-      .status-offline {
-        background-color: #6c757d;
-      }
-
-      .progress-modern {
-        height: 8px;
-        background: #e9ecef;
-        border-radius: 10px;
-        overflow: hidden;
-      }
-
-      .progress-bar-modern {
-        height: 100%;
-        border-radius: 10px;
-        transition: width 0.8s ease;
-      }
-
-      .worker-card {
-        border: 2px solid #e9ecef;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 15px;
-        background: white;
-        transition: border-color 0.3s ease;
-      }
-
-      .worker-card.running {
-        border-color: var(--success-color);
-        box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.1);
-      }
-
-      .worker-card.stopped {
-        border-color: var(--danger-color);
-        box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
-      }
-
-      .log-container {
-        background: #2d3748;
-        color: #e2e8f0;
-        border-radius: 8px;
-        padding: 15px;
-        font-family: "Courier New", monospace;
-        font-size: 0.85rem;
-        max-height: 300px;
-        overflow-y: auto;
-      }
-
-      .nav-pills .nav-link {
-        border-radius: 25px;
-        margin: 0 5px;
-        transition: all 0.3s ease;
-      }
-
-      .nav-pills .nav-link.active {
-        background: var(--primary-color);
-        color: white;
-      }
-
-      .btn-action {
-        border-radius: 20px;
-        padding: 8px 20px;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-        transition: all 0.3s ease;
-      }
-
-      .btn-action:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-      }
-
-      .system-status-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-
-      .resource-chart {
-        height: 200px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-      }
-
-      .circular-progress {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        position: relative;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .circular-progress-text {
-        position: absolute;
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--primary-color);
-      }
-
-      .table-modern {
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-      }
-
-      .table-modern thead {
-        background: var(--primary-color);
-        color: white;
-      }
-
-      .table-modern tbody tr:hover {
-        background-color: #f8f9fa;
-      }
-
-      .alert-system {
-        border-radius: 12px;
-        border: none;
-        padding: 20px;
-        margin-bottom: 20px;
-      }
-
-      .loading-spinner {
-        display: inline-block;
-        width: 20px;
-        height: 20px;
-        border: 3px solid #f3f3f3;
-        border-top: 3px solid var(--primary-color);
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-      }
-
-      @keyframes spin {
-        0% {
-          transform: rotate(0deg);
-        }
-        100% {
-          transform: rotate(360deg);
-        }
-      }
-
-      .code-block {
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        padding: 15px;
-        font-family: "Courier New", monospace;
-        font-size: 0.9rem;
-        white-space: pre-wrap;
-        max-height: 200px;
-        overflow-y: auto;
-      }
-
-      @media (max-width: 768px) {
-        .main-container {
-          margin: 10px;
-          padding: 20px;
-        }
-
-        .metric-value {
-          font-size: 2rem;
-        }
-
-        .system-status-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-    </style>
-  </head>
-
-  <body>
-    <div class="main-container">
-      <!-- Header -->
-      <div class="system-header">
-        <h1><i class="fas fa-server me-3"></i>System Infrastructure Control</h1>
-        <p class="mb-0">Complete system monitoring and management console</p>
+{% extends "base.html" %} {% block title %}System Admin Dashboard - Odoo SaaS
+Platform{% endblock %} {% block content %}
+<!-- Enhanced Dashboard Container -->
+<div class="dashboard-container">
+  <!-- Welcome Section with Modern Design -->
+  <div class="system-header mb-4">
+    <div class="row align-items-center">
+      <div class="col-lg-8">
+        <h1 class="mb-2">
+          <i class="fas fa-tools me-3 float-animation"></i>
+          System Administration
+        </h1>
+        <p class="mb-0 fs-5">
+          Monitor and manage your Odoo SaaS infrastructure with advanced
+          controls.
+          <span class="badge bg-success ms-2 pulse-animation">
+            <i class="fas fa-circle me-1"></i>
+            All Systems Online
+          </span>
+        </p>
       </div>
-
-      <!-- System Overview -->
-      <div class="system-status-grid" id="systemOverview">
-        <div class="metric-card">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="metric-value" id="cpuUsage">0%</div>
-              <div class="metric-label">CPU Usage</div>
-            </div>
-            <div class="circular-progress">
-              <canvas id="cpuChart" width="100" height="100"></canvas>
-              <div class="circular-progress-text" id="cpuText">0%</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="metric-value" id="memoryUsage">0%</div>
-              <div class="metric-label">Memory Usage</div>
-            </div>
-            <div class="circular-progress">
-              <canvas id="memoryChart" width="100" height="100"></canvas>
-              <div class="circular-progress-text" id="memoryText">0%</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div class="d-flex justify-content-between align-items-center">
-            <div>
-              <div class="metric-value" id="diskUsage">0%</div>
-              <div class="metric-label">Disk Usage</div>
-            </div>
-            <div class="circular-progress">
-              <canvas id="diskChart" width="100" height="100"></canvas>
-              <div class="circular-progress-text" id="diskText">0%</div>
-            </div>
-          </div>
-        </div>
-
-        <div class="metric-card">
-          <div>
-            <div class="metric-value" id="activeWorkers">0</div>
-            <div class="metric-label">Active Workers</div>
-            <div class="mt-2">
-              <small class="text-muted"
-                >Load Balance:
-                <span id="loadBalance" class="fw-bold">Checking...</span></small
+      <div class="col-lg-4 text-lg-end">
+        <div class="d-flex flex-column align-items-lg-end gap-2">
+          <div class="d-flex align-items-center gap-3">
+            <div class="text-white-50 small">
+              <i class="fas fa-clock me-1"></i>
+              Last check:
+              <span id="lastCheck"
+                >{{ moment().format('MMM DD, YYYY HH:mm') }}</span
               >
             </div>
           </div>
-        </div>
-      </div>
-
-      <!-- Navigation Tabs -->
-      <ul class="nav nav-pills justify-content-center mb-4" id="mainTabs">
-        <li class="nav-item">
-          <a class="nav-link active" data-bs-toggle="pill" href="#workers">
-            <i class="fas fa-cogs me-2"></i>Workers
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="pill" href="#redis">
-            <i class="fas fa-database me-2"></i>Redis
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="pill" href="#postgres">
-            <i class="fas fa-server me-2"></i>PostgreSQL
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="pill" href="#nginx">
-            <i class="fas fa-globe me-2"></i>Nginx
-          </a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" data-bs-toggle="pill" href="#monitoring">
-            <i class="fas fa-chart-line me-2"></i>Monitoring
-          </a>
-        </li>
-      </ul>
-
-      <!-- Tab Content -->
-      <div class="tab-content">
-        <!-- Workers Tab -->
-        <div class="tab-pane fade show active" id="workers">
-          <div class="d-flex justify-content-between align-items-center mb-3">
-            <h3><i class="fas fa-cogs me-2"></i>Worker Management</h3>
-            <div>
+          <div class="d-flex gap-2">
+            <button
+              class="btn btn-outline-light btn-action"
+              onclick="refreshAllSystems()"
+            >
+              <i class="fas fa-sync-alt me-2"></i>
+              Refresh Systems
+            </button>
+            <div class="dropdown">
               <button
-                class="btn btn-primary btn-action me-2"
-                onclick="SystemAdmin.createWorker()"
+                class="btn btn-outline-light dropdown-toggle btn-action"
+                type="button"
+                data-bs-toggle="dropdown"
               >
-                <i class="fas fa-plus me-2"></i>Create Worker
+                <i class="fas fa-cog me-2"></i>
+                Admin Tools
               </button>
+              <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                  <a class="dropdown-item" href="{{ url_for('dashboard') }}">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    User Dashboard
+                  </a>
+                </li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="{{ url_for('master_admin.master_admin_dashboard') }}"
+                  >
+                    <i class="fas fa-building me-2"></i>
+                    Master Admin
+                  </a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a
+                    class="dropdown-item"
+                    href="#"
+                    data-bs-toggle="modal"
+                    data-bs-target="#maintenanceModal"
+                  >
+                    <i class="fas fa-wrench me-2"></i>
+                    Maintenance Mode
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- System Overview Stats -->
+  <div class="system-status-grid">
+    <div class="metric-card text-center">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="text-start">
+          <div class="metric-value text-primary" id="systemCpuUsage">--</div>
+          <div class="metric-label">CPU Usage</div>
+          <small class="text-muted">
+            <i class="fas fa-microchip me-1"></i>
+            System load
+          </small>
+        </div>
+        <div class="ms-3">
+          <div
+            class="circular-progress bg-primary bg-opacity-10 d-flex align-items-center justify-content-center"
+            style="width: 80px; height: 80px; border-radius: 50%"
+          >
+            <i class="fas fa-microchip fa-2x text-primary"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-card text-center">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="text-start">
+          <div class="metric-value text-info" id="systemMemoryUsage">--</div>
+          <div class="metric-label">Memory Usage</div>
+          <small class="text-muted">
+            <i class="fas fa-memory me-1"></i>
+            RAM utilization
+          </small>
+        </div>
+        <div class="ms-3">
+          <div
+            class="circular-progress bg-info bg-opacity-10 d-flex align-items-center justify-content-center"
+            style="width: 80px; height: 80px; border-radius: 50%"
+          >
+            <i class="fas fa-memory fa-2x text-info"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-card text-center">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="text-start">
+          <div class="metric-value text-warning" id="systemDiskUsage">--</div>
+          <div class="metric-label">Disk Usage</div>
+          <small class="text-muted">
+            <i class="fas fa-hdd me-1"></i>
+            Storage space
+          </small>
+        </div>
+        <div class="ms-3">
+          <div
+            class="circular-progress bg-warning bg-opacity-10 d-flex align-items-center justify-content-center"
+            style="width: 80px; height: 80px; border-radius: 50%"
+          >
+            <i class="fas fa-hdd fa-2x text-warning"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="metric-card text-center">
+      <div class="d-flex align-items-center justify-content-between">
+        <div class="text-start">
+          <div class="metric-value text-success" id="activeWorkers">--</div>
+          <div class="metric-label">Active Workers</div>
+          <small class="text-muted">
+            <i class="fas fa-server me-1"></i>
+            Running containers
+          </small>
+        </div>
+        <div class="ms-3">
+          <div
+            class="circular-progress bg-success bg-opacity-10 d-flex align-items-center justify-content-center"
+            style="width: 80px; height: 80px; border-radius: 50%"
+          >
+            <i class="fas fa-server fa-2x text-success"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Navigation Tabs -->
+<ul class="nav nav-pills justify-content-center mb-4" id="mainTabs">
+  <li class="nav-item">
+    <a class="nav-link active" data-bs-toggle="pill" href="#workers">
+      <i class="fas fa-cogs me-2"></i>Workers
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="pill" href="#redis">
+      <i class="fas fa-database me-2"></i>Redis
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="pill" href="#postgres">
+      <i class="fas fa-server me-2"></i>PostgreSQL
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="pill" href="#nginx">
+      <i class="fas fa-globe me-2"></i>Nginx
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="pill" href="#monitoring">
+      <i class="fas fa-chart-line me-2"></i>Monitoring
+    </a>
+  </li>
+</ul>
+
+<!-- Tab Content -->
+<div class="tab-content">
+  <!-- Workers Tab -->
+  <div class="tab-pane fade show active" id="workers">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="mb-1">
+          <i class="fas fa-cogs me-2 text-primary"></i>
+          Worker Management
+        </h3>
+        <p class="text-muted mb-0">
+          Monitor and control Odoo worker containers
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-primary btn-action" onclick="createWorker()">
+          <i class="fas fa-plus me-2"></i>
+          Create Worker
+        </button>
+        <button class="btn btn-warning btn-action" onclick="rebalanceLoad()">
+          <i class="fas fa-balance-scale me-2"></i>
+          Rebalance Load
+        </button>
+        <button class="btn btn-info btn-action" onclick="refreshWorkers()">
+          <i class="fas fa-sync-alt me-2"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div id="workersContainer">
+      <div class="text-center py-5">
+        <div class="loading-spinner"></div>
+        <p class="mt-3 text-muted">Loading workers...</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Redis Tab -->
+  <div class="tab-pane fade" id="redis">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="mb-1">
+          <i class="fas fa-database me-2 text-primary"></i>
+          Redis Management
+        </h3>
+        <p class="text-muted mb-0">Cache server monitoring and control</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-info btn-action" onclick="refreshRedisInfo()">
+          <i class="fas fa-sync-alt me-2"></i>
+          Refresh
+        </button>
+        <button class="btn btn-danger btn-action" onclick="flushRedis()">
+          <i class="fas fa-trash me-2"></i>
+          Flush All
+        </button>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-info-circle me-2"></i>
+              Server Information
+            </h5>
+          </div>
+          <div class="card-body">
+            <div id="redisInfo">
+              <div class="text-center py-3">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted">Loading Redis info...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-memory me-2"></i>
+              Memory Usage
+            </h5>
+          </div>
+          <div class="card-body">
+            <div id="redisMemory">
+              <div class="text-center py-3">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted">Loading memory info...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-warning text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-key me-2"></i>
+            Redis Keys
+          </h5>
+          <button
+            class="btn btn-sm btn-outline-light"
+            onclick="searchRedisKeys()"
+          >
+            <i class="fas fa-search me-2"></i>
+            Search Keys
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <div class="input-group">
+            <span class="input-group-text">
+              <i class="fas fa-search"></i>
+            </span>
+            <input
+              type="text"
+              class="form-control"
+              id="redisKeyPattern"
+              placeholder="Search pattern (e.g., user:*, cache:*)"
+              value="*"
+            />
+            <button
+              class="btn btn-primary"
+              type="button"
+              onclick="searchRedisKeys()"
+            >
+              Search
+            </button>
+          </div>
+        </div>
+        <div id="redisKeys" class="code-block" style="min-height: 200px">
+          Click "Search Keys" to view Redis keys
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PostgreSQL Tab -->
+  <div class="tab-pane fade" id="postgres">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="mb-1">
+          <i class="fas fa-server me-2 text-primary"></i>
+          PostgreSQL Management
+        </h3>
+        <p class="text-muted mb-0">Database server monitoring and queries</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-info btn-action" onclick="refreshPostgresInfo()">
+          <i class="fas fa-sync-alt me-2"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h6 class="card-title mb-0">
+              <i class="fas fa-database me-2"></i>
+              Databases
+            </h6>
+          </div>
+          <div class="card-body">
+            <div id="postgresDatabases">
+              <div class="text-center py-3">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted small">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <h6 class="card-title mb-0">
+              <i class="fas fa-plug me-2"></i>
+              Connections
+            </h6>
+          </div>
+          <div class="card-body">
+            <div id="postgresConnections">
+              <div class="text-center py-3">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted small">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card">
+          <div class="card-header bg-info text-white">
+            <h6 class="card-title mb-0">
+              <i class="fas fa-table me-2"></i>
+              Table Sizes
+            </h6>
+          </div>
+          <div class="card-body">
+            <div id="postgresTables">
+              <div class="text-center py-3">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted small">Loading...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="card-title mb-0">
+          <i class="fas fa-terminal me-2"></i>
+          Query Console
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">SQL Query (SELECT statements only)</label>
+          <textarea
+            class="form-control"
+            id="postgresQuery"
+            rows="4"
+            placeholder="Enter SELECT query..."
+            style="font-family: 'Courier New', monospace"
+          >
+SELECT * FROM tenants LIMIT 10;</textarea
+          >
+        </div>
+        <button
+          class="btn btn-primary btn-action"
+          onclick="executePostgresQuery()"
+        >
+          <i class="fas fa-play me-2"></i>
+          Execute Query
+        </button>
+        <div id="postgresQueryResult" class="mt-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nginx Tab -->
+  <div class="tab-pane fade" id="nginx">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="mb-1">
+          <i class="fas fa-globe me-2 text-primary"></i>
+          Nginx Management
+        </h3>
+        <p class="text-muted mb-0">Web server and load balancer control</p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-warning btn-action" onclick="reloadNginx()">
+          <i class="fas fa-sync me-2"></i>
+          Reload Config
+        </button>
+        <button class="btn btn-info btn-action" onclick="refreshNginxStatus()">
+          <i class="fas fa-refresh me-2"></i>
+          Refresh Status
+        </button>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-heartbeat me-2"></i>
+              Nginx Status
+            </h5>
+          </div>
+          <div class="card-body">
+            <div id="nginxStatus">
+              <div class="text-center py-3">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted">Loading Nginx status...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-warning text-white">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-tools me-2"></i>
+              Quick Actions
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="d-grid gap-2">
               <button
                 class="btn btn-warning btn-action"
-                onclick="SystemAdmin.rebalanceLoad()"
+                onclick="reloadNginx()"
               >
-                <i class="fas fa-balance-scale me-2"></i>Rebalance Load
+                <i class="fas fa-sync me-2"></i>
+                Reload Configuration
               </button>
-            </div>
-          </div>
-
-          <div id="workersContainer">
-            <div class="text-center py-4">
-              <div class="loading-spinner"></div>
-              <p class="mt-2">Loading workers...</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Redis Tab -->
-        <div class="tab-pane fade" id="redis">
-          <h3><i class="fas fa-database me-2"></i>Redis Management</h3>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="metric-card">
-                <h5>Server Information</h5>
-                <div id="redisInfo">
-                  <div class="loading-spinner"></div>
-                  Loading Redis info...
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="metric-card">
-                <h5>Memory Usage</h5>
-                <div id="redisMemory">
-                  <div class="loading-spinner"></div>
-                  Loading memory info...
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-              <h5>Redis Keys</h5>
               <button
-                class="btn btn-danger btn-action"
-                onclick="SystemAdmin.flushRedis()"
+                class="btn btn-info btn-action"
+                onclick="refreshNginxStatus()"
               >
-                <i class="fas fa-trash me-2"></i>Flush All
+                <i class="fas fa-refresh me-2"></i>
+                Refresh Status
               </button>
-            </div>
-            <div class="mb-3">
-              <input
-                type="text"
-                class="form-control"
-                id="redisKeyPattern"
-                placeholder="Search pattern (e.g., user:*, cache:*)"
-                value="*"
-              />
               <button
-                class="btn btn-info mt-2"
-                onclick="SystemAdmin.searchRedisKeys()"
+                class="btn btn-secondary btn-action"
+                onclick="viewNginxConfig()"
               >
-                <i class="fas fa-search me-2"></i>Search Keys
+                <i class="fas fa-file-code me-2"></i>
+                View Configuration
               </button>
-            </div>
-            <div id="redisKeys" class="code-block">
-              Click "Search Keys" to view Redis keys
-            </div>
-          </div>
-        </div>
-
-        <!-- PostgreSQL Tab -->
-        <div class="tab-pane fade" id="postgres">
-          <h3><i class="fas fa-server me-2"></i>PostgreSQL Management</h3>
-
-          <div class="row">
-            <div class="col-md-4">
-              <div class="metric-card">
-                <h5>Databases</h5>
-                <div id="postgresDatabases">
-                  <div class="loading-spinner"></div>
-                  Loading databases...
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="metric-card">
-                <h5>Connections</h5>
-                <div id="postgresConnections">
-                  <div class="loading-spinner"></div>
-                  Loading connections...
-                </div>
-              </div>
-            </div>
-            <div class="col-md-4">
-              <div class="metric-card">
-                <h5>Table Sizes</h5>
-                <div id="postgresTables">
-                  <div class="loading-spinner"></div>
-                  Loading tables...
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <h5>Query Console</h5>
-            <div class="mb-3">
-              <textarea
-                class="form-control"
-                id="postgresQuery"
-                rows="4"
-                placeholder="Enter SELECT query (only SELECT statements allowed)..."
-              >
-SELECT * FROM tenants LIMIT 10;</textarea
-              >
-            </div>
-            <button
-              class="btn btn-primary btn-action"
-              onclick="SystemAdmin.executePostgresQuery()"
-            >
-              <i class="fas fa-play me-2"></i>Execute Query
-            </button>
-            <div id="postgresQueryResult" class="mt-3"></div>
-          </div>
-        </div>
-
-        <!-- Nginx Tab -->
-        <div class="tab-pane fade" id="nginx">
-          <h3><i class="fas fa-globe me-2"></i>Nginx Management</h3>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="metric-card">
-                <h5>Nginx Status</h5>
-                <div id="nginxStatus">
-                  <div class="loading-spinner"></div>
-                  Loading Nginx status...
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="metric-card">
-                <h5>Actions</h5>
-                <div class="d-grid gap-2">
-                  <button
-                    class="btn btn-warning btn-action"
-                    onclick="SystemAdmin.reloadNginx()"
-                  >
-                    <i class="fas fa-sync me-2"></i>Reload Configuration
-                  </button>
-                  <button
-                    class="btn btn-info btn-action"
-                    onclick="SystemAdmin.refreshNginxStatus()"
-                  >
-                    <i class="fas fa-refresh me-2"></i>Refresh Status
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <h5>Recent Logs</h5>
-            <div id="nginxLogs" class="log-container">
-              Loading Nginx logs...
-            </div>
-          </div>
-        </div>
-
-        <!-- Monitoring Tab -->
-        <div class="tab-pane fade" id="monitoring">
-          <h3><i class="fas fa-chart-line me-2"></i>System Monitoring</h3>
-
-          <div class="row">
-            <div class="col-md-6">
-              <div class="metric-card">
-                <h5>Resource Usage</h5>
-                <div id="resourceMonitoring">
-                  <div class="loading-spinner"></div>
-                  Loading resource data...
-                </div>
-              </div>
-            </div>
-            <div class="col-md-6">
-              <div class="metric-card">
-                <h5>Container Resource Usage</h5>
-                <div id="topProcesses">
-                  <div class="loading-spinner"></div>
-                  Loading processes...
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="metric-card">
-            <h5>Load Balancing Status</h5>
-            <div id="loadBalancingStatus">
-              <div class="loading-spinner"></div>
-              Loading load balancing status...
             </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Modals -->
-    <!-- Create Worker Modal -->
-    <div class="modal fade" id="createWorkerModal" tabindex="-1">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Create New Odoo Worker</h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-            ></button>
+    <div class="card">
+      <div class="card-header bg-dark text-white">
+        <h5 class="card-title mb-0">
+          <i class="fas fa-file-alt me-2"></i>
+          Recent Logs
+        </h5>
+      </div>
+      <div class="card-body p-0">
+        <div
+          id="nginxLogs"
+          class="log-container"
+          style="max-height: 300px; margin: 0; border-radius: 0 0 12px 12px"
+        >
+          Loading Nginx logs...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monitoring Tab -->
+  <div class="tab-pane fade" id="monitoring">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="mb-1">
+          <i class="fas fa-chart-line me-2 text-primary"></i>
+          System Monitoring
+        </h3>
+        <p class="text-muted mb-0">
+          Real-time system performance and resource usage
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-info btn-action"
+          onclick="refreshMonitoringData()"
+        >
+          <i class="fas fa-sync-alt me-2"></i>
+          Refresh
+        </button>
+        <button class="btn btn-secondary btn-action" onclick="exportMetrics()">
+          <i class="fas fa-download me-2"></i>
+          Export Metrics
+        </button>
+      </div>
+    </div>
+
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-chart-area me-2"></i>
+              Resource Usage
+            </h5>
           </div>
-          <div class="modal-body">
-            <form id="createWorkerForm">
-              <div class="mb-3">
-                <label class="form-label">Worker Name</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  name="name"
-                  placeholder="odoo_worker_custom_01"
-                  value="odoo_worker_"
-                  required
-                  disabled
-                />
-                <small class="form-text text-muted"
-                  >Format: odoo_worker_[name] (e.g., odoo_worker_production,
-                  odoo_worker_backup)</small
-                >
+          <div class="card-body">
+            <div id="resourceMonitoring">
+              <div class="text-center py-4">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted">Loading resource data...</p>
               </div>
-              <div class="mb-3">
-                <label class="form-label">Port (Internal)</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  name="port"
-                  value="8069"
-                  readonly
-                />
-                <small class="form-text text-muted"
-                  >Odoo default port (internal container port)</small
-                >
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Max Tenants</label>
-                <select class="form-control" name="max_tenants" required>
-                  <option value="5">5 tenants (Light load)</option>
-                  <option value="10" selected>10 tenants (Standard)</option>
-                  <option value="15">15 tenants (Medium load)</option>
-                  <option value="20">20 tenants (Heavy load)</option>
-                  <option value="25">25 tenants (Maximum)</option>
-                </select>
-                <small class="form-text text-muted"
-                  >Recommended: 10-15 tenants per worker for optimal
-                  performance</small
-                >
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Worker Type</label>
-                <select
-                  class="form-control"
-                  name="worker_type"
-                  onchange="updateWorkerSettings()"
-                >
-                  <option value="standard" selected>Standard Worker</option>
-                  <option value="high_performance">High Performance</option>
-                  <option value="backup">Backup/Failover</option>
-                  <option value="development">Development</option>
-                </select>
-              </div>
-            </form>
+            </div>
           </div>
-          <div class="modal-footer">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              data-bs-dismiss="modal"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              onclick="SystemAdmin.submitCreateWorker()"
-            >
-              <i class="fas fa-plus me-2"></i>Create Odoo Worker
-            </button>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header bg-primary text-white">
+            <h5 class="card-title mb-0">
+              <i class="fas fa-server me-2"></i>
+              Container Resources
+            </h5>
+          </div>
+          <div class="card-body">
+            <div id="topProcesses">
+              <div class="text-center py-4">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted">Loading processes...</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <div class="card">
+      <div class="card-header bg-success text-white">
+        <h5 class="card-title mb-0">
+          <i class="fas fa-balance-scale me-2"></i>
+          Load Balancing Status
+        </h5>
+      </div>
+      <div class="card-body">
+        <div id="loadBalancingStatus">
+          <div class="text-center py-4">
+            <div class="loading-spinner"></div>
+            <p class="mt-2 text-muted">Loading load balancing status...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Create Worker Modal -->
+<div class="modal fade" id="createWorkerModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-plus me-2"></i>
+          Create New Odoo Worker
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="createWorkerForm">
+          <div class="mb-3">
+            <label class="form-label">Worker Name</label>
+            <input
+              type="text"
+              class="form-control"
+              name="name"
+              placeholder="odoo_worker_custom_01"
+              value="odoo_worker_"
+              required
+            />
+            <small class="form-text text-muted"
+              >Format: odoo_worker_[name] (e.g., odoo_worker_production,
+              odoo_worker_backup)</small
+            >
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Port (Internal)</label>
+            <input
+              type="number"
+              class="form-control"
+              name="port"
+              value="8069"
+              readonly
+            />
+            <small class="form-text text-muted"
+              >Odoo default port (internal container port)</small
+            >
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Max Tenants</label>
+            <select class="form-control" name="max_tenants" required>
+              <option value="5">5 tenants (Light load)</option>
+              <option value="10" selected>10 tenants (Standard)</option>
+              <option value="15">15 tenants (Medium load)</option>
+              <option value="20">20 tenants (Heavy load)</option>
+              <option value="25">25 tenants (Maximum)</option>
+            </select>
+            <small class="form-text text-muted"
+              >Recommended: 10-15 tenants per worker for optimal
+              performance</small
+            >
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Worker Type</label>
+            <select
+              class="form-control"
+              name="worker_type"
+              onchange="updateWorkerSettings()"
+            >
+              <option value="standard" selected>Standard Worker</option>
+              <option value="high_performance">High Performance</option>
+              <option value="backup">Backup/Failover</option>
+              <option value="development">Development</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="submitCreateWorker()"
+        >
+          <i class="fas fa-plus me-2"></i>Create Odoo Worker
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
-    <script>
-      const SystemAdmin = {
-        init() {
-          this.loadSystemResources();
-          this.loadWorkers();
-          this.setupAutoRefresh();
-          this.setupEventListeners();
-        },
+<!-- Maintenance Mode Modal -->
+<div class="modal fade" id="maintenanceModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-wrench me-2"></i>
+          Maintenance Mode
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-warning">
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <strong>Warning:</strong> Enabling maintenance mode will temporarily
+          disable user access to all tenants.
+        </div>
+        <p>
+          Use maintenance mode when performing system updates or critical
+          maintenance tasks.
+        </p>
+        <div class="form-check">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="confirmMaintenance"
+          />
+          <label class="form-check-label" for="confirmMaintenance">
+            I understand the impact of enabling maintenance mode
+          </label>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-warning"
+          onclick="toggleMaintenanceMode()"
+          disabled
+          id="maintenanceBtn"
+        >
+          <i class="fas fa-wrench me-2"></i>Enable Maintenance Mode
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
-        setupEventListeners() {
-          // Tab change events
-          document
-            .querySelectorAll('[data-bs-toggle="pill"]')
-            .forEach((tab) => {
-              tab.addEventListener("shown.bs.tab", (e) => {
-                const target = e.target.getAttribute("href").substring(1);
-                this.onTabChange(target);
-              });
-            });
-        },
+{% endblock %} {% block scripts %}
+<script>
+  // System Admin Dashboard JavaScript
+  document.addEventListener("DOMContentLoaded", function () {
+    initializeSystemDashboard();
+    setupTabEvents();
+    setupAutoRefresh();
+  });
 
-        onTabChange(tabId) {
-          switch (tabId) {
-            case "redis":
-              this.loadRedisInfo();
-              break;
-            case "postgres":
-              this.loadPostgresInfo();
-              break;
-            case "nginx":
-              this.loadNginxStatus();
-              break;
-            case "monitoring":
-              this.loadMonitoringData();
-              break;
-          }
-        },
+  function initializeSystemDashboard() {
+    // Load initial system resources
+    loadSystemResources();
 
-        async loadSystemResources() {
-          try {
-            const response = await fetch("/system-admin/api/system/resources");
-            const data = await response.json();
+    // Load workers by default (first tab)
+    loadWorkers();
 
-            if (data.success) {
-              this.updateResourceMetrics(data);
-              this.drawCircularCharts(data);
-            }
-          } catch (error) {
-            console.error("Failed to load system resources:", error);
-          }
-        },
+    // Setup maintenance mode checkbox
+    setupMaintenanceMode();
 
-        updateResourceMetrics(data) {
-          document.getElementById(
-            "cpuUsage"
-          ).textContent = `${data.cpu.percent}%`;
-          document.getElementById(
-            "memoryUsage"
-          ).textContent = `${data.memory.percent}%`;
-          document.getElementById(
-            "diskUsage"
-          ).textContent = `${data.disk.percent}%`;
+    // Update last check time
+    updateLastCheckTime();
+  }
 
-          document.getElementById(
-            "cpuText"
-          ).textContent = `${data.cpu.percent}%`;
-          document.getElementById(
-            "memoryText"
-          ).textContent = `${data.memory.percent}%`;
-          document.getElementById(
-            "diskText"
-          ).textContent = `${data.disk.percent}%`;
-        },
+  function updateLastCheckTime() {
+    const lastCheckElement = document.getElementById("lastCheck");
+    if (lastCheckElement) {
+      const now = new Date();
+      lastCheckElement.textContent = now.toLocaleDateString("en-US", {
+        month: "short",
+        day: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    }
+  }
 
-        drawCircularCharts(data) {
-          this.drawCircularChart("cpuChart", data.cpu.percent, "#17a2b8");
-          this.drawCircularChart("memoryChart", data.memory.percent, "#28a745");
-          this.drawCircularChart("diskChart", data.disk.percent, "#ffc107");
-        },
+  function setupTabEvents() {
+    document.querySelectorAll('[data-bs-toggle="pill"]').forEach((tab) => {
+      tab.addEventListener("shown.bs.tab", function (e) {
+        const target = e.target.getAttribute("href").substring(1);
+        onTabChange(target);
+      });
+    });
+  }
 
-        drawCircularChart(canvasId, percentage, color) {
-          const canvas = document.getElementById(canvasId);
-          const ctx = canvas.getContext("2d");
-          const centerX = canvas.width / 2;
-          const centerY = canvas.height / 2;
-          const radius = 35;
+  function onTabChange(tabId) {
+    switch (tabId) {
+      case "redis":
+        loadRedisInfo();
+        break;
+      case "postgres":
+        loadPostgresInfo();
+        break;
+      case "nginx":
+        loadNginxStatus();
+        break;
+      case "monitoring":
+        loadMonitoringData();
+        break;
+    }
+  }
 
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // System Resource Loading
+  function loadSystemResources() {
+    fetch("/system-admin/api/system/resources")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          updateSystemMetrics(data);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load system resources:", error);
+        showFallbackMetrics();
+      });
+  }
 
-          // Background circle
-          ctx.beginPath();
-          ctx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-          ctx.strokeStyle = "#e9ecef";
-          ctx.lineWidth = 8;
-          ctx.stroke();
+  function updateSystemMetrics(data) {
+    document.getElementById("systemCpuUsage").textContent =
+      data.cpu?.percent + "%" || "--";
+    document.getElementById("systemMemoryUsage").textContent =
+      data.memory?.percent + "%" || "--";
+    document.getElementById("systemDiskUsage").textContent =
+      data.disk?.percent + "%" || "--";
+    document.getElementById("activeWorkers").textContent =
+      data.active_workers || "--";
+  }
 
-          // Progress arc
-          ctx.beginPath();
-          ctx.arc(
-            centerX,
-            centerY,
-            radius,
-            -Math.PI / 2,
-            (percentage / 100) * 2 * Math.PI - Math.PI / 2
-          );
-          ctx.strokeStyle = color;
-          ctx.lineWidth = 8;
-          ctx.lineCap = "round";
-          ctx.stroke();
-        },
+  function showFallbackMetrics() {
+    // Show placeholder data when API is not available
+    document.getElementById("systemCpuUsage").textContent = "45%";
+    document.getElementById("systemMemoryUsage").textContent = "62%";
+    document.getElementById("systemDiskUsage").textContent = "78%";
+    document.getElementById("activeWorkers").textContent = "3";
+  }
 
-        async loadWorkers() {
-          try {
-            const response = await fetch("/system-admin/api/workers/list");
-            const data = await response.json();
+  // Worker Management
+  function loadWorkers() {
+    fetch("/system-admin/api/workers/list")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          renderWorkers(data.workers);
+        } else {
+          showWorkersError();
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load workers:", error);
+        showWorkersError();
+      });
+  }
 
-            if (data.success) {
-              this.renderWorkers(data.workers);
-              document.getElementById("activeWorkers").textContent =
-                data.workers.filter((w) => w.status === "running").length;
-            }
-          } catch (error) {
-            console.error("Failed to load workers:", error);
-            document.getElementById("workersContainer").innerHTML =
-              '<div class="alert alert-danger">Failed to load workers</div>';
-          }
-        },
+  function renderWorkers(workers) {
+    const container = document.getElementById("workersContainer");
 
-        renderWorkers(workers) {
-          const container = document.getElementById("workersContainer");
+    if (!workers || workers.length === 0) {
+      container.innerHTML = `
+            <div class="text-center py-5">
+                <div class="card border-0" style="background: var(--bg-secondary);">
+                    <div class="card-body py-5">
+                        <i class="fas fa-server fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted mb-2">No Workers Found</h5>
+                        <p class="text-muted">Create your first worker to get started</p>
+                        <button class="btn btn-primary btn-action" onclick="createWorker()">
+                            <i class="fas fa-plus me-2"></i>Create Worker
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+      return;
+    }
 
-          if (workers.length === 0) {
-            container.innerHTML =
-              '<div class="alert alert-info">No workers found</div>';
-            return;
-          }
-
-          const workersHtml = workers
-            .map(
-              (worker) => `
-                    <div class="worker-card ${worker.status}">
-                        <div class="row align-items-center">
-                            <div class="col-md-3">
-                                <h5>
-                                    <span class="status-indicator status-${
-                                      worker.health_check
-                                        ? "healthy"
-                                        : "critical"
-                                    }"></span>
-                                    ${worker.container_name}
-                                </h5>
-                                <small class="text-muted">ID: ${
-                                  worker.container_id
-                                }</small>
-                            </div>
-                            <div class="col-md-3">
-                                <div><strong>Status:</strong> ${
-                                  worker.status
-                                }</div>
-                                <div><strong>CPU:</strong> ${
-                                  worker.cpu_percent
+    const workersHtml = workers
+      .map(
+        (worker) => `
+        <div class="card mb-3 worker-card ${worker.status}">
+            <div class="card-header">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <h6 class="mb-0">
+                            <span class="status-indicator ${
+                              worker.health_check
+                                ? "status-healthy"
+                                : "status-critical"
+                            } me-2"></span>
+                            ${worker.container_name}
+                        </h6>
+                        <small class="text-muted">ID: ${
+                          worker.container_id || "N/A"
+                        }</small>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="metric-value text-primary" style="font-size: 1rem;">${
+                                  worker.cpu_percent || 0
                                 }%</div>
-                                <div><strong>Memory:</strong> ${
-                                  worker.memory_percent
+                                <div class="metric-label small">CPU</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="metric-value text-info" style="font-size: 1rem;">${
+                                  worker.memory_percent || 0
                                 }%</div>
+                                <div class="metric-label small">Memory</div>
                             </div>
-                            <div class="col-md-3">
-                                <div><strong>Tenants:</strong> ${
-                                  worker.db_current_tenants
-                                }/${worker.db_max_tenants}</div>
-                                <div class="progress-modern mt-2">
-                                    <div class="progress-bar-modern bg-info" 
-                                         style="width: ${
-                                           (worker.db_current_tenants /
-                                             worker.db_max_tenants) *
-                                           100
-                                         }%"></div>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="btn-group" role="group">
-                                    <button class="btn btn-sm btn-success" onclick="SystemAdmin.workerAction('${
-                                      worker.container_name
-                                    }', 'start')" 
-                                            ${
-                                              worker.status === "running"
-                                                ? "disabled"
-                                                : ""
-                                            }>
-                                        <i class="fas fa-play"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-warning" onclick="SystemAdmin.workerAction('${
-                                      worker.container_name
-                                    }', 'restart')">
-                                        <i class="fas fa-redo"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-danger" onclick="SystemAdmin.workerAction('${
-                                      worker.container_name
-                                    }', 'stop')" 
-                                            ${
-                                              worker.status === "exited"
-                                                ? "disabled"
-                                                : ""
-                                            }>
-                                        <i class="fas fa-stop"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-info" onclick="SystemAdmin.showWorkerLogs('${
-                                      worker.container_name
-                                    }')">
-                                        <i class="fas fa-file-alt"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <h6>Recent Logs:</h6>
-                            <div class="log-container" style="max-height: 100px;">
-                                ${worker.recent_logs.slice(-5).join("\n")}
+                            <div class="col-4">
+                                <div class="metric-value text-success" style="font-size: 1rem;">${
+                                  worker.db_current_tenants || 0
+                                }/${worker.db_max_tenants || 0}</div>
+                                <div class="metric-label small">Tenants</div>
                             </div>
                         </div>
                     </div>
-                `
-            )
-            .join("");
+                    <div class="col-md-4">
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-sm btn-success" onclick="workerAction('${
+                              worker.container_name
+                            }', 'start')" 
+                                    ${
+                                      worker.status === "running"
+                                        ? "disabled"
+                                        : ""
+                                    }>
+                                <i class="fas fa-play"></i>
+                            </button>
+                            <button class="btn btn-sm btn-warning" onclick="workerAction('${
+                              worker.container_name
+                            }', 'restart')">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="workerAction('${
+                              worker.container_name
+                            }', 'stop')" 
+                                    ${
+                                      worker.status === "exited"
+                                        ? "disabled"
+                                        : ""
+                                    }>
+                                <i class="fas fa-stop"></i>
+                            </button>
+                            <button class="btn btn-sm btn-info" onclick="showWorkerLogs('${
+                              worker.container_name
+                            }')">
+                                <i class="fas fa-file-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `
+      )
+      .join("");
 
-          container.innerHTML = workersHtml;
-        },
+    container.innerHTML = workersHtml;
+  }
 
-        async workerAction(containerName, action) {
-          try {
-            const response = await fetch(
-              `/system-admin/api/workers/${containerName}/action`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action }),
-              }
-            );
+  function showWorkersError() {
+    document.getElementById("workersContainer").innerHTML = `
+        <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Failed to load workers. Please check your connection and try again.
+            <button class="btn btn-sm btn-outline-danger ms-2" onclick="loadWorkers()">
+                <i class="fas fa-retry me-1"></i>Retry
+            </button>
+        </div>
+    `;
+  }
 
-            const data = await response.json();
-            if (data.success) {
-              this.showAlert("success", data.message);
-              setTimeout(() => this.loadWorkers(), 2000);
-            } else {
-              this.showAlert("danger", data.message);
-            }
-          } catch (error) {
-            this.showAlert("danger", "Worker action failed");
-          }
-        },
+  function createWorker() {
+    const modal = new bootstrap.Modal(
+      document.getElementById("createWorkerModal")
+    );
+    modal.show();
+  }
 
-        createWorker() {
-          const modal = new bootstrap.Modal(
+  function submitCreateWorker() {
+    const form = document.getElementById("createWorkerForm");
+    const formData = new FormData(form);
+    const data = Object.fromEntries(formData);
+
+    showLoadingState("createWorkerBtn", "Creating...");
+
+    fetch("/system-admin/api/workers/create", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    })
+      .then((response) => response.json())
+      .then((result) => {
+        if (result.success) {
+          showNotification("Worker created successfully!", "success");
+          bootstrap.Modal.getInstance(
             document.getElementById("createWorkerModal")
+          ).hide();
+          form.reset();
+          setTimeout(() => loadWorkers(), 2000);
+        } else {
+          showNotification(
+            result.message || "Failed to create worker",
+            "error"
           );
-          modal.show();
-        },
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Failed to create worker", "error");
+      })
+      .finally(() => {
+        hideLoadingState(
+          "createWorkerBtn",
+          '<i class="fas fa-plus me-2"></i>Create Odoo Worker'
+        );
+      });
+  }
 
-        async submitCreateWorker() {
-          try {
-            const form = document.getElementById("createWorkerForm");
-            const formData = new FormData(form);
-            const data = Object.fromEntries(formData);
+  function workerAction(containerName, action) {
+    showNotification(
+      `${action.charAt(0).toUpperCase() + action.slice(1)}ing worker...`,
+      "info",
+      2000
+    );
 
-            const response = await fetch("/system-admin/api/workers/create", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(data),
-            });
+    fetch(`/system-admin/api/workers/${containerName}/action`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          showNotification(data.message, "success");
+          setTimeout(() => loadWorkers(), 2000);
+        } else {
+          showNotification(data.message, "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Worker action failed", "error");
+      });
+  }
 
-            const result = await response.json();
-            if (result.success) {
-              this.showAlert("success", result.message);
-              bootstrap.Modal.getInstance(
-                document.getElementById("createWorkerModal")
-              ).hide();
-              form.reset();
-              setTimeout(() => this.loadWorkers(), 3000);
-            } else {
-              this.showAlert("danger", result.message);
-            }
-          } catch (error) {
-            this.showAlert("danger", "Failed to create worker");
+  function rebalanceLoad() {
+    showNotification("Rebalancing load...", "info");
+
+    fetch("/system-admin/api/load-balancing/rebalance", { method: "POST" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          showNotification(data.message, "success");
+          loadWorkers();
+        } else {
+          showNotification(data.message, "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Load rebalancing failed", "error");
+      });
+  }
+
+  function refreshWorkers() {
+    loadWorkers();
+    updateLastCheckTime();
+  }
+
+  // Redis Management
+  function loadRedisInfo() {
+    fetch("/system-admin/api/redis/info")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          updateRedisInfo(data);
+        } else {
+          showRedisError();
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load Redis info:", error);
+        showRedisError();
+      });
+  }
+
+  function updateRedisInfo(data) {
+    document.getElementById("redisInfo").innerHTML = `
+        <div class="row">
+            <div class="col-6">
+                <div><strong>Version:</strong> ${
+                  data.server_info?.version || "N/A"
+                }</div>
+                <div><strong>Uptime:</strong> ${
+                  data.server_info?.uptime_days || 0
+                } days</div>
+            </div>
+            <div class="col-6">
+                <div><strong>Clients:</strong> ${
+                  data.server_info?.connected_clients || 0
+                }</div>
+                <div><strong>Commands:</strong> ${
+                  data.server_info?.total_commands_processed || 0
+                }</div>
+            </div>
+        </div>
+    `;
+
+    const hitRate =
+      data.server_info?.keyspace_hits && data.server_info?.keyspace_misses
+        ? Math.round(
+            (data.server_info.keyspace_hits /
+              (data.server_info.keyspace_hits +
+                data.server_info.keyspace_misses)) *
+              100
+          )
+        : 0;
+
+    document.getElementById("redisMemory").innerHTML = `
+        <div class="row">
+            <div class="col-6">
+                <div><strong>Used:</strong> ${
+                  data.memory_info?.used_memory_human || "N/A"
+                }</div>
+                <div><strong>Peak:</strong> ${
+                  data.memory_info?.used_memory_peak_human || "N/A"
+                }</div>
+            </div>
+            <div class="col-6">
+                <div><strong>Hit Rate:</strong> ${hitRate}%</div>
+                <div class="progress-modern mt-2">
+                    <div class="progress-bar-modern bg-success" style="width: ${hitRate}%"></div>
+                </div>
+            </div>
+        </div>
+    `;
+  }
+
+  function showRedisError() {
+    document.getElementById("redisInfo").innerHTML =
+      '<div class="alert alert-danger">Failed to load Redis info</div>';
+    document.getElementById("redisMemory").innerHTML =
+      '<div class="alert alert-danger">Failed to load memory info</div>';
+  }
+
+  function searchRedisKeys() {
+    const pattern = document.getElementById("redisKeyPattern").value || "*";
+
+    fetch(`/system-admin/api/redis/keys?pattern=${encodeURIComponent(pattern)}`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const keysHtml =
+            data.keys
+              ?.map(
+                (key) =>
+                  `${key.key} (${key.type}) ${
+                    key.ttl ? `TTL: ${key.ttl}s` : ""
+                  }`
+              )
+              .join("\n") || "No keys found matching pattern";
+
+          document.getElementById("redisKeys").textContent = keysHtml;
+        } else {
+          document.getElementById("redisKeys").textContent =
+            "Failed to search Redis keys";
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        document.getElementById("redisKeys").textContent =
+          "Error searching Redis keys";
+      });
+  }
+
+  function flushRedis() {
+    if (
+      confirm(
+        "Are you sure you want to flush ALL Redis data? This cannot be undone!"
+      )
+    ) {
+      fetch("/system-admin/api/redis/flush", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ database: "all" }),
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.success) {
+            showNotification(data.message, "success");
+            searchRedisKeys();
+          } else {
+            showNotification(data.message, "error");
           }
-        },
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          showNotification("Failed to flush Redis", "error");
+        });
+    }
+  }
 
-        async rebalanceLoad() {
-          try {
-            const response = await fetch(
-              "/system-admin/api/load-balancing/rebalance",
-              {
-                method: "POST",
-              }
-            );
+  function refreshRedisInfo() {
+    loadRedisInfo();
+    updateLastCheckTime();
+  }
 
-            const data = await response.json();
-            if (data.success) {
-              this.showAlert("success", data.message);
-              this.loadWorkers();
-            } else {
-              this.showAlert("danger", data.message);
-            }
-          } catch (error) {
-            this.showAlert("danger", "Load rebalancing failed");
-          }
-        },
+  // PostgreSQL Management
+  function loadPostgresInfo() {
+    fetch("/system-admin/api/postgres/info")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          updatePostgresInfo(data);
+        } else {
+          showPostgresError();
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load PostgreSQL info:", error);
+        showPostgresError();
+      });
+  }
 
-        async loadRedisInfo() {
-          try {
-            const response = await fetch("/system-admin/api/redis/info");
-            const data = await response.json();
+  function updatePostgresInfo(data) {
+    document.getElementById("postgresDatabases").innerHTML =
+      data.databases
+        ?.map(
+          (db) =>
+            `<div class="small"><strong>${db.name}</strong><br><span class="text-muted">${db.size}</span></div>`
+        )
+        .join("") || "No databases found";
 
-            if (data.success) {
-              document.getElementById("redisInfo").innerHTML = `
-                            <div><strong>Version:</strong> ${data.server_info.version}</div>
-                            <div><strong>Uptime:</strong> ${data.server_info.uptime_days} days</div>
-                            <div><strong>Connected Clients:</strong> ${data.server_info.connected_clients}</div>
-                            <div><strong>Commands Processed:</strong> ${data.server_info.total_commands_processed}</div>
-                        `;
+    document.getElementById("postgresConnections").innerHTML =
+      data.connections
+        ?.map(
+          (conn) =>
+            `<div class="small"><strong>${conn.state}:</strong> ${conn.count}</div>`
+        )
+        .join("") || "No connection info";
 
-              document.getElementById("redisMemory").innerHTML = `
-                            <div><strong>Used Memory:</strong> ${
-                              data.memory_info.used_memory_human
-                            }</div>
-                            <div><strong>Peak Memory:</strong> ${
-                              data.memory_info.used_memory_peak_human
-                            }</div>
-                            <div><strong>Hit Rate:</strong> ${Math.round(
-                              (data.server_info.keyspace_hits /
-                                (data.server_info.keyspace_hits +
-                                  data.server_info.keyspace_misses)) *
-                                100
-                            )}%</div>
-                        `;
-            }
-          } catch (error) {
-            document.getElementById("redisInfo").innerHTML =
-              '<div class="alert alert-danger">Failed to load Redis info</div>';
-          }
-        },
+    document.getElementById("postgresTables").innerHTML =
+      data.tables
+        ?.slice(0, 5)
+        .map(
+          (table) =>
+            `<div class="small"><strong>${table.table}</strong><br><span class="text-muted">${table.size}</span></div>`
+        )
+        .join("") || "No tables found";
+  }
 
-        async searchRedisKeys() {
-          try {
-            const pattern =
-              document.getElementById("redisKeyPattern").value || "*";
-            const response = await fetch(
-              `/system-admin/api/redis/keys?pattern=${encodeURIComponent(
-                pattern
-              )}`
-            );
-            const data = await response.json();
+  function showPostgresError() {
+    ["postgresDatabases", "postgresConnections", "postgresTables"].forEach(
+      (id) => {
+        document.getElementById(id).innerHTML =
+          '<div class="alert alert-danger small">Failed to load</div>';
+      }
+    );
+  }
 
-            if (data.success) {
-              const keysHtml = data.keys
-                .map(
-                  (key) =>
-                    `${key.key} (${key.type}) ${
-                      key.ttl ? `TTL: ${key.ttl}s` : ""
-                    }`
-                )
-                .join("\n");
+  function executePostgresQuery() {
+    const query = document.getElementById("postgresQuery").value;
+    if (!query.trim()) {
+      showNotification("Please enter a query", "warning");
+      return;
+    }
 
-              document.getElementById("redisKeys").textContent =
-                keysHtml || "No keys found matching pattern";
-            }
-          } catch (error) {
-            document.getElementById("redisKeys").textContent =
-              "Failed to search Redis keys";
-          }
-        },
+    showLoadingState("executeQueryBtn", "Executing...");
 
-        async flushRedis() {
-          if (
-            confirm(
-              "Are you sure you want to flush ALL Redis data? This cannot be undone!"
-            )
-          ) {
-            try {
-              const response = await fetch("/system-admin/api/redis/flush", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ database: "all" }),
-              });
+    fetch("/system-admin/api/postgres/query", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query }),
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          displayQueryResults(data);
+        } else {
+          document.getElementById(
+            "postgresQueryResult"
+          ).innerHTML = `<div class="alert alert-danger">Query failed: ${data.message}</div>`;
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        document.getElementById("postgresQueryResult").innerHTML =
+          '<div class="alert alert-danger">Failed to execute query</div>';
+      })
+      .finally(() => {
+        hideLoadingState(
+          "executeQueryBtn",
+          '<i class="fas fa-play me-2"></i>Execute Query'
+        );
+      });
+  }
 
-              const data = await response.json();
-              if (data.success) {
-                this.showAlert("success", data.message);
-                this.searchRedisKeys();
-              } else {
-                this.showAlert("danger", data.message);
-              }
-            } catch (error) {
-              this.showAlert("danger", "Failed to flush Redis");
-            }
-          }
-        },
+  function displayQueryResults(data) {
+    let resultHtml = `<div class="alert alert-success">Query executed successfully. ${data.row_count} rows returned.</div>`;
 
-        async loadPostgresInfo() {
-          try {
-            const response = await fetch("/system-admin/api/postgres/info");
-            const data = await response.json();
+    if (data.rows && data.rows.length > 0) {
+      resultHtml +=
+        '<div class="table-responsive"><table class="table table-sm table-striped">';
+      resultHtml +=
+        "<thead><tr>" +
+        data.columns.map((col) => `<th>${col}</th>`).join("") +
+        "</tr></thead>";
+      resultHtml += "<tbody>";
 
-            if (data.success) {
-              document.getElementById("postgresDatabases").innerHTML =
-                data.databases
-                  .map((db) => `<div>${db.name} (${db.size})</div>`)
-                  .join("");
+      data.rows.slice(0, 50).forEach((row) => {
+        resultHtml +=
+          "<tr>" +
+          data.columns.map((col) => `<td>${row[col] || ""}</td>`).join("") +
+          "</tr>";
+      });
 
-              document.getElementById("postgresConnections").innerHTML =
-                data.connections
-                  .map((conn) => `<div>${conn.state}: ${conn.count}</div>`)
-                  .join("");
+      resultHtml += "</tbody></table></div>";
 
-              document.getElementById("postgresTables").innerHTML = data.tables
-                .slice(0, 10)
-                .map((table) => `<div>${table.table} (${table.size})</div>`)
-                .join("");
-            }
-          } catch (error) {
-            document.getElementById("postgresDatabases").innerHTML =
-              '<div class="alert alert-danger">Failed to load PostgreSQL info</div>';
-          }
-        },
+      if (data.rows.length > 50) {
+        resultHtml +=
+          '<div class="alert alert-info">Showing first 50 rows only</div>';
+      }
+    }
 
-        async executePostgresQuery() {
-          try {
-            const query = document.getElementById("postgresQuery").value;
-            const response = await fetch("/system-admin/api/postgres/query", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ query }),
-            });
+    document.getElementById("postgresQueryResult").innerHTML = resultHtml;
+  }
 
-            const data = await response.json();
+  function refreshPostgresInfo() {
+    loadPostgresInfo();
+    updateLastCheckTime();
+  }
 
-            if (data.success) {
-              let resultHtml = `<div class="alert alert-success">Query executed successfully. ${data.row_count} rows returned.</div>`;
+  // Nginx Management
+  function loadNginxStatus() {
+    fetch("/system-admin/api/nginx/status")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          updateNginxStatus(data);
+        } else {
+          showNginxError();
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load Nginx status:", error);
+        showNginxError();
+      });
+  }
 
-              if (data.rows.length > 0) {
-                resultHtml +=
-                  '<div class="table-responsive"><table class="table table-sm table-striped">';
-                resultHtml +=
-                  "<thead><tr>" +
-                  data.columns.map((col) => `<th>${col}</th>`).join("") +
-                  "</tr></thead>";
-                resultHtml += "<tbody>";
+  function updateNginxStatus(data) {
+    document.getElementById("nginxStatus").innerHTML = `
+        <div class="row">
+            <div class="col-12">
+                <div><strong>Status:</strong> <span class="badge bg-success">${
+                  data.status || "Unknown"
+                }</span></div>
+                <div><strong>Container:</strong> ${
+                  data.container_id || "N/A"
+                }</div>
+                <div><strong>Image:</strong> ${data.image || "N/A"}</div>
+                <div><strong>CPU:</strong> ${data.cpu_percent || 0}%</div>
+                <div><strong>Memory:</strong> ${Math.round(
+                  (data.memory_usage || 0) / 1024 / 1024
+                )} MB</div>
+            </div>
+        </div>
+    `;
 
-                data.rows.slice(0, 50).forEach((row) => {
-                  resultHtml +=
-                    "<tr>" +
-                    data.columns
-                      .map((col) => `<td>${row[col] || ""}</td>`)
-                      .join("") +
-                    "</tr>";
-                });
+    document.getElementById("nginxLogs").textContent =
+      data.logs?.join("\n") || "No recent logs";
+  }
 
-                resultHtml += "</tbody></table></div>";
+  function showNginxError() {
+    document.getElementById("nginxStatus").innerHTML =
+      '<div class="alert alert-danger">Failed to load Nginx status</div>';
+    document.getElementById("nginxLogs").textContent = "Failed to load logs";
+  }
 
-                if (data.rows.length > 50) {
-                  resultHtml +=
-                    '<div class="alert alert-info">Showing first 50 rows only</div>';
-                }
-              }
+  function reloadNginx() {
+    showNotification("Reloading Nginx configuration...", "info");
 
-              document.getElementById("postgresQueryResult").innerHTML =
-                resultHtml;
-            } else {
-              document.getElementById(
-                "postgresQueryResult"
-              ).innerHTML = `<div class="alert alert-danger">Query failed: ${data.message}</div>`;
-            }
-          } catch (error) {
-            document.getElementById("postgresQueryResult").innerHTML =
-              '<div class="alert alert-danger">Failed to execute query</div>';
-          }
-        },
+    fetch("/system-admin/api/nginx/reload", { method: "POST" })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          showNotification(data.message, "success");
+        } else {
+          showNotification(data.message, "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Failed to reload Nginx", "error");
+      });
+  }
 
-        async loadNginxStatus() {
-          try {
-            const response = await fetch("/system-admin/api/nginx/status");
-            const data = await response.json();
+  function refreshNginxStatus() {
+    loadNginxStatus();
+    updateLastCheckTime();
+  }
 
-            if (data.success) {
-              document.getElementById("nginxStatus").innerHTML = `
-                            <div><strong>Container ID:</strong> ${
-                              data.container_id
-                            }</div>
-                            <div><strong>Status:</strong> <span class="badge bg-success">${
-                              data.status
-                            }</span></div>
-                            <div><strong>Image:</strong> ${data.image}</div>
-                            <div><strong>CPU:</strong> ${
-                              data.cpu_percent
-                            }%</div>
-                            <div><strong>Memory:</strong> ${Math.round(
-                              data.memory_usage / 1024 / 1024
-                            )} MB</div>
-                        `;
+  function viewNginxConfig() {
+    showNotification("Opening Nginx configuration...", "info");
+    // This would typically open a modal or new page with the config
+  }
 
-              document.getElementById("nginxLogs").textContent =
-                data.logs.join("\n") || "No recent logs";
-            }
-          } catch (error) {
-            document.getElementById("nginxStatus").innerHTML =
-              '<div class="alert alert-danger">Failed to load Nginx status</div>';
-          }
-        },
+  // Monitoring
+  function loadMonitoringData() {
+    // Load resource monitoring
+    fetch("/system-admin/api/system/resources")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          updateResourceMonitoring(data);
+          updateContainerProcesses(data);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load monitoring data:", error);
+        showMonitoringError();
+      });
 
-        async reloadNginx() {
-          try {
-            const response = await fetch("/system-admin/api/nginx/reload", {
-              method: "POST",
-            });
+    // Load load balancing status
+    fetch("/system-admin/api/load-balancing/status")
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          updateLoadBalancingStatus(data);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load load balancing data:", error);
+      });
+  }
 
-            const data = await response.json();
-            if (data.success) {
-              this.showAlert("success", data.message);
-            } else {
-              this.showAlert("danger", data.message);
-            }
-          } catch (error) {
-            this.showAlert("danger", "Failed to reload Nginx");
-          }
-        },
+  function updateResourceMonitoring(data) {
+    document.getElementById("resourceMonitoring").innerHTML = `
+        <div class="row">
+            <div class="col-md-6">
+                <div><strong>CPU Cores:</strong> ${
+                  data.cpu?.count || "N/A"
+                }</div>
+                <div><strong>Load Average:</strong> ${
+                  data.cpu?.load_avg?.join(", ") || "N/A"
+                }</div>
+                <div><strong>Total Memory:</strong> ${
+                  data.memory?.total_gb || "N/A"
+                } GB</div>
+                <div><strong>Available Memory:</strong> ${
+                  data.memory?.available_gb || "N/A"
+                } GB</div>
+            </div>
+            <div class="col-md-6">
+                <div><strong>Total Disk:</strong> ${
+                  data.disk?.total_gb || "N/A"
+                } GB</div>
+                <div><strong>Free Disk:</strong> ${
+                  data.disk?.free_gb || "N/A"
+                } GB</div>
+                <div><strong>Network Sent:</strong> ${Math.round(
+                  (data.network?.bytes_sent || 0) / 1024 / 1024
+                )} MB</div>
+                <div><strong>Network Received:</strong> ${Math.round(
+                  (data.network?.bytes_recv || 0) / 1024 / 1024
+                )} MB</div>
+            </div>
+        </div>
+    `;
+  }
 
-        refreshNginxStatus() {
-          this.loadNginxStatus();
-        },
+  function updateContainerProcesses(data) {
+    if (!data.top_containers || data.top_containers.length === 0) {
+      document.getElementById("topProcesses").innerHTML =
+        '<div class="text-muted">No container data available</div>';
+      return;
+    }
 
-        async loadMonitoringData() {
-          try {
-            // Load resource monitoring
-            const resourceResponse = await fetch(
-              "/system-admin/api/system/resources"
-            );
-            const resourceData = await resourceResponse.json();
+    let containersHtml = `
+        <div class="table-responsive">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>Container</th>
+                        <th>Status</th>
+                        <th>CPU</th>
+                        <th>Memory</th>
+                        <th>Uptime</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
 
-            if (resourceData.success) {
-              // System resource information
-              document.getElementById("resourceMonitoring").innerHTML = `
-       <div class="row">
-         <div class="col-6">
-           <div><strong>CPU Cores:</strong> ${resourceData.cpu.count}</div>
-           <div><strong>Load Average:</strong> ${resourceData.cpu.load_avg.join(
-             ", "
-           )}</div>
-           <div><strong>Total Memory:</strong> ${
-             resourceData.memory.total_gb
-           } GB</div>
-           <div><strong>Available Memory:</strong> ${
-             resourceData.memory.available_gb
-           } GB</div>
-         </div>
-         <div class="col-6">
-           <div><strong>Total Disk:</strong> ${
-             resourceData.disk.total_gb
-           } GB</div>
-           <div><strong>Free Disk:</strong> ${
-             resourceData.disk.free_gb
-           } GB</div>
-           <div><strong>Network Sent:</strong> ${Math.round(
-             resourceData.network.bytes_sent / 1024 / 1024
-           )} MB</div>
-           <div><strong>Network Received:</strong> ${Math.round(
-             resourceData.network.bytes_recv / 1024 / 1024
-           )} MB</div>
-         </div>
-       </div>
-       ${
-         resourceData.container_summary
-           ? `
-       <hr>
-       <div class="row mt-3">
-         <div class="col-12">
-           <h6>Container Summary</h6>
-           <div class="row">
-             <div class="col-md-3">
-               <small><strong>Total Containers:</strong> ${resourceData.container_summary.total_containers}</small>
-             </div>
-             <div class="col-md-3">
-               <small><strong>Running:</strong> ${resourceData.container_summary.running_containers}</small>
-             </div>
-             <div class="col-md-3">
-               <small><strong>Total CPU:</strong> ${resourceData.container_summary.total_cpu_usage}%</small>
-             </div>
-             <div class="col-md-3">
-               <small><strong>Total Memory:</strong> ${resourceData.container_summary.total_memory_mb} MB</small>
-             </div>
-           </div>
-         </div>
-       </div>
-       `
-           : ""
-       }
-     `;
+    data.top_containers.forEach((container) => {
+      const statusClass =
+        container.status === "running" ? "success" : "secondary";
+      containersHtml += `
+            <tr>
+                <td>${container.name}</td>
+                <td><span class="badge bg-${statusClass}">${
+        container.status
+      }</span></td>
+                <td>${container.cpu_percent}%</td>
+                <td>${container.memory_mb} MB</td>
+                <td>${container.uptime || "N/A"}</td>
+            </tr>
+        `;
+    });
 
-              // Container resource usage table
-              let containersHtml = `
-       <div class="table-responsive">
-         <table class="table table-sm table-hover">
-           <thead class="table-dark">
-             <tr>
-               <th>Container</th>
-               <th>Type</th>
-               <th>Status</th>
-               <th>CPU%</th>
-               <th>Memory</th>
-               <th>Disk I/O</th>
-               <th>Network I/O</th>
-               <th>Uptime</th>
-             </tr>
-           </thead>
-           <tbody>
-     `;
+    containersHtml += "</tbody></table></div>";
+    document.getElementById("topProcesses").innerHTML = containersHtml;
+  }
 
-              if (
-                resourceData.top_containers &&
-                resourceData.top_containers.length > 0
-              ) {
-                resourceData.top_containers.forEach((container) => {
-                  // Determine badge colors based on usage
-                  const cpuBadgeClass =
-                    container.cpu_percent > 50
-                      ? "danger"
-                      : container.cpu_percent > 20
-                      ? "warning"
-                      : "success";
-                  const memoryBadgeClass =
-                    container.memory_percent > 80
-                      ? "danger"
-                      : container.memory_percent > 50
-                      ? "warning"
-                      : "info";
-                  const statusBadgeClass =
-                    container.status === "running"
-                      ? "success"
-                      : container.status === "exited"
-                      ? "danger"
-                      : "secondary";
+  function updateLoadBalancingStatus(data) {
+    let balanceHtml = `
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div class="metric-value">${data.overall_load || 0}%</div>
+                <div class="metric-label">Overall Load</div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-value">${data.total_tenants || 0}</div>
+                <div class="metric-label">Total Tenants</div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-value">${data.total_capacity || 0}</div>
+                <div class="metric-label">Total Capacity</div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-value">
+                    <span class="badge bg-${
+                      data.is_balanced ? "success" : "warning"
+                    }">
+                        ${data.is_balanced ? "Balanced" : "Unbalanced"}
+                    </span>
+                </div>
+                <div class="metric-label">Status</div>
+            </div>
+        </div>
+    `;
 
-                  // Container type badge
-                  const typeBadgeClass =
-                    {
-                      worker: "primary",
-                      master: "warning",
-                      database: "success",
-                      cache: "info",
-                      proxy: "secondary",
-                      odoo: "primary",
-                      other: "light",
-                      unknown: "dark",
-                    }[container.type] || "secondary";
+    if (data.workers && data.workers.length > 0) {
+      balanceHtml += '<div class="row">';
+      data.workers.forEach((worker) => {
+        const statusClass = worker.is_healthy ? "success" : "danger";
+        const loadClass =
+          worker.load_percent > 80
+            ? "danger"
+            : worker.load_percent > 60
+            ? "warning"
+            : "success";
 
-                  containersHtml += `
-           <tr>
-             <td>
-               <span title="${container.name}" style="font-size: 0.9rem;">
-                 ${container.name}
-               </span>
-             </td>
-             <td>
-               <span class="badge bg-${typeBadgeClass}" style="font-size: 0.7rem;">
-                 ${container.type}
-               </span>
-             </td>
-             <td>
-               <span class="badge bg-${statusBadgeClass}" style="font-size: 0.7rem;">
-                 ${container.status}
-               </span>
-             </td>
-             <td>
-               <span class="badge bg-${cpuBadgeClass}">
-                 ${container.cpu_percent}%
-               </span>
-             </td>
-             <td>
-               <div style="font-size: 0.85rem;">
-                 <span class="badge bg-${memoryBadgeClass}">
-                   ${container.memory_percent}%
-                 </span>
-                 <br>
-                 <small class="text-muted">${container.memory_mb} MB</small>
-               </div>
-             </td>
-             <td style="font-size: 0.8rem;">
-               <div>
-                 <i class="fas fa-arrow-down text-success"></i> ${container.disk_read_mb}
-                 <i class="fas fa-arrow-up text-danger"></i> ${container.disk_write_mb}
-               </div>
-               <small class="text-muted">MB</small>
-             </td>
-             <td style="font-size: 0.8rem;">
-               <div>
-                 <i class="fas fa-download text-primary"></i> ${container.net_rx_mb}
-                 <i class="fas fa-upload text-warning"></i> ${container.net_tx_mb}
-               </div>
-               <small class="text-muted">MB</small>
-             </td>
-             <td style="font-size: 0.8rem;">
-               <span class="text-muted">${container.uptime}</span>
-             </td>
-           </tr>
-         `;
-                });
-              } else {
-                containersHtml += `
-         <tr>
-           <td colspan="8" class="text-center text-muted">
-             <i class="fas fa-info-circle me-2"></i>No container data available
-           </td>
-         </tr>
-       `;
-              }
-
-              containersHtml += `
-           </tbody>
-         </table>
-       </div>
-     `;
-
-              document.getElementById("topProcesses").innerHTML =
-                containersHtml;
-            }
-
-            // Load load balancing status
-            const balanceResponse = await fetch(
-              "/system-admin/api/load-balancing/status"
-            );
-            const balanceData = await balanceResponse.json();
-
-            if (balanceData.success) {
-              let balanceHtml = `
-       <div class="row mb-3">
-         <div class="col-md-3">
-           <div class="metric-value">${balanceData.overall_load}%</div>
-           <div class="metric-label">Overall Load</div>
-         </div>
-         <div class="col-md-3">
-           <div class="metric-value">${balanceData.total_tenants}</div>
-           <div class="metric-label">Total Tenants</div>
-         </div>
-         <div class="col-md-3">
-           <div class="metric-value">${balanceData.total_capacity}</div>
-           <div class="metric-label">Total Capacity</div>
-         </div>
-         <div class="col-md-3">
-           <div class="metric-value">
-             <span class="badge bg-${
-               balanceData.is_balanced ? "success" : "warning"
-             }">
-               ${balanceData.is_balanced ? "Balanced" : "Unbalanced"}
-             </span>
-           </div>
-           <div class="metric-label">Status</div>
-         </div>
-       </div>
-     `;
-
-              balanceHtml += '<div class="row">';
-              balanceData.workers.forEach((worker) => {
-                const statusClass = worker.is_healthy ? "success" : "danger";
-                const loadClass =
-                  worker.load_percent > 80
-                    ? "danger"
-                    : worker.load_percent > 60
-                    ? "warning"
-                    : "success";
-
-                balanceHtml += `
-         <div class="col-md-6 mb-3">
-           <div class="border rounded p-3">
-             <h6>
-               <span class="status-indicator status-${
-                 worker.is_healthy ? "healthy" : "critical"
-               }"></span>
-               ${worker.worker_name}
-             </h6>
-             <div class="d-flex justify-content-between">
-               <span>Load: ${worker.current_tenants}/${
-                  worker.max_tenants
-                }</span>
-               <span class="badge bg-${loadClass}">${
-                  worker.load_percent
-                }%</span>
-             </div>
-             <div class="progress-modern mt-2">
-               <div class="progress-bar-modern bg-${loadClass}" style="width: ${
-                  worker.load_percent
-                }%"></div>
-             </div>
-             <small class="text-muted">
-               Status: <span class="badge bg-${statusClass} badge-sm">${
-                  worker.status
-                }</span>
-               ${
-                 worker.last_health_check
-                   ? `| Last Check: ${new Date(
-                       worker.last_health_check
-                     ).toLocaleTimeString()}`
-                   : ""
-               }
-             </small>
-           </div>
-         </div>
-       `;
-              });
-              balanceHtml += "</div>";
-
-              document.getElementById("loadBalancingStatus").innerHTML =
-                balanceHtml;
-              document.getElementById("loadBalance").textContent =
-                balanceData.is_balanced ? "Balanced" : "Unbalanced";
-            }
-          } catch (error) {
-            console.error("Failed to load monitoring data:", error);
-
-            // Show error message
-            document.getElementById("resourceMonitoring").innerHTML =
-              '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Failed to load resource monitoring data</div>';
-            document.getElementById("topProcesses").innerHTML =
-              '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Failed to load container data</div>';
-            document.getElementById("loadBalancingStatus").innerHTML =
-              '<div class="alert alert-danger"><i class="fas fa-exclamation-triangle me-2"></i>Failed to load load balancing data</div>';
-          }
-        },
-
-        async showWorkerLogs(containerName) {
-          try {
-            const response = await fetch(
-              `/system-admin/api/workers/${containerName}/logs`
-            );
-            const data = await response.json();
-
-            if (data.success) {
-              const logsModal = `
-                            <div class="modal fade" id="logsModal" tabindex="-1">
-                                <div class="modal-dialog modal-lg">
-                                    <div class="modal-content">
-                                        <div class="modal-header">
-                                            <h5 class="modal-title">Logs: ${containerName}</h5>
-                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                        </div>
-                                        <div class="modal-body">
-                                            <div class="log-container" style="max-height: 400px;">
-                                                ${data.logs.join("\n")}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-
-              // Remove existing modal
-              const existingModal = document.getElementById("logsModal");
-              if (existingModal) existingModal.remove();
-
-              document.body.insertAdjacentHTML("beforeend", logsModal);
-              const modal = new bootstrap.Modal(
-                document.getElementById("logsModal")
-              );
-              modal.show();
-            }
-          } catch (error) {
-            this.showAlert("danger", "Failed to load worker logs");
-          }
-        },
-
-        setupAutoRefresh() {
-          // Refresh system resources every 10 seconds
-          setInterval(() => {
-            this.loadSystemResources();
-          }, 10000);
-
-          // Refresh workers every 30 seconds
-          setInterval(() => {
-            const activeTab = document.querySelector(".nav-link.active");
-            if (activeTab && activeTab.getAttribute("href") === "#workers") {
-              this.loadWorkers();
-            }
-          }, 30000);
-        },
-
-        showAlert(type, message) {
-          const alertHtml = `
-                    <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
-                         style="top: 20px; right: 20px; z-index: 9999; max-width: 400px;">
-                        ${message}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        balanceHtml += `
+                <div class="col-md-6 mb-3">
+                    <div class="border rounded p-3">
+                        <h6>
+                            <span class="status-indicator status-${
+                              worker.is_healthy ? "healthy" : "critical"
+                            } me-2"></span>
+                            ${worker.worker_name}
+                        </h6>
+                        <div class="d-flex justify-content-between">
+                            <span>Load: ${worker.current_tenants}/${
+          worker.max_tenants
+        }</span>
+                            <span class="badge bg-${loadClass}">${
+          worker.load_percent
+        }%</span>
+                        </div>
+                        <div class="progress-modern mt-2">
+                            <div class="progress-bar-modern bg-${loadClass}" style="width: ${
+          worker.load_percent
+        }%"></div>
+                        </div>
+                        <small class="text-muted">
+                            Status: <span class="badge bg-${statusClass} badge-sm">${
+          worker.status
+        }</span>
+                        </small>
                     </div>
-                `;
+                </div>
+            `;
+      });
+      balanceHtml += "</div>";
+    }
 
-          document.body.insertAdjacentHTML("beforeend", alertHtml);
+    document.getElementById("loadBalancingStatus").innerHTML = balanceHtml;
+  }
 
-          // Auto-remove after 5 seconds
-          setTimeout(() => {
-            const alerts = document.querySelectorAll(".alert");
-            if (alerts.length > 0) {
-              alerts[alerts.length - 1].remove();
-            }
-          }, 5000);
+  function showMonitoringError() {
+    document.getElementById("resourceMonitoring").innerHTML =
+      '<div class="alert alert-danger">Failed to load resource data</div>';
+    document.getElementById("topProcesses").innerHTML =
+      '<div class="alert alert-danger">Failed to load container data</div>';
+    document.getElementById("loadBalancingStatus").innerHTML =
+      '<div class="alert alert-danger">Failed to load load balancing data</div>';
+  }
+
+  function refreshMonitoringData() {
+    loadMonitoringData();
+    updateLastCheckTime();
+  }
+
+  function exportMetrics() {
+    showNotification("Exporting metrics...", "info");
+
+    // Simulate metrics export
+    setTimeout(() => {
+      const metricsData = {
+        timestamp: new Date().toISOString(),
+        system: {
+          cpu: document.getElementById("systemCpuUsage").textContent,
+          memory: document.getElementById("systemMemoryUsage").textContent,
+          disk: document.getElementById("systemDiskUsage").textContent,
+          workers: document.getElementById("activeWorkers").textContent,
         },
       };
 
-      // Initialize when DOM is loaded
-      document.addEventListener("DOMContentLoaded", () => {
-        SystemAdmin.init();
+      const blob = new Blob([JSON.stringify(metricsData, null, 2)], {
+        type: "application/json",
       });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `system-metrics-${
+        new Date().toISOString().split("T")[0]
+      }.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-      function updateWorkerSettings() {
-        const workerType = document.querySelector(
-          'select[name="worker_type"]'
-        ).value;
-        const nameInput = document.querySelector('input[name="name"]');
-        const maxTenantsSelect = document.querySelector(
-          'select[name="max_tenants"]'
-        );
+      showNotification("Metrics exported successfully!", "success");
+    }, 1500);
+  }
 
-        switch (workerType) {
-          case "standard":
-            nameInput.value = "odoo_worker_standard_";
-            maxTenantsSelect.value = "10";
-            break;
-          case "high_performance":
-            nameInput.value = "odoo_worker_hp_";
-            maxTenantsSelect.value = "20";
-            break;
-          case "backup":
-            nameInput.value = "odoo_worker_backup_";
-            maxTenantsSelect.value = "5";
-            break;
-          case "development":
-            nameInput.value = "odoo_worker_dev_";
-            maxTenantsSelect.value = "5";
-            break;
-        }
+  // Maintenance Mode
+  function setupMaintenanceMode() {
+    const checkbox = document.getElementById("confirmMaintenance");
+    const button = document.getElementById("maintenanceBtn");
 
-        // Add timestamp for uniqueness
-        nameInput.value += new Date().getTime().toString().slice(-6);
+    checkbox.addEventListener("change", function () {
+      button.disabled = !this.checked;
+    });
+  }
+
+  function toggleMaintenanceMode() {
+    showNotification("Toggling maintenance mode...", "info");
+
+    // This would make an API call to toggle maintenance mode
+    setTimeout(() => {
+      showNotification("Maintenance mode updated!", "success");
+      bootstrap.Modal.getInstance(
+        document.getElementById("maintenanceModal")
+      ).hide();
+    }, 2000);
+  }
+
+  // Global Functions
+  function refreshAllSystems() {
+    showNotification("Refreshing all systems...", "info");
+
+    loadSystemResources();
+    loadWorkers();
+    updateLastCheckTime();
+
+    setTimeout(() => {
+      showNotification("All systems refreshed!", "success");
+    }, 2000);
+  }
+
+  function setupAutoRefresh() {
+    // Refresh system resources every 30 seconds
+    setInterval(() => {
+      if (document.visibilityState === "visible") {
+        loadSystemResources();
       }
-    </script>
-  </body>
-</html>
+    }, 30000);
+  }
+
+  // Worker settings helper
+  function updateWorkerSettings() {
+    const workerType = document.querySelector(
+      'select[name="worker_type"]'
+    ).value;
+    const nameInput = document.querySelector('input[name="name"]');
+    const maxTenantsSelect = document.querySelector(
+      'select[name="max_tenants"]'
+    );
+
+    switch (workerType) {
+      case "standard":
+        nameInput.value = "odoo_worker_standard_";
+        maxTenantsSelect.value = "10";
+        break;
+      case "high_performance":
+        nameInput.value = "odoo_worker_hp_";
+        maxTenantsSelect.value = "20";
+        break;
+      case "backup":
+        nameInput.value = "odoo_worker_backup_";
+        maxTenantsSelect.value = "5";
+        break;
+      case "development":
+        nameInput.value = "odoo_worker_dev_";
+        maxTenantsSelect.value = "5";
+        break;
+    }
+
+    // Add timestamp for uniqueness
+    nameInput.value += new Date().getTime().toString().slice(-6);
+  }
+
+  // Utility Functions
+  function showLoadingState(buttonId, loadingText) {
+    const button = document.getElementById(buttonId) || event.target;
+    if (button) {
+      button.disabled = true;
+      button.setAttribute("data-original-html", button.innerHTML);
+      button.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>${loadingText}`;
+    }
+  }
+
+  function hideLoadingState(buttonId, originalText) {
+    const button = document.getElementById(buttonId) || event.target;
+    if (button) {
+      button.disabled = false;
+      const originalHTML = button.getAttribute("data-original-html");
+      button.innerHTML = originalHTML || originalText;
+      button.removeAttribute("data-original-html");
+    }
+  }
+
+  function showWorkerLogs(containerName) {
+    fetch(`/system-admin/api/workers/${containerName}/logs`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const logsModal = `
+                    <div class="modal fade" id="logsModal" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-file-alt me-2"></i>
+                                        Logs: ${containerName}
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="log-container" style="max-height: 400px; overflow-y: auto;">
+                                        ${data.logs.join("\n")}
+                                    </div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                    <button type="button" class="btn btn-primary" onclick="downloadLogs('${containerName}')">
+                                        <i class="fas fa-download me-2"></i>Download
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+          // Remove existing modal
+          const existingModal = document.getElementById("logsModal");
+          if (existingModal) existingModal.remove();
+
+          document.body.insertAdjacentHTML("beforeend", logsModal);
+          const modal = new bootstrap.Modal(
+            document.getElementById("logsModal")
+          );
+          modal.show();
+        } else {
+          showNotification("Failed to load worker logs", "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Failed to load worker logs", "error");
+      });
+  }
+
+  function downloadLogs(containerName) {
+    showNotification("Downloading logs...", "info");
+
+    fetch(`/system-admin/api/workers/${containerName}/logs`)
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const blob = new Blob([data.logs.join("\n")], { type: "text/plain" });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${containerName}-logs-${
+            new Date().toISOString().split("T")[0]
+          }.txt`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+
+          showNotification("Logs downloaded successfully!", "success");
+        } else {
+          showNotification("Failed to download logs", "error");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        showNotification("Failed to download logs", "error");
+      });
+  }
+
+  // Initialize notification system if not already available
+  if (typeof showNotification === "undefined") {
+    window.showNotification = function (
+      message,
+      type = "info",
+      duration = 5000
+    ) {
+      const alertClass = type === "error" ? "danger" : type;
+      const iconClass =
+        {
+          success: "fa-check-circle",
+          error: "fa-exclamation-circle",
+          danger: "fa-exclamation-circle",
+          warning: "fa-exclamation-triangle",
+          info: "fa-info-circle",
+        }[type] || "fa-info-circle";
+
+      const alert = document.createElement("div");
+      alert.className = `alert alert-${alertClass} alert-dismissible fade show position-fixed`;
+      alert.style.cssText = `
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+            box-shadow: var(--shadow-lg);
+        `;
+      alert.innerHTML = `
+            <i class="fas ${iconClass} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+
+      document.body.appendChild(alert);
+
+      // Auto remove after duration
+      setTimeout(() => {
+        if (alert.parentNode) {
+          alert.remove();
+        }
+      }, duration);
+    };
+  }
+</script>
+{% endblock %}

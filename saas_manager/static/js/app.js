@@ -121,22 +121,27 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Tenant-specific initialization (only for manage_tenant.html)
-  if (document.getElementById("log-timeline") && window.tenantId) {
-    fetchLogs(window.tenantId)
-      .then(() => {
-        filterLogs();
-        initSocketIO(window.tenantId);
-      })
-      .catch(() => {
-        console.error("Failed to initialize tenant logs");
-        AppUtils.showNotification(
-          "Error: Failed to load tenant logs",
-          "danger"
-        );
-      });
-  } else if (document.getElementById("log-timeline")) {
-    console.error("Tenant ID is undefined in manage_tenant.html");
-    AppUtils.showNotification("Error: Tenant ID not found", "danger");
+  if (document.getElementById("log-timeline")) {
+    // Wait a bit for window.tenantId to be set by the template script
+    setTimeout(() => {
+      if (window.tenantId) {
+        fetchLogs(window.tenantId)
+          .then(() => {
+            filterLogs();
+            initSocketIO(window.tenantId);
+          })
+          .catch(() => {
+            console.error("Failed to initialize tenant logs");
+            AppUtils.showNotification(
+              "Error: Failed to load tenant logs",
+              "danger"
+            );
+          });
+      } else {
+        console.error("Tenant ID is undefined in manage_tenant.html");
+        AppUtils.showNotification("Error: Tenant ID not found", "danger");
+      }
+    }, 100); // Small delay to allow template script to run first
   }
 });
 
@@ -172,19 +177,44 @@ async function fetchLogs(tenantId) {
 }
 
 function initSocketIO(tenantId) {
-  socket = io.connect(window.location.origin);
-  socket.on("connect", () => {
-    console.log("Connected to SocketIO");
-    socket.emit("join", `tenant_${tenantId}`);
-  });
-  socket.on("new_log", (log) => {
-    filteredLogs.unshift(log);
-    filteredLogs = filteredLogs.slice(0, 1000);
-    filterLogs();
-  });
-  socket.on("stats_update", (stats) => {
-    updateStats(stats);
-  });
+  if (typeof io === "undefined") {
+    console.warn("Socket.io not available, disabling real-time features");
+    return;
+  }
+
+  try {
+    socket = io.connect(window.location.origin, {
+      transports: ["polling", "websocket"],
+      upgrade: true,
+      rememberUpgrade: false,
+      timeout: 20000,
+      forceNew: true,
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to SocketIO");
+      socket.emit("join", `tenant_${tenantId}`);
+    });
+
+    socket.on("connect_error", (error) => {
+      console.warn("Socket.io connection error:", error);
+      // Fallback to polling only
+      socket.io.opts.transports = ["polling"];
+    });
+
+    socket.on("new_log", (log) => {
+      filteredLogs.unshift(log);
+      filteredLogs = filteredLogs.slice(0, 1000);
+      filterLogs();
+    });
+
+    socket.on("stats_update", (stats) => {
+      updateStats(stats);
+    });
+  } catch (error) {
+    console.error("Failed to initialize Socket.io:", error);
+    AppUtils.showNotification("Real-time updates unavailable", "warning");
+  }
 }
 
 function formatTimeAgo(timestamp) {

@@ -16,9 +16,6 @@
 
   // Theme Management
   function initializeTheme() {
-    const themeToggle = createThemeToggle();
-    document.body.appendChild(themeToggle);
-
     // Load saved theme
     const savedTheme =
       localStorage.getItem("theme") ||
@@ -34,49 +31,6 @@
         applyTheme(e.matches ? "dark" : "light");
       }
     });
-  }
-
-  function createThemeToggle() {
-    const toggle = document.createElement("div");
-    toggle.className = "theme-toggle";
-    toggle.innerHTML = `
-            <button id="theme-toggle-btn" class="btn btn-sm btn-outline-secondary" 
-                    title="Toggle dark/light mode" style="
-                position: fixed;
-                top: 80px;
-                right: 20px;
-                z-index: 1050;
-                border-radius: 50%;
-                width: 50px;
-                height: 50px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                backdrop-filter: blur(10px);
-                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-                box-shadow: var(--shadow-lg);
-                border: 2px solid var(--border-primary);
-                background: rgba(255, 255, 255, 0.9);
-            ">
-                <i class="fas fa-sun" id="theme-icon"></i>
-            </button>
-        `;
-
-    const button = toggle.querySelector("#theme-toggle-btn");
-    button.addEventListener("click", toggleTheme);
-
-    // Add hover effects
-    button.addEventListener("mouseenter", function () {
-      this.style.transform = "scale(1.1) rotate(5deg)";
-      this.style.boxShadow = "var(--shadow-xl)";
-    });
-
-    button.addEventListener("mouseleave", function () {
-      this.style.transform = "scale(1) rotate(0deg)";
-      this.style.boxShadow = "var(--shadow-lg)";
-    });
-
-    return toggle;
   }
 
   function toggleTheme() {
@@ -861,36 +815,27 @@
   // Initialize notification system
   createNotificationSystem();
 
-    // Enhanced Page Navigation
-    function enhancePageNavigation() {
+  // Enhanced Page Navigation
+  function enhancePageNavigation() {
     // Add page transition effect
     document.body.classList.add("page-transition");
 
     // Smooth scroll for internal links
     document.querySelectorAll('a[href^="#"]').forEach((link) => {
-        link.addEventListener("click", function (e) {
+      link.addEventListener("click", function (e) {
         const href = this.getAttribute("href");
-        // Check if href is not just "#" and is a valid selector
         if (href && href !== "#" && href.length > 1) {
-            e.preventDefault();
-            const target = document.querySelector(href);
-            if (target) {
+          e.preventDefault();
+          const target = document.querySelector(href);
+          if (target) {
             target.scrollIntoView({
-                behavior: "smooth",
-                block: "start",
+              behavior: "smooth",
+              block: "start",
             });
-            }
+          }
         }
-        });
+      });
     });
-
-  // Add loading state to external links
-  document.querySelectorAll('a[href^="http"]').forEach((link) => {
-    link.addEventListener("click", function () {
-      this.innerHTML += ' <i class="fas fa-spinner fa-spin ms-2"></i>';
-    });
-  });
-};
 
     // Add loading state to external links
     document.querySelectorAll('a[href^="http"]').forEach((link) => {

@@ -1,22 +1,138 @@
 {
   "name": "Odoo SaaS Platform",
   "short_name": "Odoo SaaS",
-  "description": "Manage your Odoo tenants with ease",
-  "start_url": "/dashboard",
+  "description": "Manage your Odoo tenants with ease - Create, monitor, and access your Odoo instances from anywhere",
+  "start_url": "/dashboard?utm_source=pwa",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#005B8C",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["business", "productivity", "utilities"],
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "icons": [
     {
       "src": "/static/img/kdoo-logo.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/kdoo-logo.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/kdoo-logo.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/kdoo-logo.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/kdoo-logo.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/img/kdoo-logo.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/img/kdoo-logo.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/static/img/kdoo-logo.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "16x16 32x32",
+      "type": "image/x-icon",
+      "purpose": "any"
     }
   ],
-  "scope": "/"
+  "screenshots": [
+    {
+      "src": "/static/img/screenshot-dashboard.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Dashboard view showing tenant management"
+    },
+    {
+      "src": "/static/img/screenshot-mobile.png",
+      "sizes": "414x896",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mobile dashboard view"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View your tenant dashboard and manage instances",
+      "url": "/dashboard?utm_source=shortcut",
+      "icons": [
+        {
+          "src": "/static/img/kdoo-logo.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Create Tenant",
+      "short_name": "New Tenant",
+      "description": "Create a new Odoo tenant instance",
+      "url": "/tenant/create?utm_source=shortcut",
+      "icons": [
+        {
+          "src": "/static/img/kdoo-logo.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Admin Panel",
+      "short_name": "Admin",
+      "description": "Access administrative functions",
+      "url": "/admin/tenants?utm_source=shortcut",
+      "icons": [
+        {
+          "src": "/static/img/kdoo-logo.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "handle_links": "preferred",
+  "capture_links": "existing-client-navigate"
 }
