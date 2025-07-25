@@ -1,0 +1,748 @@
+<!-- Add Server Modal -->
+<div class="modal fade" id="addServerModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-server me-2"></i>Add Infrastructure Server
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="addServerForm">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="serverName" class="form-label">Server Name</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="serverName"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="serverIp" class="form-label">IP Address</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="serverIp"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="serverUsername" class="form-label">Username</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="serverUsername"
+                  required
+                />
+              </div>
+              <div class="mb-3">
+                <label for="serverPort" class="form-label">SSH Port</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="serverPort"
+                  value="22"
+                />
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Authentication Method</label>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="authMethod"
+                    id="authPassword"
+                    value="password"
+                    checked
+                  />
+                  <label class="form-check-label" for="authPassword"
+                    >Password</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    name="authMethod"
+                    id="authKey"
+                    value="key"
+                  />
+                  <label class="form-check-label" for="authKey">SSH Key</label>
+                </div>
+              </div>
+              <div class="mb-3" id="passwordField">
+                <label for="serverPassword" class="form-label">Password</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  id="serverPassword"
+                />
+              </div>
+              <div class="mb-3" id="keyField" style="display: none">
+                <label for="serverKeyPath" class="form-label"
+                  >SSH Key Path</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="serverKeyPath"
+                  placeholder="/path/to/private/key"
+                />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Service Roles</label>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="roleDocker"
+                    value="docker"
+                  />
+                  <label class="form-check-label" for="roleDocker"
+                    >Docker</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="roleNginx"
+                    value="nginx"
+                  />
+                  <label class="form-check-label" for="roleNginx">Nginx</label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="rolePostgres"
+                    value="postgres"
+                  />
+                  <label class="form-check-label" for="rolePostgres"
+                    >PostgreSQL</label
+                  >
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="checkbox"
+                    id="roleRedis"
+                    value="redis"
+                  />
+                  <label class="form-check-label" for="roleRedis">Redis</label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="InfraAdmin.testServerConnection()"
+        >
+          <i class="fas fa-plug me-2"></i>Test Connection
+        </button>
+        <button type="submit" form="addServerForm" class="btn btn-success">
+          <i class="fas fa-plus me-2"></i>Add Server
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Domain Modal -->
+<div class="modal fade" id="addDomainModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-globe me-2"></i>Add Domain Mapping
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="addDomainForm">
+          <div class="mb-3">
+            <label for="customDomain" class="form-label">Custom Domain</label>
+            <input
+              type="text"
+              class="form-control"
+              id="customDomain"
+              placeholder="example.com"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="targetSubdomain" class="form-label"
+              >Target Subdomain</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              id="targetSubdomain"
+              placeholder="tenant-name"
+              required
+            />
+          </div>
+          <div class="mb-3">
+            <label for="tenantSelect" class="form-label"
+              >Tenant (Optional)</label
+            >
+            <select class="form-select" id="tenantSelect">
+              <option value="">Select a tenant...</option>
+            </select>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="enableSsl" />
+            <label class="form-check-label" for="enableSsl">Enable SSL</label>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="autoRenewSsl"
+              checked
+            />
+            <label class="form-check-label" for="autoRenewSsl"
+              >Auto-renew SSL</label
+            >
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button type="submit" form="addDomainForm" class="btn btn-primary">
+          <i class="fas fa-plus me-2"></i>Add Domain
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Deployment Modal -->
+<div class="modal fade" id="createDeploymentModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-rocket me-2"></i>Create Deployment
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <form id="createDeploymentForm">
+          <div class="mb-3">
+            <label for="deploymentType" class="form-label"
+              >Deployment Type</label
+            >
+            <select class="form-select" id="deploymentType" required>
+              <option value="">Select type...</option>
+              <option value="deploy">Deploy Service</option>
+              <option value="migrate">Migrate Services</option>
+              <option value="backup">Create Backup</option>
+              <option value="update">Update Services</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="serviceType" class="form-label">Service Type</label>
+            <select class="form-select" id="serviceType" required>
+              <option value="">Select service...</option>
+              <option value="docker">Docker</option>
+              <option value="nginx">Nginx</option>
+              <option value="postgres">PostgreSQL</option>
+              <option value="redis">Redis</option>
+              <option value="odoo">Odoo Worker</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="targetServerId" class="form-label">Target Server</label>
+            <select class="form-select" id="targetServerId" required>
+              <option value="">Select server...</option>
+            </select>
+          </div>
+          <div class="mb-3" id="sourceServerField" style="display: none">
+            <label for="sourceServerId" class="form-label">Source Server</label>
+            <select class="form-select" id="sourceServerId">
+              <option value="">Select source server...</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="deploymentPriority" class="form-label">Priority</label>
+            <select class="form-select" id="deploymentPriority">
+              <option value="normal">Normal</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+            </select>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              id="testBeforeDeploy"
+              checked
+            />
+            <label class="form-check-label" for="testBeforeDeploy">
+              Test before deployment
+            </label>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button
+          type="submit"
+          form="createDeploymentForm"
+          class="btn btn-primary"
+        >
+          <i class="fas fa-rocket me-2"></i>Start Deployment
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- System Initialization Modal -->
+<div class="modal fade" id="systemInitModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-cog me-2"></i>Initialize Infrastructure System
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <p>
+          This will initialize the infrastructure management system with default
+          configurations:
+        </p>
+        <ul>
+          <li>Setup default cron jobs for maintenance</li>
+          <li>Create configuration templates</li>
+          <li>Initialize monitoring system</li>
+          <li>Configure default alert thresholds</li>
+        </ul>
+        <div class="alert alert-info">
+          <i class="fas fa-info-circle me-2"></i>
+          This process is safe to run multiple times and won't overwrite
+          existing configurations.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="InfraAdmin.initializeSystem()"
+        >
+          <i class="fas fa-play me-2"></i>Initialize System
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Network Scan Modal -->
+<div class="modal fade" id="networkScanModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-network-wired me-2"></i>Network Scan Results
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="scanProgress" style="display: none">
+          <div class="text-center mb-3">
+            <div class="loading-spinner me-2"></div>
+            <span>Scanning network...</span>
+          </div>
+          <div class="progress">
+            <div
+              class="progress-bar"
+              id="scanProgressBar"
+              style="width: 0%"
+            ></div>
+          </div>
+        </div>
+        <div id="scanResults">
+          <div class="text-center text-muted py-4">
+            <i class="fas fa-search fa-2x mb-3"></i>
+            <p>
+              No scan results yet. Start a network scan to discover machines.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="InfraAdmin.autoSetupSelectedMachines()"
+          id="autoSetupBtn"
+          style="display: none"
+        >
+          <i class="fas fa-magic me-2"></i>Auto-Setup Selected
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Server Details Modal -->
+<div
+  class="modal fade"
+  id="serverDetailsModal"
+  tabindex="-1"
+  aria-labelledby="serverDetailsModalLabel"
+  aria-hidden="true"
+>
+  <div class="modal-dialog modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="serverDetailsModalLabel">
+          <i class="fas fa-server me-2"></i>
+          Server Details: <span id="serverNameTitle">Loading...</span>
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+          aria-label="Close"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <!-- Loading State -->
+        <div id="serverDetailsLoading" class="text-center py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <p class="mt-2">Loading server details...</p>
+        </div>
+
+        <!-- Server Details Content -->
+        <div id="serverDetailsContent" style="display: none">
+          <!-- Server Info Section -->
+          <div class="row mb-4">
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Server Information
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <table class="table table-sm">
+                    <tr>
+                      <td><strong>Name:</strong></td>
+                      <td id="serverDetailName">-</td>
+                    </tr>
+                    <tr>
+                      <td><strong>IP Address:</strong></td>
+                      <td id="serverDetailIP">-</td>
+                    </tr>
+                    <tr>
+                      <td><strong>OS Type:</strong></td>
+                      <td id="serverDetailOS">-</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Status:</strong></td>
+                      <td>
+                        <span id="serverDetailStatus" class="badge">-</span>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td><strong>CPU Cores:</strong></td>
+                      <td id="serverDetailCPU">-</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Memory:</strong></td>
+                      <td id="serverDetailMemory">-</td>
+                    </tr>
+                    <tr>
+                      <td><strong>Disk:</strong></td>
+                      <td id="serverDetailDisk">-</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0">
+                    <i class="fas fa-heartbeat me-2"></i>Health Status
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                      <span>Health Score:</span>
+                      <span id="serverHealthScore" class="fw-bold">-</span>
+                    </div>
+                    <div class="progress mt-1">
+                      <div
+                        id="serverHealthBar"
+                        class="progress-bar"
+                        role="progressbar"
+                        style="width: 0%"
+                      ></div>
+                    </div>
+                  </div>
+                  <div class="row text-center">
+                    <div class="col-4">
+                      <small class="text-muted">CPU Usage</small>
+                      <div id="serverCPUUsage" class="fw-bold">-</div>
+                    </div>
+                    <div class="col-4">
+                      <small class="text-muted">Memory Usage</small>
+                      <div id="serverMemoryUsage" class="fw-bold">-</div>
+                    </div>
+                    <div class="col-4">
+                      <small class="text-muted">Disk Usage</small>
+                      <div id="serverDiskUsage" class="fw-bold">-</div>
+                    </div>
+                  </div>
+                  <div class="mt-3">
+                    <small class="text-muted">Last Health Check:</small>
+                    <div id="serverLastHealthCheck">-</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Services Section -->
+          <div class="row mb-4">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>Services Status
+                  </h6>
+                </div>
+                <div class="card-body">
+                  <div id="serverServicesStatus" class="row">
+                    <!-- Services will be populated here -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recent Activity Tabs -->
+          <div class="row">
+            <div class="col-12">
+              <ul class="nav nav-tabs" id="serverActivityTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link active"
+                    id="deployments-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#deployments"
+                    type="button"
+                    role="tab"
+                  >
+                    <i class="fas fa-rocket me-1"></i>Recent Deployments
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="cronjobs-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#cronjobs"
+                    type="button"
+                    role="tab"
+                  >
+                    <i class="fas fa-clock me-1"></i>Cron Jobs
+                  </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                  <button
+                    class="nav-link"
+                    id="alerts-tab"
+                    data-bs-toggle="tab"
+                    data-bs-target="#alerts"
+                    type="button"
+                    role="tab"
+                  >
+                    <i class="fas fa-exclamation-triangle me-1"></i>Recent
+                    Alerts
+                  </button>
+                </li>
+              </ul>
+              <div class="tab-content" id="serverActivityTabsContent">
+                <!-- Deployments Tab -->
+                <div
+                  class="tab-pane fade show active"
+                  id="deployments"
+                  role="tabpanel"
+                >
+                  <div class="table-responsive mt-3">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Task Type</th>
+                          <th>Service</th>
+                          <th>Status</th>
+                          <th>Progress</th>
+                          <th>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody id="serverDeploymentsList">
+                        <!-- Deployments will be populated here -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Cron Jobs Tab -->
+                <div class="tab-pane fade" id="cronjobs" role="tabpanel">
+                  <div class="table-responsive mt-3">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Name</th>
+                          <th>Schedule</th>
+                          <th>Status</th>
+                          <th>Last Run</th>
+                          <th>Next Run</th>
+                        </tr>
+                      </thead>
+                      <tbody id="serverCronJobsList">
+                        <!-- Cron jobs will be populated here -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Alerts Tab -->
+                <div class="tab-pane fade" id="alerts" role="tabpanel">
+                  <div class="table-responsive mt-3">
+                    <table class="table table-sm">
+                      <thead>
+                        <tr>
+                          <th>Type</th>
+                          <th>Severity</th>
+                          <th>Message</th>
+                          <th>Status</th>
+                          <th>Created</th>
+                        </tr>
+                      </thead>
+                      <tbody id="serverAlertsList">
+                        <!-- Alerts will be populated here -->
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Error State -->
+        <div
+          id="serverDetailsError"
+          style="display: none"
+          class="alert alert-danger"
+        >
+          <i class="fas fa-exclamation-triangle me-2"></i>
+          <span id="serverDetailsErrorMessage"
+            >Failed to load server details.</span
+          >
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="refreshServerDetails()"
+        >
+          <i class="fas fa-sync-alt me-1"></i>Refresh
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Deployment Details Modal -->
+<div class="modal fade" id="deploymentDetailsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-rocket me-2"></i>Deployment Details
+        </h5>
+        <button
+          type="button"
+          class="btn-close"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body">
+        <div id="deploymentDetailsContent">
+          <!-- Content will be loaded dynamically -->
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+          Close
+        </button>
+        <button
+          type="button"
+          class="btn btn-danger"
+          id="cancelDeploymentBtn"
+          style="display: none"
+          onclick="InfraAdmin.cancelDeployment()"
+        >
+          <i class="fas fa-stop me-2"></i>Cancel Deployment
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

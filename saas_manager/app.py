@@ -56,6 +56,11 @@ import secrets
 from werkzeug.utils import secure_filename
 
 try:
+    from .infra_admin import infra_admin_bp
+except ImportError:
+    from infra_admin import infra_admin_bp
+    
+try:
     from .master_admin import master_admin_bp
 except ImportError:
     from master_admin import master_admin_bp
@@ -97,6 +102,7 @@ def run_async_in_background(coro):
 # Create Flask app
 app = create_app()
 init_db(app)
+app.register_blueprint(infra_admin_bp)
 app.register_blueprint(master_admin_bp)
 app.register_blueprint(system_admin_bp)
 app.register_blueprint(support_bp)
@@ -736,9 +742,7 @@ def serve_manifest():
 @app.route('/')
 @track_errors('index_route')
 def index():
-    if current_user.is_authenticated:
-        return redirect(url_for('dashboard'))
-    return redirect(url_for('login'))
+    return render_template('index.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 @track_errors('login_route')

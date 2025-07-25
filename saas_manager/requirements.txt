@@ -37,3 +37,4 @@ psutil
 flask-session
 flask-limiter
 Pillow
+paramiko

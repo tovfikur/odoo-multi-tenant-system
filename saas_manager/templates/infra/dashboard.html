@@ -1,0 +1,2056 @@
+{% extends "base.html" %} {% block title %}Infrastructure Admin Dashboard - Odoo
+SaaS Platform{% endblock %} {% block content %}
+<!-- Modern System Header with Glassmorphism -->
+<div class="row mb-4">
+  <div class="col">
+    <div class="system-header position-relative overflow-hidden">
+      <!-- Animated Background Gradient -->
+      <div
+        class="position-absolute top-0 start-0 w-100 h-100"
+        style="
+          background: linear-gradient(
+            135deg,
+            var(--primary) 0%,
+            var(--secondary) 50%,
+            var(--accent) 100%
+          );
+          opacity: 0.9;
+        "
+      ></div>
+
+      <!-- Floating Orbs Animation -->
+      <div
+        class="position-absolute"
+        style="
+          top: -50px;
+          right: -50px;
+          width: 200px;
+          height: 200px;
+          background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 70%
+          );
+          border-radius: 50%;
+          animation: float 6s ease-in-out infinite;
+        "
+      ></div>
+      <div
+        class="position-absolute"
+        style="
+          bottom: -30px;
+          left: -30px;
+          width: 150px;
+          height: 150px;
+          background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.08) 0%,
+            transparent 70%
+          );
+          border-radius: 50%;
+          animation: float 8s ease-in-out infinite reverse;
+        "
+      ></div>
+
+      <div
+        class="position-relative z-2 d-flex align-items-center justify-content-between w-100 p-4"
+      >
+        <div class="d-flex align-items-center">
+          <div
+            class="me-4"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              backdrop-filter: blur(20px);
+              border-radius: 20px;
+              padding: 1rem;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+            "
+          >
+            <i class="fas fa-server fa-2x text-white"></i>
+          </div>
+          <div>
+            <h1
+              class="mb-2 text-white fw-bold"
+              style="
+                font-size: 2.5rem;
+                text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+              "
+            >
+              Infrastructure Command Unit
+            </h1>
+            <p class="mb-0 text-white" style="opacity: 0.9; font-size: 1.1rem">
+              Real-time infrastructure orchestration and monitoring
+            </p>
+            <div class="mt-2">
+              <span
+                class="badge me-2"
+                style="
+                  background: rgba(255, 255, 255, 0.2);
+                  backdrop-filter: blur(10px);
+                  border: 1px solid rgba(255, 255, 255, 0.3);
+                  color: white;
+                  padding: 0.5rem 1rem;
+                  border-radius: 20px;
+                "
+              >
+                <i
+                  class="fas fa-circle text-success me-1"
+                  style="font-size: 0.6rem"
+                ></i
+                >All Systems Operational
+              </span>
+              <span
+                class="badge"
+                style="
+                  background: rgba(255, 255, 255, 0.15);
+                  backdrop-filter: blur(10px);
+                  border: 1px solid rgba(255, 255, 255, 0.3);
+                  color: white;
+                  padding: 0.5rem 1rem;
+                  border-radius: 20px;
+                "
+              >
+                <i class="fas fa-clock me-1"></i>Last Updated:
+                <span id="lastUpdateTime">--:--</span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="d-flex gap-3">
+          <button
+            class="btn text-white border-0 px-4 py-2"
+            onclick="InfraAdmin.toggleMonitoring()"
+            id="monitoringToggle"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              backdrop-filter: blur(20px);
+              border-radius: 15px;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              transition: all 0.3s ease;
+              font-weight: 500;
+            "
+            onmouseover="this.style.background='rgba(255,255,255,0.3)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.2)'"
+          >
+            <i class="fas fa-play me-2"></i>Start Monitoring
+          </button>
+          <button
+            class="btn text-white border-0 px-4 py-2"
+            data-bs-toggle="modal"
+            data-bs-target="#systemInitModal"
+            style="
+              background: rgba(255, 255, 255, 0.15);
+              backdrop-filter: blur(20px);
+              border-radius: 15px;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+              transition: all 0.3s ease;
+              font-weight: 500;
+            "
+            onmouseover="this.style.background='rgba(255,255,255,0.25)'"
+            onmouseout="this.style.background='rgba(255,255,255,0.15)'"
+          >
+            <i class="fas fa-cog me-2"></i>System Settings
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ultra-Modern System Overview Cards -->
+<div class="row mb-5 g-4">
+  <div class="col-lg-3 col-md-6">
+    <div
+      class="position-relative overflow-hidden"
+      style="
+        border-radius: 24px;
+        background: linear-gradient(
+          135deg,
+          rgba(26, 115, 232, 0.1) 0%,
+          rgba(26, 115, 232, 0.05) 100%
+        );
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(26, 115, 232, 0.2);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+      "
+      onmouseover="this.style.transform='translateY(-8px) scale(1.02)'; this.style.boxShadow='0 20px 40px rgba(26, 115, 232, 0.3)'"
+      onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)'"
+    >
+      <!-- Animated Background Pattern -->
+      <div class="position-absolute top-0 end-0 opacity-25">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+          <circle
+            cx="60"
+            cy="60"
+            r="40"
+            stroke="currentColor"
+            stroke-width="1"
+            fill="none"
+            opacity="0.3"
+            style="color: var(--primary)"
+          />
+          <circle
+            cx="60"
+            cy="60"
+            r="25"
+            stroke="currentColor"
+            stroke-width="1"
+            fill="none"
+            opacity="0.5"
+            style="color: var(--primary)"
+          />
+          <circle
+            cx="60"
+            cy="60"
+            r="10"
+            fill="currentColor"
+            opacity="0.7"
+            style="color: var(--primary)"
+          />
+        </svg>
+      </div>
+
+      <div class="p-4 position-relative z-2">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <div class="mb-3">
+              <div
+                class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style="
+                  width: 60px;
+                  height: 60px;
+                  background: linear-gradient(
+                    135deg,
+                    var(--primary) 0%,
+                    var(--primary-light) 100%
+                  );
+                  box-shadow: 0 8px 32px rgba(26, 115, 232, 0.3);
+                "
+              >
+                <i class="fas fa-server text-white fa-lg"></i>
+              </div>
+            </div>
+            <h2
+              class="fw-bold mb-2"
+              style="
+                color: var(--text-primary);
+                font-size: 2.5rem;
+                line-height: 1;
+              "
+              id="totalServers"
+            >
+              -
+            </h2>
+            <p
+              class="mb-3"
+              style="
+                color: var(--text-secondary);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 0.85rem;
+              "
+            >
+              Infrastructure Servers
+            </p>
+          </div>
+        </div>
+
+        <!-- Modern Progress Indicator -->
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="flex-grow-1 me-3">
+            <div
+              class="d-flex justify-content-between align-items-center w-100 mb-2"
+            >
+              <span
+                style="
+                  color: var(--text-secondary);
+                  font-size: 0.85rem;
+                  font-weight: 500;
+                "
+                >Health Status</span
+              >
+              <span
+                style="
+                  color: var(--success);
+                  font-size: 0.85rem;
+                  font-weight: 600;
+                "
+                id="activeServersText"
+                >0 active</span
+              >
+            </div>
+            <div
+              class="position-relative"
+              style="
+                height: 8px;
+                background: rgba(26, 115, 232, 0.1);
+                border-radius: 10px;
+                overflow: hidden;
+              "
+            >
+              <div
+                class="position-absolute top-0 start-0 h-100 rounded-pill transition-all"
+                style="
+                  background: linear-gradient(
+                    90deg,
+                    var(--primary) 0%,
+                    var(--primary-light) 100%
+                  );
+                  width: 0%;
+                  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+                "
+                id="activeServersProgress"
+              ></div>
+              <div
+                class="position-absolute top-0 start-0 w-100 h-100"
+                style="
+                  background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.3),
+                    transparent
+                  );
+                  animation: shimmer 2s infinite;
+                "
+              ></div>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="small text-success fw-bold" id="serverHealthPercentage">
+              0%
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6">
+    <div
+      class="position-relative overflow-hidden"
+      style="
+        border-radius: 24px;
+        background: linear-gradient(
+          135deg,
+          rgba(0, 191, 165, 0.1) 0%,
+          rgba(0, 191, 165, 0.05) 100%
+        );
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(0, 191, 165, 0.2);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+      "
+      onmouseover="this.style.transform='translateY(-8px) scale(1.02)'; this.style.boxShadow='0 20px 40px rgba(0, 191, 165, 0.3)'"
+      onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)'"
+    >
+      <!-- Animated Background Pattern -->
+      <div class="position-absolute top-0 end-0 opacity-25">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+          <path
+            d="M20 60 Q60 20 100 60 Q60 100 20 60"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+            opacity="0.4"
+            style="color: var(--success)"
+          />
+          <circle
+            cx="60"
+            cy="60"
+            r="15"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+            opacity="0.6"
+            style="color: var(--success)"
+          />
+        </svg>
+      </div>
+
+      <div class="p-4 position-relative z-2">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <div class="mb-3">
+              <div
+                class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style="
+                  width: 60px;
+                  height: 60px;
+                  background: linear-gradient(
+                    135deg,
+                    var(--success) 0%,
+                    var(--success-light) 100%
+                  );
+                  box-shadow: 0 8px 32px rgba(0, 191, 165, 0.3);
+                "
+              >
+                <i class="fas fa-globe text-white fa-lg"></i>
+              </div>
+            </div>
+            <h2
+              class="fw-bold mb-2"
+              style="
+                color: var(--text-primary);
+                font-size: 2.5rem;
+                line-height: 1;
+              "
+              id="totalDomains"
+            >
+              -
+            </h2>
+            <p
+              class="mb-3"
+              style="
+                color: var(--text-secondary);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 0.85rem;
+              "
+            >
+              Domain Mappings
+            </p>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center justify-content-between">
+          <div class="flex-grow-1 me-3">
+            <div
+              class="d-flex justify-content-between align-items-center w-100 mb-2"
+            >
+              <span
+                style="
+                  color: var(--text-secondary);
+                  font-size: 0.85rem;
+                  font-weight: 500;
+                "
+                >SSL Coverage</span
+              >
+              <span
+                style="
+                  color: var(--success);
+                  font-size: 0.85rem;
+                  font-weight: 600;
+                "
+                id="activeDomainsText"
+                >0 active</span
+              >
+            </div>
+            <div
+              class="position-relative"
+              style="
+                height: 8px;
+                background: rgba(0, 191, 165, 0.1);
+                border-radius: 10px;
+                overflow: hidden;
+              "
+            >
+              <div
+                class="position-absolute top-0 start-0 h-100 rounded-pill transition-all"
+                style="
+                  background: linear-gradient(
+                    90deg,
+                    var(--success) 0%,
+                    var(--success-light) 100%
+                  );
+                  width: 0%;
+                  transition: width 1s cubic-bezier(0.4, 0, 0.2, 1);
+                "
+                id="activeDomainProgress"
+              ></div>
+              <div
+                class="position-absolute top-0 start-0 w-100 h-100"
+                style="
+                  background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.3),
+                    transparent
+                  );
+                  animation: shimmer 2s infinite;
+                "
+              ></div>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="small text-success fw-bold" id="domainHealthPercentage">
+              0%
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6">
+    <div
+      class="position-relative overflow-hidden"
+      style="
+        border-radius: 24px;
+        background: linear-gradient(
+          135deg,
+          rgba(155, 81, 224, 0.1) 0%,
+          rgba(155, 81, 224, 0.05) 100%
+        );
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(155, 81, 224, 0.2);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+      "
+      onmouseover="this.style.transform='translateY(-8px) scale(1.02)'; this.style.boxShadow='0 20px 40px rgba(155, 81, 224, 0.3)'"
+      onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)'"
+    >
+      <!-- Animated Background Pattern -->
+      <div class="position-absolute top-0 end-0 opacity-25">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+          <polygon
+            points="60,20 90,40 90,80 60,100 30,80 30,40"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+            opacity="0.4"
+            style="color: var(--info)"
+          />
+          <circle
+            cx="60"
+            cy="60"
+            r="8"
+            fill="currentColor"
+            opacity="0.6"
+            style="color: var(--info)"
+          />
+        </svg>
+      </div>
+
+      <div class="p-4 position-relative z-2">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <div class="mb-3">
+              <div
+                class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style="
+                  width: 60px;
+                  height: 60px;
+                  background: linear-gradient(
+                    135deg,
+                    var(--info) 0%,
+                    var(--info-light) 100%
+                  );
+                  box-shadow: 0 8px 32px rgba(155, 81, 224, 0.3);
+                "
+              >
+                <i class="fas fa-rocket text-white fa-lg"></i>
+              </div>
+            </div>
+            <h2
+              class="fw-bold mb-2"
+              style="
+                color: var(--text-primary);
+                font-size: 2.5rem;
+                line-height: 1;
+              "
+              id="activeDeployments"
+            >
+              -
+            </h2>
+            <p
+              class="mb-3"
+              style="
+                color: var(--text-secondary);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 0.85rem;
+              "
+            >
+              Active Deployments
+            </p>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center">
+          <div class="me-3">
+            <div
+              class="d-flex align-items-center justify-content-center rounded-circle"
+              style="
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(
+                  135deg,
+                  rgba(155, 81, 224, 0.2) 0%,
+                  rgba(155, 81, 224, 0.1) 100%
+                );
+              "
+            >
+              <div class="status-indicator status-info"></div>
+            </div>
+          </div>
+          <div>
+            <div
+              style="
+                color: var(--text-secondary);
+                font-size: 0.85rem;
+                font-weight: 500;
+              "
+            >
+              Running Tasks
+            </div>
+            <div
+              style="color: var(--info); font-size: 0.9rem; font-weight: 600"
+            >
+              Real-time Processing
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-3 col-md-6">
+    <div
+      class="position-relative overflow-hidden"
+      style="
+        border-radius: 24px;
+        background: linear-gradient(
+          135deg,
+          rgba(255, 111, 97, 0.1) 0%,
+          rgba(255, 111, 97, 0.05) 100%
+        );
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 111, 97, 0.2);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: pointer;
+      "
+      onmouseover="this.style.transform='translateY(-8px) scale(1.02)'; this.style.boxShadow='0 20px 40px rgba(255, 111, 97, 0.3)'"
+      onmouseout="this.style.transform='translateY(0) scale(1)'; this.style.boxShadow='0 8px 32px rgba(0,0,0,0.1)'"
+    >
+      <!-- Animated Background Pattern -->
+      <div class="position-absolute top-0 end-0 opacity-25">
+        <svg width="120" height="120" viewBox="0 0 120 120" fill="none">
+          <path
+            d="M60 30 L75 45 L60 60 L75 75 L60 90 L45 75 L60 60 L45 45 Z"
+            stroke="currentColor"
+            stroke-width="2"
+            fill="none"
+            opacity="0.4"
+            style="color: var(--warning)"
+          />
+        </svg>
+      </div>
+
+      <div class="p-4 position-relative z-2">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <div class="mb-3">
+              <div
+                class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style="
+                  width: 60px;
+                  height: 60px;
+                  background: linear-gradient(
+                    135deg,
+                    var(--warning) 0%,
+                    var(--warning-light) 100%
+                  );
+                  box-shadow: 0 8px 32px rgba(255, 111, 97, 0.3);
+                "
+              >
+                <i class="fas fa-exclamation-triangle text-white fa-lg"></i>
+              </div>
+            </div>
+            <h2
+              class="fw-bold mb-2"
+              style="
+                color: var(--text-primary);
+                font-size: 2.5rem;
+                line-height: 1;
+              "
+              id="activeAlerts"
+            >
+              -
+            </h2>
+            <p
+              class="mb-3"
+              style="
+                color: var(--text-secondary);
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                font-size: 0.85rem;
+              "
+            >
+              System Alerts
+            </p>
+          </div>
+        </div>
+
+        <div class="d-flex align-items-center">
+          <div class="me-3">
+            <div
+              class="d-flex align-items-center justify-content-center rounded-circle"
+              style="
+                width: 40px;
+                height: 40px;
+                background: linear-gradient(
+                  135deg,
+                  rgba(255, 111, 97, 0.2) 0%,
+                  rgba(255, 111, 97, 0.1) 100%
+                );
+              "
+            >
+              <div class="status-indicator" id="alertsStatus"></div>
+            </div>
+          </div>
+          <div>
+            <div
+              style="
+                color: var(--text-secondary);
+                font-size: 0.85rem;
+                font-weight: 500;
+              "
+            >
+              Critical Issues
+            </div>
+            <div
+              style="color: var(--warning); font-size: 0.9rem; font-weight: 600"
+              id="criticalAlertsText"
+            >
+              0 critical
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modern Navigation Tabs -->
+<div class="row mb-4">
+  <div class="col">
+    <nav class="d-flex justify-content-center">
+      <div
+        class="nav nav-pills p-2"
+        id="nav-tab"
+        role="tablist"
+        style="
+          background: rgba(255, 255, 255, 0.1);
+          backdrop-filter: blur(20px);
+          border-radius: 20px;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        "
+      >
+        <button
+          class="nav-link active mx-1"
+          id="servers-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#servers"
+          type="button"
+          role="tab"
+          style="
+            border-radius: 15px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+          "
+        >
+          <i class="fas fa-server me-2"></i>Servers
+        </button>
+        <button
+          class="nav-link mx-1"
+          id="domains-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#domains"
+          type="button"
+          role="tab"
+          style="
+            border-radius: 15px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+          "
+        >
+          <i class="fas fa-globe me-2"></i>Domains
+        </button>
+        <button
+          class="nav-link mx-1"
+          id="deployments-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#deployments"
+          type="button"
+          role="tab"
+          style="
+            border-radius: 15px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+          "
+        >
+          <i class="fas fa-rocket me-2"></i>Deployments
+        </button>
+        <button
+          class="nav-link mx-1"
+          id="monitoring-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#monitoring"
+          type="button"
+          role="tab"
+          style="
+            border-radius: 15px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+          "
+        >
+          <i class="fas fa-chart-line me-2"></i>Monitoring
+        </button>
+        <button
+          class="nav-link mx-1"
+          id="discovery-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#discovery"
+          type="button"
+          role="tab"
+          style="
+            border-radius: 15px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.3s ease;
+          "
+        >
+          <i class="fas fa-search me-2"></i>Discovery
+        </button>
+      </div>
+    </nav>
+  </div>
+</div>
+
+<!-- Tab Content -->
+<div class="tab-content" id="nav-tabContent">
+  <!-- Servers Tab -->
+  <div class="tab-pane fade show active" id="servers" role="tabpanel">
+    <div class="row mb-4">
+      <div class="col-md-8">
+        <div
+          class="card border-0 shadow-lg"
+          style="
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+          "
+        >
+          <div
+            class="card-header border-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                var(--bg-tertiary) 0%,
+                var(--bg-secondary) 100%
+              );
+              border-radius: 20px 20px 0 0;
+            "
+          >
+            <div
+              class="d-flex justify-content-between align-items-center w-100"
+            >
+              <h5 class="mb-0 fw-bold" style="color: var(--text-primary)">
+                <i class="fas fa-server me-2 text-primary"></i>Infrastructure
+                Servers
+              </h5>
+              <button
+                class="btn btn-primary btn-sm px-4"
+                data-bs-toggle="modal"
+                data-bs-target="#addServerModal"
+                style="border-radius: 15px; font-weight: 600"
+              >
+                <i class="fas fa-plus me-2"></i>Add Server
+              </button>
+            </div>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-modern mb-0">
+                <thead>
+                  <tr>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Server
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Status
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Services
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Health
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="serversTableBody">
+                  <tr>
+                    <td
+                      colspan="5"
+                      class="text-center py-5"
+                      style="border: none"
+                    >
+                      <div class="loading-spinner me-2"></div>
+                      <span style="color: var(--text-secondary)"
+                        >Loading servers...</span
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div
+          class="card border-0 shadow-lg mb-4"
+          style="
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+          "
+        >
+          <div
+            class="card-header border-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                var(--success) 0%,
+                var(--success-light) 100%
+              );
+              border-radius: 20px 20px 0 0;
+            "
+          >
+            <h5 class="mb-0 fw-bold text-white">
+              <i class="fas fa-chart-pie me-2"></i>Server Health Overview
+            </h5>
+          </div>
+          <div class="card-body text-center p-4">
+            <div class="mb-4">
+              <div
+                class="circular-progress mx-auto mb-3"
+                id="serverHealthChart"
+                style="width: 120px; height: 120px"
+              >
+                <div
+                  class="circular-progress-text fw-bold"
+                  style="font-size: 1.5rem"
+                >
+                  --%
+                </div>
+              </div>
+            </div>
+            <div class="row text-center">
+              <div class="col-6">
+                <div
+                  class="p-3 rounded-4"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      rgba(0, 191, 165, 0.1) 0%,
+                      rgba(0, 191, 165, 0.05) 100%
+                    );
+                  "
+                >
+                  <div class="small text-success fw-semibold mb-1">Active</div>
+                  <div
+                    class="h4 fw-bold text-success mb-0"
+                    id="activeServersCount"
+                  >
+                    -
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div
+                  class="p-3 rounded-4"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      rgba(220, 53, 69, 0.1) 0%,
+                      rgba(220, 53, 69, 0.05) 100%
+                    );
+                  "
+                >
+                  <div class="small text-danger fw-semibold mb-1">Issues</div>
+                  <div
+                    class="h4 fw-bold text-danger mb-0"
+                    id="failedServersCount"
+                  >
+                    -
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="card border-0 shadow-lg"
+          style="
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+          "
+        >
+          <div
+            class="card-header border-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                var(--info) 0%,
+                var(--info-light) 100%
+              );
+              border-radius: 20px 20px 0 0;
+            "
+          >
+            <h5 class="mb-0 fw-bold text-white">
+              <i class="fas fa-bolt me-2"></i>Quick Actions
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <div class="d-grid gap-3">
+              <button
+                class="btn btn-outline-primary fw-semibold"
+                onclick="InfraAdmin.refreshServers()"
+                style="
+                  border-radius: 15px;
+                  padding: 0.875rem;
+                  border-width: 2px;
+                "
+              >
+                <i class="fas fa-sync-alt me-2"></i>Refresh Status
+              </button>
+              <button
+                class="btn btn-outline-success fw-semibold"
+                onclick="InfraAdmin.healthCheckAll()"
+                style="
+                  border-radius: 15px;
+                  padding: 0.875rem;
+                  border-width: 2px;
+                "
+              >
+                <i class="fas fa-heartbeat me-2"></i>Health Check All
+              </button>
+              <button
+                class="btn btn-outline-info fw-semibold"
+                data-bs-toggle="modal"
+                data-bs-target="#networkScanModal"
+                style="
+                  border-radius: 15px;
+                  padding: 0.875rem;
+                  border-width: 2px;
+                "
+              >
+                <i class="fas fa-network-wired me-2"></i>Network Scan
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Domains Tab -->
+  <div class="tab-pane fade" id="domains" role="tabpanel">
+    <div
+      class="card border-0 shadow-lg"
+      style="
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+      "
+    >
+      <div
+        class="card-header border-0"
+        style="
+          background: linear-gradient(
+            135deg,
+            var(--success) 0%,
+            var(--success-light) 100%
+          );
+          border-radius: 20px 20px 0 0;
+        "
+      >
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <h5 class="mb-0 fw-bold text-white">
+            <i class="fas fa-globe me-2"></i>Domain Mappings
+          </h5>
+          <button
+            class="btn text-white border-0 px-4 fw-semibold"
+            data-bs-toggle="modal"
+            data-bs-target="#addDomainModal"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              backdrop-filter: blur(10px);
+              border-radius: 15px;
+              border: 1px solid rgba(255, 255, 255, 0.3);
+            "
+          >
+            <i class="fas fa-plus me-2"></i>Add Domain
+          </button>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-modern mb-0">
+            <thead>
+              <tr>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Custom Domain
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Target
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  SSL
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Status
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Last Verified
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody id="domainsTableBody">
+              <tr>
+                <td colspan="6" class="text-center py-5" style="border: none">
+                  <div class="loading-spinner me-2"></div>
+                  <span style="color: var(--text-secondary)"
+                    >Loading domains...</span
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Deployments Tab -->
+  <div class="tab-pane fade" id="deployments" role="tabpanel">
+    <div
+      class="card border-0 shadow-lg"
+      style="
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+      "
+    >
+      <div
+        class="card-header border-0"
+        style="
+          background: linear-gradient(
+            135deg,
+            var(--info) 0%,
+            var(--info-light) 100%
+          );
+          border-radius: 20px 20px 0 0;
+        "
+      >
+        <div class="d-flex justify-content-between align-items-center w-100">
+          <h5 class="mb-0 fw-bold text-white">
+            <i class="fas fa-rocket me-2"></i>Deployment Tasks
+          </h5>
+          <div class="d-flex gap-2">
+            <button
+              class="btn text-white border-0 px-3 fw-semibold"
+              onclick="InfraAdmin.refreshDeployments()"
+              style="
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(10px);
+                border-radius: 12px;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+              "
+            >
+              <i class="fas fa-sync-alt me-2"></i>Refresh
+            </button>
+            <button
+              class="btn text-white border-0 px-4 fw-semibold"
+              data-bs-toggle="modal"
+              data-bs-target="#createDeploymentModal"
+              style="
+                background: rgba(255, 255, 255, 0.2);
+                backdrop-filter: blur(10px);
+                border-radius: 15px;
+                border: 1px solid rgba(255, 255, 255, 0.3);
+              "
+            >
+              <i class="fas fa-plus me-2"></i>New Deployment
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-modern mb-0">
+            <thead>
+              <tr>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Task
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Type
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Servers
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Status
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Progress
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Created
+                </th>
+                <th
+                  style="
+                    border: none;
+                    background: transparent;
+                    color: var(--text-primary);
+                    font-weight: 700;
+                    padding: 1.25rem;
+                  "
+                >
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody id="deploymentsTableBody">
+              <tr>
+                <td colspan="7" class="text-center py-5" style="border: none">
+                  <div class="loading-spinner me-2"></div>
+                  <span style="color: var(--text-secondary)"
+                    >Loading deployments...</span
+                  >
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monitoring Tab -->
+  <div class="tab-pane fade" id="monitoring" role="tabpanel">
+    <div class="row">
+      <div class="col-md-8">
+        <div
+          class="card border-0 shadow-lg"
+          style="
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+          "
+        >
+          <div
+            class="card-header border-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                var(--warning) 0%,
+                var(--warning-light) 100%
+              );
+              border-radius: 20px 20px 0 0;
+            "
+          >
+            <h5 class="mb-0 fw-bold text-white">
+              <i class="fas fa-exclamation-triangle me-2"></i>System Alerts
+            </h5>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-modern mb-0">
+                <thead>
+                  <tr>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Alert
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Severity
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Server
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Metric
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Time
+                    </th>
+                    <th
+                      style="
+                        border: none;
+                        background: transparent;
+                        color: var(--text-primary);
+                        font-weight: 700;
+                        padding: 1.25rem;
+                      "
+                    >
+                      Actions
+                    </th>
+                  </tr>
+                </thead>
+                <tbody id="alertsTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      class="text-center py-5"
+                      style="border: none"
+                    >
+                      <div class="loading-spinner me-2"></div>
+                      <span style="color: var(--text-secondary)"
+                        >Loading alerts...</span
+                      >
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div
+          class="card border-0 shadow-lg mb-4"
+          style="
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+          "
+        >
+          <div
+            class="card-header border-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                var(--danger) 0%,
+                var(--coral-light) 100%
+              );
+              border-radius: 20px 20px 0 0;
+            "
+          >
+            <h5 class="mb-0 fw-bold text-white">
+              <i class="fas fa-chart-bar me-2"></i>Alert Summary
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <div class="text-center mb-4">
+              <div
+                class="d-inline-flex align-items-center justify-content-center rounded-circle mb-3"
+                style="
+                  width: 80px;
+                  height: 80px;
+                  background: linear-gradient(
+                    135deg,
+                    rgba(220, 53, 69, 0.1) 0%,
+                    rgba(220, 53, 69, 0.05) 100%
+                  );
+                "
+              >
+                <h2 class="fw-bold text-danger mb-0" id="criticalAlertsCount">
+                  0
+                </h2>
+              </div>
+              <div class="fw-bold" style="color: var(--text-primary)">
+                Critical Alerts
+              </div>
+            </div>
+            <div class="row text-center">
+              <div class="col-6">
+                <div
+                  class="p-3 rounded-4"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      rgba(255, 193, 7, 0.1) 0%,
+                      rgba(255, 193, 7, 0.05) 100%
+                    );
+                  "
+                >
+                  <div class="small text-warning fw-semibold mb-1">Warning</div>
+                  <div
+                    class="h5 fw-bold text-warning mb-0"
+                    id="warningAlertsCount"
+                  >
+                    0
+                  </div>
+                </div>
+              </div>
+              <div class="col-6">
+                <div
+                  class="p-3 rounded-4"
+                  style="
+                    background: linear-gradient(
+                      135deg,
+                      rgba(23, 162, 184, 0.1) 0%,
+                      rgba(23, 162, 184, 0.05) 100%
+                    );
+                  "
+                >
+                  <div class="small text-info fw-semibold mb-1">Info</div>
+                  <div class="h5 fw-bold text-info mb-0" id="infoAlertsCount">
+                    0
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="card border-0 shadow-lg"
+          style="
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+          "
+        >
+          <div
+            class="card-header border-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                var(--primary) 0%,
+                var(--primary-light) 100%
+              );
+              border-radius: 20px 20px 0 0;
+            "
+          >
+            <h5 class="mb-0 fw-bold text-white">
+              <i class="fas fa-tools me-2"></i>Monitoring Tools
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <div class="d-grid gap-3">
+              <button
+                class="btn btn-outline-success fw-semibold"
+                onclick="InfraAdmin.acknowledgeAllAlerts()"
+                style="
+                  border-radius: 15px;
+                  padding: 0.875rem;
+                  border-width: 2px;
+                "
+              >
+                <i class="fas fa-check me-2"></i>Acknowledge All
+              </button>
+              <button
+                class="btn btn-outline-info fw-semibold"
+                onclick="InfraAdmin.createBackup()"
+                style="
+                  border-radius: 15px;
+                  padding: 0.875rem;
+                  border-width: 2px;
+                "
+              >
+                <i class="fas fa-save me-2"></i>Create Backup
+              </button>
+              <button
+                class="btn btn-outline-warning fw-semibold"
+                onclick="InfraAdmin.testAllSystems()"
+                style="
+                  border-radius: 15px;
+                  padding: 0.875rem;
+                  border-width: 2px;
+                "
+              >
+                <i class="fas fa-vial me-2"></i>Test Systems
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Discovery Tab -->
+  <div class="tab-pane fade" id="discovery" role="tabpanel">
+    <div class="row">
+      <div class="col-md-6">
+        <div
+          class="card border-0 shadow-lg"
+          style="
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+          "
+        >
+          <div
+            class="card-header border-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                var(--secondary) 0%,
+                var(--secondary-light) 100%
+              );
+              border-radius: 20px 20px 0 0;
+            "
+          >
+            <h5 class="mb-0 fw-bold text-white">
+              <i class="fas fa-search me-2"></i>Network Discovery
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <form id="networkScanForm">
+              <div class="mb-4">
+                <label
+                  for="networkRange"
+                  class="form-label fw-semibold"
+                  style="color: var(--text-primary)"
+                  >Network Range</label
+                >
+                <input
+                  type="text"
+                  class="form-control"
+                  id="networkRange"
+                  placeholder="192.168.1.0/24"
+                  value="192.168.1.0/24"
+                  style="
+                    border-radius: 12px;
+                    border: 2px solid var(--border-primary);
+                    padding: 0.875rem;
+                  "
+                />
+              </div>
+              <div class="mb-4">
+                <label
+                  class="form-label fw-semibold"
+                  style="color: var(--text-primary)"
+                  >SSH Credentials</label
+                >
+                <div id="sshCredentials">
+                  <div class="row mb-3">
+                    <div class="col-4">
+                      <input
+                        type="text"
+                        class="form-control"
+                        placeholder="Username"
+                        name="username"
+                        style="
+                          border-radius: 10px;
+                          border: 2px solid var(--border-primary);
+                        "
+                      />
+                    </div>
+                    <div class="col-4">
+                      <input
+                        type="password"
+                        class="form-control"
+                        placeholder="Password"
+                        name="password"
+                        style="
+                          border-radius: 10px;
+                          border: 2px solid var(--border-primary);
+                        "
+                      />
+                    </div>
+                    <div class="col-4">
+                      <input
+                        type="number"
+                        class="form-control"
+                        placeholder="Port"
+                        name="port"
+                        value="22"
+                        style="
+                          border-radius: 10px;
+                          border: 2px solid var(--border-primary);
+                        "
+                      />
+                    </div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-outline-secondary fw-semibold"
+                  onclick="InfraAdmin.addCredentialRow()"
+                  style="border-radius: 12px; border-width: 2px"
+                >
+                  <i class="fas fa-plus me-2"></i>Add Credentials
+                </button>
+              </div>
+              <button
+                type="submit"
+                class="btn btn-primary fw-semibold px-4"
+                style="border-radius: 15px"
+              >
+                <i class="fas fa-play me-2"></i>Start Network Scan
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div
+          class="card border-0 shadow-lg"
+          style="
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+          "
+        >
+          <div
+            class="card-header border-0"
+            style="
+              background: linear-gradient(
+                135deg,
+                var(--accent) 0%,
+                var(--accent-light) 100%
+              );
+              border-radius: 20px 20px 0 0;
+            "
+          >
+            <h5 class="mb-0 fw-bold text-white">
+              <i class="fas fa-server me-2"></i>Discovered Machines
+            </h5>
+          </div>
+          <div class="card-body p-4">
+            <div id="discoveredMachines">
+              <div class="text-center text-muted py-5">
+                <div class="mb-4">
+                  <div
+                    class="d-inline-flex align-items-center justify-content-center rounded-circle"
+                    style="
+                      width: 80px;
+                      height: 80px;
+                      background: linear-gradient(
+                        135deg,
+                        rgba(113, 75, 103, 0.1) 0%,
+                        rgba(113, 75, 103, 0.05) 100%
+                      );
+                    "
+                  >
+                    <i
+                      class="fas fa-search fa-2x"
+                      style="color: var(--primary)"
+                    ></i>
+                  </div>
+                </div>
+                <h6 class="fw-bold mb-2" style="color: var(--text-primary)">
+                  Network Discovery
+                </h6>
+                <p class="mb-0" style="color: var(--text-secondary)">
+                  Start a network scan to discover available machines in your
+                  infrastructure
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Include Modals -->
+{% include 'infra/modals.html' %}
+
+<!-- Additional CSS for Modern Design -->
+<style>
+  /* Shimmer Animation */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Enhanced Float Animation */
+  @keyframes float {
+    0%,
+    100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-20px);
+    }
+  }
+
+  /* Modern Nav Pills */
+  .nav-pills .nav-link {
+    color: var(--text-secondary) !important;
+    background: transparent !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .nav-pills .nav-link:hover {
+    color: var(--primary) !important;
+    background: rgba(26, 115, 232, 0.1) !important;
+    transform: translateY(-2px);
+  }
+
+  .nav-pills .nav-link.active {
+    color: white !important;
+    background: linear-gradient(
+      135deg,
+      var(--primary) 0%,
+      var(--primary-dark) 100%
+    ) !important;
+    box-shadow: 0 8px 25px rgba(26, 115, 232, 0.3);
+    transform: translateY(-2px);
+  }
+
+  /* Enhanced Table Styling */
+  .table-modern tbody tr {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+  }
+
+  .table-modern tbody tr:hover {
+    background: linear-gradient(
+      135deg,
+      rgba(26, 115, 232, 0.02) 0%,
+      rgba(26, 115, 232, 0.05) 100%
+    );
+    transform: translateX(4px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Enhanced Circular Progress */
+  .circular-progress {
+    border-radius: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.5s ease;
+  }
+
+  /* Enhanced Status Indicators */
+  .status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    position: relative;
+    animation: pulse 2s infinite;
+  }
+
+  .status-indicator::before {
+    content: "";
+    position: absolute;
+    top: -3px;
+    left: -3px;
+    right: -3px;
+    bottom: -3px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0.3;
+    animation: ripple 2s infinite;
+  }
+
+  @keyframes ripple {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.8;
+    }
+    100% {
+      transform: scale(2);
+      opacity: 0;
+    }
+  }
+
+  /* Enhanced Loading Spinner */
+  .loading-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid rgba(26, 115, 232, 0.2);
+    border-top: 3px solid var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+  }
+
+  /* Button Enhancements */
+  .btn {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.2),
+      transparent
+    );
+    transition: left 0.5s;
+  }
+
+  .btn:hover::before {
+    left: 100%;
+  }
+
+  /* Real-time Update Timestamp */
+  #lastUpdateTime {
+    font-family: "JetBrains Mono", monospace;
+    font-weight: 500;
+  }
+
+  /* Responsive Enhancements */
+  @media (max-width: 768px) {
+    .system-header {
+      text-align: center;
+    }
+
+    .system-header .d-flex {
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .system-header h1 {
+      font-size: 2rem;
+    }
+
+    .nav-pills {
+      flex-wrap: wrap;
+    }
+
+    .nav-pills .nav-link {
+      margin: 0.25rem;
+      padding: 0.5rem 1rem;
+      font-size: 0.9rem;
+    }
+  }
+</style>
+
+{% endblock %} {% block scripts %}
+<script src="{{ url_for('static', filename='js/infra.js') }}"></script>
+<script>
+  // Initialize dashboard when page loads
+  document.addEventListener("DOMContentLoaded", function () {
+    InfraAdmin.init();
+
+    // Update timestamp every second
+    setInterval(updateTimestamp, 1000);
+    updateTimestamp();
+  });
+
+  function updateTimestamp() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString("en-US", {
+      hour12: false,
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
+    const timestampElement = document.getElementById("lastUpdateTime");
+    if (timestampElement) {
+      timestampElement.textContent = timeString;
+    }
+  }
+</script>
+{% endblock %}

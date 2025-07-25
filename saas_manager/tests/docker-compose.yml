@@ -1,0 +1,146 @@
+services:
+  ubuntu-vps-1:
+    image: ubuntu:24.04
+    container_name: ubuntu-vps-1
+    hostname: ubuntu-vps-1
+    restart: unless-stopped
+    privileged: true
+    networks:
+      vps_network:
+        ipv4_address: 172.22.0.10
+    ports:
+      # SSH and common services
+      - "2221:22"
+      - "8001:80"
+      - "4431:443"
+      - "3001:3000"
+      - "5001:5000"
+      - "8081:8080"
+      - "9001:9000"
+      # Database ports
+      - "3307:3306" # MySQL
+      - "5433:5432" # PostgreSQL
+      - "27018:27017" # MongoDB
+      - "6380:6379" # Redis
+    volumes:
+      - ubuntu1_data:/home
+      - ./init.sh:/init.sh
+    command: >
+      bash -c "
+        chmod +x /init.sh &&
+        /init.sh &&
+        tail -f /dev/null
+      "
+
+  ubuntu-vps-2:
+    image: ubuntu:24.04
+    container_name: ubuntu-vps-2
+    hostname: ubuntu-vps-2
+    restart: unless-stopped
+    privileged: true
+    networks:
+      vps_network:
+        ipv4_address: 172.22.0.11
+    ports:
+      # SSH and common services
+      - "2222:22"
+      - "8002:80"
+      - "4432:443"
+      - "3002:3000"
+      - "5002:5000"
+      - "8082:8080"
+      - "9002:9000"
+      # Database ports
+      - "3308:3306" # MySQL
+      - "5434:5432" # PostgreSQL
+      - "27019:27017" # MongoDB
+      - "6381:6379" # Redis
+    volumes:
+      - ubuntu2_data:/home
+      - ./init.sh:/init.sh
+    command: >
+      bash -c "
+        chmod +x /init.sh &&
+        /init.sh &&
+        tail -f /dev/null
+      "
+
+  ubuntu-vps-3:
+    image: ubuntu:24.04
+    container_name: ubuntu-vps-3
+    hostname: ubuntu-vps-3
+    restart: unless-stopped
+    privileged: true
+    networks:
+      vps_network:
+        ipv4_address: 172.22.0.12
+    ports:
+      # SSH and common services
+      - "2223:22"
+      - "8003:80"
+      - "4433:443"
+      - "3003:3000"
+      - "5003:5000"
+      - "8083:8080"
+      - "9003:9000"
+      # Database ports
+      - "3309:3306" # MySQL
+      - "5435:5432" # PostgreSQL
+      - "27020:27017" # MongoDB
+      - "6382:6379" # Redis
+    volumes:
+      - ubuntu3_data:/home
+      - ./init.sh:/init.sh
+    command: >
+      bash -c "
+        chmod +x /init.sh &&
+        /init.sh &&
+        tail -f /dev/null
+      "
+
+  ubuntu-vps-4:
+    image: ubuntu:24.04
+    container_name: ubuntu-vps-4
+    hostname: ubuntu-vps-4
+    restart: unless-stopped
+    privileged: true
+    networks:
+      vps_network:
+        ipv4_address: 172.22.0.13
+    ports:
+      # SSH and common services
+      - "2224:22"
+      - "8004:80"
+      - "4434:443"
+      - "3004:3000"
+      - "5004:5000"
+      - "8084:8080"
+      - "9004:9000"
+      # Database ports
+      - "3310:3306" # MySQL
+      - "5436:5432" # PostgreSQL
+      - "27021:27017" # MongoDB
+      - "6383:6379" # Redis
+    volumes:
+      - ubuntu4_data:/home
+      - ./init.sh:/init.sh
+    command: >
+      bash -c "
+        chmod +x /init.sh &&
+        /init.sh &&
+        tail -f /dev/null
+      "
+
+networks:
+  vps_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16
+          gateway: 172.22.0.1
+
+volumes:
+  ubuntu1_data:
+  ubuntu2_data:
+  ubuntu3_data:
+  ubuntu4_data:
