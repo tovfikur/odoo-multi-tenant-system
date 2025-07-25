@@ -36,3 +36,4 @@ aiohttp
 psutil
 flask-session
 flask-limiter
+Pillow

@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#714B67" />
+    <link rel="manifest" href="/manifest.json" />
     <meta
       name="description"
       content="Odoo SaaS Platform - Modern cloud-based ERP solution"
@@ -49,7 +50,20 @@
       rel="stylesheet"
     />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
-    {% block head %}{% endblock %}
+
+    {% if current_user.is_authenticated %}
+    <script>
+      // Set authentication status for support widget
+      document.body.dataset.userAuthenticated = "true";
+    </script>
+
+    <!-- Load support widget styles and scripts -->
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='css/support.css') }}"
+    />
+    <script src="{{ url_for('static', filename='js/support.js') }}"></script>
+    {% endif %} {% block head %}{% endblock %}
   </head>
 
   <body>
@@ -104,7 +118,24 @@
                 <span>New Tenant</span>
               </a>
             </li>
+
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('support.tickets') }}">
+                <i class="fas fa-headset"></i> Support
+              </a>
+            </li>
+
             {% if current_user.is_admin %}
+
+            <li class="nav-item">
+              <a
+                class="nav-link"
+                href="{{ url_for('support_admin.dashboard') }}"
+              >
+                <i class="fas fa-life-ring"></i> Support Admin
+              </a>
+            </li>
+
             <li class="nav-item dropdown">
               <a
                 class="nav-link dropdown-toggle"
@@ -159,21 +190,16 @@
               </a>
               <ul class="dropdown-menu dropdown-menu-end">
                 <li>
-                  <a class="dropdown-item" href="#" data-tooltip="Edit Profile">
+                  <a
+                    class="dropdown-item"
+                    href="/profile"
+                    data-tooltip="Edit Profile"
+                  >
                     <i class="fas fa-user-cog"></i>
                     <span>Profile Settings</span>
                   </a>
                 </li>
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="#"
-                    data-tooltip="Account Preferences"
-                  >
-                    <i class="fas fa-palette"></i>
-                    <span>Preferences</span>
-                  </a>
-                </li>
+
                 <li>
                   <a class="dropdown-item" href="#" data-tooltip="Get Help">
                     <i class="fas fa-question-circle"></i>
@@ -220,25 +246,28 @@
       </div>
     </nav>
 
-    <!-- Enhanced Flash Messages -->
-    <div class="container mt-3" style="padding-top: 80px">
+    <!-- Floating Notification Container -->
+    <div id="floating-notifications" class="floating-notifications-container">
       {% with messages = get_flashed_messages(with_categories=true) %} {% if
       messages %} {% for category, message in messages %}
       <div
-        class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show animate-in"
-        role="alert"
-        style="animation-delay: {{ loop.index0 * 0.1 }}s;"
+        class="floating-notification floating-notification-{{ 'danger' if category == 'error' else category }}"
+        data-auto-dismiss="5000"
+        style="animation-delay: {{ loop.index0 * 0.2 }}s;"
       >
-        <i
-          class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' if category == 'info' else 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' }} me-2"
-        ></i>
-        <span>{{ message }}</span>
-        <button
-          type="button"
-          class="btn-close"
-          data-bs-dismiss="alert"
-          aria-label="Close"
-        ></button>
+        <div class="floating-notification-content">
+          <i
+            class="fas fa-{{ 'exclamation-triangle' if category == 'error' else 'info-circle' if category == 'info' else 'check-circle' if category == 'success' else 'exclamation-triangle' if category == 'warning' else 'info-circle' }} me-2"
+          ></i>
+          <span class="notification-text">{{ message }}</span>
+          <button
+            type="button"
+            class="floating-notification-close"
+            aria-label="Close"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
       </div>
       {% endfor %} {% endif %} {% endwith %}
     </div>
@@ -399,29 +428,74 @@
       </div>
     </div>
 
+    <!-- Floating Install Button -->
+    <button
+      id="pwa-install-btn"
+      class="btn btn-primary btn-floating-install"
+      style="display: none"
+      data-tooltip="Install App"
+    >
+      <i class="fas fa-download"></i>
+    </button>
+
     <!-- Additional JavaScript for enhanced functionality -->
     <script>
       // Back to top functionality
       document.addEventListener("DOMContentLoaded", function () {
+        // Auto-dismiss and close functionality for floating notifications
+        const notifications = document.querySelectorAll(
+          ".floating-notification"
+        );
+
+        notifications.forEach((notification) => {
+          const autoDismiss = notification.dataset.autoDismiss;
+          const closeBtn = notification.querySelector(
+            ".floating-notification-close"
+          );
+
+          // Close button functionality
+          if (closeBtn) {
+            closeBtn.addEventListener("click", function () {
+              dismissNotification(notification);
+            });
+          }
+
+          // Auto dismiss
+          if (autoDismiss) {
+            setTimeout(() => {
+              dismissNotification(notification);
+            }, parseInt(autoDismiss));
+          }
+        });
+
+        function dismissNotification(notification) {
+          notification.classList.add("dismissing");
+          setTimeout(() => {
+            notification.remove();
+          }, 300);
+        }
+
         // Enhanced navbar responsiveness
         const navbarToggler = document.querySelector(".navbar-toggler");
         const navbarCollapse = document.querySelector(".navbar-collapse");
 
-        navbarToggler.addEventListener("click", function () {
-          this.classList.toggle("active");
-        });
+        if (navbarToggler && navbarCollapse) {
+          navbarToggler.addEventListener("click", function () {
+            this.classList.toggle("active");
+          });
 
-        // Close navbar when clicking outside
-        document.addEventListener("click", function (event) {
-          if (
-            !navbarCollapse.contains(event.target) &&
-            !navbarToggler.contains(event.target)
-          ) {
-            if (navbarCollapse.classList.contains("show")) {
-              navbarToggler.click();
+          // Close navbar when clicking outside
+          document.addEventListener("click", function (event) {
+            if (
+              !navbarCollapse.contains(event.target) &&
+              !navbarToggler.contains(event.target)
+            ) {
+              if (navbarCollapse.classList.contains("show")) {
+                navbarToggler.click();
+              }
             }
-          }
-        });
+          });
+        }
 
         // Add loading states to navigation links
         document.querySelectorAll(".navbar-nav a").forEach((link) => {
@@ -517,10 +591,11 @@
         document.addEventListener("keydown", function (e) {
           if ((e.ctrlKey || e.metaKey) && e.key === "?") {
             e.preventDefault();
-            const shortcutsModal = new bootstrap.Modal(
-              document.getElementById("shortcutsModal")
-            );
-            shortcutsModal.show();
+            const shortcutsModal = document.getElementById("shortcutsModal");
+            if (shortcutsModal) {
+              const modal = new bootstrap.Modal(shortcutsModal);
+              modal.show();
+            }
           }
         });
 
@@ -536,7 +611,10 @@
           window.addEventListener("load", function () {
             setTimeout(() => {
               const perfData = performance.getEntriesByType("navigation")[0];
-              if (perfData.loadEventEnd - perfData.navigationStart > 3000) {
+              if (
+                perfData &&
+                perfData.loadEventEnd - perfData.navigationStart > 3000
+              ) {
                 console.warn(
                   "Page load time is high:",
                   perfData.loadEventEnd - perfData.navigationStart,
@@ -655,26 +733,55 @@
       // PWA Install prompt
       let deferredPrompt;
       const installButton = document.getElementById("pwa-install-btn");
+      const installPrompt = document.getElementById("install-prompt");
+      const installAppBtn = document.getElementById("install-app-btn");
+      const dismissInstall = document.getElementById("dismiss-install");
 
       window.addEventListener("beforeinstallprompt", (e) => {
         console.log("PWA install prompt available");
         e.preventDefault();
         deferredPrompt = e;
 
-        // Show install button if it exists
+        // Show install button/prompt
         if (installButton) {
           installButton.style.display = "block";
-          installButton.addEventListener("click", async () => {
+        }
+
+        // Show install prompt after 30 seconds (optional)
+        setTimeout(() => {
+          if (deferredPrompt && installPrompt) {
+            installPrompt.style.display = "block";
+          }
+        }, 30000);
+      });
+
+      // Handle install button clicks
+      [installButton, installAppBtn].forEach((btn) => {
+        if (btn) {
+          btn.addEventListener("click", async () => {
             if (deferredPrompt) {
               deferredPrompt.prompt();
               const { outcome } = await deferredPrompt.userChoice;
               console.log(`PWA install prompt outcome: ${outcome}`);
+
+              if (outcome === "accepted") {
+                console.log("User accepted the install prompt");
+              }
+
               deferredPrompt = null;
-              installButton.style.display = "none";
+              if (installButton) installButton.style.display = "none";
+              if (installPrompt) installPrompt.style.display = "none";
             }
           });
         }
       });
+
+      // Handle dismiss
+      if (dismissInstall) {
+        dismissInstall.addEventListener("click", () => {
+          if (installPrompt) installPrompt.style.display = "none";
+        });
+      }
 
       // PWA installed
       window.addEventListener("appinstalled", () => {
@@ -683,9 +790,8 @@
           window.showNotification("App installed successfully! 🎉", "success");
         }
         deferredPrompt = null;
-        if (installButton) {
-          installButton.style.display = "none";
-        }
+        if (installButton) installButton.style.display = "none";
+        if (installPrompt) installPrompt.style.display = "none";
       });
     </script>
   </body>

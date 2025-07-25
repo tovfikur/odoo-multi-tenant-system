@@ -26,6 +26,29 @@ class SaasUser(db.Model, UserMixin):
     
     tenants = db.relationship('TenantUser', back_populates='user')
     public_keys = db.relationship('UserPublicKey', backref='user')
+    
+    full_name = db.Column(db.String(100))
+    bio = db.Column(db.Text)
+    company = db.Column(db.String(100))
+    location = db.Column(db.String(100))
+    website = db.Column(db.String(200))
+    language = db.Column(db.String(10), default='en')
+    profile_picture = db.Column(db.String(100))
+
+    def get_profile_picture_url(self):
+        """Get the URL for the profile picture or return None"""
+        if self.profile_picture:
+            return f'/static/uploads/profiles/{self.profile_picture}'
+        return None
+    
+    def get_avatar_initials(self):
+        """Get initials for avatar placeholder"""
+        if self.full_name:
+            names = self.full_name.split()
+            if len(names) >= 2:
+                return f"{names[0][0]}{names[1][0]}".upper()
+            return names[0][0].upper()
+        return self.username[0].upper()
 
 class Tenant(db.Model):
     __tablename__ = 'tenants'
@@ -170,11 +193,76 @@ class AuditLog(db.Model):
     action = db.Column(db.String(100), nullable=False)
     details = db.Column(db.JSON)
     ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     user = db.relationship('SaasUser')
     tenant = db.relationship('Tenant')
+
+    def to_dict(self):
+        """Convert audit log to dictionary for API responses"""
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'tenant_id': self.tenant_id,
+            'action': self.action,
+            'details': self.details,
+            'ip_address': self.ip_address,
+            'user_agent': self.user_agent,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'user_email': self.user.email if self.user else None
+        }
+
+# SUPPORT MODELS - Added here to avoid table redefinition errors
+class SupportTicket(db.Model):
+    __tablename__ = 'support_tickets'
     
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('saas_users.id'), nullable=False)
+    subject = db.Column(db.String(200), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    status = db.Column(db.String(20), default='open')  # open, in_progress, closed
+    priority = db.Column(db.String(20), default='medium')  # low, medium, high, urgent
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    admin_notes = db.Column(db.Text)
     
+    user = db.relationship('SaasUser', backref='support_tickets')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'subject': self.subject,
+            'message': self.message,
+            'status': self.status,
+            'priority': self.priority,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'admin_notes': self.admin_notes,
+            'user_email': self.user.email if self.user else None
+        }
+
+class SupportReply(db.Model):
+    __tablename__ = 'support_replies'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    ticket_id = db.Column(db.Integer, db.ForeignKey('support_tickets.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('saas_users.id'), nullable=True)  # None for admin replies
+    message = db.Column(db.Text, nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    ticket = db.relationship('SupportTicket', backref='replies')
+    user = db.relationship('SaasUser', backref='support_replies')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'ticket_id': self.ticket_id,
+            'message': self.message,
+            'is_admin': self.is_admin,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'user_email': self.user.email if self.user else 'Admin'
+        }
 
 class Payment(db.Model):
     """Payment tracking for manual verification"""
@@ -312,6 +400,7 @@ class TenantBackup(db.Model):
     
     tenant = db.relationship('Tenant', backref='backups')
     initiator = db.relationship('SaasUser')
+
 
 
 def add_helper_methods_to_models():

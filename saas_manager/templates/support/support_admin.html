@@ -1,0 +1,216 @@
+<!-- Simple Support Admin Dashboard -->
+{% extends "base.html" %}
+{% block title %}Support Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-headset me-2"></i>Support Admin</h2>
+    <button class="btn btn-outline-primary" id="masterRefreshBtn">
+      <i class="fas fa-sync-alt me-2"></i>Refresh
+    </button>
+  </div>
+
+  <!-- Statistics -->
+  <div class="row mb-4">
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-primary" id="masterStatTotal">{{ stats.total or 0 }}</h3>
+          <small>Total</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-warning" id="masterStatOpen">{{ stats.open or 0 }}</h3>
+          <small>Open</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-info" id="masterStatProgress">{{ stats.in_progress or 0 }}</h3>
+          <small>In Progress</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-success" id="masterStatClosed">{{ stats.closed or 0 }}</h3>
+          <small>Closed</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-2">
+      <div class="card text-center">
+        <div class="card-body">
+          <h3 class="text-danger" id="masterStatUrgent">{{ stats.urgent or 0 }}</h3>
+          <small>Urgent</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="row mb-3">
+    <div class="col-md-8">
+      <div class="btn-group">
+        <button class="btn btn-outline-secondary active masterFilterBtn" data-master-filter="all">All</button>
+        <button class="btn btn-outline-warning masterFilterBtn" data-master-filter="open">Open</button>
+        <button class="btn btn-outline-info masterFilterBtn" data-master-filter="in_progress">In Progress</button>
+        <button class="btn btn-outline-success masterFilterBtn" data-master-filter="closed">Closed</button>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <input type="text" class="form-control" id="masterSearchInput" placeholder="Search tickets...">
+    </div>
+  </div>
+
+  <!-- Tickets List -->
+  <div id="masterTicketsContainer">
+    {% if tickets %}
+      {% for ticket in tickets %}
+      <div class="card mb-3 masterTicketCard" data-master-ticket="{{ ticket.id }}" data-master-status="{{ ticket.status }}">
+        <div class="card-body">
+          <!-- Ticket Header -->
+          <div class="row align-items-start mb-3">
+            <div class="col-md-8">
+              <h6 class="masterTicketTitle">{{ ticket.subject }}</h6>
+              <small class="text-muted">
+                <i class="fas fa-user"></i> {{ ticket.user_email or 'Unknown' }} • 
+                <i class="fas fa-clock"></i> {{ ticket.created_at.strftime('%m/%d/%Y %H:%M') if ticket.created_at else 'Unknown' }}
+              </small>
+            </div>
+            <div class="col-md-4 text-end">
+              <span class="badge bg-{% if ticket.status == 'open' %}primary{% elif ticket.status == 'in_progress' %}warning{% elif ticket.status == 'closed' %}success{% else %}secondary{% endif %} masterStatusBadge">
+                {{ ticket.status.replace('_', ' ').upper() }}
+              </span>
+              <span class="badge bg-{% if ticket.priority == 'urgent' %}danger{% elif ticket.priority == 'high' %}warning{% elif ticket.priority == 'medium' %}info{% else %}secondary{% endif %}">
+                {{ ticket.priority.upper() }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Message Preview -->
+          <div class="masterTicketMessage bg-light p-2 rounded mb-3">
+            {% if ticket.message|length > 150 %}
+              {{ ticket.message[:150] }}...
+            {% else %}
+              {{ ticket.message }}
+            {% endif %}
+          </div>
+
+          <!-- Admin Controls -->
+          <div class="masterAdminPanel bg-primary bg-opacity-10 p-3 rounded">
+            <div class="row g-2">
+              <!-- Status Control -->
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Status:</label>
+                <select class="form-select form-select-sm masterStatusSelect" data-master-ticket="{{ ticket.id }}">
+                  <option value="open" {% if ticket.status == 'open' %}selected{% endif %}>📋 Open</option>
+                  <option value="in_progress" {% if ticket.status == 'in_progress' %}selected{% endif %}>⏳ In Progress</option>
+                  <option value="closed" {% if ticket.status == 'closed' %}selected{% endif %}>✅ Closed</option>
+                </select>
+              </div>
+
+              <!-- Priority Control -->
+              <div class="col-md-3">
+                <label class="form-label small fw-bold">Priority:</label>
+                <select class="form-select form-select-sm masterPrioritySelect" data-master-ticket="{{ ticket.id }}">
+                  <option value="low" {% if ticket.priority == 'low' %}selected{% endif %}>🔽 Low</option>
+                  <option value="medium" {% if ticket.priority == 'medium' %}selected{% endif %}>➖ Medium</option>
+                  <option value="high" {% if ticket.priority == 'high' %}selected{% endif %}>🔺 High</option>
+                  <option value="urgent" {% if ticket.priority == 'urgent' %}selected{% endif %}>🚨 Urgent</option>
+                </select>
+              </div>
+
+              <!-- Actions -->
+              <div class="col-md-6">
+                <label class="form-label small fw-bold">Actions:</label>
+                <div class="d-flex gap-1 flex-wrap">
+                  <button class="btn btn-primary btn-sm masterReplyBtn" data-master-ticket="{{ ticket.id }}">
+                    <i class="fas fa-reply"></i> Reply
+                  </button>
+                  <button class="btn btn-secondary btn-sm masterNotesBtn" data-master-ticket="{{ ticket.id }}">
+                    <i class="fas fa-sticky-note"></i> Notes
+                  </button>
+                  <button class="btn btn-info btn-sm masterViewBtn" data-master-ticket="{{ ticket.id }}">
+                    <i class="fas fa-eye"></i> View
+                  </button>
+                  <button class="btn btn-outline-info btn-sm masterRepliesBtn" data-master-ticket="{{ ticket.id }}">
+                    <i class="fas fa-comments"></i> Show Replies
+                  </button>
+                  <button class="btn btn-success btn-sm masterQuickBtn" data-master-ticket="{{ ticket.id }}" data-master-current="{{ ticket.status }}">
+                    <i class="fas fa-fast-forward"></i> Next
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Hidden Notes Section -->
+            <div class="masterNotesSection mt-3" id="masterNotes-{{ ticket.id }}" style="display: none;">
+              <textarea class="form-control masterNotesText" data-master-ticket="{{ ticket.id }}" rows="3" placeholder="Internal admin notes...">{{ ticket.admin_notes or '' }}</textarea>
+              <button class="btn btn-sm btn-primary mt-2 masterSaveNotesBtn" data-master-ticket="{{ ticket.id }}">
+                <i class="fas fa-save"></i> Save Notes
+              </button>
+            </div>
+
+            <!-- Hidden Replies Section -->
+            <div class="masterRepliesSection mt-3" id="masterReplies-{{ ticket.id }}" style="display: none;">
+              <div class="card">
+                <div class="card-header">
+                  <h6 class="mb-0"><i class="fas fa-comments me-2"></i>Conversation History</h6>
+                </div>
+                <div class="card-body" id="masterRepliesContent-{{ ticket.id }}">
+                  <!-- Replies will be loaded here -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="text-center py-5">
+        <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+        <h5>No tickets found</h5>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Simple Reply Modal -->
+<div class="modal fade" id="masterReplyModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Reply to Ticket</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <strong>Customer:</strong> <span id="masterReplyCustomer"></span>
+        </div>
+        <div class="mb-3">
+          <strong>Subject:</strong> <span id="masterReplySubject"></span>
+        </div>
+        <textarea class="form-control" id="masterReplyMessage" rows="4" placeholder="Type your reply..."></textarea>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-primary" id="masterSendReply">Send Reply</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/support_admin.js') }}"></script>
+{% endblock %}

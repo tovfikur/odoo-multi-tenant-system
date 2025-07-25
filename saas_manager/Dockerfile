@@ -222,14 +222,6 @@ CMD ["sh", "-c", "\
     echo 'Testing database connectivity...' && \
     python3 -c \"import os; print('Environment variables:'); env_vars = ['DATABASE_URL', 'REDIS_URL', 'SECRET_KEY']; [print(key + ': ' + ('***' if 'password' in key.lower() else os.environ.get(key, 'NOT_SET'))) for key in env_vars]\" && \
     \
-    echo 'Running initialization script...' && \
-    python3 /app/__init__.py --force || { \
-        echo 'ERROR: Initialization failed'; \
-        echo 'Check initialization logs:'; \
-        cat /app/logs/init.log 2>/dev/null || echo 'No init log found'; \
-        exit 1; \
-    } && \
-    \
     echo 'Initialization completed successfully!' && \
     echo 'Starting Flask application...' && \
     python3 app.py || { \

@@ -1,0 +1,351 @@
+{% extends "base.html" %} {% block title %}Edit Profile - {{
+current_user.username }}{% endblock %} {% block content %}
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <!-- Header with Gradient -->
+      <div class="system-header text-center mb-4">
+        <h1>Edit Profile</h1>
+        <p>Update your personal information and preferences</p>
+      </div>
+
+      <!-- Main Form Card -->
+      <div class="card">
+        <div class="card-body">
+          <form id="profile-form" method="POST" enctype="multipart/form-data">
+            {{ form.hidden_tag() }}
+
+            <!-- Profile Picture Section -->
+            <div class="text-center mb-4 pb-4 border-bottom">
+              <div class="mb-3">
+                {% if current_user.profile_picture %}
+                <img
+                  id="profileImage"
+                  src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_picture) }}"
+                  alt="Profile Picture"
+                  class="rounded-circle mb-3"
+                  width="100"
+                  height="100"
+                  style="
+                    object-fit: cover;
+                    border: 3px solid var(--border-primary);
+                  "
+                />
+                <div
+                  id="profilePlaceholder"
+                  class="rounded-circle d-flex align-items-center justify-content-center text-white mx-auto mb-3"
+                  style="
+                    width: 100px;
+                    height: 100px;
+                    font-size: 2rem;
+                    background: var(--secondary);
+                    border: 3px solid var(--border-primary);
+                    display: none;
+                  "
+                >
+                  {{ current_user.get_avatar_initials() }}
+                </div>
+                {% else %}
+                <img
+                  id="profileImage"
+                  src=""
+                  alt="Profile Picture"
+                  class="rounded-circle mb-3"
+                  width="100"
+                  height="100"
+                  style="
+                    object-fit: cover;
+                    border: 3px solid var(--border-primary);
+                    display: none;
+                  "
+                />
+                <div
+                  id="profilePlaceholder"
+                  class="rounded-circle d-flex align-items-center justify-content-center text-white mx-auto mb-3"
+                  style="
+                    width: 100px;
+                    height: 100px;
+                    font-size: 2rem;
+                    background: var(--secondary);
+                    border: 3px solid var(--border-primary);
+                  "
+                >
+                  {{ current_user.get_avatar_initials() }}
+                </div>
+                {% endif %}
+              </div>
+
+              <div class="mb-3">
+                <input
+                  type="file"
+                  name="profile_picture"
+                  accept="image/png,image/jpg,image/jpeg,image/gif,image/webp"
+                  class="form-control"
+                  onchange="previewImage(this)"
+                  id="profilePictureInput"
+                />
+              </div>
+
+              <div class="d-flex gap-2 justify-content-center">
+                <button
+                  type="button"
+                  class="btn btn-outline-danger btn-sm"
+                  onclick="deleteAvatar()"
+                  id="deleteAvatarBtn"
+                  {%
+                  if
+                  not
+                  current_user.profile_picture
+                  %}style="display: none;"
+                  {%
+                  endif
+                  %}
+                >
+                  <i class="fas fa-trash me-1"></i>Remove
+                </button>
+              </div>
+              <small class="text-muted d-block mt-2"
+                >PNG, JPG, JPEG, GIF, WEBP (Max 5MB)</small
+              >
+            </div>
+
+            <!-- Basic Information -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.username.label(class="form-label") }} {{
+                form.username(class="form-control") }} {% if
+                form.username.errors %}
+                <div class="text-danger small mt-1">
+                  {% for error in form.username.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.email.label(class="form-label") }} {{
+                form.email(class="form-control") }} {% if form.email.errors %}
+                <div class="text-danger small mt-1">
+                  {% for error in form.email.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              {{ form.full_name.label(class="form-label") }} {{
+              form.full_name(class="form-control") }} {% if
+              form.full_name.errors %}
+              <div class="text-danger small mt-1">
+                {% for error in form.full_name.errors %}{{ error }}{% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="mb-3">
+              {{ form.bio.label(class="form-label") }} {{
+              form.bio(class="form-control", rows="3") }} {% if form.bio.errors
+              %}
+              <div class="text-danger small mt-1">
+                {% for error in form.bio.errors %}{{ error }}{% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Additional Information -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.company.label(class="form-label") }} {{
+                form.company(class="form-control") }} {% if form.company.errors
+                %}
+                <div class="text-danger small mt-1">
+                  {% for error in form.company.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.location.label(class="form-label") }} {{
+                form.location(class="form-control") }} {% if
+                form.location.errors %}
+                <div class="text-danger small mt-1">
+                  {% for error in form.location.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="mb-3">
+              {{ form.website.label(class="form-label") }} {{
+              form.website(class="form-control") }} {% if form.website.errors %}
+              <div class="text-danger small mt-1">
+                {% for error in form.website.errors %}{{ error }}{% endfor %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Preferences -->
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                {{ form.timezone.label(class="form-label") }} {{
+                form.timezone(class="form-select") }} {% if form.timezone.errors
+                %}
+                <div class="text-danger small mt-1">
+                  {% for error in form.timezone.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+              <div class="col-md-6 mb-3">
+                {{ form.language.label(class="form-label") }} {{
+                form.language(class="form-select") }} {% if form.language.errors
+                %}
+                <div class="text-danger small mt-1">
+                  {% for error in form.language.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+              </div>
+            </div>
+
+            <!-- Password Section -->
+            <div class="card mt-4">
+              <div class="card-header bg-warning">
+                <h5 class="mb-0 text-white">
+                  <i class="fas fa-lock me-2"></i>Change Password
+                </h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  {{ form.current_password.label(class="form-label") }} {{
+                  form.current_password(class="form-control") }} {% if
+                  form.current_password.errors %}
+                  <div class="text-danger small mt-1">
+                    {% for error in form.current_password.errors %}{{ error }}{%
+                    endfor %}
+                  </div>
+                  {% endif %}
+                </div>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    {{ form.new_password.label(class="form-label") }} {{
+                    form.new_password(class="form-control") }} {% if
+                    form.new_password.errors %}
+                    <div class="text-danger small mt-1">
+                      {% for error in form.new_password.errors %}{{ error }}{%
+                      endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    {{ form.confirm_password.label(class="form-label") }} {{
+                    form.confirm_password(class="form-control") }} {% if
+                    form.confirm_password.errors %}
+                    <div class="text-danger small mt-1">
+                      {% for error in form.confirm_password.errors %}{{ error
+                      }}{% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+              <a
+                href="{{ url_for('view_profile') }}"
+                class="btn btn-outline-secondary"
+              >
+                <i class="fas fa-times me-2"></i>Cancel
+              </a>
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save me-2"></i>Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function previewImage(input) {
+    const profileImage = document.getElementById("profileImage");
+    const profilePlaceholder = document.getElementById("profilePlaceholder");
+    const deleteBtn = document.getElementById("deleteAvatarBtn");
+
+    if (input.files && input.files[0]) {
+      const file = input.files[0];
+
+      if (file.size > 5 * 1024 * 1024) {
+        alert("File size must be less than 5MB");
+        input.value = "";
+        return;
+      }
+
+      const allowedTypes = [
+        "image/png",
+        "image/jpg",
+        "image/jpeg",
+        "image/gif",
+        "image/webp",
+      ];
+      if (!allowedTypes.includes(file.type)) {
+        alert("Please select a valid image file (PNG, JPG, JPEG, GIF, WebP)");
+        input.value = "";
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = function (e) {
+        profileImage.src = e.target.result;
+        profileImage.style.display = "block";
+        profilePlaceholder.style.display = "none";
+        deleteBtn.style.display = "inline-block";
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
+  function deleteAvatar() {
+    if (!confirm("Are you sure you want to remove your profile picture?")) {
+      return;
+    }
+
+    fetch('{{ url_for("delete_avatar") }}', {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      },
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        if (data.success) {
+          const profileImage = document.getElementById("profileImage");
+          const profilePlaceholder =
+            document.getElementById("profilePlaceholder");
+          const deleteBtn = document.getElementById("deleteAvatarBtn");
+          const fileInput = document.getElementById("profilePictureInput");
+
+          profileImage.style.display = "none";
+          profilePlaceholder.style.display = "flex";
+          deleteBtn.style.display = "none";
+
+          if (fileInput) {
+            fileInput.value = "";
+          }
+
+          // Show success message if available
+          if (window.showNotification) {
+            window.showNotification(data.message, "success");
+          }
+        } else {
+          alert("Error: " + data.error);
+        }
+      })
+      .catch((error) => {
+        console.error("Error deleting avatar:", error);
+        alert("Failed to delete avatar");
+      });
+  }
+</script>
+{% endblock %}

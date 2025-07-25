@@ -48,6 +48,13 @@ from billing import BillingService
 from cache_manager import get_cached_user_tenants, get_cached_admin_stats, invalidate_tenant_cache, invalidate_user_cache, create_cache_manager
 from websocket_handler import WebSocketManager, setup_websocket_handlers, UpdateTrigger
 
+from wtforms import StringField, PasswordField, TextAreaField, SelectField
+from wtforms.validators import Email, EqualTo, Optional
+import os
+from PIL import Image
+import secrets
+from werkzeug.utils import secure_filename
+
 try:
     from .master_admin import master_admin_bp
 except ImportError:
@@ -68,7 +75,15 @@ try:
 except ImportError:
     from TenantLogManager import TenantLogManager
 
+try:
+    from .support import support_bp
+except ImportError:
+    from support import support_bp
 
+try:
+    from .support_admin import support_admin_bp
+except ImportError:
+    from support_admin import support_admin_bp
 
 
 def run_async_in_background(coro):
@@ -84,6 +99,8 @@ app = create_app()
 init_db(app)
 app.register_blueprint(master_admin_bp)
 app.register_blueprint(system_admin_bp)
+app.register_blueprint(support_bp)
+app.register_blueprint(support_admin_bp)
 
 # Initialize Odoo manager and other services
 odoo = OdooDatabaseManager(odoo_url="http://odoo_master:8069", master_pwd=os.environ.get('ODOO_MASTER_PASSWORD', 'admin123'))
@@ -1584,6 +1601,442 @@ def delete_tenant(tenant_id):
     except Exception as e:
         flash(f'Deletion failed: {e}', 'danger')
     return redirect(url_for('dashboard'))
+
+
+
+# Add this form class after your existing form classes
+@track_errors('profile_form_validation')
+class ProfileForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired(), Length(min=3, max=50)])
+    email = StringField('Email', validators=[DataRequired(), email_validator])
+    full_name = StringField('Full Name', validators=[Optional(), Length(max=100)])
+    bio = TextAreaField('Bio', validators=[Optional(), Length(max=500)])
+    company = StringField('Company', validators=[Optional(), Length(max=100)])
+    location = StringField('Location', validators=[Optional(), Length(max=100)])
+    website = StringField('Website', validators=[Optional(), Length(max=200)])
+    timezone = SelectField('Timezone', choices=[], validators=[Optional()])
+    language = SelectField('Language', choices=[
+        ('en', 'English'),
+        ('es', 'Spanish'),
+        ('fr', 'French'),
+        ('de', 'German'),
+        ('zh', 'Chinese'),
+        ('ja', 'Japanese'),
+        ('ar', 'Arabic'),
+    ], validators=[Optional()])
+    current_password = PasswordField('Current Password', validators=[Optional()])
+    new_password = PasswordField('New Password', validators=[
+        Optional(), 
+        Length(min=6, message='Password must be at least 6 characters long')
+    ])
+    confirm_password = PasswordField('Confirm New Password', validators=[
+        Optional(),
+        EqualTo('new_password', message='Passwords must match')
+    ])
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Populate timezone choices (simplified list)
+        self.timezone.choices = [
+            ('UTC', 'UTC'),
+            ('US/Eastern', 'Eastern Time (US)'),
+            ('US/Central', 'Central Time (US)'),
+            ('US/Mountain', 'Mountain Time (US)'),
+            ('US/Pacific', 'Pacific Time (US)'),
+            ('Europe/London', 'London'),
+            ('Europe/Paris', 'Paris'),
+            ('Europe/Berlin', 'Berlin'),
+            ('Asia/Tokyo', 'Tokyo'),
+            ('Asia/Shanghai', 'Shanghai'),
+            ('Asia/Kolkata', 'Mumbai'),
+            ('Asia/Dhaka', 'Dhaka'),
+            ('Australia/Sydney', 'Sydney'),
+        ]
+
+# Add these helper functions
+
+@track_errors('profile_image_processing')
+def save_profile_picture(form_picture, username):
+    """Save and process profile picture"""
+    try:
+        random_hex = secrets.token_hex(8)
+        _, f_ext = os.path.splitext(form_picture.filename)
+        
+        # Validate file extension
+        allowed_extensions = {'.png', '.jpg', '.jpeg', '.gif', '.webp'}
+        if f_ext.lower() not in allowed_extensions:
+            raise ValueError("Invalid file extension")
+        
+        picture_fn = f"profile_{username}_{random_hex}{f_ext.lower()}"
+        
+        # Use app.root_path instead of current_app.root_path
+        # Or use a direct path if you know your app structure
+        upload_path = os.path.join(app.root_path, 'static', 'uploads', 'profiles')
+        # Alternative: use absolute path
+        # upload_path = os.path.join(os.getcwd(), 'static', 'uploads', 'profiles')
+        
+        os.makedirs(upload_path, exist_ok=True)
+        
+        picture_path = os.path.join(upload_path, picture_fn)
+        
+        # Process and save image
+        with Image.open(form_picture) as img:
+            # Convert to RGB if necessary
+            if img.mode in ('RGBA', 'LA', 'P'):
+                img = img.convert('RGB')
+            
+            # Resize to 300x300
+            img.thumbnail((300, 300), Image.Resampling.LANCZOS)
+            
+            # Create square image
+            square_img = Image.new('RGB', (300, 300), (255, 255, 255))
+            x = (300 - img.width) // 2
+            y = (300 - img.height) // 2
+            square_img.paste(img, (x, y))
+            
+            square_img.save(picture_path, 'JPEG', quality=85, optimize=True)
+        
+        return picture_fn
+        
+    except Exception as e:
+        error_tracker.log_error(e, {
+            'username': username, 
+            'function': 'save_profile_picture',
+            'filename': getattr(form_picture, 'filename', 'unknown')
+        })
+        return None
+
+@track_errors('allowed_file_check')
+def allowed_file(filename):
+    """Check if uploaded file is allowed"""
+    if not filename or '.' not in filename:
+        return False
+    
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+    extension = filename.rsplit('.', 1)[1].lower()
+    return extension in ALLOWED_EXTENSIONS
+
+def delete_profile_picture(filename):
+    """Delete a profile picture file"""
+    if not filename:
+        return True
+    
+    try:
+        picture_path = os.path.join(
+            app.root_path, 'static', 'uploads', 'profiles', filename
+        )
+        if os.path.exists(picture_path):
+            os.remove(picture_path)
+        return True
+    except Exception as e:
+        error_tracker.log_error(e, {'filename': filename, 'function': 'delete_profile_picture'})
+        return False
+
+# Add these routes to your app.py
+
+
+@app.route('/profile/edit', methods=['GET', 'POST'])
+@login_required
+@track_errors('edit_profile_route')
+def edit_profile():
+    form = ProfileForm()
+    
+    if request.method == 'GET':
+        # Pre-populate form with current user data
+        form.username.data = current_user.username
+        form.email.data = current_user.email
+        form.full_name.data = current_user.full_name or ''
+        form.bio.data = current_user.bio or ''
+        form.company.data = current_user.company or ''
+        form.location.data = current_user.location or ''
+        form.website.data = current_user.website or ''
+        form.timezone.data = current_user.timezone or 'UTC'
+        form.language.data = current_user.language or 'en'
+    
+    if form.validate_on_submit():
+        try:
+            # Check username uniqueness
+            existing_user = SaasUser.query.filter(
+                SaasUser.username == form.username.data,
+                SaasUser.id != current_user.id
+            ).first()
+            if existing_user:
+                flash('Username already exists. Please choose a different one.', 'error')
+                return render_template('edit_profile.html', form=form)
+            
+            # Check email uniqueness
+            existing_email = SaasUser.query.filter(
+                SaasUser.email == form.email.data,
+                SaasUser.id != current_user.id
+            ).first()
+            if existing_email:
+                flash('Email already exists. Please choose a different one.', 'error')
+                return render_template('edit_profile.html', form=form)
+            
+            # Verify current password if changing password
+            if form.new_password.data:
+                if not form.current_password.data:
+                    flash('Current password is required to set a new password.', 'error')
+                    return render_template('edit_profile.html', form=form)
+                
+                if not check_password_hash(current_user.password_hash, form.current_password.data):
+                    flash('Current password is incorrect.', 'error')
+                    return render_template('edit_profile.html', form=form)
+            
+            # Handle profile picture upload
+            profile_picture_updated = False
+            if 'profile_picture' in request.files:
+                file = request.files['profile_picture']
+                if file and file.filename and allowed_file(file.filename):
+                    # Delete old picture first
+                    if current_user.profile_picture:
+                        delete_profile_picture(current_user.profile_picture)
+                    
+                    # Save new picture
+                    picture_file = save_profile_picture(file, form.username.data)
+                    if picture_file:
+                        current_user.profile_picture = picture_file
+                        profile_picture_updated = True
+                    else:
+                        flash('Failed to upload profile picture. Please try again.', 'warning')
+            
+            # Update user information
+            current_user.username = form.username.data
+            current_user.email = form.email.data
+            current_user.full_name = form.full_name.data or None
+            current_user.bio = form.bio.data or None
+            current_user.company = form.company.data or None
+            current_user.location = form.location.data or None
+            current_user.website = form.website.data or None
+            current_user.timezone = form.timezone.data or 'UTC'
+            current_user.language = form.language.data or 'en'
+            
+            # Update password if provided
+            if form.new_password.data:
+                current_user.password_hash = generate_password_hash(form.new_password.data)
+                current_user.last_password_change = datetime.utcnow()
+            
+            # Commit changes first
+            db.session.commit()
+            
+            # Create audit log - FIXED VERSION
+            try:
+                audit_log = AuditLog(
+                    user_id=current_user.id,
+                    action='profile_updated',
+                    details={
+                        'username': form.username.data,
+                        'email': form.email.data,
+                        'password_changed': bool(form.new_password.data),
+                        'profile_picture_updated': profile_picture_updated
+                    },
+                    ip_address=request.remote_addr,
+                    user_agent=str(request.user_agent)  # This field now exists
+                )
+                db.session.add(audit_log)
+                db.session.commit()
+            except Exception as audit_error:
+                # Don't fail the entire update if audit logging fails
+                logger.warning(f"Failed to create audit log: {audit_error}")
+                error_tracker.log_error(audit_error, {
+                    'user_id': current_user.id,
+                    'action': 'audit_log_creation_failed'
+                })
+            
+            flash('Your profile has been updated successfully!', 'success')
+            return redirect(url_for('view_profile'))
+            
+        except Exception as e:
+            db.session.rollback()
+            error_tracker.log_error(e, {
+                'user_id': current_user.id,
+                'form_data': {
+                    'username': form.username.data,
+                    'email': form.email.data
+                }
+            })
+            flash('An error occurred while updating your profile. Please try again.', 'error')
+    
+    return render_template('edit_profile.html', form=form)
+
+@app.route('/profile')
+@login_required
+@track_errors('view_profile_route')
+def view_profile():
+    """View user profile"""
+    try:
+        # Get user's tenants
+        user_tenants = cache_manager.get_user_tenants(current_user.id)
+        
+        # Get recent activity (last 10 audit logs)
+        recent_activity = AuditLog.query.filter_by(user_id=current_user.id)\
+            .order_by(AuditLog.created_at.desc())\
+            .limit(10).all()
+        
+        # Add the current datetime for template calculations
+        now = datetime.utcnow()
+        
+        return render_template('view_profile.html', 
+                             user=current_user, 
+                             tenants=user_tenants,
+                             recent_activity=recent_activity,
+                             now=now)  # Add this line
+    except Exception as e:
+        error_tracker.log_error(e, {'user_id': current_user.id})
+        flash('Error loading profile. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
+
+
+@app.route('/api/profile/upload-avatar', methods=['POST'])
+@login_required
+@track_errors('upload_avatar_api')
+def upload_avatar():
+    """API endpoint for avatar upload via AJAX"""
+    try:
+        if 'avatar' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['avatar']
+        if not file or not file.filename:
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'File type not allowed. Use PNG, JPG, JPEG, GIF, or WebP'}), 400
+        
+        # Check file size (5MB max)
+        file.seek(0, os.SEEK_END)
+        file_size = file.tell()
+        file.seek(0)
+        
+        if file_size > 5 * 1024 * 1024:
+            return jsonify({'error': 'File too large (max 5MB)'}), 400
+        
+        # Delete old profile picture
+        old_picture = current_user.profile_picture
+        if old_picture:
+            delete_profile_picture(old_picture)
+        
+        # Save new picture
+        picture_file = save_profile_picture(file, current_user.username)
+        if not picture_file:
+            return jsonify({'error': 'Failed to process image'}), 500
+        
+        # Update database
+        current_user.profile_picture = picture_file
+        current_user.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        # Create audit log - FIXED VERSION
+        try:
+            audit_log = AuditLog(
+                user_id=current_user.id,
+                action='avatar_updated',
+                details={'filename': picture_file},
+                ip_address=request.remote_addr,
+                user_agent=str(request.user_agent)  # Now properly included
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+        except Exception as audit_error:
+            # Don't fail the upload if audit logging fails
+            logger.warning(f"Failed to create audit log for avatar upload: {audit_error}")
+        
+        avatar_url = url_for('static', filename=f'uploads/profiles/{picture_file}')
+        return jsonify({
+            'success': True,
+            'avatar_url': avatar_url,
+            'message': 'Avatar updated successfully!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        error_tracker.log_error(e, {'user_id': current_user.id})
+        return jsonify({'error': 'Failed to upload avatar'}), 500
+
+# FIXED delete_avatar route - replace in app.py:
+
+@app.route('/api/profile/delete-avatar', methods=['POST'])
+@login_required
+@track_errors('delete_avatar_api')
+def delete_avatar():
+    """API endpoint to delete user avatar"""
+    try:
+        old_picture = current_user.profile_picture
+        
+        if old_picture:
+            # Delete file from filesystem
+            delete_profile_picture(old_picture)
+            
+            # Update database
+            current_user.profile_picture = None
+            current_user.updated_at = datetime.utcnow()
+            db.session.commit()
+            
+            # Create audit log - FIXED VERSION
+            try:
+                audit_log = AuditLog(
+                    user_id=current_user.id,
+                    action='avatar_deleted',
+                    details={'old_filename': old_picture},
+                    ip_address=request.remote_addr,
+                    user_agent=str(request.user_agent)  # Now properly included
+                )
+                db.session.add(audit_log)
+                db.session.commit()
+            except Exception as audit_error:
+                # Don't fail the deletion if audit logging fails
+                logger.warning(f"Failed to create audit log for avatar deletion: {audit_error}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Avatar deleted successfully!'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        error_tracker.log_error(e, {'user_id': current_user.id})
+        return jsonify({'error': 'Failed to delete avatar'}), 500
+
+# Add this after your app initialization in app.py
+
+@app.template_global()
+def now():
+    """Make current datetime available to all templates"""
+    return datetime.utcnow()
+
+# Or alternatively, you can add it to the template context processor
+@app.context_processor
+def inject_now():
+    """Inject current datetime into all template contexts"""
+    return {'now': datetime.utcnow()}
+
+# You can also add other useful template globals
+@app.template_global()
+def moment_js_format(dt):
+    """Format datetime for moment.js"""
+    if dt:
+        return dt.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+    return None
+
+@app.template_filter('timeago')
+def timeago_filter(dt):
+    """Calculate time ago from datetime"""
+    if not dt:
+        return 'Never'
+    
+    now = datetime.utcnow()
+    diff = now - dt
+    
+    if diff.days > 0:
+        return f"{diff.days}d ago"
+    elif diff.seconds > 3600:
+        hours = diff.seconds // 3600
+        return f"{hours}h ago"
+    elif diff.seconds > 60:
+        minutes = diff.seconds // 60
+        return f"{minutes}m ago"
+    else:
+        return "Just now"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))

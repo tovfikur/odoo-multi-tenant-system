@@ -1,0 +1,398 @@
+{% extends "base.html" %} {% block title %}{{ user.username }} - Profile{%
+endblock %} {% block content %}
+<div class="container-fluid">
+  <!-- Profile Header - Clean and Simple -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card border-0">
+        <div
+          class="card-body p-4"
+          style="
+            background: linear-gradient(
+              135deg,
+              var(--primary) 0%,
+              var(--primary-dark) 100%
+            );
+          "
+        >
+          <div class="row align-items-center text-white">
+            <div class="col-auto">
+              {% if user.profile_picture %}
+              <img
+                src="{{ url_for('static', filename='uploads/profiles/' + user.profile_picture) }}"
+                alt="Profile"
+                class="rounded-circle border border-3 border-white"
+                width="80"
+                height="80"
+                style="object-fit: cover"
+              />
+              {% else %}
+              <div
+                class="rounded-circle border border-3 border-white d-flex align-items-center justify-content-center"
+                style="
+                  width: 80px;
+                  height: 80px;
+                  background: rgba(255, 255, 255, 0.2);
+                  font-size: 1.5rem;
+                  font-weight: 600;
+                "
+              >
+                {{ user.get_avatar_initials() }}
+              </div>
+              {% endif %}
+            </div>
+            <div class="col">
+              <h2 class="mb-1 fw-bold text-white">
+                {% if user.full_name %}{{ user.full_name }}{% else %}{{
+                user.username }}{% endif %}
+              </h2>
+              {% if user.full_name %}
+              <p class="mb-1 opacity-75">@{{ user.username }}</p>
+              {% endif %} {% if user.bio %}
+              <p class="mb-2 opacity-90">{{ user.bio }}</p>
+              {% endif %}
+              <div class="d-flex flex-wrap gap-2">
+                {% if user.company %}
+                <span class="badge bg-light text-dark small">
+                  <i class="fas fa-building me-1"></i>{{ user.company }}
+                </span>
+                {% endif %} {% if user.location %}
+                <span class="badge bg-light text-dark small">
+                  <i class="fas fa-map-marker-alt me-1"></i>{{ user.location }}
+                </span>
+                {% endif %}
+                <span class="badge bg-light text-dark small">
+                  <i class="fas fa-calendar me-1"></i>{{
+                  user.created_at.strftime('%B %Y') }}
+                </span>
+              </div>
+            </div>
+            <div class="col-auto">
+              <a href="{{ url_for('edit_profile') }}" class="btn btn-light">
+                <i class="fas fa-edit me-2"></i>Edit Profile
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0">
+        <div class="card-body py-3 text-center">
+          <h3 class="fw-bold text-primary mb-1">{{ tenants|length }}</h3>
+          <small class="text-muted text-uppercase">Tenants</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0">
+        <div class="card-body py-3 text-center">
+          <h3 class="fw-bold text-success mb-1">
+            {{ tenants|selectattr('status', 'equalto', 'active')|list|length }}
+          </h3>
+          <small class="text-muted text-uppercase">Active</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0">
+        <div class="card-body py-3 text-center">
+          <h3 class="fw-bold text-info mb-1">{{ recent_activity|length }}</h3>
+          <small class="text-muted text-uppercase">Activities</small>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0">
+        <div class="card-body py-3 text-center">
+          <h3 class="fw-bold text-warning mb-1">
+            {% if user.last_login %}{{ user.last_login | timeago }}{% else
+            %}Never{% endif %}
+          </h3>
+          <small class="text-muted text-uppercase">Last Login</small>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Main Content -->
+    <div class="col-lg-8">
+      <!-- Profile Information -->
+      <div class="card border-0 mb-4">
+        <div class="card-header">
+          <h5 class="mb-0 fw-semibold">
+            <i class="fas fa-user me-2 text-primary"></i>Profile Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <!-- Email -->
+              <div
+                class="d-flex align-items-center mb-3 p-3 rounded"
+                style="background-color: var(--bg-tertiary)"
+              >
+                <div class="bg-primary rounded-circle p-2 me-3">
+                  <i class="fas fa-envelope text-white"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Email</small>
+                  <span class="fw-medium" style="color: var(--text-primary)"
+                    >{{ user.email }}</span
+                  >
+                </div>
+              </div>
+
+              {% if user.website %}
+              <div
+                class="d-flex align-items-center mb-3 p-3 rounded"
+                style="background-color: var(--bg-tertiary)"
+              >
+                <div class="bg-success rounded-circle p-2 me-3">
+                  <i class="fas fa-globe text-white"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Website</small>
+                  <a
+                    href="{{ user.website }}"
+                    target="_blank"
+                    class="text-decoration-none fw-medium"
+                    style="color: var(--link-color)"
+                  >
+                    {{ user.website }}
+                  </a>
+                </div>
+              </div>
+              {% endif %} {% if user.language %}
+              <div
+                class="d-flex align-items-center mb-3 p-3 rounded"
+                style="background-color: var(--bg-tertiary)"
+              >
+                <div class="bg-info rounded-circle p-2 me-3">
+                  <i class="fas fa-language text-white"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Language</small>
+                  <span class="fw-medium" style="color: var(--text-primary)"
+                    >{{ user.language|upper }}</span
+                  >
+                </div>
+              </div>
+              {% endif %}
+            </div>
+
+            <div class="col-md-6">
+              <!-- Role -->
+              <div
+                class="d-flex align-items-center mb-3 p-3 rounded"
+                style="background-color: var(--bg-tertiary)"
+              >
+                <div class="bg-warning rounded-circle p-2 me-3">
+                  <i class="fas fa-user-tag text-white"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Role</small>
+                  <span
+                    class="badge bg-{{ 'warning' if user.is_admin else 'info' }}"
+                  >
+                    {{ 'Administrator' if user.is_admin else 'User' }}
+                  </span>
+                </div>
+              </div>
+
+              {% if user.timezone %}
+              <div
+                class="d-flex align-items-center mb-3 p-3 rounded"
+                style="background-color: var(--bg-tertiary)"
+              >
+                <div class="bg-secondary rounded-circle p-2 me-3">
+                  <i class="fas fa-clock text-white"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Timezone</small>
+                  <span class="fw-medium" style="color: var(--text-primary)"
+                    >{{ user.timezone }}</span
+                  >
+                </div>
+              </div>
+              {% endif %}
+
+              <!-- Status -->
+              <div
+                class="d-flex align-items-center mb-3 p-3 rounded"
+                style="background-color: var(--bg-tertiary)"
+              >
+                <div
+                  class="bg-{{ 'success' if user.is_active else 'danger' }} rounded-circle p-2 me-3"
+                >
+                  <i class="fas fa-shield-alt text-white"></i>
+                </div>
+                <div>
+                  <small class="text-muted d-block">Status</small>
+                  <span
+                    class="badge bg-{{ 'success' if user.is_active else 'danger' }}"
+                  >
+                    {{ 'Active' if user.is_active else 'Inactive' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tenants -->
+      <div class="card border-0">
+        <div class="card-header">
+          <h5 class="mb-0 fw-semibold">
+            <i class="fas fa-server me-2 text-success"></i>My Tenants
+          </h5>
+        </div>
+        <div class="card-body">
+          {% if tenants %} {% for tenant in tenants %}
+          <div
+            class="border rounded p-3 mb-3 position-relative"
+            style="
+              background-color: var(--bg-tertiary);
+              border-color: var(--border-primary) !important;
+            "
+          >
+            <div class="position-absolute top-0 end-0 m-2">
+              <span
+                class="badge bg-{{ 'success' if tenant.status == 'active' else 'warning' if tenant.status == 'pending' else 'secondary' }}"
+              >
+                {% if tenant.status == 'active' %}
+                <i class="fas fa-check-circle me-1"></i>Active {% elif
+                tenant.status == 'pending' %}
+                <i class="fas fa-clock me-1"></i>Pending {% elif tenant.status
+                == 'creating' %}
+                <i class="fas fa-spinner fa-spin me-1"></i>Creating {% else %}
+                <i class="fas fa-pause-circle me-1"></i>{{ tenant.status|title
+                }} {% endif %}
+              </span>
+            </div>
+
+            <h6 class="mb-2 fw-semibold" style="color: var(--text-primary)">
+              {{ tenant.name }}
+            </h6>
+            <p class="text-muted mb-2 small">
+              <i class="fas fa-link me-1"></i>
+              <code
+                class="p-1 rounded"
+                style="
+                  background-color: var(--bg-primary);
+                  color: var(--text-primary);
+                "
+                >{{ tenant.subdomain }}.odoo-bangladesh.com</code
+              >
+            </p>
+            <div class="d-flex justify-content-between align-items-center">
+              <small class="text-muted">
+                <i class="fas fa-calendar me-1"></i>
+                {{ tenant.created_at.strftime('%b %d, %Y') }}
+              </small>
+              <div class="btn-group btn-group-sm">
+                {% if tenant.status == 'active' %}
+                <a
+                  href="{{ url_for('tenant_auto_login', subdomain=tenant.subdomain) }}"
+                  class="btn btn-outline-primary btn-sm"
+                >
+                  <i class="fas fa-external-link-alt me-1"></i>Open
+                </a>
+                {% endif %}
+                <a
+                  href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}"
+                  class="btn btn-outline-secondary btn-sm"
+                >
+                  <i class="fas fa-cog me-1"></i>Manage
+                </a>
+              </div>
+            </div>
+          </div>
+          {% endfor %} {% else %}
+          <div class="text-center py-5">
+            <i class="fas fa-server fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No Tenants Yet</h5>
+            <p class="text-muted mb-3">You haven't created any tenants yet.</p>
+            <a href="{{ url_for('create_tenant') }}" class="btn btn-primary">
+              <i class="fas fa-plus me-2"></i>Create Your First Tenant
+            </a>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+      <!-- Recent Activity -->
+      <div class="card border-0">
+        <div class="card-header">
+          <h5 class="mb-0 fw-semibold">
+            <i class="fas fa-history me-2 text-info"></i>Recent Activity
+          </h5>
+        </div>
+        <div class="card-body p-0">
+          {% if recent_activity %} {% for activity in recent_activity %}
+          <div
+            class="p-3"
+            style="border-bottom: 1px solid var(--border-primary)"
+          >
+            <div class="d-flex align-items-start">
+              <div
+                class="bg-{{ 'success' if 'created' in activity.action else 'primary' if 'login' in activity.action else 'warning' if 'updated' in activity.action else 'info' }} 
+                          rounded-circle p-2 me-3 flex-shrink-0"
+              >
+                {% if 'login' in activity.action %}
+                <i class="fas fa-sign-in-alt text-white small"></i>
+                {% elif 'created' in activity.action %}
+                <i class="fas fa-plus text-white small"></i>
+                {% elif 'updated' in activity.action %}
+                <i class="fas fa-edit text-white small"></i>
+                {% elif 'deleted' in activity.action %}
+                <i class="fas fa-trash text-white small"></i>
+                {% else %}
+                <i class="fas fa-circle text-white small"></i>
+                {% endif %}
+              </div>
+              <div class="flex-grow-1">
+                <h6
+                  class="mb-1 fw-semibold small"
+                  style="color: var(--text-primary)"
+                >
+                  {{ activity.action.replace('_', ' ').title() }}
+                </h6>
+                {% if activity.details %}
+                <p class="mb-1 text-muted small">
+                  {% if activity.action == 'profile_updated' %} Updated profile
+                  information{% if activity.details.password_changed %} and
+                  password{% endif %} {% elif activity.action ==
+                  'tenant_created' %} Created tenant: {{
+                  activity.details.get('name', 'Unknown') }} {% else %} {{
+                  activity.details|truncate(50) }} {% endif %}
+                </p>
+                {% endif %}
+                <small class="text-muted">
+                  <i class="fas fa-clock me-1"></i>
+                  {{ activity.created_at.strftime('%b %d, %Y at %I:%M %p') }}
+                </small>
+              </div>
+            </div>
+          </div>
+          {% endfor %} {% else %}
+          <div class="text-center py-4">
+            <i class="fas fa-history fa-2x text-muted mb-2"></i>
+            <p class="text-muted mb-0">No recent activity</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

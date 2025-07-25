@@ -1,0 +1,133 @@
+<!-- ===== support.html - User Support Page ===== -->
+{% extends "base.html" %} {% block title %}Support - Odoo SaaS Platform{%
+endblock %} {% block extra_css %}
+<link
+  rel="stylesheet"
+  href="{{ url_for('static', filename='css/support.css') }}"
+/>
+{% endblock %} {% block content %}
+<div class="container">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-headset me-2"></i>Support Center</h2>
+        <a href="tel:+1234567890" class="call-support-btn">
+          <i class="fas fa-phone"></i> Call Support
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <div class="row">
+    <!-- Create New Ticket -->
+    <div class="col-lg-6 mb-4">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-plus-circle me-2"></i>Create Support Ticket
+          </h5>
+        </div>
+        <div class="card-body">
+          <form id="createTicketForm">
+            <div class="mb-3">
+              <label for="ticketSubject" class="form-label">Subject</label>
+              <input
+                type="text"
+                class="form-control"
+                id="ticketSubject"
+                name="subject"
+                required
+              />
+            </div>
+            <div class="mb-3">
+              <label for="ticketPriority" class="form-label">Priority</label>
+              <select class="form-control" id="ticketPriority" name="priority">
+                <option value="low">Low Priority</option>
+                <option value="medium" selected>Medium Priority</option>
+                <option value="high">High Priority</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label for="ticketMessage" class="form-label">Message</label>
+              <textarea
+                class="form-control"
+                id="ticketMessage"
+                name="message"
+                rows="4"
+                placeholder="Describe your issue in detail..."
+                required
+              ></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">
+              <i class="fas fa-paper-plane me-2"></i>Create Ticket
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- My Tickets -->
+    <div class="col-lg-6 mb-4">
+      <div class="card">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0"><i class="fas fa-ticket-alt me-2"></i>My Tickets</h5>
+          <button
+            class="btn btn-sm btn-outline-secondary"
+            onclick="supportSystem.loadMyTickets()"
+          >
+            <i class="fas fa-refresh"></i>
+          </button>
+        </div>
+        <div class="card-body">
+          <div id="ticketsContainer" class="tickets-scroll-container">
+            <!-- Dynamic content loaded here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Support Information -->
+  <div class="row">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0">
+            <i class="fas fa-info-circle me-2"></i>Support Information
+          </h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>
+                <i class="fas fa-phone me-2 text-success"></i>Phone Support
+              </h6>
+              <p class="text-muted">Available 24/7 for urgent issues</p>
+              <p><strong>+1 (234) 567-8900</strong></p>
+            </div>
+            <div class="col-md-6">
+              <h6>
+                <i class="fas fa-envelope me-2 text-primary"></i>Email Support
+              </h6>
+              <p class="text-muted">Response within 24 hours</p>
+              <p><strong>support@odoosaas.com</strong></p>
+            </div>
+          </div>
+          <hr />
+          <h6><i class="fas fa-clock me-2 text-info"></i>Support Hours</h6>
+          <ul class="list-unstyled">
+            <li><strong>Monday - Friday:</strong> 9:00 AM - 6:00 PM EST</li>
+            <li><strong>Saturday:</strong> 10:00 AM - 4:00 PM EST</li>
+            <li><strong>Sunday:</strong> Emergency support only</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %} {% block extra_js %}
+<script src="{{ url_for('static', filename='js/support.js') }}"></script>
+{% endblock %}
