@@ -898,32 +898,42 @@
       ".features-modern, .stats-modern, .cta-modern"
     );
 
-    sections.forEach((section, index) => {
-      if (index > 0) {
-        // Skip first section
-        const divider = document.createElement("div");
-        divider.className = "section-divider";
-        section.parentNode.insertBefore(divider, section);
+    for (let i = 1; i < sections.length; i++) {
+      const prevSection = sections[i - 1];
+      const currentSection = sections[i];
 
-        // Animate divider on scroll
-        const observer = new IntersectionObserver(
-          (entries) => {
-            entries.forEach((entry) => {
-              if (entry.isIntersecting) {
-                entry.target.style.opacity = "1";
-                entry.target.style.transform = "scaleX(1)";
-              }
-            });
-          },
-          { threshold: 0.5 }
-        );
-
-        divider.style.opacity = "0";
-        divider.style.transform = "scaleX(0)";
-        divider.style.transition = "opacity 0.8s ease, transform 0.8s ease";
-        observer.observe(divider);
+      // Avoid adding multiple dividers between same sections
+      if (
+        prevSection.nextElementSibling !== currentSection ||
+        currentSection.previousElementSibling !== prevSection
+      ) {
+        continue;
       }
-    });
+
+      // Create and insert divider between previous and current section
+      const divider = document.createElement("div");
+      divider.className = "section-divider";
+      divider.style.opacity = "0";
+      divider.style.transform = "scaleX(0)";
+      divider.style.transition = "opacity 0.8s ease, transform 0.8s ease";
+
+      currentSection.parentNode.insertBefore(divider, currentSection);
+
+      // Animate divider on scroll
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+              entry.target.style.opacity = "1";
+              entry.target.style.transform = "scaleX(1)";
+            }
+          });
+        },
+        { threshold: 0.5 }
+      );
+
+      observer.observe(divider);
+    }
   }
 
   // Dynamic Background Effects

@@ -1228,6 +1228,7 @@ body {
 
 /* Enhanced Typography with Unique Effects */
 .hero-title {
+  font-family: "Caveat Brush", "Atma", cursive !important;
   position: relative;
 }
 
