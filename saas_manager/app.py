@@ -1101,7 +1101,7 @@ def verify_tenant_access(user_id, tenant_id):
 def create_odoo_session(tenant_subdomain, username, password):
     try:
         domain = os.environ.get('DOMAIN', 'odoo-bangladesh.com')
-        tenant_url = f"http://{tenant_subdomain}.{domain}"
+        tenant_url = f"https://{tenant_subdomain}.{domain}"
         session = requests.Session()
         response = session.get(f"{tenant_url}/web/login")
         if response.status_code != 200:
@@ -1138,7 +1138,7 @@ def create_odoo_session(tenant_subdomain, username, password):
 def authenticate_odoo_xmlrpc(tenant_subdomain, username, password, database_name):
     try:
         domain = os.environ.get('DOMAIN', 'odoo-bangladesh.com')
-        tenant_url = f"http://{tenant_subdomain}.{domain}"
+        tenant_url = f"https://{tenant_subdomain}.{domain}"
         common = xmlrpc.client.ServerProxy(f'{tenant_url}/xmlrpc/2/common')
         version_info = common.version()
         logger.info(f"Odoo version for {tenant_subdomain}: {version_info}")
@@ -1184,7 +1184,7 @@ def create_session_response(session_data, target_url):
 def check_tenant_health(tenant_subdomain):
     try:
         domain = os.environ.get('DOMAIN', 'odoo-bangladesh.com')
-        tenant_url = f"http://{tenant_subdomain}.{domain}"
+        tenant_url = f"https://{tenant_subdomain}.{domain}"
         response = requests.get(f"{tenant_url}/web/health", timeout=10)
         if response.status_code == 200:
             return {'healthy': True, 'status_code': response.status_code, 'response_time': response.elapsed.total_seconds()}
@@ -1285,7 +1285,7 @@ def tenant_auto_login(subdomain):
         
         if session_data and session_data.get('success'):
             update_tenant_last_access(tenant.id)
-            target_url = f"http://{subdomain}.{os.environ.get('DOMAIN', 'odoo-bangladesh.com')}/web"
+            target_url = f"https://{subdomain}.{os.environ.get('DOMAIN', 'khudroo.com')}/web"
             response = create_session_response(session_data, target_url)
             if response:
                 return response

@@ -261,7 +261,7 @@
                 <p class="mb-1">
                   {% if status.tenant.status == 'active' %}
                   <a
-                    href="http://{{ status.tenant.subdomain }}.{{ request.host }}"
+                    href="https://{{ status.tenant.subdomain }}.{{ request.host }}"
                     target="_blank"
                     class="text-primary"
                   >
@@ -376,7 +376,7 @@
             {% if status.tenant.status == 'active' %}
             <div class="d-flex gap-2 justify-content-center">
               <a
-                href="http://{{ status.tenant.subdomain }}.{{ request.host }}"
+                href="https://{{ status.tenant.subdomain }}.{{ request.host }}"
                 target="_blank"
                 class="btn btn-success btn-lg"
               >

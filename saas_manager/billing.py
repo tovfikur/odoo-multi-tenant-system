@@ -346,10 +346,10 @@ def initiate_unified_payment(tenant_id, user_id, plan):
         domain = os.environ.get('DOMAIN', 'khudroo.com')
         
         # Use unified-specific URLs
-        success_url = f"http://{domain}{url_for('unified_payment_success', tenant_id=tenant_id)}"
-        fail_url = f"http://{domain}{url_for('unified_payment_fail', tenant_id=tenant_id)}"
-        cancel_url = f"http://{domain}{url_for('unified_payment_cancel', tenant_id=tenant_id)}"
-        ipn_url = f"http://{domain}/billing/ipn"
+        success_url = f"https://{domain}{url_for('unified_payment_success', tenant_id=tenant_id)}"
+        fail_url = f"https://{domain}{url_for('unified_payment_fail', tenant_id=tenant_id)}"
+        cancel_url = f"https://{domain}{url_for('unified_payment_cancel', tenant_id=tenant_id)}"
+        ipn_url = f"https://{domain}/billing/ipn"
 
         # Prepare SSLCommerz payment request
         payload = {
@@ -482,10 +482,10 @@ class BillingService:
 
             transaction_id = f"TXN-{uuid.uuid4().hex[:16]}"
             domain = os.environ.get('DOMAIN', 'khudroo.com')
-            success_url = f"http://{domain}{url_for('payment_success', tenant_id=tenant_id)}"
-            fail_url = f"http://{domain}{url_for('payment_fail', tenant_id=tenant_id)}"
-            cancel_url = f"http://{domain}{url_for('payment_cancel', tenant_id=tenant_id)}"
-            ipn_url = f"http://{domain}/billing/ipn"
+            success_url = f"https://{domain}{url_for('payment_success', tenant_id=tenant_id)}"
+            fail_url = f"https://{domain}{url_for('payment_fail', tenant_id=tenant_id)}"
+            cancel_url = f"https://{domain}{url_for('payment_cancel', tenant_id=tenant_id)}"
+            ipn_url = f"https://{domain}/billing/ipn"
 
             # Prepare SSLCommerz payment request
             payload = {
