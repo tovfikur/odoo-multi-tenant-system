@@ -235,10 +235,11 @@ def handle_unified_payment_fail(tenant_id, transaction_id):
 
 # Add these routes to your register_billing_routes function in billing.py
 
-def register_unified_billing_routes(app):
+def register_unified_billing_routes(app, csrf=None):
     """Register unified registration billing routes"""
     
     @app.route('/billing/unified/<int:tenant_id>/success', methods=['GET', 'POST'])
+    @csrf.exempt
     @track_errors('unified_payment_success_route')
     def unified_payment_success(tenant_id):
         logger.debug(f"Unified Success Callback Received:\n"
@@ -270,6 +271,7 @@ def register_unified_billing_routes(app):
         return BillingService.handle_unified_payment_success(tenant_id, transaction_id, validation_id)
 
     @app.route('/billing/unified/<int:tenant_id>/fail', methods=['GET', 'POST'])
+    @csrf.exempt
     @track_errors('unified_payment_fail_route')
     def unified_payment_fail(tenant_id):
         logger.debug(f"Unified Fail Callback Received:\n"
@@ -300,6 +302,7 @@ def register_unified_billing_routes(app):
         return BillingService.handle_unified_payment_fail(tenant_id, transaction_id)
 
     @app.route('/billing/unified/<int:tenant_id>/cancel', methods=['GET', 'POST'])
+    @csrf.exempt
     @track_errors('unified_payment_cancel_route')
     def unified_payment_cancel(tenant_id):
         logger.debug(f"Unified Cancel Callback Received:\n"
@@ -335,7 +338,7 @@ def initiate_unified_payment(tenant_id, user_id, plan):
         amount = plan_obj.price
 
         transaction_id = f"UNIFIED-{uuid.uuid4().hex[:16]}"
-        domain = os.environ.get('DOMAIN', 'localhost:8000')
+        domain = os.environ.get('DOMAIN', 'khudroo.com')
         
         # Use unified-specific URLs
         success_url = f"http://{domain}{url_for('unified_payment_success', tenant_id=tenant_id)}"
@@ -473,7 +476,7 @@ class BillingService:
                 raise ValueError(f"Invalid plan: {plan}")
 
             transaction_id = f"TXN-{uuid.uuid4().hex[:16]}"
-            domain = os.environ.get('DOMAIN', 'localhost:8000')
+            domain = os.environ.get('DOMAIN', 'khudroo.com')
             success_url = f"http://{domain}{url_for('payment_success', tenant_id=tenant_id)}"
             fail_url = f"http://{domain}{url_for('payment_fail', tenant_id=tenant_id)}"
             cancel_url = f"http://{domain}{url_for('payment_cancel', tenant_id=tenant_id)}"
@@ -820,7 +823,7 @@ class BillingService:
             flash('Error processing payment cancellation.', 'error')
             return redirect(url_for('dashboard'))
 
-def register_billing_routes(app):
+def register_billing_routes(app, csrf=None):
     """Register billing-related routes with the Flask app"""
     @app.route('/billing/<int:tenant_id>/pay', methods=['POST'])
     @login_required
@@ -850,6 +853,7 @@ def register_billing_routes(app):
             return redirect(url_for('dashboard'))
 
     @app.route('/billing/<int:tenant_id>/success', methods=['GET', 'POST'])
+    @csrf.exempt
     @track_errors('payment_success_route')
     def payment_success(tenant_id):
         logger.debug(f"Success Callback Received:\n"
@@ -897,6 +901,7 @@ def register_billing_routes(app):
         return BillingService.handle_payment_success(tenant_id, transaction_id, validation_id)
 
     @app.route('/billing/<int:tenant_id>/fail', methods=['GET', 'POST'])
+    @csrf.exempt
     @track_errors('payment_fail_route')
     def payment_fail(tenant_id):
         logger.debug(f"Fail Callback Received:\n"
@@ -929,6 +934,7 @@ def register_billing_routes(app):
         return BillingService.handle_payment_fail(tenant_id, transaction_id)
 
     @app.route('/billing/<int:tenant_id>/cancel', methods=['GET', 'POST'])
+    @csrf.exempt
     @track_errors('payment_cancel_route')
     def payment_cancel(tenant_id):
         logger.debug(f"Cancel Callback Received:\n"
@@ -953,6 +959,7 @@ def register_billing_routes(app):
         return BillingService.handle_payment_cancel(tenant_id, transaction_id)
 
     @app.route('/billing/ipn', methods=['POST'])
+    @csrf.exempt
     @track_errors('ipn_route')
     def ipn():
         """Handle IPN (Instant Payment Notification) from SSLCommerz"""

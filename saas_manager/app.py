@@ -45,7 +45,6 @@ from factory import create_app, init_db
 from utils import error_tracker, logger, track_errors
 from db import db
 from models import SaasUser, Tenant, TenantUser, SubscriptionPlan, WorkerInstance, UserPublicKey, CredentialAccess, Report, AuditLog, PaymentTransaction
-from billing import BillingService
 from cache_manager import get_cached_user_tenants, get_cached_admin_stats, invalidate_tenant_cache, invalidate_user_cache, create_cache_manager
 from websocket_handler import WebSocketManager, setup_websocket_handlers, UpdateTrigger
 
@@ -112,15 +111,14 @@ def run_async_in_background(coro):
         loop.close()
 
 # Create Flask app
-app = create_app()
+app, csrf = create_app()
 init_db(app)
-csrf = CSRFProtect(app)
 app.register_blueprint(infra_admin_bp)
 app.register_blueprint(master_admin_bp)
 app.register_blueprint(system_admin_bp)
 app.register_blueprint(support_bp)
 app.register_blueprint(support_admin_bp)
-register_unified_billing_routes(app)
+register_unified_billing_routes(app, csrf)
 
 # Add CSRF token to template context
 @app.context_processor

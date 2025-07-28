@@ -8,6 +8,7 @@ from db import db  # Import db from db.py
 from utils import error_tracker
 from models import SaasUser  # Assuming SaasUser is defined in models.py
 from billing import register_billing_routes
+from flask_wtf.csrf import CSRFProtect
 
 def create_app():
     app = Flask(__name__)
@@ -18,9 +19,10 @@ def create_app():
     )
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
+    csrf = CSRFProtect(app)
     # Initialize SQLAlchemy with the app
     db.init_app(app)
-    register_billing_routes(app)
+    register_billing_routes(app, csrf)
     
     # Initialize Flask-Login
     login_manager = LoginManager()
@@ -39,7 +41,7 @@ def create_app():
     # Initialize Flask-Moment
     moment = Moment(app)
     
-    return app
+    return app, csrf
 
 def init_db(app):
     with app.app_context():
