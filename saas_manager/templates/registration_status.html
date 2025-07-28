@@ -1,0 +1,539 @@
+<!-- registration_status.html - Add this template to your templates folder -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Registration Status - Odoo SaaS Platform</title>
+
+    <!-- External Dependencies -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Core Styles -->
+    <link
+      href="{{ url_for('static', filename='css/style.css') }}"
+      rel="stylesheet"
+    />
+
+    <style>
+      .status-container {
+        min-height: 100vh;
+        background: var(--gradient-mesh), var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        padding: 2rem 0;
+      }
+
+      .status-card {
+        background: var(--bg-primary);
+        border-radius: var(--border-radius-xl);
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--border-primary);
+        overflow: hidden;
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      .status-header {
+        padding: 2rem;
+        text-align: center;
+        border-bottom: 1px solid var(--border-primary);
+      }
+
+      .status-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 2rem;
+      }
+
+      .status-icon.processing {
+        background: linear-gradient(
+          135deg,
+          var(--warning) 0%,
+          var(--warning-dark) 100%
+        );
+        color: white;
+        animation: pulse 2s infinite;
+      }
+
+      .status-icon.success {
+        background: linear-gradient(
+          135deg,
+          var(--success) 0%,
+          var(--success-dark) 100%
+        );
+        color: white;
+      }
+
+      .status-icon.failed {
+        background: linear-gradient(
+          135deg,
+          var(--danger) 0%,
+          var(--coral-dark) 100%
+        );
+        color: white;
+      }
+
+      .status-timeline {
+        padding: 2rem;
+      }
+
+      .timeline-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        position: relative;
+      }
+
+      .timeline-item::after {
+        content: "";
+        position: absolute;
+        left: 20px;
+        top: 40px;
+        width: 2px;
+        height: calc(100% + 20px);
+        background: var(--border-primary);
+        z-index: 1;
+      }
+
+      .timeline-item:last-child::after {
+        display: none;
+      }
+
+      .timeline-marker {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        z-index: 2;
+        position: relative;
+      }
+
+      .timeline-marker.completed {
+        background: var(--success);
+        color: white;
+      }
+
+      .timeline-marker.current {
+        background: var(--warning);
+        color: white;
+        animation: pulse 2s infinite;
+      }
+
+      .timeline-marker.pending {
+        background: var(--bg-tertiary);
+        color: var(--text-muted);
+        border: 2px solid var(--border-primary);
+      }
+
+      .timeline-content h6 {
+        margin-bottom: 0.25rem;
+        color: var(--text-primary);
+      }
+
+      .timeline-content p {
+        margin-bottom: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.1);
+          opacity: 0.8;
+        }
+      }
+
+      .refresh-button {
+        animation: fadeIn 0.5s ease;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .auto-refresh-info {
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        margin-top: 1rem;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-modern">
+      <div class="container">
+        <a class="navbar-brand-modern" href="{{ url_for('index') }}">
+          <div class="logo-modern">O</div>
+          <span>Odoo SaaS</span>
+        </a>
+        <div class="d-flex">
+          <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
+            <i class="fas fa-tachometer-alt me-1"></i> Dashboard
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="status-container">
+      <div class="container">
+        <div class="status-card">
+          <!-- Status Header -->
+          <div class="status-header">
+            {% if status and status.tenant and status.tenant.status == 'pending'
+            and status.payment and status.payment.status == 'pending' %}
+            <div class="status-icon processing">
+              <i class="fas fa-credit-card"></i>
+            </div>
+            <h3>Processing Payment</h3>
+            <p class="text-muted">
+              We're processing your payment and setting up your Odoo instance...
+            </p>
+            {% elif status.tenant.status == 'creating' %}
+            <div class="status-icon processing">
+              <i class="fas fa-cogs"></i>
+            </div>
+            <h3>Setting Up Your Instance</h3>
+            <p class="text-muted">
+              Payment successful! We're now creating your Odoo database...
+            </p>
+            {% elif status.tenant.status == 'active' %}
+            <div class="status-icon success">
+              <i class="fas fa-check"></i>
+            </div>
+            <h3>Ready to Go!</h3>
+            <p class="text-muted">
+              Your Odoo instance is ready and waiting for you!
+            </p>
+            {% else %}
+            <div class="status-icon failed">
+              <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <h3>Setup Issue</h3>
+            <p class="text-muted">
+              There was an issue with your registration. Please contact support.
+            </p>
+            {% endif %}
+          </div>
+
+          <!-- Organization Details -->
+          <div class="status-timeline">
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <h6 class="text-muted">Organization</h6>
+                <p class="mb-1"><strong>{{ status.tenant.name }}</strong></p>
+                <p class="mb-0 text-muted">
+                  {% if status.tenant.plan %} {{ status.tenant.plan.title() }}
+                  Plan {% else %} Select Plan {% endif %}
+                </p>
+              </div>
+              <div class="col-md-6">
+                <h6 class="text-muted">Instance URL</h6>
+                <p class="mb-1">
+                  {% if status.tenant.status == 'active' %}
+                  <a
+                    href="http://{{ status.tenant.subdomain }}.{{ request.host }}"
+                    target="_blank"
+                    class="text-primary"
+                  >
+                    {{ status.tenant.subdomain }}.{{ request.host }}
+                    <i class="fas fa-external-link-alt ms-1"></i>
+                  </a>
+                  {% else %}
+                  <span class="text-muted"
+                    >{{ status.tenant.subdomain }}.{{ request.host }}</span
+                  >
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+
+            <!-- Progress Timeline -->
+            <h6 class="mb-3">Setup Progress</h6>
+
+            <!-- Step 1: Payment -->
+            <div class="timeline-item">
+              {% if status.payment.status == 'SUCCESS' %}
+              <div class="timeline-marker completed">
+                <i class="fas fa-check"></i>
+              </div>
+              {% elif status.payment.status == 'PENDING' %}
+              <div class="timeline-marker current">
+                <i class="fas fa-credit-card"></i>
+              </div>
+              {% else %}
+              <div class="timeline-marker failed">
+                <i class="fas fa-times"></i>
+              </div>
+              {% endif %}
+              <div class="timeline-content">
+                <h6>Payment Processing</h6>
+                <p>
+                  Status: {% set status_class, status_text =
+                  status.payment.status|format_payment_status %}
+                  <span class="badge bg-{{ status_class }}"
+                    >{{ status_text }}</span
+                  >
+                  {% if status.payment.transaction_id %}
+                  <br /><small class="text-muted"
+                    >Transaction: {{ status.payment.transaction_id }}</small
+                  >
+                  {% endif %}
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 2: Database Creation -->
+            <div class="timeline-item">
+              {% if status.tenant.status == 'active' %}
+              <div class="timeline-marker completed">
+                <i class="fas fa-check"></i>
+              </div>
+              {% elif status.tenant.status == 'creating' %}
+              <div class="timeline-marker current">
+                <i class="fas fa-database"></i>
+              </div>
+              {% elif status.payment.status == 'SUCCESS' %}
+              <div class="timeline-marker current">
+                <i class="fas fa-hourglass-half"></i>
+              </div>
+              {% else %}
+              <div class="timeline-marker pending">
+                <i class="fas fa-database"></i>
+              </div>
+              {% endif %}
+              <div class="timeline-content">
+                <h6>Database Setup</h6>
+                <p>
+                  {% if status.tenant.status == 'active' %} Your Odoo database
+                  has been created and configured successfully. {% elif
+                  status.tenant.status == 'creating' %} Creating your Odoo
+                  database and installing applications... {% elif
+                  status.payment.status == 'SUCCESS' %} Waiting to start
+                  database creation... {% else %} Waiting for payment
+                  confirmation... {% endif %}
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 3: Account Activation -->
+            <div class="timeline-item">
+              {% if status.tenant.status == 'active' and status.user.active %}
+              <div class="timeline-marker completed">
+                <i class="fas fa-check"></i>
+              </div>
+              {% elif status.tenant.status == 'active' %}
+              <div class="timeline-marker current">
+                <i class="fas fa-user-check"></i>
+              </div>
+              {% else %}
+              <div class="timeline-marker pending">
+                <i class="fas fa-user"></i>
+              </div>
+              {% endif %}
+              <div class="timeline-content">
+                <h6>Account Activation</h6>
+                <p>
+                  {% if status.user.active %} Your account is active and ready
+                  to use. {% else %} Account will be activated once setup is
+                  complete. {% endif %}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="card-footer bg-light">
+            {% if status.tenant.status == 'active' %}
+            <div class="d-flex gap-2 justify-content-center">
+              <a
+                href="http://{{ status.tenant.subdomain }}.{{ request.host }}"
+                target="_blank"
+                class="btn btn-success btn-lg"
+              >
+                <i class="fas fa-rocket me-2"></i>
+                Launch My Odoo
+              </a>
+              <a
+                href="{{ url_for('dashboard') }}"
+                class="btn btn-outline-primary"
+              >
+                <i class="fas fa-tachometer-alt me-1"></i>
+                Go to Dashboard
+              </a>
+            </div>
+            {% elif status.payment.status == 'FAILED' or status.tenant.status ==
+            'failed' %}
+            <div class="d-flex gap-2 justify-content-center">
+              <button class="btn btn-danger" onclick="cleanupRegistration()">
+                <i class="fas fa-trash me-1"></i>
+                Start Over
+              </button>
+              <a
+                href="mailto:support@odoo-saas.com"
+                class="btn btn-outline-secondary"
+              >
+                <i class="fas fa-envelope me-1"></i>
+                Contact Support
+              </a>
+            </div>
+            {% else %}
+            <div class="text-center">
+              <button
+                class="btn btn-outline-primary refresh-button"
+                onclick="window.location.reload()"
+              >
+                <i class="fas fa-sync-alt me-1"></i>
+                Refresh Status
+              </button>
+              <div class="auto-refresh-info">
+                <small class="text-muted">
+                  <i class="fas fa-info-circle me-1"></i>
+                  This page will automatically update when your instance is
+                  ready.
+                </small>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+
+    <script>
+      // Auto-refresh and real-time updates
+      let refreshInterval;
+      let socket;
+
+      // Initialize WebSocket connection for real-time updates
+      function initWebSocket() {
+          if (typeof io !== 'undefined') {
+              socket = io();
+
+              socket.on('connect', function() {
+                  console.log('Connected to real-time updates');
+                  socket.emit('join_registration_updates', {});
+              });
+
+              socket.on('payment_update', function(data) {
+                  console.log('Payment status update:', data);
+                  if (data.tenant && data.tenant.id === {{ status.tenant.id }}) {
+                      // Reload page to show updated status
+                      window.location.reload();
+                  }
+              });
+
+              socket.on('tenant_status_changed', function(data) {
+                  console.log('Tenant status update:', data);
+                  if (data.id === {{ status.tenant.id }}) {
+                      window.location.reload();
+                  }
+              });
+          }
+      }
+
+      // Auto-refresh for non-final states
+      function startAutoRefresh() {
+          const status = '{{ status.tenant.status }}';
+          const paymentStatus = '{{ status.payment.status }}';
+
+          if (status === 'pending' || status === 'creating' || paymentStatus === 'PENDING') {
+              refreshInterval = setInterval(() => {
+                  window.location.reload();
+              }, 10000); // Refresh every 10 seconds
+          }
+      }
+
+      // Cleanup failed registration
+      function cleanupRegistration() {
+          if (confirm('This will remove your failed registration attempt. You will need to start over. Continue?')) {
+              fetch('/cleanup/failed-registration', {
+                  method: 'POST',
+                  headers: {
+                      'Content-Type': 'application/json',
+                      'X-CSRFToken': '{{ csrf_token() }}'
+                  }
+              })
+              .then(response => response.json())
+              .then(data => {
+                  if (data.success) {
+                      window.location.href = '{{ url_for("unified_register") }}';
+                  } else {
+                      alert('Failed to cleanup registration: ' + data.error);
+                  }
+              })
+              .catch(error => {
+                  console.error('Error:', error);
+                  alert('Error occurred during cleanup');
+              });
+          }
+      }
+
+      // Initialize on page load
+      document.addEventListener('DOMContentLoaded', function() {
+          initWebSocket();
+          startAutoRefresh();
+
+          // Clean up on page unload
+          window.addEventListener('beforeunload', function() {
+              if (refreshInterval) {
+                  clearInterval(refreshInterval);
+              }
+              if (socket) {
+                  socket.emit('leave_registration_updates', {});
+                  socket.disconnect();
+              }
+          });
+      });
+
+      // Show success message when instance is ready
+      {% if status.tenant.status == 'active' %}
+      document.addEventListener('DOMContentLoaded', function() {
+          // Show celebration effect
+          const statusIcon = document.querySelector('.status-icon.success');
+          if (statusIcon) {
+              statusIcon.style.animation = 'pulse 1s ease-in-out 3';
+          }
+
+          // Clear session storage if used
+          try {
+              sessionStorage.removeItem('registration_progress');
+          } catch (e) {}
+      });
+      {% endif %}
+    </script>
+  </body>
+</html>

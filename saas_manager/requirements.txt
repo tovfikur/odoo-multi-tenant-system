@@ -38,3 +38,4 @@ flask-session
 flask-limiter
 Pillow
 paramiko
+email-validator

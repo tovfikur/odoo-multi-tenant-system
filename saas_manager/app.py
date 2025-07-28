@@ -24,11 +24,12 @@ from concurrent.futures import ThreadPoolExecutor
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response, send_file
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_wtf import FlaskForm
+from flask_wtf.csrf import CSRFProtect
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_session import Session
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-from wtforms import StringField, PasswordField, SelectField, IntegerField, BooleanField
+from wtforms import StringField, PasswordField, SelectField, IntegerField, BooleanField, HiddenField
 from wtforms.validators import DataRequired, Length, NumberRange, ValidationError
 import re
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -43,7 +44,7 @@ import hashlib
 from factory import create_app, init_db
 from utils import error_tracker, logger, track_errors
 from db import db
-from models import SaasUser, Tenant, TenantUser, SubscriptionPlan, WorkerInstance, UserPublicKey, CredentialAccess, Report, AuditLog
+from models import SaasUser, Tenant, TenantUser, SubscriptionPlan, WorkerInstance, UserPublicKey, CredentialAccess, Report, AuditLog, PaymentTransaction
 from billing import BillingService
 from cache_manager import get_cached_user_tenants, get_cached_admin_stats, invalidate_tenant_cache, invalidate_user_cache, create_cache_manager
 from websocket_handler import WebSocketManager, setup_websocket_handlers, UpdateTrigger
@@ -89,6 +90,17 @@ try:
     from .support_admin import support_admin_bp
 except ImportError:
     from support_admin import support_admin_bp
+    
+try:
+    from .support_admin import support_admin_bp
+except ImportError:
+    from support_admin import support_admin_bp
+    
+try:
+    from .billing import BillingService, register_unified_billing_routes
+except ImportError:
+    from billing import BillingService, register_unified_billing_routes
+    
 
 
 def run_async_in_background(coro):
@@ -102,11 +114,27 @@ def run_async_in_background(coro):
 # Create Flask app
 app = create_app()
 init_db(app)
+csrf = CSRFProtect(app)
 app.register_blueprint(infra_admin_bp)
 app.register_blueprint(master_admin_bp)
 app.register_blueprint(system_admin_bp)
 app.register_blueprint(support_bp)
 app.register_blueprint(support_admin_bp)
+register_unified_billing_routes(app)
+
+# Add CSRF token to template context
+@app.context_processor
+def inject_csrf_token():
+    """Make CSRF token available to all templates"""
+    from flask_wtf.csrf import generate_csrf
+    return dict(csrf_token=generate_csrf)
+
+# Alternative method - add as template global
+@app.template_global()
+def csrf_token():
+    """Generate CSRF token for templates"""
+    from flask_wtf.csrf import generate_csrf
+    return generate_csrf()
 
 # Initialize Odoo manager and other services
 odoo = OdooDatabaseManager(odoo_url="http://odoo_master:8069", master_pwd=os.environ.get('ODOO_MASTER_PASSWORD', 'admin123'))
@@ -292,7 +320,8 @@ class LoginForm(FlaskForm):
 @track_errors('register_form_validation')
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=50)])
-    email = StringField('Email', validators=[DataRequired(), email_validator])
+    # email = StringField('Email', validators=[DataRequired(), email_validator])
+    email = StringField('Email', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired(), Length(min=6)])
 
 @track_errors('tenant_form_validation')
@@ -811,14 +840,37 @@ def logout():
 
 @app.route('/dashboard')
 @login_required
-@track_errors('dashboard_route')
+@track_errors('enhanced_dashboard_route')
 def dashboard():
     try:
         user_tenants = cache_manager.get_user_tenants(current_user.id)
         stats = {}
+        
+        # Check for pending registration
+        pending_registration = None
+        if session.get('registration_completed'):
+            tenant_id = session.get('pending_tenant_id')
+            if tenant_id:
+                tenant = Tenant.query.get(tenant_id)
+                if tenant and tenant.status in ['pending', 'creating']:
+                    transaction = PaymentTransaction.query.filter_by(
+                        tenant_id=tenant_id,
+                        user_id=current_user.id
+                    ).order_by(PaymentTransaction.created_at.desc()).first()
+                    
+                    pending_registration = {
+                        'tenant': tenant,
+                        'transaction': transaction,
+                        'show_status': True
+                    }
+        
         if current_user.is_admin:
             stats = cache_manager.get_admin_stats()
-        return render_template('dashboard.html', tenants=user_tenants, stats=stats)
+            
+        return render_template('dashboard.html', 
+                             tenants=user_tenants, 
+                             stats=stats,
+                             pending_registration=pending_registration)
     except Exception as e:
         error_tracker.log_error(e, {'user_id': current_user.id})
         flash('Error loading dashboard. Please try again.', 'error')
@@ -1571,6 +1623,57 @@ def backup_tenant(tenant_id):
         flash(f'Backup failed: {e}', 'danger')
     return redirect(request.referrer)
 
+@app.route('/tenant/<int:tenant_id>/restore', methods=['POST'])
+@login_required
+@track_errors('restore_tenant_route')
+def restore_tenant(tenant_id):
+    tenant = Tenant.query.get_or_404(tenant_id)
+    
+    try:
+        # Check if file was uploaded
+        if 'backup_file' not in request.files:
+            flash('No backup file selected', 'danger')
+            return redirect(request.referrer)
+        
+        backup_file = request.files['backup_file']
+        
+        if backup_file.filename == '' or not backup_file.filename.lower().endswith('.zip'):
+            flash('Please select a valid ZIP backup file', 'danger')
+            return redirect(request.referrer)
+        
+        # Create temporary file
+        import tempfile
+        import os
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_file:
+            backup_file.save(temp_file.name)
+            temp_file_path = temp_file.name
+        
+        try:
+            # Deactivate database first if active
+            if odoo.is_active(tenant.database_name):
+                odoo.deactivate(tenant.database_name)
+            
+            # Delete existing database
+            odoo.delete(tenant.database_name)
+            
+            # Restore from backup
+            odoo.restore(temp_file_path, tenant.database_name)
+            
+            flash(f'Database {tenant.database_name} restored successfully', 'success')
+            
+        finally:
+            # Clean up temporary file
+            try:
+                os.unlink(temp_file_path)
+            except:
+                pass
+    
+    except Exception as e:
+        flash(f'Restore failed: {str(e)}', 'danger')
+    
+    return redirect(request.referrer)
+
 @app.route('/tenant/<int:tenant_id>/delete', methods=['POST'])
 @login_required
 @track_errors('delete_tenant_route')
@@ -1612,7 +1715,8 @@ def delete_tenant(tenant_id):
 @track_errors('profile_form_validation')
 class ProfileForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=3, max=50)])
-    email = StringField('Email', validators=[DataRequired(), email_validator])
+    # email = StringField('Email', validators=[DataRequired(), email_validator])
+    email = StringField('Email', validators=[DataRequired()])
     full_name = StringField('Full Name', validators=[Optional(), Length(max=100)])
     bio = TextAreaField('Bio', validators=[Optional(), Length(max=500)])
     company = StringField('Company', validators=[Optional(), Length(max=100)])
@@ -1657,7 +1761,613 @@ class ProfileForm(FlaskForm):
             ('Australia/Sydney', 'Sydney'),
         ]
 
+
+
+
+@track_errors('unified_registration_form_validation')
+class UnifiedRegistrationForm(FlaskForm):
+    """Unified form for user registration, tenant creation, and payment in one flow"""
+    
+    # User Information (Step 1)
+    username = StringField('Username', validators=[
+        DataRequired(message='Username is required'),
+        Length(min=3, max=50, message='Username must be between 3 and 50 characters')
+    ])
+    email = StringField('Email', validators=[
+        DataRequired(message='Email is required'),
+        Email(message='Please enter a valid email address')
+    ])
+    password = PasswordField('Password', validators=[
+        DataRequired(message='Password is required'),
+        Length(min=6, message='Password must be at least 6 characters long')
+    ])
+    confirm_password = PasswordField('Confirm Password', validators=[
+        DataRequired(message='Please confirm your password'),
+        EqualTo('password', message='Passwords must match')
+    ])
+    full_name = StringField('Full Name', validators=[
+        Optional(),
+        Length(max=100, message='Full name cannot exceed 100 characters')
+    ])
+    company = StringField('Company', validators=[
+        Optional(),
+        Length(max=100, message='Company name cannot exceed 100 characters')
+    ])
+    
+    # Organization Information (Step 2)
+    organization_name = StringField('Organization Name', validators=[
+        DataRequired(message='Organization name is required'),
+        Length(min=3, max=100, message='Organization name must be between 3 and 100 characters')
+    ])
+    subdomain = StringField('Subdomain', validators=[
+        DataRequired(message='Subdomain is required'),
+        Length(min=3, max=50, message='Subdomain must be between 3 and 50 characters')
+    ])
+    industry = StringField('Industry', validators=[
+        Optional(),
+        Length(max=100, message='Industry cannot exceed 100 characters')
+    ])
+    country = SelectField('Country', choices=[
+        ('', 'Select Country'),
+        ('BD', 'Bangladesh'),
+        ('IN', 'India'),
+        ('PK', 'Pakistan'),
+        ('US', 'United States'),
+        ('UK', 'United Kingdom'),
+        ('CA', 'Canada'),
+        ('AU', 'Australia'),
+        ('SG', 'Singapore'),
+        ('MY', 'Malaysia'),
+        ('TH', 'Thailand'),
+        ('ID', 'Indonesia'),
+        ('PH', 'Philippines'),
+        ('VN', 'Vietnam'),
+        ('AE', 'United Arab Emirates'),
+        ('SA', 'Saudi Arabia'),
+        ('OTHER', 'Other')
+    ], validators=[Optional()])
+    
+    # Plan Selection (Step 3)
+    selected_plan = HiddenField('Selected Plan', validators=[
+        DataRequired(message='Please select a subscription plan')
+    ])
+
+    def validate_username(self, username):
+        """Custom validation for username uniqueness"""
+        user = SaasUser.query.filter_by(username=username.data).first()
+        if user:
+            raise ValidationError('Username already exists. Please choose a different one.')
+    
+    def validate_email(self, email):
+        """Custom validation for email uniqueness"""
+        user = SaasUser.query.filter_by(email=email.data).first()
+        if user:
+            raise ValidationError('Email already registered. Please use a different email or sign in.')
+    
+    def validate_subdomain(self, subdomain):
+        """Custom validation for subdomain format and uniqueness"""
+        # Check format
+        if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$', subdomain.data):
+            raise ValidationError('Subdomain must contain only letters, numbers, and hyphens, and cannot start or end with a hyphen.')
+        
+        # Check for reserved subdomains
+        reserved_subdomains = ['www', 'api', 'admin', 'app', 'mail', 'ftp', 'blog', 'support', 'help']
+        if subdomain.data.lower() in reserved_subdomains:
+            raise ValidationError('This subdomain is reserved. Please choose a different one.')
+        
+        # Check uniqueness
+        tenant = Tenant.query.filter_by(subdomain=subdomain.data).first()
+        if tenant:
+            raise ValidationError('Subdomain already taken. Please choose a different one.')
+    
+    def validate_selected_plan(self, selected_plan):
+        """Custom validation for plan selection"""
+        plan = SubscriptionPlan.query.filter_by(name=selected_plan.data, is_active=True).first()
+        if not plan:
+            raise ValidationError('Invalid plan selected. Please choose a valid subscription plan.')
+
+
+
+
+
+@app.route('/register/unified', methods=['GET', 'POST'])
+@track_errors('unified_register_route')
+def unified_register():
+    """Unified registration route that handles user registration, tenant creation, and payment"""
+    form = UnifiedRegistrationForm()
+    
+    # Get active subscription plans for display
+    plans = SubscriptionPlan.query.filter_by(is_active=True).order_by(SubscriptionPlan.price).all()
+    plans_data = [
+        {
+            'id': plan.id,
+            'name': plan.name,
+            'price': float(plan.price),
+            'max_users': plan.max_users,
+            'storage_limit': plan.storage_limit,
+            'features': plan.features or [],
+            'modules': plan.modules or [],
+            'is_active': plan.is_active,
+            'created_at': plan.created_at.isoformat()
+        }
+        for plan in plans
+    ]
+    
+    # Initialize status for template - FIXED VERSION
+    status = {
+        'tenant': {
+            'status': 'new',
+            'name': None,
+            'subdomain': None,
+            'plan': None  # Add missing plan field
+        },
+        'payment': {
+            'status': 'pending',
+            'transaction_id': None,
+            'amount': 0
+        },
+        'user': {
+            'active': False, 
+            'verified': False
+        }
+    }
+    
+    # Check if user is authenticated and has pending registration
+    if current_user.is_authenticated and session.get('registration_completed'):
+        tenant_id = session.get('pending_tenant_id')
+        if tenant_id:
+            tenant = Tenant.query.get(tenant_id)
+            if tenant:
+                transaction = PaymentTransaction.query.filter_by(
+                    tenant_id=tenant_id,
+                    user_id=current_user.id
+                ).order_by(PaymentTransaction.created_at.desc()).first()
+                
+                status = {
+                    'tenant': {
+                        'status': tenant.status,
+                        'name': tenant.name,
+                        'subdomain': tenant.subdomain,
+                        'plan': tenant.plan  # Now properly included
+                    },
+                    'payment': {
+                        'status': transaction.status if transaction else 'UNKNOWN',
+                        'transaction_id': transaction.transaction_id if transaction else None,
+                        'amount': transaction.amount if transaction else 0
+                    },
+                    'user': {
+                        'active': current_user.is_active,
+                        'verified': current_user.email_verified if hasattr(current_user, 'email_verified') else False
+                    }
+                }
+    
+    if request.method == 'GET':
+        return render_template('unified_register.html', form=form, plans=plans_data, status=status)
+    
+    if form.validate_on_submit():
+        try:
+            # Step 1: Create user (inactive until payment succeeds)
+            user = SaasUser(
+                username=form.username.data,
+                email=form.email.data,
+                password_hash=generate_password_hash(form.password.data),
+                full_name=form.full_name.data or None,
+                company=form.company.data or None,
+                is_active=False,  # Will be activated after successful payment
+                email_verified=False  # Will be verified after payment
+            )
+            
+            # Step 2: Get available worker
+            worker = get_available_worker()
+            if not worker:
+                flash('Service temporarily unavailable. Please try again in a few minutes.', 'error')
+                return render_template('unified_register.html', form=form, plans=plans_data, status=status)
+            
+            # Step 3: Create tenant
+            db_name = f"kdoo_{form.subdomain.data}"
+            admin_username = f"admin_{form.subdomain.data}"
+            admin_password = generate_secure_password()
+            
+            tenant = Tenant(
+                name=form.organization_name.data,
+                subdomain=form.subdomain.data,
+                database_name=db_name,
+                plan=form.selected_plan.data,
+                admin_username=admin_username,
+                status='pending'  # Will change to 'creating' after payment, then 'active' after DB creation
+            )
+            tenant.set_admin_password(admin_password)
+            
+            # Step 4: Save everything in a transaction
+            db.session.add(user)
+            db.session.flush()  # Get user ID
+            
+            db.session.add(tenant)
+            db.session.flush()  # Get tenant ID
+            
+            # Step 5: Create tenant-user relationship
+            tenant_user = TenantUser(tenant_id=tenant.id, user_id=user.id, role='admin')
+            db.session.add(tenant_user)
+            
+            # Step 6: Update worker capacity
+            worker.current_tenants += 1
+            
+            # Step 7: Commit all changes
+            db.session.commit()
+            
+            # Step 8: Log in the user immediately (but keep inactive)
+            login_user(user)
+            
+            try:
+                # Cache updates
+                tenant_data = {
+                    'id': tenant.id,
+                    'name': tenant.name,
+                    'subdomain': tenant.subdomain,
+                    'status': tenant.status,
+                    'plan': tenant.plan
+                }
+                
+                update_trigger.tenant_created(tenant_data, [user.id])
+                update_trigger.user_stats_changed()
+                
+            except Exception as e:
+                logger.warning(f"Failed to update cache after unified registration: {e}")
+            
+            # Step 9: Initiate payment using enhanced billing
+            try:
+                # Import the enhanced billing service
+                from billing import BillingService
+                
+                payment_url = BillingService.initiate_unified_payment(
+                    tenant_id=tenant.id, 
+                    user_id=user.id, 
+                    plan=tenant.plan
+                )
+                
+                # Store registration completion status
+                session['registration_completed'] = True
+                session['pending_tenant_id'] = tenant.id
+                
+                flash('Registration completed! Redirecting to secure payment...', 'success')
+                return redirect(payment_url)
+                
+            except Exception as payment_error:
+                # If payment initiation fails, clean up
+                db.session.rollback()
+                error_tracker.log_error(payment_error, {
+                    'user_email': form.email.data,
+                    'subdomain': form.subdomain.data,
+                    'plan': form.selected_plan.data,
+                    'function': 'initiate_unified_payment'
+                })
+                flash('Registration completed, but payment system is temporarily unavailable. Please try again.', 'error')
+                return render_template('unified_register.html', form=form, plans=plans_data, status=status)
+            
+        except Exception as e:
+            db.session.rollback()
+            error_tracker.log_error(e, {
+                'form_data': {
+                    'username': form.username.data,
+                    'email': form.email.data,
+                    'organization_name': form.organization_name.data,
+                    'subdomain': form.subdomain.data,
+                    'plan': form.selected_plan.data
+                },
+                'function': 'unified_register'
+            })
+            flash('Registration failed due to a system error. Please try again or contact support.', 'error')
+    
+    # If form validation failed, show errors
+    return render_template('unified_register.html', form=form, plans=plans_data, status=status)
+
+@app.route('/registration/status')
+@login_required
+@track_errors('registration_status_route')
+def registration_status():
+    """Check the status of current user's registration and payment"""
+    try:
+        if not session.get('registration_completed'):
+            return redirect(url_for('dashboard'))
+        
+        tenant_id = session.get('pending_tenant_id')
+        if not tenant_id:
+            return redirect(url_for('dashboard'))
+        
+        tenant = Tenant.query.get(tenant_id)
+        if not tenant:
+            session.pop('registration_completed', None)
+            session.pop('pending_tenant_id', None)
+            return redirect(url_for('dashboard'))
+        
+        # Check latest payment transaction
+        transaction = PaymentTransaction.query.filter_by(
+            tenant_id=tenant_id,
+            user_id=current_user.id
+        ).order_by(PaymentTransaction.created_at.desc()).first()
+        
+        status_data = {
+            'tenant': {
+                'id': tenant.id,
+                'name': tenant.name,
+                'subdomain': tenant.subdomain,
+                'status': tenant.status,
+                'plan': tenant.plan
+            },
+            'payment': {
+                'status': transaction.status if transaction else 'UNKNOWN',
+                'transaction_id': transaction.transaction_id if transaction else None,
+                'amount': transaction.amount if transaction else 0
+            },
+            'user': {
+                'active': current_user.is_active,
+                'verified': current_user.email_verified if hasattr(current_user, 'email_verified') else False
+            }
+        }
+        
+        return render_template('registration_status.html', status=status_data)
+        
+    except Exception as e:
+        error_tracker.log_error(e, {
+            'user_id': current_user.id,
+            'function': 'registration_status'
+        })
+        return redirect(url_for('dashboard'))
+
+
+
+# Add cleanup route for failed registrations
+@app.route('/cleanup/failed-registration', methods=['POST'])
+@login_required
+@track_errors('cleanup_failed_registration')
+def cleanup_failed_registration():
+    """Clean up failed registration attempts"""
+    try:
+        if not session.get('registration_completed'):
+            return jsonify({'error': 'No pending registration'}), 400
+        
+        tenant_id = session.get('pending_tenant_id')
+        if not tenant_id:
+            return jsonify({'error': 'No pending tenant'}), 400
+        
+        tenant = Tenant.query.get(tenant_id)
+        if not tenant:
+            session.pop('registration_completed', None)
+            session.pop('pending_tenant_id', None)
+            return jsonify({'success': True, 'message': 'Registration cleaned up'})
+        
+        # Only allow cleanup if payment failed or tenant creation failed
+        if tenant.status not in ['failed', 'pending']:
+            return jsonify({'error': 'Cannot cleanup active registration'}), 400
+        
+        # Check if user owns this tenant
+        tenant_user = TenantUser.query.filter_by(
+            tenant_id=tenant_id,
+            user_id=current_user.id
+        ).first()
+        
+        if not tenant_user:
+            return jsonify({'error': 'Access denied'}), 403
+        
+        # Clean up
+        try:
+            # Delete tenant relationships
+            TenantUser.query.filter_by(tenant_id=tenant_id).delete()
+            CredentialAccess.query.filter_by(tenant_id=tenant_id).delete()
+            PaymentTransaction.query.filter_by(tenant_id=tenant_id).delete()
+            
+            # Delete tenant
+            db.session.delete(tenant)
+            
+            # Update worker capacity
+            workers = WorkerInstance.query.filter(WorkerInstance.current_tenants > 0).all()
+            for worker in workers:
+                if worker.current_tenants > 0:
+                    worker.current_tenants -= 1
+            
+            db.session.commit()
+            
+            # Clear session
+            session.pop('registration_completed', None)
+            session.pop('pending_tenant_id', None)
+            
+            return jsonify({'success': True, 'message': 'Failed registration cleaned up successfully'})
+            
+        except Exception as cleanup_error:
+            db.session.rollback()
+            error_tracker.log_error(cleanup_error, {
+                'tenant_id': tenant_id,
+                'user_id': current_user.id,
+                'function': 'cleanup_failed_registration'
+            })
+            return jsonify({'error': 'Cleanup failed'}), 500
+        
+    except Exception as e:
+        error_tracker.log_error(e, {
+            'user_id': current_user.id,
+            'function': 'cleanup_failed_registration'
+        })
+        return jsonify({'error': 'Cleanup error'}), 500
+
+
+# WebSocket events for real-time updates
+@socketio.on('join_registration_updates')
+def on_join_registration_updates(data):
+    """Join room for registration status updates"""
+    if current_user.is_authenticated:
+        room = f"user_{current_user.id}_registration"
+        join_room(room)
+        emit('joined', {'room': room})
+
+@socketio.on('leave_registration_updates')
+def on_leave_registration_updates(data):
+    """Leave registration updates room"""
+    if current_user.is_authenticated:
+        room = f"user_{current_user.id}_registration"
+        leave_room(room)
+        emit('left', {'room': room})
+
+# Add this to your UpdateTrigger class in websocket_handler.py
+def payment_status_changed(self, transaction_id, status, tenant_data, user_ids):
+    """Trigger payment status change updates"""
+    try:
+        update_data = {
+            'type': 'payment_status_changed',
+            'transaction_id': transaction_id,
+            'status': status,
+            'tenant': tenant_data,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        for user_id in user_ids:
+            room = f"user_{user_id}_registration"
+            self.ws_manager.emit_to_room(room, 'payment_update', update_data)
+            
+    except Exception as e:
+        logger.warning(f"Failed to trigger payment status update: {e}")
+
+
+# Add webhook endpoint for payment status updates
+@app.route('/webhook/payment-status', methods=['POST'])
+@track_errors('payment_webhook_route')
+def payment_webhook():
+    """Webhook endpoint for real-time payment status updates"""
+    try:
+        data = request.get_json()
+        
+        if not data or 'transaction_id' not in data:
+            return jsonify({'error': 'Invalid webhook data'}), 400
+        
+        transaction_id = data['transaction_id']
+        status = data.get('status', 'UNKNOWN')
+        
+        # Find and update transaction
+        transaction = PaymentTransaction.query.filter_by(
+            transaction_id=transaction_id
+        ).first()
+        
+        if not transaction:
+            logger.warning(f"Webhook: Transaction {transaction_id} not found")
+            return jsonify({'error': 'Transaction not found'}), 404
+        
+        # Update status
+        transaction.status = status
+        transaction.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        # Trigger real-time updates via WebSocket
+        try:
+            tenant = Tenant.query.get(transaction.tenant_id)
+            if tenant:
+                tenant_data = {
+                    'id': tenant.id,
+                    'name': tenant.name,
+                    'subdomain': tenant.subdomain,
+                    'status': tenant.status
+                }
+                
+                update_trigger.payment_status_changed(
+                    transaction_id, 
+                    status, 
+                    tenant_data, 
+                    [transaction.user_id]
+                )
+        except Exception as ws_error:
+            logger.warning(f"Failed to send WebSocket update: {ws_error}")
+        
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'function': 'payment_webhook'})
+        return jsonify({'error': 'Webhook processing failed'}), 500
+
+
+
+# Add this API endpoint for real-time subdomain validation
+
+@app.route('/api/validate-subdomain/<subdomain>')
+@track_errors('validate_subdomain_api')
+def validate_subdomain_api(subdomain):
+    """API endpoint to validate subdomain availability in real-time"""
+    try:
+        # Check format
+        if not re.match(r'^[a-zA-Z0-9]([a-zA-Z0-9-]*[a-zA-Z0-9])?$', subdomain):
+            return jsonify({
+                'available': False,
+                'message': 'Subdomain must contain only letters, numbers, and hyphens'
+            })
+        
+        # Check length
+        if len(subdomain) < 3 or len(subdomain) > 50:
+            return jsonify({
+                'available': False,
+                'message': 'Subdomain must be between 3 and 50 characters'
+            })
+        
+        # Check reserved subdomains
+        reserved_subdomains = ['www', 'api', 'admin', 'app', 'mail', 'ftp', 'blog', 'support', 'help']
+        if subdomain.lower() in reserved_subdomains:
+            return jsonify({
+                'available': False,
+                'message': 'This subdomain is reserved'
+            })
+        
+        # Check uniqueness
+        tenant = Tenant.query.filter_by(subdomain=subdomain).first()
+        if tenant:
+            return jsonify({
+                'available': False,
+                'message': 'Subdomain already taken'
+            })
+        
+        return jsonify({
+            'available': True,
+            'message': 'Subdomain is available',
+            'preview_url': f"https://{subdomain}.{request.host}"
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'subdomain': subdomain, 'function': 'validate_subdomain_api'})
+        return jsonify({
+            'available': False,
+            'message': 'Error checking subdomain availability'
+        }), 500
+
+
+
+# Template filter for better status display
+@app.template_filter('format_payment_status')
+def format_payment_status(status):
+    """Format payment status for display"""
+    status_mapping = {
+        'PENDING': ('warning', 'Processing'),
+        'SUCCESS': ('success', 'Completed'),
+        'FAILED': ('danger', 'Failed'),
+        'CANCELLED': ('secondary', 'Cancelled'),
+        'UNKNOWN': ('info', 'Unknown')
+    }
+    return status_mapping.get(status, ('info', status))
+
+@app.template_filter('format_tenant_status')
+def format_tenant_status(status):
+    """Format tenant status for display"""
+    status_mapping = {
+        'pending': ('warning', 'Awaiting Payment'),
+        'creating': ('info', 'Setting Up'),
+        'active': ('success', 'Active'),
+        'failed': ('danger', 'Setup Failed'),
+        'inactive': ('secondary', 'Inactive')
+    }
+    return status_mapping.get(status, ('info', status.title()))
+
+# Add error handler for payment-related errors
+@app.errorhandler(404)
+def payment_required(error):
+    """Handle payment required errors"""
+    return render_template('errors/payment_required.html'), 404
+
 # Add these helper functions
+
 
 @track_errors('profile_image_processing')
 def save_profile_picture(form_picture, username):

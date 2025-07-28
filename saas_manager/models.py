@@ -139,6 +139,9 @@ class SubscriptionPlan(db.Model):
     priority_support = db.Column(db.Boolean, default=False)
     sla_uptime = db.Column(db.Float, default=99.9)  # Percentage
 
+
+
+
 class WorkerInstance(db.Model):
     __tablename__ = 'worker_instances'
     
@@ -287,6 +290,43 @@ class Payment(db.Model):
     tenant = db.relationship('Tenant', backref='payments')
     user = db.relationship('SaasUser', foreign_keys=[user_id], backref='payments')
     verifier = db.relationship('SaasUser', foreign_keys=[verified_by])
+
+class PaymentTransaction(db.Model):
+    """Model to store payment transaction details"""
+    __tablename__ = 'payment_transactions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    transaction_id = db.Column(db.String(100), unique=True, nullable=False)
+    validation_id = db.Column(db.String(100), nullable=True)  # Store val_id from SSLCommerz
+    tenant_id = db.Column(db.Integer, nullable=False)  # Just an integer, no foreign key
+    user_id = db.Column(db.Integer, db.ForeignKey('saas_users.id'), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(10), default='BDT')
+    status = db.Column(db.String(50), default='PENDING')
+    payment_method = db.Column(db.String(100))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    response_data = db.Column(db.String(2000))  # Store raw response from SSLCommerz
+    
+    # Relationship with user (keeping this one)
+    user = db.relationship('SaasUser', backref='payment_transactions')
+    
+    # NO tenant relationship - removed completely
+    
+    def get_tenant(self):
+        """Get the associated tenant by manual lookup"""
+        # Import here to avoid circular imports
+        from models import Tenant
+        return Tenant.query.get(self.tenant_id)
+    
+    def get_tenant_name(self):
+        """Helper method to get tenant name safely"""
+        tenant = self.get_tenant()
+        return tenant.name if tenant else f"Unknown Tenant (ID: {self.tenant_id})"
+    
+    def __repr__(self):
+        return f"<PaymentTransaction {self.transaction_id} - {self.status}>"
+
 
 class SystemSetting(db.Model):
     """System-wide settings and configuration"""

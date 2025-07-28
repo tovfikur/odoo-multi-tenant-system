@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - Odoo SaaS Platform</title>
+
+    <!-- External Dependencies -->
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Core Styles -->
+    <link
+      href="{{ url_for('static', filename='css/style.css') }}"
+      rel="stylesheet"
+    />
+
+    <style>
+      .registration-container {
+        min-height: 100vh;
+        background: var(--gradient-mesh), var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        padding: 2rem 0;
+      }
+
+      .registration-card {
+        background: var(--bg-primary);
+        border-radius: var(--border-radius-xl);
+        box-shadow: var(--shadow-xl);
+        border: 1px solid var(--border-primary);
+        overflow: hidden;
+        max-width: 800px;
+        margin: 0 auto;
+      }
+
+      .step-indicator {
+        display: flex;
+        justify-content: space-between;
+        padding: 1.5rem 2rem;
+        background: var(--bg-tertiary);
+        border-bottom: 1px solid var(--border-primary);
+      }
+
+      .step {
+        display: flex;
+        align-items: center;
+        color: var(--text-muted);
+        font-size: 0.9rem;
+      }
+
+      .step.active {
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .step.completed {
+        color: var(--success);
+      }
+
+      .step-number {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.5rem;
+        font-weight: 600;
+      }
+
+      .step.active .step-number {
+        background: var(--primary);
+        color: white;
+      }
+
+      .step.completed .step-number {
+        background: var(--success);
+        color: white;
+      }
+
+      .form-section {
+        display: none;
+        padding: 2rem;
+      }
+
+      .form-section.active {
+        display: block;
+      }
+
+      .plan-selector {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .plan-card {
+        border: 2px solid var(--border-primary);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+      }
+
+      .plan-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-lg);
+      }
+
+      .plan-card.selected {
+        border-color: var(--primary);
+        background: var(--primary-light);
+      }
+
+      .plan-card .plan-name {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+      }
+
+      .plan-card .plan-price {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--primary);
+        margin-bottom: 1rem;
+      }
+
+      .plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      .plan-features li {
+        padding: 0.25rem 0;
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+      }
+
+      .plan-features li i {
+        color: var(--success);
+        margin-right: 0.5rem;
+      }
+
+      .form-navigation {
+        display: flex;
+        justify-content: space-between;
+        padding: 1.5rem 2rem;
+        background: var(--bg-tertiary);
+        border-top: 1px solid var(--border-primary);
+      }
+
+      .subdomain-preview {
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background: var(--bg-tertiary);
+        border-radius: var(--border-radius);
+        font-family: monospace;
+        color: var(--text-secondary);
+      }
+
+      .availability-check {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+      }
+
+      .available {
+        color: var(--success);
+      }
+
+      .unavailable {
+        color: var(--danger);
+      }
+
+      .checking {
+        color: var(--warning);
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-modern">
+      <div class="container">
+        <a class="navbar-brand-modern" href="{{ url_for('index') }}">
+          <div class="logo-modern">O</div>
+          <span>Odoo SaaS</span>
+        </a>
+        <div class="d-flex">
+          <a href="{{ url_for('login') }}" class="btn btn-outline-primary">
+            <i class="fas fa-sign-in-alt me-1"></i> Sign In
+          </a>
+        </div>
+      </div>
+    </nav>
+
+    <div class="registration-container">
+      <div class="container">
+        <div class="registration-card">
+          <!-- Step Indicator -->
+          <div class="step-indicator">
+            <div class="step active" id="step-1">
+              <div class="step-number">1</div>
+              <span>Account</span>
+            </div>
+            <div class="step" id="step-2">
+              <div class="step-number">2</div>
+              <span>Organization</span>
+            </div>
+            <div class="step" id="step-3">
+              <div class="step-number">3</div>
+              <span>Plan</span>
+            </div>
+          </div>
+
+          <!-- Registration Form -->
+          <form method="POST" id="registrationForm">
+            {{ form.hidden_tag() }}
+
+            <!-- Step 1: User Information -->
+            <div class="form-section active" id="section-1">
+              <h3 class="mb-4">Create Your Account</h3>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.username(class="form-control",
+                    placeholder="Username") }} {{
+                    form.username.label(class="form-label") }} {% if
+                    form.username.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.username.errors %}{{ error }}{%
+                      endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.email(class="form-control", placeholder="Email") }}
+                    {{ form.email.label(class="form-label") }} {% if
+                    form.email.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.email.errors %}{{ error }}{% endfor
+                      %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.password(class="form-control",
+                    placeholder="Password") }} {{
+                    form.password.label(class="form-label") }} {% if
+                    form.password.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.password.errors %}{{ error }}{%
+                      endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.confirm_password(class="form-control",
+                    placeholder="Confirm Password") }} {{
+                    form.confirm_password.label(class="form-label") }} {% if
+                    form.confirm_password.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.confirm_password.errors %}{{ error
+                      }}{% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.full_name(class="form-control", placeholder="Full
+                    Name (Optional)") }} {{
+                    form.full_name.label(class="form-label") }}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.company(class="form-control", placeholder="Company
+                    (Optional)") }} {{ form.company.label(class="form-label") }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Organization Information -->
+            <div class="form-section" id="section-2">
+              <h3 class="mb-4">Organization Details</h3>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.organization_name(class="form-control",
+                    placeholder="Organization Name") }} {{
+                    form.organization_name.label(class="form-label") }} {% if
+                    form.organization_name.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.organization_name.errors %}{{ error
+                      }}{% endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.industry(class="form-control", placeholder="Industry
+                    (Optional)") }} {{ form.industry.label(class="form-label")
+                    }}
+                  </div>
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.subdomain(class="form-control",
+                    placeholder="Subdomain", id="subdomainInput") }} {{
+                    form.subdomain.label(class="form-label") }}
+                    <div class="subdomain-preview">
+                      Your Odoo will be available at:
+                      <strong
+                        ><span id="subdomainPreview">your-subdomain</span>.{{
+                        request.host }}</strong
+                      >
+                    </div>
+                    <div
+                      class="availability-check"
+                      id="availabilityCheck"
+                    ></div>
+                    {% if form.subdomain.errors %}
+                    <div class="invalid-feedback d-block">
+                      {% for error in form.subdomain.errors %}{{ error }}{%
+                      endfor %}
+                    </div>
+                    {% endif %}
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="form-floating mb-3">
+                    {{ form.country(class="form-control") }} {{
+                    form.country.label(class="form-label") }}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: Plan Selection -->
+            <div class="form-section" id="section-3">
+              <h3 class="mb-4">Choose Your Plan</h3>
+              {{ form.selected_plan }}
+              <div class="plan-selector" id="planSelector">
+                {% for plan in plans %}
+                <div
+                  class="plan-card"
+                  data-plan="{{ plan.name }}"
+                  onclick="selectPlan('{{ plan.name }}', this)"
+                >
+                  <div class="plan-name">{{ plan.name.title() }}</div>
+                  <div class="plan-price">
+                    ${{ "%.0f"|format(plan.price) }}<small>/month</small>
+                  </div>
+                  <ul class="plan-features">
+                    <li>
+                      <i class="fas fa-users"></i> Up to {{ plan.max_users }}
+                      users
+                    </li>
+                    <li>
+                      <i class="fas fa-database"></i> {{ plan.storage_limit }}
+                      storage
+                    </li>
+                    {% for feature in plan.features %}
+                    <li><i class="fas fa-check"></i> {{ feature }}</li>
+                    {% endfor %}
+                  </ul>
+                </div>
+                {% endfor %}
+              </div>
+              {% if form.selected_plan.errors %}
+              <div class="invalid-feedback d-block mt-3">
+                {% for error in form.selected_plan.errors %}{{ error }}{% endfor
+                %}
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="form-navigation">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                id="prevBtn"
+                onclick="changeStep(-1)"
+                style="display: none"
+              >
+                <i class="fas fa-arrow-left me-1"></i> Previous
+              </button>
+              <div>
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  id="nextBtn"
+                  onclick="changeStep(1)"
+                >
+                  Next <i class="fas fa-arrow-right ms-1"></i>
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-success"
+                  id="submitBtn"
+                  style="display: none"
+                >
+                  <i class="fas fa-credit-card me-1"></i> Complete Registration
+                </button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      let currentStep = 1;
+      const totalSteps = 3;
+      let subdomainTimeout;
+
+      // Step navigation
+      function changeStep(direction) {
+        if (direction === 1 && !validateCurrentStep()) {
+          return;
+        }
+
+        const newStep = currentStep + direction;
+        if (newStep < 1 || newStep > totalSteps) return;
+
+        // Hide current step
+        document
+          .getElementById(`section-${currentStep}`)
+          .classList.remove("active");
+        document
+          .getElementById(`step-${currentStep}`)
+          .classList.remove("active");
+        if (direction === 1) {
+          document
+            .getElementById(`step-${currentStep}`)
+            .classList.add("completed");
+        }
+
+        // Show new step
+        currentStep = newStep;
+        document
+          .getElementById(`section-${currentStep}`)
+          .classList.add("active");
+        document.getElementById(`step-${currentStep}`).classList.add("active");
+        if (direction === -1) {
+          document
+            .getElementById(`step-${currentStep}`)
+            .classList.remove("completed");
+        }
+
+        // Update navigation buttons
+        updateNavigationButtons();
+      }
+
+      function updateNavigationButtons() {
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const submitBtn = document.getElementById("submitBtn");
+
+        prevBtn.style.display = currentStep > 1 ? "block" : "none";
+
+        if (currentStep === totalSteps) {
+          nextBtn.style.display = "none";
+          submitBtn.style.display = "block";
+        } else {
+          nextBtn.style.display = "block";
+          submitBtn.style.display = "none";
+        }
+      }
+
+      // SINGLE FIXED VALIDATION FUNCTION
+      function validateCurrentStep() {
+        console.log("🔥 validateCurrentStep() CALLED - STEP:", currentStep);
+
+        const section = document.getElementById(`section-${currentStep}`);
+        console.log("🔥 Section lookup result:", section);
+
+        // Check if section exists
+        if (!section) {
+          console.error(`❌ Section not found: section-${currentStep}`);
+          console.error("🔥 Available sections in DOM:");
+          document.querySelectorAll('[id^="section-"]').forEach((s) => {
+            console.error("  - Found section:", s.id);
+          });
+          return false;
+        }
+
+        console.log(`✅ Found section: section-${currentStep}`);
+
+        const inputs = section.querySelectorAll(
+          "input[required], select[required]"
+        );
+        console.log(`📝 Found ${inputs.length} required inputs/selects`);
+        console.log("🔥 Required inputs found:", inputs);
+
+        let isValid = true;
+        const validationErrors = [];
+
+        // Log all found inputs for debugging
+        inputs.forEach((input, index) => {
+          const inputInfo = {
+            id: input.id,
+            name: input.name,
+            type: input.type,
+            value: input.value,
+            trimmedValue: input.value?.trim(),
+            hasValue: !!input.value?.trim(),
+          };
+          console.log(`🔥 Input ${index + 1}:`, inputInfo);
+        });
+
+        // Basic required field validation - SKIP hidden plan field
+        inputs.forEach((input, index) => {
+          // SKIP the selected_plan hidden field - we'll validate it separately
+          if (input.id === "selected_plan" && input.type === "hidden") {
+            console.log(
+              `🔥 Skipping hidden plan field - will validate separately`
+            );
+            return;
+          }
+
+          const trimmedValue = input.value?.trim();
+          const fieldIdentifier =
+            input.id || input.name || `input-${input.type}`;
+
+          console.log(`🔥 Checking input ${index + 1} (${fieldIdentifier}):`, {
+            value: input.value,
+            trimmed: trimmedValue,
+            isEmpty: !trimmedValue,
+          });
+
+          if (!trimmedValue) {
+            input.classList.add("is-invalid");
+            isValid = false;
+            const error = `Field '${fieldIdentifier}' is required but empty`;
+            validationErrors.push(error);
+            console.error(`🚨 VALIDATION ERROR: ${error}`);
+          } else {
+            input.classList.remove("is-invalid");
+            console.log(`✅ Field '${fieldIdentifier}' is valid`);
+          }
+        });
+
+        // Step-specific validation
+        console.log(
+          `🎯 Running step-specific validation for step ${currentStep}`
+        );
+
+        if (currentStep === 1) {
+          console.log("🔐 Validating password fields for step 1");
+
+          const password = document.getElementById("password");
+          const confirmPassword = document.getElementById("confirm_password");
+
+          if (!password) {
+            console.error("❌ Password field not found");
+            validationErrors.push("Password field not found");
+            isValid = false;
+          } else if (!confirmPassword) {
+            console.error("❌ Confirm password field not found");
+            validationErrors.push("Confirm password field not found");
+            isValid = false;
+          } else {
+            console.log("Password validation:", {
+              passwordValue: password.value,
+              confirmPasswordValue: confirmPassword.value,
+              passwordsMatch: password.value === confirmPassword.value,
+            });
+
+            if (
+              password.value &&
+              confirmPassword.value &&
+              password.value !== confirmPassword.value
+            ) {
+              confirmPassword.classList.add("is-invalid");
+              isValid = false;
+              const error = "Passwords do not match";
+              validationErrors.push(error);
+              console.error(`🚨 VALIDATION ERROR: ${error}`);
+            } else if (password.value && confirmPassword.value) {
+              confirmPassword.classList.remove("is-invalid");
+              console.log("✅ Passwords match");
+            }
+          }
+        }
+
+        if (currentStep === 3) {
+          console.log("🔥 STEP 3 VALIDATION - Plan selection check");
+
+          const selectedPlan = document.getElementById("selected_plan");
+          console.log("🔥 selectedPlan element:", selectedPlan);
+
+          if (!selectedPlan) {
+            console.error("❌ Selected plan field not found");
+            console.error("🔥 Looking for all elements with 'plan' in ID:");
+            document.querySelectorAll('[id*="plan"]').forEach((el) => {
+              console.error("  - Found:", el.id, el);
+            });
+            validationErrors.push("Selected plan field not found");
+            isValid = false;
+          } else {
+            // Get the current value at validation time
+            const currentValue = selectedPlan.value;
+            console.log("🔥 Plan selection details:", {
+              selectedPlanValue: currentValue,
+              hasPlanSelected: !!currentValue,
+              element: selectedPlan,
+            });
+
+            if (!currentValue) {
+              const error = "No plan selected";
+              validationErrors.push(error);
+              console.error(`🚨 VALIDATION ERROR: ${error}`);
+              alert("Please select a plan to continue.");
+              isValid = false;
+            } else {
+              console.log(`✅ Plan selected: ${currentValue}`);
+            }
+          }
+        }
+
+        // Final validation summary
+        console.log(`🔥 FINAL VALIDATION SUMMARY for Step ${currentStep}:`);
+        console.log(`🔥 - Overall Valid: ${isValid}`);
+        console.log(`🔥 - Errors Found: ${validationErrors.length}`);
+
+        if (validationErrors.length > 0) {
+          console.error("🚨 VALIDATION FAILED - ERRORS:");
+          validationErrors.forEach((error, index) => {
+            console.error(`🚨   ${index + 1}. ${error}`);
+          });
+        } else {
+          console.log("🔥 ✅ All validations passed!");
+        }
+
+        console.log("🔥 validateCurrentStep() RETURNING:", isValid);
+        return isValid;
+      }
+
+      // Plan selection
+      function selectPlan(planName, element) {
+        console.log(`🔥 selectPlan() called with: ${planName}`);
+
+        // Remove selection from all plans
+        document.querySelectorAll(".plan-card").forEach((card) => {
+          card.classList.remove("selected");
+        });
+
+        // Select current plan
+        element.classList.add("selected");
+        const planInput = document.getElementById("selected_plan");
+        planInput.value = planName;
+        console.log(`🔥 Plan input value set to: ${planInput.value}`);
+      }
+
+      // Subdomain validation
+      function checkSubdomainAvailability(subdomain) {
+        const checkDiv = document.getElementById("availabilityCheck");
+
+        if (subdomain.length < 3) {
+          checkDiv.innerHTML = "";
+          return;
+        }
+
+        checkDiv.innerHTML =
+          '<i class="fas fa-spinner fa-spin"></i> <span class="checking">Checking availability...</span>';
+
+        fetch(`/api/validate-subdomain/${encodeURIComponent(subdomain)}`)
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.available) {
+              checkDiv.innerHTML =
+                '<i class="fas fa-check"></i> <span class="available">Available!</span>';
+            } else {
+              checkDiv.innerHTML =
+                '<i class="fas fa-times"></i> <span class="unavailable">' +
+                data.message +
+                "</span>";
+            }
+          })
+          .catch((error) => {
+            checkDiv.innerHTML =
+              '<i class="fas fa-exclamation-triangle"></i> <span class="unavailable">Error checking availability</span>';
+          });
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        // Subdomain input handling
+        const subdomainInput = document.getElementById("subdomainInput");
+        const subdomainPreview = document.getElementById("subdomainPreview");
+
+        if (subdomainInput && subdomainPreview) {
+          subdomainInput.addEventListener("input", function () {
+            const value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, "");
+            this.value = value;
+            subdomainPreview.textContent = value || "your-subdomain";
+
+            // Clear existing timeout
+            clearTimeout(subdomainTimeout);
+
+            // Check availability after 500ms delay
+            if (value.length >= 3) {
+              subdomainTimeout = setTimeout(() => {
+                checkSubdomainAvailability(value);
+              }, 500);
+            }
+          });
+        }
+
+        // Form validation on input
+        document.querySelectorAll("input, select").forEach((input) => {
+          input.addEventListener("input", function () {
+            if (this.classList.contains("is-invalid")) {
+              this.classList.remove("is-invalid");
+            }
+          });
+        });
+
+        // Initialize navigation
+        updateNavigationButtons();
+      });
+
+      // Handle form submission
+      document
+        .getElementById("registrationForm")
+        .addEventListener("submit", function (e) {
+          console.log("Form submission triggered for unified registration");
+          console.log("Current step:", currentStep);
+          console.log(
+            "Selected plan:",
+            document.getElementById("selected_plan").value
+          );
+
+          // Only validate if we're on the last step (step 3)
+          if (currentStep !== 3) {
+            console.log("Not on final step, preventing submission");
+            e.preventDefault();
+            return;
+          }
+
+          // FORCE THE VALIDATION TO RUN AND LOG THE RESULT
+          console.log("🚀 CALLING validateCurrentStep() NOW...");
+          const validationResult = validateCurrentStep();
+          console.log("🚀 validateCurrentStep() returned:", validationResult);
+
+          if (!validationResult) {
+            console.error(
+              "🚨 VALIDATION FAILED - DETAILS SHOULD BE LOGGED ABOVE"
+            );
+            console.log("Final step validation failed, preventing submission");
+            e.preventDefault();
+            return;
+          }
+
+          // Check if plan is selected (redundant but keeping for safety)
+          const selectedPlan = document.getElementById("selected_plan").value;
+          if (!selectedPlan) {
+            alert(
+              "Please select a subscription plan before completing registration."
+            );
+            e.preventDefault();
+            return;
+          }
+
+          console.log("All validation passed, submitting to:", this.action);
+
+          // Show loading state
+          const submitBtn = document.getElementById("submitBtn");
+          submitBtn.innerHTML =
+            '<i class="fas fa-spinner fa-spin me-1"></i> Processing Registration...';
+          submitBtn.disabled = true;
+
+          // Form will submit naturally
+        });
+
+      // Alternative: If you want to handle submission via AJAX instead
+      function submitFormViaAjax(e) {
+        e.preventDefault(); // Prevent default form submission
+
+        if (!validateCurrentStep()) {
+          return;
+        }
+
+        const formData = new FormData(
+          document.getElementById("registrationForm")
+        );
+
+        // Show loading state
+        const submitBtn = document.getElementById("submitBtn");
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML =
+          '<i class="fas fa-spinner fa-spin me-1"></i> Processing...';
+        submitBtn.disabled = true;
+
+        fetch("/register", {
+          // Make sure this matches your Flask route
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => {
+            if (response.ok) {
+              return response.json();
+            } else {
+              throw new Error("Registration failed");
+            }
+          })
+          .then((data) => {
+            if (data.success) {
+              alert("Registration successful!");
+              window.location.href = data.redirect || "/dashboard";
+            } else {
+              alert(
+                "Registration failed: " + (data.message || "Unknown error")
+              );
+              // Reset button
+              submitBtn.innerHTML = originalText;
+              submitBtn.disabled = false;
+            }
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+            alert("Registration failed. Please try again.");
+            // Reset button
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+          });
+      }
+    </script>
+  </body>
+</html>

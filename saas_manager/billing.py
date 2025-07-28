@@ -14,49 +14,13 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from db import db  # Import db from db.py
 from utils import error_tracker, track_errors, generate_random_alphanumeric, logger  # Import error_tracker and logger from utils.py
-from models import Tenant, SaasUser, SubscriptionPlan, TenantUser, CredentialAccess, WorkerInstance  # Import models
+from models import Tenant, SaasUser, SubscriptionPlan, TenantUser, CredentialAccess, WorkerInstance, PaymentTransaction  # Import models
 
 # SSLCommerz Sandbox Credentials
 SSLCOMMERZ_STORE_ID = "kendr686995fcc52be"
 SSLCOMMERZ_STORE_PASSWORD = "kendr686995fcc52be@ssl"
 SSLCOMMERZ_SESSION_API = "https://sandbox.sslcommerz.com/gwprocess/v4/api.php"
 SSLCOMMERZ_VALIDATION_API = "https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php"
-
-class PaymentTransaction(db.Model):
-    """Model to store payment transaction details"""
-    __tablename__ = 'payment_transactions'
-    
-    id = Column(Integer, primary_key=True)
-    transaction_id = Column(String(100), unique=True, nullable=False)
-    validation_id = Column(String(100), nullable=True)  # Store val_id from SSLCommerz
-    tenant_id = Column(Integer, nullable=False)  # Just an integer, no foreign key
-    user_id = Column(Integer, ForeignKey('saas_users.id'), nullable=False)
-    amount = Column(Float, nullable=False)
-    currency = Column(String(10), default='BDT')
-    status = Column(String(50), default='PENDING')
-    payment_method = Column(String(100))
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    response_data = Column(String(2000))  # Store raw response from SSLCommerz
-    
-    # Relationship with user (keeping this one)
-    user = relationship('SaasUser', backref='payment_transactions')
-    
-    # NO tenant relationship - removed completely
-    
-    def get_tenant(self):
-        """Get the associated tenant by manual lookup"""
-        # Import here to avoid circular imports
-        from models import Tenant
-        return Tenant.query.get(self.tenant_id)
-    
-    def get_tenant_name(self):
-        """Helper method to get tenant name safely"""
-        tenant = self.get_tenant()
-        return tenant.name if tenant else f"Unknown Tenant (ID: {self.tenant_id})"
-    
-    def __repr__(self):
-        return f"<PaymentTransaction {self.transaction_id} - {self.status}>"
 
 def run_async_in_background(coro):
     """Helper function to run an async coroutine in the background."""
@@ -65,6 +29,389 @@ def run_async_in_background(coro):
         loop.run_until_complete(coro)
     finally:
         loop.close()
+
+
+# Enhanced payment success handler specifically for unified registration
+@staticmethod
+@track_errors('handle_unified_payment_success')
+def handle_unified_payment_success(tenant_id, transaction_id, validation_id=None):
+    """Enhanced payment success handler for unified registration flow"""
+    try:
+        if BillingService.validate_payment(transaction_id, tenant_id, validation_id):
+            # Update transaction status to SUCCESS
+            transaction = PaymentTransaction.query.filter_by(
+                transaction_id=transaction_id,
+                tenant_id=tenant_id
+            ).first()
+            
+            if transaction:
+                transaction.status = 'SUCCESS'
+                transaction.updated_at = datetime.utcnow()
+                db.session.commit()
+
+            # Get tenant and user for activation
+            tenant = Tenant.query.get(tenant_id)
+            if not tenant:
+                logger.error(f"Tenant {tenant_id} not found for payment success")
+                flash('Payment successful, but tenant not found. Please contact support.', 'error')
+                return redirect(url_for('dashboard'))
+
+            # Activate the user account (was set to inactive during unified registration)
+            user = SaasUser.query.get(transaction.user_id)
+            if user and not user.is_active:
+                user.is_active = True
+                user.email_verified = True  # Auto-verify on successful payment
+                db.session.commit()
+                logger.info(f"Activated user {user.username} after successful payment")
+
+            if tenant.status == 'pending':
+                logger.info(f"Payment successful for tenant {tenant.name}. Creating Odoo database.")
+                
+                # Get plan modules
+                subscription_plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
+                plan_modules = subscription_plan.modules if subscription_plan and subscription_plan.modules else []
+                
+                # Import create_database function
+                try:
+                    from app import create_database
+                    from flask import current_app
+                    
+                    # Create database in background after successful payment
+                    executor = ThreadPoolExecutor(max_workers=1)
+                    executor.submit(
+                        run_async_in_background, 
+                        create_database(
+                            tenant.database_name, 
+                            tenant.admin_username, 
+                            tenant.get_admin_password(), 
+                            plan_modules,
+                            current_app._get_current_object()  # Pass app instance
+                        )
+                    )
+                    executor.shutdown(wait=False)
+                    
+                    # Update tenant status to 'creating' to indicate database creation is in progress
+                    tenant.status = 'creating'
+                    db.session.commit()
+                    
+                    logger.info(f"Database creation initiated for tenant {tenant.name}")
+                    
+                    # Send welcome email (if email service is configured)
+                    try:
+                        BillingService.send_welcome_email(user, tenant)
+                    except Exception as email_error:
+                        logger.warning(f"Failed to send welcome email: {email_error}")
+                    
+                except ImportError as e:
+                    logger.error(f"Failed to import create_database function: {e}")
+                    flash('Payment successful, but database creation failed to start. Please contact support.', 'warning')
+                except Exception as e:
+                    logger.error(f"Failed to start database creation: {e}")
+                    flash('Payment successful, but database creation failed to start. Please contact support.', 'warning')
+            
+            flash('Payment successful! Your Odoo instance is being created and will be ready shortly. Check your email for login credentials.', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            flash('Payment validation failed.', 'error')
+            return redirect(url_for('unified_register'))
+
+    except Exception as e:
+        error_tracker.log_error(e, {
+            'tenant_id': tenant_id,
+            'transaction_id': transaction_id,
+            'validation_id': validation_id,
+            'function': 'handle_unified_payment_success'
+        })
+        flash('Error processing payment success.', 'error')
+        return redirect(url_for('dashboard'))
+
+@staticmethod
+@track_errors('send_welcome_email')
+def send_welcome_email(user, tenant):
+    """Send welcome email with login credentials and setup instructions"""
+    try:
+        # This is a placeholder for email functionality
+        # You can integrate with services like SendGrid, Mailgun, or AWS SES
+        
+        logger.info(f"Would send welcome email to {user.email} for tenant {tenant.subdomain}")
+        
+        # Email content would include:
+        # - Welcome message
+        # - Odoo instance URL: https://{tenant.subdomain}.{domain}
+        # - Login credentials (encrypted or temporary)
+        # - Setup guide links
+        # - Support contact information
+        
+        return True
+        
+    except Exception as e:
+        error_tracker.log_error(e, {
+            'user_id': user.id,
+            'tenant_id': tenant.id,
+            'function': 'send_welcome_email'
+        })
+        return False
+
+@staticmethod
+@track_errors('handle_unified_payment_fail')
+def handle_unified_payment_fail(tenant_id, transaction_id):
+    """Enhanced payment failure handler for unified registration"""
+    try:
+        # Update transaction status first
+        transaction = PaymentTransaction.query.filter_by(
+            transaction_id=transaction_id,
+            tenant_id=tenant_id
+        ).first()
+
+        if transaction:
+            transaction.status = 'FAILED'
+            transaction.updated_at = datetime.utcnow()
+
+            # Deactivate the user account
+            user = SaasUser.query.get(transaction.user_id)
+            if user:
+                user.is_active = False
+                logger.info(f"Deactivated user {user.username} due to payment failure")
+
+            db.session.commit()
+
+        # Get tenant for cleanup
+        tenant = Tenant.query.get(tenant_id)
+        
+        if tenant:
+            logger.info(f"Payment failed for tenant {tenant.name} (ID: {tenant_id}). Cleaning up tenant record.")
+            
+            try:
+                # Update worker tenant count
+                workers = WorkerInstance.query.filter(WorkerInstance.current_tenants > 0).all()
+                for worker in workers:
+                    if worker.current_tenants > 0:
+                        worker.current_tenants -= 1
+                        logger.info(f"Decremented tenant count for worker {worker.name}")
+                
+                # Delete tenant-related records in proper order
+                TenantUser.query.filter_by(tenant_id=tenant_id).delete()
+                logger.info(f"Deleted TenantUser records for tenant {tenant_id}")
+                
+                # Delete credential access logs if any
+                CredentialAccess.query.filter_by(tenant_id=tenant_id).delete()
+                logger.info(f"Deleted CredentialAccess records for tenant {tenant_id}")
+                
+                # Don't delete the user account in unified registration
+                # Just keep it inactive so they can try again
+                
+                # Delete the tenant itself
+                db.session.delete(tenant)
+                db.session.commit()
+                logger.info(f"Successfully deleted tenant {tenant.name} (ID: {tenant_id})")
+                
+                flash('Payment failed. Please try registering again or contact support if you continue having issues.', 'error')
+                
+            except Exception as cleanup_error:
+                db.session.rollback()
+                logger.error(f"Error during tenant cleanup: {cleanup_error}")
+                error_tracker.log_error(cleanup_error, {
+                    'tenant_id': tenant_id,
+                    'transaction_id': transaction_id,
+                    'cleanup_phase': 'tenant_deletion'
+                })
+                flash('Payment failed. There was an issue cleaning up. Please contact support.', 'error')
+        else:
+            logger.warning(f"Tenant {tenant_id} not found during payment failure cleanup")
+            flash('Payment failed.', 'error')
+
+        return redirect(url_for('unified_register'))
+
+    except Exception as e:
+        db.session.rollback()
+        error_tracker.log_error(e, {
+            'tenant_id': tenant_id,
+            'transaction_id': transaction_id,
+            'function': 'handle_unified_payment_fail'
+        })
+        flash('Error processing payment failure. Please contact support.', 'error')
+        return redirect(url_for('unified_register'))
+
+
+# Add these routes to your register_billing_routes function in billing.py
+
+def register_unified_billing_routes(app):
+    """Register unified registration billing routes"""
+    
+    @app.route('/billing/unified/<int:tenant_id>/success', methods=['GET', 'POST'])
+    @track_errors('unified_payment_success_route')
+    def unified_payment_success(tenant_id):
+        logger.debug(f"Unified Success Callback Received:\n"
+                     f"  Query Params: {json.dumps(request.args.to_dict(), indent=2)}\n"
+                     f"  Form Data: {json.dumps(request.form.to_dict(), indent=2)}")
+        
+        transaction_id = request.form.get('tran_id') or request.form.get('value_d')
+        validation_id = request.form.get('val_id')
+        logger.debug(f"Extracted Parameters: transaction_id={transaction_id}, validation_id={validation_id}")
+
+        if not validation_id:
+            logger.error(f"No validation ID in query params for unified registration: {request.args.to_dict()}")
+            flash('Invalid payment validation. Please contact support.', 'error')
+            return redirect(url_for('unified_register'))
+
+        if not transaction_id:
+            transaction = PaymentTransaction.query.filter_by(
+                tenant_id=tenant_id,
+                status='PENDING'
+            ).order_by(PaymentTransaction.created_at.desc()).first()
+            if transaction:
+                transaction_id = transaction.transaction_id
+                logger.info(f"Fallback: Using latest pending transaction {transaction_id} for tenant {tenant_id}")
+            else:
+                logger.error(f"No transaction ID and no pending transaction for tenant {tenant_id}")
+                flash('Invalid transaction. Please contact support.', 'error')
+                return redirect(url_for('unified_register'))
+
+        return BillingService.handle_unified_payment_success(tenant_id, transaction_id, validation_id)
+
+    @app.route('/billing/unified/<int:tenant_id>/fail', methods=['GET', 'POST'])
+    @track_errors('unified_payment_fail_route')
+    def unified_payment_fail(tenant_id):
+        logger.debug(f"Unified Fail Callback Received:\n"
+                     f"  Query Params: {json.dumps(request.args.to_dict(), indent=2)}\n"
+                     f"  Form Data: {json.dumps(request.form.to_dict(), indent=2)}")
+        
+        transaction_id = (request.args.get('tran_id') or 
+                         request.args.get('value_d') or 
+                         request.form.get('tran_id') or 
+                         request.form.get('value_d'))
+        
+        logger.debug(f"Extracted Parameter: transaction_id={transaction_id}")
+
+        if not transaction_id:
+            logger.error(f"No transaction ID in unified payment fail callback")
+            # Try to find and clean up pending tenant anyway
+            try:
+                tenant = Tenant.query.get(tenant_id)
+                if tenant and tenant.status == 'pending':
+                    logger.warning(f"Cleaning up pending tenant {tenant_id} even without transaction_id")
+                    return BillingService.handle_unified_payment_fail(tenant_id, None)
+            except Exception as e:
+                logger.error(f"Error in unified payment fail fallback cleanup: {e}")
+            
+            flash('Payment failed. Please try again.', 'error')
+            return redirect(url_for('unified_register'))
+        
+        return BillingService.handle_unified_payment_fail(tenant_id, transaction_id)
+
+    @app.route('/billing/unified/<int:tenant_id>/cancel', methods=['GET', 'POST'])
+    @track_errors('unified_payment_cancel_route')
+    def unified_payment_cancel(tenant_id):
+        logger.debug(f"Unified Cancel Callback Received:\n"
+                     f"  Query Params: {json.dumps(request.args.to_dict(), indent=2)}\n"
+                     f"  Form Data: {json.dumps(request.form.to_dict(), indent=2)}")
+        transaction_id = request.args.get('tran_id') or request.args.get('value_d')
+        logger.debug(f"Extracted Parameter: transaction_id={transaction_id}")
+
+        if not transaction_id:
+            logger.error(f"No transaction ID in unified payment cancel callback")
+            flash('Payment was cancelled.', 'warning')
+            return redirect(url_for('unified_register'))
+        
+        # Handle cancellation similar to failure for unified registration
+        return BillingService.handle_unified_payment_fail(tenant_id, transaction_id)
+
+
+# Enhanced payment initiation for unified registration
+@staticmethod
+@track_errors('initiate_unified_payment')
+def initiate_unified_payment(tenant_id, user_id, plan):
+    """Initiate payment specifically for unified registration flow"""
+    try:
+        tenant = Tenant.query.get_or_404(tenant_id)
+        user = SaasUser.query.get_or_404(user_id)
+
+        if tenant.status != 'pending':
+            raise ValueError(f"Tenant {tenant.subdomain} is not in pending status")
+
+        plan_obj = SubscriptionPlan.query.filter_by(name=plan, is_active=True).first()
+        if not plan_obj:
+            raise ValueError(f"Invalid or inactive plan: {plan}")
+        amount = plan_obj.price
+
+        transaction_id = f"UNIFIED-{uuid.uuid4().hex[:16]}"
+        domain = os.environ.get('DOMAIN', 'localhost:8000')
+        
+        # Use unified-specific URLs
+        success_url = f"http://{domain}{url_for('unified_payment_success', tenant_id=tenant_id)}"
+        fail_url = f"http://{domain}{url_for('unified_payment_fail', tenant_id=tenant_id)}"
+        cancel_url = f"http://{domain}{url_for('unified_payment_cancel', tenant_id=tenant_id)}"
+        ipn_url = f"http://{domain}/billing/ipn"
+
+        # Prepare SSLCommerz payment request
+        payload = {
+            'store_id': SSLCOMMERZ_STORE_ID,
+            'store_passwd': SSLCOMMERZ_STORE_PASSWORD,
+            'total_amount': str(Decimal(str(amount))),
+            'currency': 'BDT',
+            'tran_id': transaction_id,
+            'success_url': success_url,
+            'fail_url': fail_url,
+            'cancel_url': cancel_url,
+            'ipn_url': ipn_url,
+            'emi_option': 0,
+            'cus_name': user.full_name or user.username,
+            'cus_email': user.email,
+            'cus_add1': user.company or 'Bangladesh',
+            'cus_add2': '',
+            'cus_city': 'N/A',
+            'cus_postcode': 'N/A',
+            'cus_country': 'Bangladesh',
+            'cus_phone': 'N/A',
+            'shipping_method': 'NO',
+            'product_name': f"{plan} Plan - {tenant.name}",
+            'product_category': 'SaaS-Registration',
+            'product_profile': 'general',
+            'num_of_item': 1,
+            'value_a': str(tenant_id),  # Store tenant_id for IPN
+            'value_b': str(user_id),
+            'value_c': plan,
+            'value_d': transaction_id
+        }
+
+        logger.info(f"Initiating unified payment for tenant {tenant_id}, transaction {transaction_id}")
+        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+        BillingService._log_sslcommerz_request('POST', SSLCOMMERZ_SESSION_API, headers, payload)
+
+        response = requests.post(SSLCOMMERZ_SESSION_API, data=payload, headers=headers, timeout=30)
+        BillingService._log_sslcommerz_response(response)
+        response_data = response.json()
+
+        if response.status_code != 200 or response_data.get('status') != 'SUCCESS':
+            logger.error(f"Unified payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
+            raise Exception(f"Payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
+
+        # Store transaction in database
+        transaction = PaymentTransaction(
+            transaction_id=transaction_id,
+            validation_id=response_data.get('val_id'),
+            tenant_id=tenant_id,
+            user_id=user_id,
+            amount=amount,
+            status='PENDING',
+            response_data=str(response_data)[:2000]
+        )
+        db.session.add(transaction)
+        db.session.commit()
+
+        logger.info(f"Unified payment initiated successfully for transaction {transaction_id}, val_id={response_data.get('val_id')}")
+        return response_data.get('GatewayPageURL')
+
+    except Exception as e:
+        db.session.rollback()
+        error_tracker.log_error(e, {
+            'tenant_id': tenant_id,
+            'user_id': user_id,
+            'plan': plan,
+            'function': 'initiate_unified_payment'
+        })
+        raise
+        
 
 class BillingService:
     """Service class to handle billing and payment operations with SSLCommerz"""

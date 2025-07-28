@@ -389,11 +389,14 @@
                         <i class="fas fa-download me-2"></i>Create Backup
                     </button>
                 </form>
-                
-                <button class="btn btn-outline-secondary w-100 db-action-btn" data-bs-toggle="modal" data-bs-target="#settingsModal" style="border-radius: 12px; padding: 1rem; font-weight: 500;">
-                    <i class="fas fa-cog me-2"></i>Settings
+
+                <button class="btn btn-outline-success w-100 db-action-btn" 
+                        data-bs-toggle="modal" 
+                        data-bs-target="#restoreModal" 
+                        style="border-radius: 12px; padding: 1rem; font-weight: 500;">
+                    <i class="fas fa-upload me-2"></i>Restore Backup
                 </button>
-                
+                                
                 {% if current_user.is_admin %}
                 <form method="POST" action="{{ url_for('delete_tenant', tenant_id=tenant.id) }}" onsubmit="return confirm('Are you sure you want to delete this tenant? This action cannot be undone.')">
                     <button type="submit" class="btn btn-outline-danger w-100 db-action-btn" style="border-radius: 12px; padding: 1rem; font-weight: 500;">
@@ -567,6 +570,149 @@
     </div>
 </div>
 
+<!-- Restore Modal -->
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+            <!-- Enhanced Header with Gradient -->
+            <div class="modal-header border-0" style="background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%); padding: 2rem;">
+                <div class="d-flex align-items-center w-100">
+                    <div class="p-3 rounded-circle me-3" style="background: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-upload text-white fa-lg"></i>
+                    </div>
+                    <div>
+                        <h4 class="modal-title text-white fw-bold mb-1" id="restoreModalLabel">
+                            Restore Database
+                        </h4>
+                        <p class="mb-0" style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
+                            Upload and restore from a backup file
+                        </p>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <!-- Modal Body with Enhanced Design -->
+            <div class="modal-body p-4">
+                <form method="POST" action="{{ url_for('restore_tenant', tenant_id=tenant.id) }}" enctype="multipart/form-data" id="restoreForm">
+                    
+                    <!-- Warning Alert with Enhanced Design -->
+                    <div class="alert alert-warning border-0 mb-4" style="border-radius: 12px; border-left: 4px solid var(--warning) !important; background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);">
+                        <div class="d-flex align-items-start">
+                            <div class="p-2 rounded-circle me-3" style="background: rgba(255, 193, 7, 0.2);">
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-2" style="color: var(--warning-dark);">Important Notice</h6>
+                                <p class="mb-2" style="color: var(--warning-dark); font-size: 0.9rem;">
+                                    This will <strong>completely replace</strong> your current database with the backup data.
+                                </p>
+                                <ul class="mb-0" style="color: var(--warning-dark); font-size: 0.85rem;">
+                                    <li>All current data will be permanently lost</li>
+                                    <li>Active user sessions will be terminated</li>
+                                    <li>This action cannot be undone</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- File Upload Section with Enhanced Design -->
+                    <div class="mb-4">
+                        <label for="backupFile" class="form-label fw-semibold mb-3">
+                            <i class="fas fa-file-archive text-success me-2"></i>
+                            Select Backup File
+                        </label>
+                        
+                        <!-- Custom File Upload Area -->
+                        <div class="file-upload-area" 
+                             style="border: 2px dashed var(--border-primary); 
+                                    border-radius: 12px; 
+                                    padding: 2rem; 
+                                    text-align: center; 
+                                    background: linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%);
+                                    transition: all 0.3s ease;
+                                    cursor: pointer;"
+                             onclick="document.getElementById('backupFile').click()"
+                             onmouseover="this.style.borderColor='var(--success)'; this.style.transform='translateY(-2px)'; this.style.boxShadow='var(--shadow-md)'"
+                             onmouseout="this.style.borderColor='var(--border-primary)'; this.style.transform='translateY(0)'; this.style.boxShadow='none'">
+                            
+                            <div class="mb-3">
+                                <div class="p-3 rounded-circle d-inline-flex" style="background: rgba(40, 167, 69, 0.1); color: var(--success);">
+                                    <i class="fas fa-cloud-upload-alt fa-2x"></i>
+                                </div>
+                            </div>
+                            
+                            <h6 class="fw-semibold mb-2" style="color: var(--text-primary);">
+                                Drop your backup file here or click to browse
+                            </h6>
+                            
+                            <p class="mb-2" style="color: var(--text-muted); font-size: 0.9rem;">
+                                Supports ZIP backup files only
+                            </p>
+                            
+                            <div class="file-name-display" style="display: none; margin-top: 1rem;">
+                                <div class="d-inline-flex align-items-center px-3 py-2 rounded-pill" 
+                                     style="background: var(--success); color: white; font-size: 0.85rem;">
+                                    <i class="fas fa-file-archive me-2"></i>
+                                    <span class="file-name"></span>
+                                    <i class="fas fa-check-circle ms-2"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden File Input -->
+                        <input type="file" 
+                               class="form-control d-none" 
+                               id="backupFile" 
+                               name="backup_file" 
+                               accept=".zip" 
+                               required>
+                    </div>
+
+                    <!-- Confirmation Checkbox with Enhanced Design -->
+                    <div class="mb-4">
+                        <div class="p-3 rounded-3" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border: 1px solid var(--border-primary);">
+                            <div class="form-check d-flex align-items-center">
+                                <input class="form-check-input me-3" 
+                                       type="checkbox" 
+                                       id="confirmRestore" 
+                                       required
+                                       style="transform: scale(1.2);">
+                                <label class="form-check-label fw-semibold" for="confirmRestore" style="color: var(--text-primary);">
+                                    <i class="fas fa-shield-alt text-danger me-2"></i>
+                                    I understand that this will permanently replace all current data
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Enhanced Footer with Action Buttons -->
+            <div class="modal-footer border-0 p-4" style="background: var(--bg-tertiary);">
+                <div class="d-flex gap-3 w-100">
+                    <button type="button" 
+                            class="btn btn-outline-secondary flex-fill" 
+                            data-bs-dismiss="modal"
+                            style="border-radius: 10px; padding: 0.75rem; font-weight: 500;">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    
+                    <button type="button" 
+                            class="btn btn-success flex-fill" 
+                            id="confirmRestoreBtn"
+                            disabled
+                            onclick="submitRestoreForm()"
+                            style="border-radius: 10px; padding: 0.75rem; font-weight: 500;">
+                        <i class="fas fa-upload me-2"></i>
+                        <span class="btn-text">Restore Database</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endif %}
 {% endblock %}
 
@@ -721,5 +867,84 @@ document.addEventListener('DOMContentLoaded', function() {
         populateApps(`/api/tenant/${tenantId}/apps/installed`, 'installedAppsList');
     });
 });
+
+
+
+
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('backupFile');
+    const confirmCheckbox = document.getElementById('confirmRestore');
+    const restoreBtn = document.getElementById('confirmRestoreBtn');
+    const fileNameDisplay = document.querySelector('.file-name-display');
+    const fileName = document.querySelector('.file-name');
+    const uploadArea = document.querySelector('.file-upload-area');
+    
+    // File selection handler
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const file = this.files[0];
+            fileName.textContent = file.name;
+            fileNameDisplay.style.display = 'block';
+            uploadArea.style.borderColor = 'var(--success)';
+            uploadArea.style.background = 'linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%)';
+            checkFormValidity();
+        }
+    });
+    
+    // Drag and drop functionality
+    uploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        this.style.borderColor = 'var(--success)';
+        this.style.background = 'linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%)';
+    });
+    
+    uploadArea.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        this.style.borderColor = 'var(--border-primary)';
+        this.style.background = 'linear-gradient(135deg, var(--bg-tertiary) 0%, var(--bg-secondary) 100%)';
+    });
+    
+    uploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].name.endsWith('.zip')) {
+            fileInput.files = files;
+            fileInput.dispatchEvent(new Event('change'));
+        }
+    });
+    
+    // Checkbox handler
+    confirmCheckbox.addEventListener('change', checkFormValidity);
+    
+    function checkFormValidity() {
+        const hasFile = fileInput.files && fileInput.files[0];
+        const isConfirmed = confirmCheckbox.checked;
+        
+        restoreBtn.disabled = !(hasFile && isConfirmed);
+        
+        if (hasFile && isConfirmed) {
+            restoreBtn.classList.remove('btn-outline-success');
+            restoreBtn.classList.add('btn-success');
+        } else {
+            restoreBtn.classList.remove('btn-success');
+            restoreBtn.classList.add('btn-outline-success');
+        }
+    }
+});
+
+function submitRestoreForm() {
+    const btn = document.getElementById('confirmRestoreBtn');
+    const btnText = btn.querySelector('.btn-text');
+    
+    // Add loading state
+    btn.disabled = true;
+    btnText.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Restoring...';
+    
+    // Submit form
+    document.getElementById('restoreForm').submit();
+}
+
+
+
 </script>
 {% endblock %}
