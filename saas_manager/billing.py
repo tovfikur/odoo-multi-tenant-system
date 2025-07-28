@@ -325,104 +325,103 @@ def register_unified_billing_routes(app, csrf=None):
         return BillingService.handle_unified_payment_fail(tenant_id, transaction_id)
 
 
-# Enhanced payment initiation for unified registration
-@staticmethod
-@track_errors('initiate_unified_payment')
-def initiate_unified_payment(tenant_id, user_id, plan):
-    """Initiate payment specifically for unified registration flow"""
-    try:
-        tenant = Tenant.query.get_or_404(tenant_id)
-        user = SaasUser.query.get_or_404(user_id)
-
-        if tenant.status != 'pending':
-            raise ValueError(f"Tenant {tenant.subdomain} is not in pending status")
-
-        plan_obj = SubscriptionPlan.query.filter_by(name=plan, is_active=True).first()
-        if not plan_obj:
-            raise ValueError(f"Invalid or inactive plan: {plan}")
-        amount = plan_obj.price
-
-        transaction_id = f"UNIFIED-{uuid.uuid4().hex[:16]}"
-        domain = os.environ.get('DOMAIN', 'khudroo.com')
-        
-        # Use unified-specific URLs
-        success_url = f"https://{domain}{url_for('unified_payment_success', tenant_id=tenant_id)}"
-        fail_url = f"https://{domain}{url_for('unified_payment_fail', tenant_id=tenant_id)}"
-        cancel_url = f"https://{domain}{url_for('unified_payment_cancel', tenant_id=tenant_id)}"
-        ipn_url = f"https://{domain}/billing/ipn"
-
-        # Prepare SSLCommerz payment request
-        payload = {
-            'store_id': SSLCOMMERZ_STORE_ID,
-            'store_passwd': SSLCOMMERZ_STORE_PASSWORD,
-            'total_amount': str(Decimal(str(amount))),
-            'currency': 'BDT',
-            'tran_id': transaction_id,
-            'success_url': success_url,
-            'fail_url': fail_url,
-            'cancel_url': cancel_url,
-            'ipn_url': ipn_url,
-            'emi_option': 0,
-            'cus_name': user.full_name or user.username,
-            'cus_email': user.email,
-            'cus_add1': user.company or 'Bangladesh',
-            'cus_add2': '',
-            'cus_city': 'N/A',
-            'cus_postcode': 'N/A',
-            'cus_country': 'Bangladesh',
-            'cus_phone': 'N/A',
-            'shipping_method': 'NO',
-            'product_name': f"{plan} Plan - {tenant.name}",
-            'product_category': 'SaaS-Registration',
-            'product_profile': 'general',
-            'num_of_item': 1,
-            'value_a': str(tenant_id),  # Store tenant_id for IPN
-            'value_b': str(user_id),
-            'value_c': plan,
-            'value_d': transaction_id
-        }
-
-        logger.info(f"Initiating unified payment for tenant {tenant_id}, transaction {transaction_id}")
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        BillingService._log_sslcommerz_request('POST', SSLCOMMERZ_SESSION_API, headers, payload)
-
-        response = requests.post(SSLCOMMERZ_SESSION_API, data=payload, headers=headers, timeout=30)
-        BillingService._log_sslcommerz_response(response)
-        response_data = response.json()
-
-        if response.status_code != 200 or response_data.get('status') != 'SUCCESS':
-            logger.error(f"Unified payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
-            raise Exception(f"Payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
-
-        # Store transaction in database
-        transaction = PaymentTransaction(
-            transaction_id=transaction_id,
-            validation_id=response_data.get('val_id'),
-            tenant_id=tenant_id,
-            user_id=user_id,
-            amount=amount,
-            status='PENDING',
-            response_data=str(response_data)[:2000]
-        )
-        db.session.add(transaction)
-        db.session.commit()
-
-        logger.info(f"Unified payment initiated successfully for transaction {transaction_id}, val_id={response_data.get('val_id')}")
-        return response_data.get('GatewayPageURL')
-
-    except Exception as e:
-        db.session.rollback()
-        error_tracker.log_error(e, {
-            'tenant_id': tenant_id,
-            'user_id': user_id,
-            'plan': plan,
-            'function': 'initiate_unified_payment'
-        })
-        raise
-        
-
 class BillingService:
     """Service class to handle billing and payment operations with SSLCommerz"""
+
+    # Enhanced payment initiation for unified registration
+    @staticmethod
+    @track_errors('initiate_unified_payment')
+    def initiate_unified_payment(tenant_id, user_id, plan):
+        """Initiate payment specifically for unified registration flow"""
+        try:
+            tenant = Tenant.query.get_or_404(tenant_id)
+            user = SaasUser.query.get_or_404(user_id)
+
+            if tenant.status != 'pending':
+                raise ValueError(f"Tenant {tenant.subdomain} is not in pending status")
+
+            plan_obj = SubscriptionPlan.query.filter_by(name=plan, is_active=True).first()
+            if not plan_obj:
+                raise ValueError(f"Invalid or inactive plan: {plan}")
+            amount = plan_obj.price
+
+            transaction_id = f"UNIFIED-{uuid.uuid4().hex[:16]}"
+            domain = os.environ.get('DOMAIN', 'khudroo.com')
+            
+            # Use unified-specific URLs
+            success_url = f"https://{domain}{url_for('unified_payment_success', tenant_id=tenant_id)}"
+            fail_url = f"https://{domain}{url_for('unified_payment_fail', tenant_id=tenant_id)}"
+            cancel_url = f"https://{domain}{url_for('unified_payment_cancel', tenant_id=tenant_id)}"
+            ipn_url = f"https://{domain}/billing/ipn"
+
+            # Prepare SSLCommerz payment request
+            payload = {
+                'store_id': SSLCOMMERZ_STORE_ID,
+                'store_passwd': SSLCOMMERZ_STORE_PASSWORD,
+                'total_amount': str(Decimal(str(amount))),
+                'currency': 'BDT',
+                'tran_id': transaction_id,
+                'success_url': success_url,
+                'fail_url': fail_url,
+                'cancel_url': cancel_url,
+                'ipn_url': ipn_url,
+                'emi_option': 0,
+                'cus_name': user.full_name or user.username,
+                'cus_email': user.email,
+                'cus_add1': user.company or 'Bangladesh',
+                'cus_add2': '',
+                'cus_city': 'N/A',
+                'cus_postcode': 'N/A',
+                'cus_country': 'Bangladesh',
+                'cus_phone': 'N/A',
+                'shipping_method': 'NO',
+                'product_name': f"{plan} Plan - {tenant.name}",
+                'product_category': 'SaaS-Registration',
+                'product_profile': 'general',
+                'num_of_item': 1,
+                'value_a': str(tenant_id),  # Store tenant_id for IPN
+                'value_b': str(user_id),
+                'value_c': plan,
+                'value_d': transaction_id
+            }
+
+            logger.info(f"Initiating unified payment for tenant {tenant_id}, transaction {transaction_id}")
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            BillingService._log_sslcommerz_request('POST', SSLCOMMERZ_SESSION_API, headers, payload)
+
+            response = requests.post(SSLCOMMERZ_SESSION_API, data=payload, headers=headers, timeout=30)
+            BillingService._log_sslcommerz_response(response)
+            response_data = response.json()
+
+            if response.status_code != 200 or response_data.get('status') != 'SUCCESS':
+                logger.error(f"Unified payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
+                raise Exception(f"Payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
+
+            # Store transaction in database
+            transaction = PaymentTransaction(
+                transaction_id=transaction_id,
+                validation_id=response_data.get('val_id'),
+                tenant_id=tenant_id,
+                user_id=user_id,
+                amount=amount,
+                status='PENDING',
+                response_data=str(response_data)[:2000]
+            )
+            db.session.add(transaction)
+            db.session.commit()
+
+            logger.info(f"Unified payment initiated successfully for transaction {transaction_id}, val_id={response_data.get('val_id')}")
+            return response_data.get('GatewayPageURL')
+
+        except Exception as e:
+            db.session.rollback()
+            error_tracker.log_error(e, {
+                'tenant_id': tenant_id,
+                'user_id': user_id,
+                'plan': plan,
+                'function': 'initiate_unified_payment'
+            })
+            raise
 
     @staticmethod
     def _log_sslcommerz_request(method, url, headers, payload=None):

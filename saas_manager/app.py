@@ -2010,7 +2010,7 @@ def unified_register():
             # Step 9: Initiate payment using enhanced billing
             try:
                 # Import the enhanced billing service
-                from billing import BillingService
+                from .billing import BillingService
                 
                 payment_url = BillingService.initiate_unified_payment(
                     tenant_id=tenant.id, 
@@ -2026,15 +2026,25 @@ def unified_register():
                 return redirect(payment_url)
                 
             except Exception as payment_error:
-                # If payment initiation fails, clean up
-                db.session.rollback()
+                # If payment initiation fails, clean up properly
+                try:
+                    # Remove the created tenant and user
+                    TenantUser.query.filter_by(tenant_id=tenant.id, user_id=user.id).delete()
+                    worker.current_tenants -= 1
+                    db.session.delete(tenant)
+                    db.session.delete(user)
+                    db.session.commit()
+                except Exception as cleanup_error:
+                    logger.error(f"Failed to cleanup after payment error: {cleanup_error}")
+                    db.session.rollback()
+                
                 error_tracker.log_error(payment_error, {
                     'user_email': form.email.data,
                     'subdomain': form.subdomain.data,
                     'plan': form.selected_plan.data,
                     'function': 'initiate_unified_payment'
                 })
-                flash('Registration completed, but payment system is temporarily unavailable. Please try again.', 'error')
+                flash('Registration failed during payment setup. Please try again.', 'error')
                 return render_template('unified_register.html', form=form, plans=plans_data, status=status)
             
         except Exception as e:
