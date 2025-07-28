@@ -1,15 +1,21 @@
 # log_transfer_api/models/log_transfer.py
+
+# Standard library imports
 import json
 import logging
-import threading
-import time
 import os
 import re
+import threading
+import time
 from datetime import datetime, timedelta
-from odoo import models, fields, api, http
-from odoo.http import request
+
+# Third-party imports
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+# Odoo imports
+from odoo import models, fields, api, http
+from odoo.http import request
 
 _logger = logging.getLogger(__name__)
 

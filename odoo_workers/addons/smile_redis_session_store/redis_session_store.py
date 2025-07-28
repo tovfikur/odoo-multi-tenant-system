@@ -4,8 +4,10 @@
 
 # Inspired by aek's Gist (<https://gist.github.com/aek/efb0f9dd8935471f9070>).
 
+# Standard library imports
 import sys
 
+# Odoo imports
 from odoo import http, tools
 from odoo.tools import lazy_property
 

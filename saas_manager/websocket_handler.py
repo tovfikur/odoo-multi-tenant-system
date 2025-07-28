@@ -1,12 +1,16 @@
 # websocket_handler.py
+
+# Standard library imports
 import json
 import logging
-from datetime import datetime
-from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
-from flask_login import current_user
-from flask import request
-import redis
 import threading
+from datetime import datetime
+
+# Third-party imports
+import redis
+from flask import request
+from flask_login import current_user
+from flask_socketio import SocketIO, emit, join_room, leave_room, disconnect
 
 logger = logging.getLogger(__name__)
 

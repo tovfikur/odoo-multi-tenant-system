@@ -1,22 +1,26 @@
+# Standard library imports
+import json
+import logging
+import os
+import subprocess
+from datetime import datetime, timedelta
+
+# Third-party imports
+import docker
+import psutil
+import psycopg2
+import redis
+import requests
 from flask import Blueprint, render_template, jsonify, request, redirect, url_for
 from flask_login import login_required, current_user
-from datetime import datetime, timedelta
-import os
-import json
-import docker
-import redis
-import psutil
-import subprocess
-import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import requests
 from sqlalchemy import text, func
-import logging
 
-from models import SaasUser, Tenant, WorkerInstance, AuditLog
+# Local application imports
 from db import db
-from utils import track_errors, error_tracker
+from models import SaasUser, Tenant, WorkerInstance, AuditLog
 from OdooDatabaseManager import OdooDatabaseManager
+from utils import track_errors, error_tracker
 
 system_admin_bp = Blueprint('system_admin', __name__, url_prefix='/system-admin')
 

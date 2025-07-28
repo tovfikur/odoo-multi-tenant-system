@@ -1,15 +1,19 @@
 # utils.py
+
+# Standard library imports
+import inspect
 import logging
+import random
 import secrets
 import string
 import sys
+import time
 import traceback
-import inspect
 from datetime import datetime
 from functools import wraps
+
+# Third-party imports
 from werkzeug.routing import BuildError
-import time
-import random
 
 class ErrorTracker:
     def __init__(self, logger):

@@ -1,10 +1,16 @@
 # cache_manager.py
+
+# Standard library imports
 import json
 import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Any
+
+# Third-party imports
 import redis
 from flask import current_app
+
+# Local application imports
 from models import Tenant, TenantUser, SaasUser, WorkerInstance
 
 logger = logging.getLogger(__name__)

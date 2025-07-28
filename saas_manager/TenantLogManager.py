@@ -1,11 +1,14 @@
+# Standard library imports
+import logging
 import re
-import docker
-import psycopg2
-from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Generator
 import threading
 from collections import defaultdict, deque
-import logging
+from datetime import datetime, timedelta
+from typing import List, Dict, Optional, Generator
+
+# Third-party imports
+import docker
+import psycopg2
 
 # Set up logging
 logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')

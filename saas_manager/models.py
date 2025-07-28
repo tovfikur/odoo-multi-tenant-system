@@ -1,5 +1,10 @@
+# Standard library imports
 from datetime import datetime
+
+# Third-party imports
 from flask_login import UserMixin
+
+# Local application imports
 from db import db
 
 class SaasUser(db.Model, UserMixin):

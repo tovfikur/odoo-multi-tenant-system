@@ -4,56 +4,56 @@ Odoo SaaS Management Application with Enhanced Error Tracking and Redis Integrat
 Main Flask application for managing Odoo tenants
 """
 
-import os
-import logging
-import sys
-import traceback
+# Standard library imports
+import asyncio
+import base64
+import bcrypt
+import hashlib
 import inspect
-from datetime import datetime, timedelta
-from functools import wraps
+import json
+import logging
+import os
+import re
 import secrets
 import string
+import sys
+import traceback
 import xmlrpc.client
-import requests
-import docker
-import redis
-import bcrypt
-import json
-import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response, send_file
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
-from flask_wtf import FlaskForm
-from flask_wtf.csrf import CSRFProtect
-from flask_socketio import SocketIO, emit, join_room, leave_room
-from flask_session import Session
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from wtforms import StringField, PasswordField, SelectField, IntegerField, BooleanField, HiddenField
-from wtforms.validators import DataRequired, Length, NumberRange, ValidationError
-import re
-from werkzeug.security import generate_password_hash, check_password_hash
-from sqlalchemy import text
+from datetime import datetime, timedelta
+from functools import wraps
+
+# Third-party imports
+import docker
 import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import base64
+import redis
+import requests
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
-from cryptography.exceptions import InvalidSignature
-import hashlib
-from factory import create_app, init_db
-from utils import error_tracker, logger, track_errors
-from db import db
-from models import SaasUser, Tenant, TenantUser, SubscriptionPlan, WorkerInstance, UserPublicKey, CredentialAccess, Report, AuditLog, PaymentTransaction
-from cache_manager import get_cached_user_tenants, get_cached_admin_stats, invalidate_tenant_cache, invalidate_user_cache, create_cache_manager
-from websocket_handler import WebSocketManager, setup_websocket_handlers, UpdateTrigger
-
-from wtforms import StringField, PasswordField, TextAreaField, SelectField
-from wtforms.validators import Email, EqualTo, Optional
-import os
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session, make_response, send_file
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
+from flask_session import Session
+from flask_socketio import SocketIO, emit, join_room, leave_room
+from flask_wtf import FlaskForm
+from flask_wtf.csrf import CSRFProtect
 from PIL import Image
-import secrets
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+from sqlalchemy import text
+from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
+from wtforms import StringField, PasswordField, SelectField, IntegerField, BooleanField, HiddenField, TextAreaField
+from wtforms.validators import DataRequired, Length, NumberRange, ValidationError, Email, EqualTo, Optional
+
+# Local application imports
+from cache_manager import get_cached_user_tenants, get_cached_admin_stats, invalidate_tenant_cache, invalidate_user_cache, create_cache_manager
+from db import db
+from factory import create_app, init_db
+from models import SaasUser, Tenant, TenantUser, SubscriptionPlan, WorkerInstance, UserPublicKey, CredentialAccess, Report, AuditLog, PaymentTransaction
+from utils import error_tracker, logger, track_errors
+from websocket_handler import WebSocketManager, setup_websocket_handlers, UpdateTrigger
 
 try:
     from .infra_admin import infra_admin_bp
@@ -85,11 +85,6 @@ try:
 except ImportError:
     from support import support_bp
 
-try:
-    from .support_admin import support_admin_bp
-except ImportError:
-    from support_admin import support_admin_bp
-    
 try:
     from .support_admin import support_admin_bp
 except ImportError:

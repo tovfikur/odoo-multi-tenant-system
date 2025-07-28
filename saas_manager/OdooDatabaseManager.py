@@ -1,10 +1,13 @@
-import os
-import xmlrpc.client
-import requests
-import psycopg2
-import docker
-import subprocess
+# Standard library imports
 import json
+import os
+import subprocess
+import xmlrpc.client
+
+# Third-party imports
+import docker
+import psycopg2
+import requests
 from tabulate import tabulate
 
 class OdooDatabaseManager:

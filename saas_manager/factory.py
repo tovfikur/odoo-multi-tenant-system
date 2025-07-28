@@ -1,14 +1,20 @@
 # factory.py
+
+# Standard library imports
 import os
+
+# Third-party imports
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_moment import Moment
-from db import db  # Import db from db.py
-from utils import error_tracker
-from models import SaasUser  # Assuming SaasUser is defined in models.py
-from billing import register_billing_routes
+from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+
+# Local application imports
+from billing import register_billing_routes
+from db import db
+from models import SaasUser
+from utils import error_tracker
 
 def create_app():
     app = Flask(__name__)
