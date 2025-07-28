@@ -118,8 +118,13 @@ create_directories() {
     sudo chmod 755 "$SYSTEM_SSL_DIR"
     
     # Create Docker SSL directory
-    mkdir -p "$DOCKER_SSL_DIR"
-    chmod 755 "$DOCKER_SSL_DIR"
+    if [[ ! -d "$DOCKER_SSL_DIR" ]]; then
+        mkdir -p "$DOCKER_SSL_DIR"
+    fi
+    # Only chmod if we can write to it
+    if [[ -w "$DOCKER_SSL_DIR" ]] || mkdir -p "$DOCKER_SSL_DIR" 2>/dev/null; then
+        chmod 755 "$DOCKER_SSL_DIR" 2>/dev/null || echo "Warning: Could not set permissions on $DOCKER_SSL_DIR"
+    fi
     
     echo -e "${GREEN}✓ SSL directories created${NC}"
     echo -e "${BLUE}  System: $SYSTEM_SSL_DIR${NC}"
