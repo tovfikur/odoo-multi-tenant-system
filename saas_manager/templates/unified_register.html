@@ -226,6 +226,7 @@
 
           <!-- Registration Form -->
           <form method="POST" id="registrationForm">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             {{ form.hidden_tag() }}
 
             <!-- Step 1: User Information -->

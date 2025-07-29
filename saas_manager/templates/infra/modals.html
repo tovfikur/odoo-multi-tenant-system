@@ -14,6 +14,7 @@
       </div>
       <div class="modal-body">
         <form id="addServerForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="row">
             <div class="col-md-6">
               <div class="mb-3">
@@ -181,6 +182,7 @@
       </div>
       <div class="modal-body">
         <form id="addDomainForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="mb-3">
             <label for="customDomain" class="form-label">Custom Domain</label>
             <input
@@ -256,6 +258,7 @@
       </div>
       <div class="modal-body">
         <form id="createDeploymentForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           <div class="mb-3">
             <label for="deploymentType" class="form-label"
               >Deployment Type</label

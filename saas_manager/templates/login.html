@@ -64,6 +64,7 @@
 
           <!-- Login Form -->
           <form method="POST" id="login-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             {{ form.hidden_tag() }}
 
             <!-- Username -->

@@ -129,6 +129,15 @@ def csrf_token():
     from flask_wtf.csrf import generate_csrf
     return generate_csrf()
 
+# CSRF error handler
+@app.errorhandler(400)
+def csrf_error(reason):
+    """Handle CSRF token errors"""
+    if str(reason).startswith('400 Bad Request: The CSRF token'):
+        flash('Security token expired. Please try again.', 'error')
+        return redirect(request.referrer or url_for('index'))
+    return reason
+
 # Initialize Odoo manager and other services
 odoo = OdooDatabaseManager(odoo_url="http://odoo_master:8069", master_pwd=os.environ.get('ODOO_MASTER_PASSWORD', 'admin123'))
 print(f"Using Odoo URL: {odoo.odoo_url}")

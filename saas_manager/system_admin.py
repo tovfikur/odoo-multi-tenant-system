@@ -21,7 +21,6 @@ from db import db
 from models import SaasUser, Tenant, WorkerInstance, AuditLog
 from OdooDatabaseManager import OdooDatabaseManager
 from utils import track_errors, error_tracker
-
 system_admin_bp = Blueprint('system_admin', __name__, url_prefix='/system-admin')
 
 # Initialize connections

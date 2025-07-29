@@ -262,12 +262,21 @@
 
     async deleteAvatarRequest() {
       try {
+        const headers = {
+          "Content-Type": "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        };
+        
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                         document.querySelector('input[name="csrf_token"]')?.value;
+        if (csrfToken) {
+          headers['X-CSRFToken'] = csrfToken;
+        }
+
         const response = await fetch("/api/profile/delete-avatar", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-          },
+          headers,
         });
 
         const result = await response.json();
@@ -554,12 +563,21 @@
       const formData = new FormData();
       formData.append("avatar", file);
 
+      const headers = {
+        "X-Requested-With": "XMLHttpRequest",
+      };
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                       document.querySelector('input[name="csrf_token"]')?.value;
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
       const response = await fetch("/api/profile/upload-avatar", {
         method: "POST",
         body: formData,
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
+        headers,
       });
 
       const result = await response.json();

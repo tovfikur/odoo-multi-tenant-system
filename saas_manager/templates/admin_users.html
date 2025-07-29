@@ -507,6 +507,7 @@ endblock %} {% block content %}
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'X-CSRFToken': '{{ csrf_token() }}',
         },
       })
         .then((response) => response.json())
@@ -534,6 +535,7 @@ endblock %} {% block content %}
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'X-CSRFToken': '{{ csrf_token() }}',
         },
       })
         .then((response) => response.json())
@@ -561,6 +563,7 @@ endblock %} {% block content %}
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'X-CSRFToken': '{{ csrf_token() }}',
         },
       })
         .then((response) => response.json())
@@ -624,6 +627,7 @@ endblock %} {% block content %}
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          'X-CSRFToken': '{{ csrf_token() }}',
         },
         body: JSON.stringify(formData),
       })

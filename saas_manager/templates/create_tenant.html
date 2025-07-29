@@ -64,6 +64,7 @@
     <div class="card shadow-lg border-0" style="border-radius: 16px;">
       <div class="card-body p-5">
         <form method="POST" id="tenant-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
           {{ form.hidden_tag() }}
 
           <!-- Organization Name -->

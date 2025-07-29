@@ -85,11 +85,22 @@ const InfraAdmin = {
   // API helper function
   async apiCall(endpoint, options = {}) {
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        ...options.headers,
+      };
+      
+      // Add CSRF token for POST requests
+      if (options.method === 'POST') {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                         document.querySelector('input[name="csrf_token"]')?.value;
+        if (csrfToken) {
+          headers['X-CSRFToken'] = csrfToken;
+        }
+      }
+
       const response = await fetch(`${this.config.apiBase}${endpoint}`, {
-        headers: {
-          "Content-Type": "application/json",
-          ...options.headers,
-        },
+        headers,
         ...options,
       });
 
@@ -1608,7 +1619,14 @@ function showServerDetails(serverId) {
 }
 
 function loadServerDetails(serverId) {
-  fetch(`/infra-admin/api/servers/${serverId}/details`)
+  const headers = {};
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                   document.querySelector('input[name="csrf_token"]')?.value;
+  if (csrfToken) {
+    headers['X-CSRFToken'] = csrfToken;
+  }
+
+  fetch(`/infra-admin/api/servers/${serverId}/details`, { headers })
     .then((response) => response.json())
     .then((data) => {
       if (data.success) {

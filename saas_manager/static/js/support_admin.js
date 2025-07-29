@@ -116,12 +116,21 @@ class MasterAdminSupport {
 
   async updateStatus(ticketId, status) {
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      };
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                       document.querySelector('input[name="csrf_token"]')?.value;
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
       const response = await fetch(`/admin/support/update/${ticketId}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-        },
+        headers,
         body: JSON.stringify({ status }),
       });
 
@@ -146,12 +155,21 @@ class MasterAdminSupport {
 
   async updatePriority(ticketId, priority) {
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      };
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                       document.querySelector('input[name="csrf_token"]')?.value;
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
       const response = await fetch(`/admin/support/update/${ticketId}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-        },
+        headers,
         body: JSON.stringify({ priority }),
       });
 
@@ -254,14 +272,23 @@ class MasterAdminSupport {
     }
 
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      };
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                       document.querySelector('input[name="csrf_token"]')?.value;
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
       const response = await fetch(
         `/admin/support/reply/${this.currentTicketId}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-          },
+          headers,
           body: JSON.stringify({ message }),
         }
       );
@@ -308,12 +335,21 @@ class MasterAdminSupport {
     const notes = textarea.value.trim();
 
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      };
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                       document.querySelector('input[name="csrf_token"]')?.value;
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
       const response = await fetch(`/admin/support/update/${ticketId}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-        },
+        headers,
         body: JSON.stringify({ admin_notes: notes }),
       });
 

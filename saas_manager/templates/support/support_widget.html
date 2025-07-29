@@ -97,7 +97,10 @@
       try {
         const response = await fetch("/support/create", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            'X-CSRFToken': '{{ csrf_token() }}'
+          },
           body: JSON.stringify({ subject, message, priority }),
         });
 

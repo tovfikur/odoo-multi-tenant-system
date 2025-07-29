@@ -13,6 +13,7 @@ current_user.username }}{% endblock %} {% block content %}
       <div class="card">
         <div class="card-body">
           <form id="profile-form" method="POST" enctype="multipart/form-data">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             {{ form.hidden_tag() }}
 
             <!-- Profile Picture Section -->
@@ -315,6 +316,7 @@ current_user.username }}{% endblock %} {% block content %}
       headers: {
         "Content-Type": "application/json",
         "X-Requested-With": "XMLHttpRequest",
+        'X-CSRFToken': '{{ csrf_token() }}'
       },
     })
       .then((response) => response.json())

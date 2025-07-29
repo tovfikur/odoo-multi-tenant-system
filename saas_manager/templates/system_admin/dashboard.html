@@ -1022,7 +1022,10 @@ SELECT * FROM tenants LIMIT 10;</textarea
 
     fetch("/system-admin/api/workers/create", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
       body: JSON.stringify(data),
     })
       .then((response) => response.json())
@@ -1062,7 +1065,10 @@ SELECT * FROM tenants LIMIT 10;</textarea
 
     fetch(`/system-admin/api/workers/${containerName}/action`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
       body: JSON.stringify({ action }),
     })
       .then((response) => response.json())
@@ -1083,7 +1089,12 @@ SELECT * FROM tenants LIMIT 10;</textarea
   function rebalanceLoad() {
     showNotification("Rebalancing load...", "info");
 
-    fetch("/system-admin/api/load-balancing/rebalance", { method: "POST" })
+    fetch("/system-admin/api/load-balancing/rebalance", { 
+      method: "POST",
+      headers: {
+        'X-CSRFToken': '{{ csrf_token() }}'
+      }
+    })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {
@@ -1218,7 +1229,10 @@ SELECT * FROM tenants LIMIT 10;</textarea
     ) {
       fetch("/system-admin/api/redis/flush", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          'X-CSRFToken': '{{ csrf_token() }}'
+        },
         body: JSON.stringify({ database: "all" }),
       })
         .then((response) => response.json())
@@ -1306,7 +1320,10 @@ SELECT * FROM tenants LIMIT 10;</textarea
 
     fetch("/system-admin/api/postgres/query", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        'X-CSRFToken': '{{ csrf_token() }}'
+      },
       body: JSON.stringify({ query }),
     })
       .then((response) => response.json())
@@ -1416,7 +1433,12 @@ SELECT * FROM tenants LIMIT 10;</textarea
   function reloadNginx() {
     showNotification("Reloading Nginx configuration...", "info");
 
-    fetch("/system-admin/api/nginx/reload", { method: "POST" })
+    fetch("/system-admin/api/nginx/reload", { 
+      method: "POST",
+      headers: {
+        'X-CSRFToken': '{{ csrf_token() }}'
+      }
+    })
       .then((response) => response.json())
       .then((data) => {
         if (data.success) {

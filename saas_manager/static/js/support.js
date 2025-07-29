@@ -194,12 +194,21 @@ class SupportSystem {
       '<i class="fas fa-spinner fa-spin me-2"></i>Creating...';
 
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      };
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                       document.querySelector('input[name="csrf_token"]')?.value;
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
       const response = await fetch(`${this.baseUrl}/support/create`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-        },
+        headers,
         body: JSON.stringify(ticketData),
       });
 
@@ -324,14 +333,23 @@ class SupportSystem {
     }
 
     try {
+      const headers = {
+        "Content-Type": "application/json",
+        "X-Requested-With": "XMLHttpRequest",
+      };
+      
+      // Add CSRF token
+      const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ||
+                       document.querySelector('input[name="csrf_token"]')?.value;
+      if (csrfToken) {
+        headers['X-CSRFToken'] = csrfToken;
+      }
+
       const response = await fetch(
         `${this.baseUrl}/support/reply/${ticketId}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-          },
+          headers,
           body: JSON.stringify({ message }),
         }
       );
