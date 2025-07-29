@@ -801,17 +801,47 @@ function togglePassword() {
 
 function copyPassword() {
     const passwordField = document.getElementById('passwordField');
-    passwordField.select();
-    passwordField.setSelectionRange(0, 99999);
-    navigator.clipboard.writeText(passwordField.value);
+    const password = passwordField.value;
     
-    // Show feedback
-    const copyBtn = event.target.closest('button');
-    const originalContent = copyBtn.innerHTML;
-    copyBtn.innerHTML = '<i class="fas fa-check text-success"></i>';
-    setTimeout(() => {
-        copyBtn.innerHTML = originalContent;
-    }, 2000);
+    // Check if clipboard API is available
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(password).then(() => {
+            showPasswordCopyFeedback();
+        }).catch(() => {
+            fallbackCopyPassword(password);
+        });
+    } else {
+        fallbackCopyPassword(password);
+    }
+    
+    function fallbackCopyPassword(text) {
+        // Fallback for HTTP or unsupported browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showPasswordCopyFeedback();
+        } catch (err) {
+            console.error('Failed to copy password: ', err);
+        }
+        document.body.removeChild(textArea);
+    }
+    
+    function showPasswordCopyFeedback() {
+        // Show feedback
+        const copyBtn = event.target.closest('button');
+        const originalContent = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check text-success"></i>';
+        setTimeout(() => {
+            copyBtn.innerHTML = originalContent;
+        }, 2000);
+    }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
