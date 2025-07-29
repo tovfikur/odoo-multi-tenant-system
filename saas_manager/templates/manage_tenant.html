@@ -738,15 +738,45 @@ document.getElementById('confirmDelete')?.addEventListener('input', function() {
 });
 
 function copyText(text) {
-    navigator.clipboard.writeText(text);
+    // Check if clipboard API is available
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(() => {
+            showCopyFeedback();
+        }).catch(() => {
+            fallbackCopyText(text);
+        });
+    } else {
+        fallbackCopyText(text);
+    }
     
-    // Show feedback
-    const copyBtn = event.target.closest('button');
-    const originalContent = copyBtn.innerHTML;
-    copyBtn.innerHTML = '<i class="fas fa-check text-success"></i>';
-    setTimeout(() => {
-        copyBtn.innerHTML = originalContent;
-    }, 1500);
+    function fallbackCopyText(text) {
+        // Fallback for HTTP or unsupported browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = text;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-999999px';
+        textArea.style.top = '-999999px';
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showCopyFeedback();
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+        }
+        document.body.removeChild(textArea);
+    }
+    
+    function showCopyFeedback() {
+        // Show feedback
+        const copyBtn = event.target.closest('button');
+        const originalContent = copyBtn.innerHTML;
+        copyBtn.innerHTML = '<i class="fas fa-check text-success"></i>';
+        setTimeout(() => {
+            copyBtn.innerHTML = originalContent;
+        }, 1500);
+    }
 }
 
 function togglePassword() {
