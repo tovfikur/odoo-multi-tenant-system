@@ -1,6 +1,6 @@
 {
-  "name": "Odoo SaaS Platform",
-  "short_name": "Odoo SaaS",
+  "name": "Khudroo",
+  "short_name": "Khudroo",
   "description": "Manage your Odoo tenants with ease - Create, monitor, and access your Odoo instances from anywhere",
   "start_url": "/dashboard?utm_source=pwa",
   "display": "standalone",

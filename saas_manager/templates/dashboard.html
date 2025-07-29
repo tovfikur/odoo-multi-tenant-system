@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Dashboard - Odoo SaaS Platform{% endblock %}
+{% block title %}Dashboard - Khudroo{% endblock %}
 
 {% block content %}
 <!-- Welcome Header -->
 <div class="system-header">
   <h1><i class="fas fa-tachometer-alt me-3"></i>Dashboard</h1>
-  <p>Welcome back, {{ current_user.username }}! Manage your Odoo instances with ease.</p>
+  <p>Welcome back, {{ current_user.username }}! Manage your Khudroo instances with ease.</p>
 </div>
 
 {% if current_user.is_admin and stats %}
@@ -160,7 +160,7 @@
       </div>
       <h4 class="mb-3" style="color: var(--text-muted);">No tenants yet</h4>
       <p class="mb-4" style="color: var(--text-muted);">
-        Get started by creating your first Odoo tenant instance.<br>
+        Get started by creating your first Khudroo tenant instance.<br>
         It only takes a few minutes to set up.
       </p>
       <a href="{{ url_for('create_tenant') }}" class="btn btn-primary btn-lg btn-action">
@@ -212,7 +212,7 @@
           </div>
           <div>
             <h6 class="mb-2">Need Help?</h6>
-            <p class="mb-0">Check our documentation or contact support for assistance with your Odoo instances.</p>
+            <p class="mb-0">Check our documentation or contact support for assistance with your Khudroo instances.</p>
           </div>
         </div>
       </div>

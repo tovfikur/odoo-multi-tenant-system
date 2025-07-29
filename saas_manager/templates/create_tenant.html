@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Create Tenant - Odoo SaaS Platform{% endblock %}
+{% block title %}Create Tenant - Khudroo{% endblock %}
 
 {% block content %}
 <!-- Breadcrumb -->
@@ -15,9 +15,9 @@
     </nav>
     <div class="text-center mb-4">
       <h1 class="display-5 fw-bold mb-2" style="">
-        <i class="fas fa-rocket text-primary me-3"></i>Launch Your Odoo Instance
+        <i class="fas fa-rocket text-primary me-3"></i>Launch Your Khudroo Instance
       </h1>
-      <p class="lead" style="">Get started with your dedicated Odoo environment in just a few steps</p>
+      <p class="lead" style="">Get started with your dedicated Khudroo environment in just a few steps</p>
     </div>
   </div>
 </div>
@@ -80,7 +80,7 @@
               {% endfor %}
             {% endif %}
             <div class="form-text mt-2" style="font-size: 0.9rem;">
-              <i class="fas fa-lightbulb text-warning me-1"></i>This will appear in your Odoo interface and documents
+              <i class="fas fa-lightbulb text-warning me-1"></i>This will appear in your Khudroo interface and documents
             </div>
           </div>
 
@@ -123,7 +123,7 @@
                   <input class="form-check-input" type="checkbox" id="confirm-creation" required style="transform: scale(1.3);">
                   <label class="form-check-label fw-medium ms-3" for="confirm-creation" style=" font-size: 1rem;">
                     <i class="fas fa-shield-alt text-warning me-2"></i>
-                    I understand this will create a dedicated Odoo database and instance for my organization
+                    I understand this will create a dedicated Khudroo database and instance for my organization
                   </label>
                 </div>
               </div>
@@ -133,7 +133,7 @@
           <!-- Action Button -->
           <div class="d-grid mb-3">
             <button type="submit" class="btn btn-primary btn-lg py-4" id="create-btn" style="font-size: 1.2rem; font-weight: 600; background: linear-gradient(135deg, var(--success) 0%, #2d8f47 100%); border: none;">
-              <i class="fas fa-rocket me-2"></i>Launch My Odoo Instance
+              <i class="fas fa-rocket me-2"></i>Launch My Khudroo Instance
             </button>
           </div>
           <div class="text-center">
@@ -207,7 +207,7 @@
         </div>
         <h5 class="fw-bold mb-2" style="">Join 10,000+ companies</h5>
         <p class="mb-3" style=" font-size: 0.9rem;">
-          Already using our Odoo hosting platform to grow their business
+          Already using our Khudroo hosting platform to grow their business
         </p>
         <div class="d-flex justify-content-center">
           <div class="text-warning">
@@ -457,10 +457,10 @@ function validateSubdomain() {
 function handleFormSubmit(e) {
   const createBtn = document.getElementById("create-btn");
   createBtn.disabled = true;
-  createBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Launching your Odoo instance...';
+  createBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Launching your Khudroo instance...';
   
   if (window.showNotification) {
-    window.showNotification("🚀 Launching your Odoo instance! This may take a few moments.", "info", 10000);
+    window.showNotification("🚀 Launching your Khudroo instance! This may take a few moments.", "info", 10000);
   }
 }
 

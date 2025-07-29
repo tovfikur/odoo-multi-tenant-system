@@ -4,7 +4,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Registration Status - Odoo SaaS Platform</title>
+    <title>Registration Status - Khudroo</title>
 
     <!-- External Dependencies -->
     <link
@@ -193,8 +193,8 @@
     <nav class="navbar navbar-expand-lg navbar-modern">
       <div class="container">
         <a class="navbar-brand-modern" href="{{ url_for('index') }}">
-          <div class="logo-modern">O</div>
-          <span>Odoo SaaS</span>
+          <div class="logo-modern">K</div>
+          <span>Khudroo</span>
         </a>
         <div class="d-flex">
           <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary">
@@ -216,7 +216,7 @@
             </div>
             <h3>Processing Payment</h3>
             <p class="text-muted">
-              We're processing your payment and setting up your Odoo instance...
+              We're processing your payment and setting up your Khudroo instance...
             </p>
             {% elif status.tenant.status == 'creating' %}
             <div class="status-icon processing">
@@ -224,7 +224,7 @@
             </div>
             <h3>Setting Up Your Instance</h3>
             <p class="text-muted">
-              Payment successful! We're now creating your Odoo database...
+              Payment successful! We're now creating your Khudroo database...
             </p>
             {% elif status.tenant.status == 'active' %}
             <div class="status-icon success">
@@ -232,7 +232,7 @@
             </div>
             <h3>Ready to Go!</h3>
             <p class="text-muted">
-              Your Odoo instance is ready and waiting for you!
+              Your Khudroo instance is ready and waiting for you!
             </p>
             {% else %}
             <div class="status-icon failed">
@@ -334,9 +334,9 @@
               <div class="timeline-content">
                 <h6>Database Setup</h6>
                 <p>
-                  {% if status.tenant.status == 'active' %} Your Odoo database
+                  {% if status.tenant.status == 'active' %} Your Khudroo database
                   has been created and configured successfully. {% elif
-                  status.tenant.status == 'creating' %} Creating your Odoo
+                  status.tenant.status == 'creating' %} Creating your Khudroo
                   database and installing applications... {% elif
                   status.payment.status == 'SUCCESS' %} Waiting to start
                   database creation... {% else %} Waiting for payment
@@ -381,7 +381,7 @@
                 class="btn btn-success btn-lg"
               >
                 <i class="fas fa-rocket me-2"></i>
-                Launch My Odoo
+                Launch My Khudroo
               </a>
               <a
                 href="{{ url_for('dashboard') }}"
