@@ -133,9 +133,29 @@ def get_available_modules():
         master_pwd = os.environ.get('ODOO_MASTER_PASSWORD', 'admin')
         db_manager = OdooDatabaseManager(odoo_url, master_pwd)
         
-        # For now, skip the database connection and just return fallback modules
-        # This ensures the UI works even when no tenants exist yet
+        # Connect directly to odoo_master database to get all modules
         modules = []
+        try:
+            modules = db_manager.get_all_available_modules(
+                db_name='odoo_master',
+                admin_user='admin',
+                admin_password='admin'
+            )
+            print(f"[✓] Successfully fetched {len(modules)} modules from odoo_master database")
+        except Exception as e:
+            print(f"[!] Failed to fetch modules from odoo_master: {e}")
+            
+        # If odoo_master doesn't work, try saas_manager database 
+        if not modules:
+            try:
+                modules = db_manager.get_all_available_modules(
+                    db_name='saas_manager',
+                    admin_user='admin',
+                    admin_password='admin'
+                )
+                print(f"[✓] Successfully fetched {len(modules)} modules from saas_manager database")
+            except Exception as e:
+                print(f"[!] Failed to fetch modules from saas_manager: {e}")
         
         if not modules:
             # Return a basic set of common modules if we can't fetch from Odoo

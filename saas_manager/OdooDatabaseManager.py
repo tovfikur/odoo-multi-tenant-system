@@ -358,28 +358,50 @@ class OdooDatabaseManager:
                 print(f"[!] No modules found in database {db_name}")
                 return []
             
-            # Get module details
-            modules = models.execute_kw(
-                db_name, uid, admin_password,
-                'ir.module.module', 'read',
-                [module_ids, ['name', 'shortdesc', 'author', 'version', 'state', 'category_id', 'summary']]
-            )
+            # Get module details (some fields might not exist in all Odoo versions)
+            try:
+                modules = models.execute_kw(
+                    db_name, uid, admin_password,
+                    'ir.module.module', 'read',
+                    [module_ids, ['name', 'shortdesc', 'author', 'state', 'category_id', 'summary']]
+                )
+            except:
+                # Fallback with minimal fields if some don't exist
+                modules = models.execute_kw(
+                    db_name, uid, admin_password,
+                    'ir.module.module', 'read',
+                    [module_ids, ['name', 'shortdesc', 'state', 'category_id']]
+                )
             
             # Filter and format modules
             formatted_modules = []
             for module in modules:
-                # Skip base and technical modules that shouldn't be user-selectable
-                if module['name'] in ['base', 'web', 'web_enterprise']:
+                # Only skip truly core technical modules that shouldn't be user-selectable
+                skip_modules = ['base', 'web']
+                if module['name'] in skip_modules:
                     continue
                     
+                # Skip modules without a proper name or description
+                if not module.get('name') or module['name'].startswith('test_'):
+                    continue
+                    
+                # Handle shortdesc which might be JSON format like {"en_US": "Sales"}
+                display_name = module['name']
+                if module.get('shortdesc'):
+                    if isinstance(module['shortdesc'], dict):
+                        # Extract English version if available
+                        display_name = module['shortdesc'].get('en_US', module['shortdesc'].get('en', module['name']))
+                    else:
+                        display_name = module['shortdesc']
+                
                 formatted_modules.append({
                     'name': module['name'],
-                    'display_name': module['shortdesc'] or module['name'],
+                    'display_name': display_name,
                     'description': module.get('summary', ''),
                     'state': module['state'],
                     'category': module['category_id'][1] if module['category_id'] else 'Other',
                     'author': module.get('author', ''),
-                    'version': module.get('version', '')
+                    'version': ''  # Version field might not be available
                 })
             
             print(f"[✓] Retrieved {len(formatted_modules)} available modules")
