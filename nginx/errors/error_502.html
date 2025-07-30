@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <meta name="description" content="502 Bad Gateway - Khudroo Error Page" />
+    <title>502 - Bad Gateway | Khudroo</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/errors/error-styles.css" />
+  </head>
+  <body>
+    <main class="error-container">
+      <div class="floating-bg">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+      </div>
+
+      <section class="error-content">
+        <header class="khudroo-logo">
+          <img
+            src="/errors/kdoo-logo.png"
+            alt="Khudroo Logo"
+            class="logo-image"
+            width="60"
+            height="60"
+          />
+          <span class="logo-text">Khudroo</span>
+        </header>
+
+        <div class="error-logo">
+          <i class="fas fa-plug shake-animation" aria-hidden="true"></i>
+        </div>
+
+        <div class="error-code bounce-in">502</div>
+
+        <h1 class="error-title fade-in-up">Bad Gateway</h1>
+
+        <p class="error-description fade-in-up-delayed">
+          We're having trouble connecting to our servers right now. This is
+          usually temporary and should resolve shortly.
+        </p>
+
+        <nav class="error-actions fade-in-up-more-delayed">
+          <button onclick="location.reload()" class="btn-primary" type="button">
+            <i class="fas fa-redo" aria-hidden="true"></i>
+            <span>Refresh Page</span>
+          </button>
+          <a href="/" class="btn-secondary">
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span>Home Page</span>
+          </a>
+        </nav>
+
+        <aside class="error-suggestions">
+          <h3>What you can do:</h3>
+          <ul>
+            <li>
+              <i class="fas fa-check" aria-hidden="true"></i
+              ><span>Wait a few minutes and retry</span>
+            </li>
+            <li>
+              <i class="fas fa-check" aria-hidden="true"></i
+              ><span>Check your internet connection</span>
+            </li>
+            <li>
+              <i class="fas fa-check" aria-hidden="true"></i
+              ><span>Contact support if persistent</span>
+            </li>
+          </ul>
+        </aside>
+      </section>
+
+      <div class="error-animation">
+        <div class="connection-error">
+          <div class="signal-bars">
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+            <span class="bar"></span>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <script src="/errors/error-scripts.js"></script>
+  </body>
+</html>

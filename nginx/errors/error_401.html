@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, user-scalable=no"
+    />
+    <meta name="description" content="401 Unauthorized - Khudroo Error Page" />
+    <title>401 - Unauthorized | Khudroo</title>
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/errors/error-styles.css" />
+  </head>
+  <body>
+    <main class="error-container">
+      <div class="floating-bg">
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+        <div class="floating-element"></div>
+      </div>
+
+      <section class="error-content">
+        <header class="khudroo-logo">
+          <img
+            src="/errors/kdoo-logo.png"
+            alt="Khudroo Logo"
+            class="logo-image"
+            width="60"
+            height="60"
+          />
+          <span class="logo-text">Khudroo</span>
+        </header>
+
+        <div class="error-logo">
+          <i class="fas fa-lock swing-animation" aria-hidden="true"></i>
+        </div>
+
+        <div class="error-code bounce-in">401</div>
+
+        <h1 class="error-title fade-in-up">Unauthorized Access</h1>
+
+        <p class="error-description fade-in-up-delayed">
+          You don't have permission to access this resource. Please sign in with
+          proper credentials.
+        </p>
+
+        <nav class="error-actions fade-in-up-more-delayed">
+          <a href="/login" class="btn-primary">
+            <i class="fas fa-sign-in-alt" aria-hidden="true"></i>
+            <span>Sign In</span>
+          </a>
+          <a href="/" class="btn-secondary">
+            <i class="fas fa-home" aria-hidden="true"></i>
+            <span>Home Page</span>
+          </a>
+        </nav>
+
+        <aside class="error-suggestions">
+          <h3>What you can do:</h3>
+          <ul>
+            <li>
+              <i class="fas fa-check" aria-hidden="true"></i
+              ><span>Sign in to your account</span>
+            </li>
+            <li>
+              <i class="fas fa-check" aria-hidden="true"></i
+              ><span>Check your permissions</span>
+            </li>
+            <li>
+              <i class="fas fa-check" aria-hidden="true"></i
+              ><span>Contact administrator</span>
+            </li>
+          </ul>
+        </aside>
+      </section>
+
+      <div class="error-animation">
+        <div class="rotating-lock">
+          <i class="fas fa-key" aria-hidden="true"></i>
+        </div>
+      </div>
+    </main>
+
+    <script src="/errors/error-scripts.js"></script>
+  </body>
+</html>
