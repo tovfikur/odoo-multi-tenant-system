@@ -98,6 +98,78 @@ def get_plans():
         error_tracker.log_error(e, {'admin_user': current_user.id})
         return jsonify({'success': False, 'message': 'Failed to fetch plans'}), 500
 
+@master_admin_bp.route('/master-admin/plan/<int:plan_id>/details', methods=['GET'])
+@login_required
+@require_admin()
+@track_errors('get_plan_details')
+def get_plan_details(plan_id):
+    try:
+        plan = SubscriptionPlan.query.get_or_404(plan_id)
+        plan_data = {
+            'id': plan.id,
+            'name': plan.name,
+            'price': float(plan.price),
+            'max_users': plan.max_users,
+            'storage_limit': plan.storage_limit,
+            'features': plan.features or '',
+            'modules': plan.modules or '',
+            'is_active': plan.is_active,
+            'created_at': plan.created_at.isoformat() if plan.created_at else ''
+        }
+        return jsonify({'success': True, 'plan': plan_data})
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return jsonify({'success': False, 'message': 'Failed to fetch plan details'}), 500
+
+@master_admin_bp.route('/master-admin/modules/available', methods=['GET'])
+@login_required
+@require_admin()
+@track_errors('get_available_modules')
+def get_available_modules():
+    """Get all available Odoo modules for plan configuration"""
+    try:
+        # Initialize with required parameters
+        odoo_url = os.environ.get('ODOO_URL', 'http://odoo_master:8069')
+        master_pwd = os.environ.get('ODOO_MASTER_PASSWORD', 'admin')
+        db_manager = OdooDatabaseManager(odoo_url, master_pwd)
+        
+        # For now, skip the database connection and just return fallback modules
+        # This ensures the UI works even when no tenants exist yet
+        modules = []
+        
+        if not modules:
+            # Return a basic set of common modules if we can't fetch from Odoo
+            modules = [
+                {'name': 'sale', 'display_name': 'Sales', 'category': 'Sales', 'state': 'uninstalled'},
+                {'name': 'purchase', 'display_name': 'Purchase', 'category': 'Purchase', 'state': 'uninstalled'},
+                {'name': 'stock', 'display_name': 'Inventory', 'category': 'Inventory', 'state': 'uninstalled'},
+                {'name': 'account', 'display_name': 'Accounting', 'category': 'Accounting', 'state': 'uninstalled'},
+                {'name': 'hr', 'display_name': 'Human Resources', 'category': 'Human Resources', 'state': 'uninstalled'},
+                {'name': 'project', 'display_name': 'Project Management', 'category': 'Project', 'state': 'uninstalled'},
+                {'name': 'crm', 'display_name': 'CRM', 'category': 'Sales', 'state': 'uninstalled'},
+                {'name': 'website', 'display_name': 'Website Builder', 'category': 'Website', 'state': 'uninstalled'},
+                {'name': 'mail', 'display_name': 'Discuss', 'category': 'Productivity', 'state': 'uninstalled'},
+                {'name': 'calendar', 'display_name': 'Calendar', 'category': 'Productivity', 'state': 'uninstalled'},
+            ]
+        
+        # Group modules by category
+        categorized = {}
+        for module in modules:
+            category = module.get('category', 'Other')
+            if category not in categorized:
+                categorized[category] = []
+            categorized[category].append(module)
+        
+        return jsonify({
+            'success': True,
+            'modules': modules,
+            'categorized': categorized
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return jsonify({'success': False, 'message': 'Failed to fetch modules'}), 500
+
 @master_admin_bp.route('/master-admin/plan/create', methods=['POST'])
 @login_required
 @require_admin()

@@ -1293,27 +1293,50 @@
             <label
               class="form-label fw-semibold"
               style="color: var(--text-primary)"
-              >Features (comma-separated)</label
+              >Features</label
             >
-            <textarea
-              class="form-control"
-              name="features"
-              rows="3"
-              style="border-radius: 12px"
-            ></textarea>
+            <div id="featuresContainer">
+              <div class="feature-input-group mb-2">
+                <div class="input-group">
+                  <input
+                    type="text"
+                    class="form-control feature-input"
+                    placeholder="Enter feature name"
+                    style="border-radius: 12px 0 0 12px"
+                  />
+                  <button
+                    type="button"
+                    class="btn btn-outline-danger remove-feature"
+                    style="border-radius: 0 12px 12px 0"
+                    onclick="removeFeature(this)"
+                  >
+                    <i class="fas fa-times"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              onclick="addFeature()"
+            >
+              <i class="fas fa-plus me-1"></i>Add Feature
+            </button>
           </div>
           <div class="mb-3">
             <label
               class="form-label fw-semibold"
               style="color: var(--text-primary)"
-              >Modules (comma-separated)</label
+              >Modules</label
             >
-            <textarea
-              class="form-control"
-              name="modules"
-              rows="2"
-              style="border-radius: 12px"
-            ></textarea>
+            <div class="row" id="modulesContainer">
+              <div class="col-12 text-center p-3">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                Loading available modules...
+              </div>
+            </div>
           </div>
           <div class="form-check">
             <input
@@ -1354,6 +1377,167 @@
     </div>
   </div>
 </div>
+
+<!-- Edit Plan Modal -->
+<div class="modal fade" id="editPlanModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="border-radius: 16px; border: none">
+      <div
+        class="modal-header border-0"
+        style="
+          background: linear-gradient(
+            135deg,
+            var(--warning) 0%,
+            var(--warning-dark) 100%
+          );
+          border-radius: 16px 16px 0 0;
+        "
+      >
+        <h5 class="modal-title text-white fw-semibold">
+          <i class="fas fa-edit me-2"></i>Edit Plan
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <form id="editPlanForm">
+          <input type="hidden" name="plan_id" id="editPlanId" />
+          <div class="mb-3">
+            <label
+              class="form-label fw-semibold"
+              style="color: var(--text-primary)"
+              >Plan Name</label
+            >
+            <input
+              type="text"
+              class="form-control"
+              name="name"
+              id="editPlanName"
+              required
+              style="border-radius: 12px"
+            />
+          </div>
+          <div class="mb-3">
+            <label
+              class="form-label fw-semibold"
+              style="color: var(--text-primary)"
+              >Price ($)</label
+            >
+            <input
+              type="number"
+              class="form-control"
+              name="price"
+              id="editPlanPrice"
+              step="0.01"
+              required
+              style="border-radius: 12px"
+            />
+          </div>
+          <div class="mb-3">
+            <label
+              class="form-label fw-semibold"
+              style="color: var(--text-primary)"
+              >Max Users</label
+            >
+            <input
+              type="number"
+              class="form-control"
+              name="max_users"
+              id="editPlanMaxUsers"
+              required
+              style="border-radius: 12px"
+            />
+          </div>
+          <div class="mb-3">
+            <label
+              class="form-label fw-semibold"
+              style="color: var(--text-primary)"
+              >Storage Limit (MB)</label
+            >
+            <input
+              type="number"
+              class="form-control"
+              name="storage_limit"
+              id="editPlanStorageLimit"
+              required
+              style="border-radius: 12px"
+            />
+          </div>
+          <div class="mb-3">
+            <label
+              class="form-label fw-semibold"
+              style="color: var(--text-primary)"
+              >Features</label
+            >
+            <div id="editFeaturesContainer">
+              <!-- Features will be populated here -->
+            </div>
+            <button
+              type="button"
+              class="btn btn-outline-primary btn-sm"
+              onclick="addEditFeature()"
+            >
+              <i class="fas fa-plus me-1"></i>Add Feature
+            </button>
+          </div>
+          <div class="mb-3">
+            <label
+              class="form-label fw-semibold"
+              style="color: var(--text-primary)"
+              >Modules</label
+            >
+            <div class="row" id="editModulesContainer">
+              <div class="col-12 text-center p-3">
+                <div class="spinner-border spinner-border-sm me-2" role="status">
+                  <span class="visually-hidden">Loading...</span>
+                </div>
+                Loading available modules...
+              </div>
+            </div>
+          </div>
+          <div class="form-check">
+            <input
+              class="form-check-input"
+              type="checkbox"
+              name="is_active"
+              id="editPlanIsActive"
+            />
+            <label
+              class="form-check-label fw-semibold"
+              style="color: var(--text-primary)"
+              >Active</label
+            >
+          </div>
+        </form>
+      </div>
+      <div
+        class="modal-footer border-0"
+        style="background: var(--bg-secondary); border-radius: 0 0 16px 16px"
+      >
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+          style="border-radius: 12px"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-warning"
+          onclick="Dashboard.updatePlan()"
+          style="border-radius: 12px"
+        >
+          Update Plan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %} {% block scripts %}
 <!-- Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
@@ -2378,10 +2562,118 @@
 
     // Plan Actions
     showCreatePlanModal() {
+      this.loadAvailableModules();
       const modal = new bootstrap.Modal(
         document.getElementById("createPlanModal")
       );
       modal.show();
+    },
+
+    // Feature management functions
+    addFeature() {
+      const container = document.getElementById('featuresContainer');
+      const featureDiv = document.createElement('div');
+      featureDiv.className = 'feature-input-group mb-2';
+      featureDiv.innerHTML = `
+        <div class="input-group">
+          <input
+            type="text"
+            class="form-control feature-input"
+            placeholder="Enter feature name"
+            style="border-radius: 12px 0 0 12px"
+          />
+          <button
+            type="button"
+            class="btn btn-outline-danger remove-feature"
+            style="border-radius: 0 12px 12px 0"
+            onclick="removeFeature(this)"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      `;
+      container.appendChild(featureDiv);
+    },
+
+    addEditFeature() {
+      const container = document.getElementById('editFeaturesContainer');
+      const featureDiv = document.createElement('div');
+      featureDiv.className = 'feature-input-group mb-2';
+      featureDiv.innerHTML = `
+        <div class="input-group">
+          <input
+            type="text"
+            class="form-control feature-input"
+            placeholder="Enter feature name"
+            style="border-radius: 12px 0 0 12px"
+          />
+          <button
+            type="button"
+            class="btn btn-outline-danger remove-feature"
+            style="border-radius: 0 12px 12px 0"
+            onclick="removeFeature(this)"
+          >
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+      `;
+      container.appendChild(featureDiv);
+    },
+
+    // Load available modules
+    async loadAvailableModules() {
+      try {
+        const response = await fetch('/master-admin/modules/available');
+        const result = await response.json();
+        
+        if (result.success) {
+          this.renderModulesCheckboxes('modulesContainer', result.categorized);
+          this.renderModulesCheckboxes('editModulesContainer', result.categorized);
+        } else {
+          document.getElementById('modulesContainer').innerHTML = '<div class="col-12 text-center text-muted p-3">Failed to load modules</div>';
+          document.getElementById('editModulesContainer').innerHTML = '<div class="col-12 text-center text-muted p-3">Failed to load modules</div>';
+        }
+      } catch (error) {
+        console.error('Error loading modules:', error);
+        document.getElementById('modulesContainer').innerHTML = '<div class="col-12 text-center text-muted p-3">Error loading modules</div>';
+        document.getElementById('editModulesContainer').innerHTML = '<div class="col-12 text-center text-muted p-3">Error loading modules</div>';
+      }
+    },
+
+    renderModulesCheckboxes(containerId, categorizedModules) {
+      const container = document.getElementById(containerId);
+      container.innerHTML = '';
+      
+      Object.keys(categorizedModules).forEach(category => {
+        const categoryDiv = document.createElement('div');
+        categoryDiv.className = 'col-md-6 mb-3';
+        
+        let moduleCheckboxes = '';
+        categorizedModules[category].forEach(module => {
+          moduleCheckboxes += `
+            <div class="form-check">
+              <input class="form-check-input module-checkbox" type="checkbox" 
+                     value="${module.name}" id="${containerId}_${module.name}">
+              <label class="form-check-label" for="${containerId}_${module.name}" title="${module.description}">
+                ${module.display_name}
+              </label>
+            </div>
+          `;
+        });
+        
+        categoryDiv.innerHTML = `
+          <div class="card h-100">
+            <div class="card-header py-2">
+              <h6 class="mb-0">${category}</h6>
+            </div>
+            <div class="card-body py-2" style="max-height: 200px; overflow-y: auto;">
+              ${moduleCheckboxes}
+            </div>
+          </div>
+        `;
+        
+        container.appendChild(categoryDiv);
+      });
     },
 
     async createPlan() {
@@ -2389,23 +2681,23 @@
         const form = document.getElementById("createPlanForm");
         const formData = new FormData(form);
 
+        // Collect features from input fields
+        const featureInputs = document.querySelectorAll('#featuresContainer .feature-input');
+        const features = Array.from(featureInputs)
+          .map(input => input.value.trim())
+          .filter(value => value !== '');
+
+        // Collect selected modules
+        const moduleCheckboxes = document.querySelectorAll('#modulesContainer .module-checkbox:checked');
+        const modules = Array.from(moduleCheckboxes).map(checkbox => checkbox.value);
+
         const planData = {
           name: formData.get("name"),
           price: parseFloat(formData.get("price")),
           max_users: parseInt(formData.get("max_users")),
           storage_limit: parseInt(formData.get("storage_limit")),
-          features: formData.get("features")
-            ? formData
-                .get("features")
-                .split(",")
-                .map((f) => f.trim())
-            : [],
-          modules: formData.get("modules")
-            ? formData
-                .get("modules")
-                .split(",")
-                .map((m) => m.trim())
-            : [],
+          features: features,
+          modules: modules,
           is_active: formData.has("is_active"),
         };
 
@@ -2438,8 +2730,160 @@
     },
 
     async editPlan(planId) {
-      // Implementation follows the same pattern as the original
-      console.log("Edit plan:", planId);
+      try {
+        // Load modules first
+        await this.loadAvailableModules();
+        
+        // Fetch plan details
+        const response = await fetch(`/master-admin/plan/${planId}/details`);
+        const result = await response.json();
+        
+        if (result.success) {
+          const plan = result.plan;
+          
+          // Populate the edit modal with plan data
+          document.getElementById('editPlanId').value = plan.id;
+          document.getElementById('editPlanName').value = plan.name;
+          document.getElementById('editPlanPrice').value = plan.price;
+          document.getElementById('editPlanMaxUsers').value = plan.max_users;
+          document.getElementById('editPlanStorageLimit').value = plan.storage_limit;
+          document.getElementById('editPlanIsActive').checked = plan.is_active;
+          
+          // Populate features
+          this.populateEditFeatures(plan.features || []);
+          
+          // Populate modules
+          this.populateEditModules(plan.modules || []);
+          
+          // Show the modal
+          new bootstrap.Modal(document.getElementById('editPlanModal')).show();
+        } else {
+          this.showAlert("danger", result.message || "Failed to load plan details");
+        }
+      } catch (error) {
+        console.error('Error loading plan details:', error);
+        this.showAlert("danger", "Failed to load plan details");
+      }
+    },
+
+    populateEditFeatures(features) {
+      const container = document.getElementById('editFeaturesContainer');
+      container.innerHTML = '';
+      
+      // Handle features being either array or string
+      let featuresArray = [];
+      if (Array.isArray(features)) {
+        featuresArray = features;
+      } else if (typeof features === 'string' && features.trim()) {
+        featuresArray = features.split(',').map(f => f.trim()).filter(f => f);
+      }
+      
+      // Add existing features
+      featuresArray.forEach(feature => {
+        if (feature.trim()) {
+          const featureDiv = document.createElement('div');
+          featureDiv.className = 'feature-input-group mb-2';
+          featureDiv.innerHTML = `
+            <div class="input-group">
+              <input
+                type="text"
+                class="form-control feature-input"
+                value="${feature.trim()}"
+                style="border-radius: 12px 0 0 12px"
+              />
+              <button
+                type="button"
+                class="btn btn-outline-danger remove-feature"
+                style="border-radius: 0 12px 12px 0"
+                onclick="removeFeature(this)"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+            </div>
+          `;
+          container.appendChild(featureDiv);
+        }
+      });
+      
+      // Add one empty field if no features exist
+      if (features.length === 0) {
+        this.addEditFeature();
+      }
+    },
+
+    populateEditModules(selectedModules) {
+      setTimeout(() => {
+        // Handle modules being either array or string
+        let modulesArray = [];
+        if (Array.isArray(selectedModules)) {
+          modulesArray = selectedModules;
+        } else if (typeof selectedModules === 'string' && selectedModules.trim()) {
+          modulesArray = selectedModules.split(',').map(m => m.trim()).filter(m => m);
+        }
+        
+        // Check the selected modules
+        modulesArray.forEach(moduleName => {
+          const checkbox = document.querySelector(`#editModulesContainer_${moduleName}`);
+          if (checkbox) {
+            checkbox.checked = true;
+          }
+        });
+      }, 100); // Small delay to ensure modules are rendered
+    },
+
+    async updatePlan() {
+      try {
+        const formData = new FormData(document.getElementById('editPlanForm'));
+        
+        // Collect features from input fields
+        const featureInputs = document.querySelectorAll('#editFeaturesContainer .feature-input');
+        const features = Array.from(featureInputs)
+          .map(input => input.value.trim())
+          .filter(value => value !== '');
+
+        // Collect selected modules
+        const moduleCheckboxes = document.querySelectorAll('#editModulesContainer .module-checkbox:checked');
+        const modules = Array.from(moduleCheckboxes).map(checkbox => checkbox.value);
+        
+        const planData = {
+          plan_id: formData.get('plan_id'),
+          name: formData.get('name'),
+          price: parseFloat(formData.get('price')) || 0,
+          max_users: parseInt(formData.get('max_users')) || 0,
+          storage_limit: parseInt(formData.get('storage_limit')) || 0,
+          features: features,
+          modules: modules,
+          is_active: document.getElementById('editPlanIsActive').checked
+        };
+        
+        this.showLoading();
+        const planId = document.getElementById('editPlanId').value;
+        const response = await fetch(`/master-admin/plan/${planId}/update`, {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json",
+            'X-CSRFToken': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify(planData),
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          this.showAlert("success", result.message);
+          // Hide modal
+          bootstrap.Modal.getInstance(document.getElementById('editPlanModal')).hide();
+          // Reload plans to show updated data
+          await this.loadPlans();
+        } else {
+          this.showAlert("danger", result.message);
+        }
+      } catch (error) {
+        console.error('Error updating plan:', error);
+        this.showAlert("danger", "Failed to update plan");
+      } finally {
+        this.hideLoading();
+      }
     },
 
     async deletePlan(planId) {
@@ -2770,6 +3214,19 @@
         }
       }, 5000);
     },
+  };
+
+  // Global functions for feature management
+  window.addFeature = function() {
+    Dashboard.addFeature();
+  };
+
+  window.addEditFeature = function() {
+    Dashboard.addEditFeature();
+  };
+
+  window.removeFeature = function(button) {
+    button.closest('.feature-input-group').remove();
   };
 
   // Initialize dashboard when DOM is loaded

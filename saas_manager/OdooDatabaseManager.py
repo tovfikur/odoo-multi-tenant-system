@@ -313,6 +313,82 @@ class OdooDatabaseManager:
             print(f"[!] Failed to get modules details for {db_name}: {e}")
             return []
 
+    def get_all_available_modules(self, db_name: str = None, admin_user: str = None, admin_password: str = None) -> list:
+        """
+        Get all available modules (both installed and uninstalled) from Odoo.
+        
+        Args:
+            db_name (str): Name of the Odoo database (optional, uses first available if not provided)
+            admin_user (str): Admin username for authentication (optional, uses default)
+            admin_password (str): Admin password for authentication (optional, uses default)
+        
+        Returns:
+            list: List of dictionaries containing all available modules information
+        """
+        try:
+            # Use defaults if not provided
+            if not db_name:
+                # Try to get any available database
+                db_name = "template_db"  # or use any existing tenant DB
+            if not admin_user:
+                admin_user = "admin"
+            if not admin_password:
+                admin_password = "admin"
+            
+            # Authenticate
+            common = xmlrpc.client.ServerProxy(f'{self.odoo_url}/xmlrpc/2/common')
+            uid = common.authenticate(db_name, admin_user, admin_password, {})
+            
+            if not uid:
+                print(f"[!] Authentication failed for database {db_name}, trying alternative...")
+                # Try with any tenant database that might exist
+                return []
+            
+            # Connect to object endpoint
+            models = xmlrpc.client.ServerProxy(f'{self.odoo_url}/xmlrpc/2/object')
+            
+            # Search for ALL modules (installed, uninstalled, etc.)
+            module_ids = models.execute_kw(
+                db_name, uid, admin_password,
+                'ir.module.module', 'search',
+                [[]]  # No filters to get all modules
+            )
+            
+            if not module_ids:
+                print(f"[!] No modules found in database {db_name}")
+                return []
+            
+            # Get module details
+            modules = models.execute_kw(
+                db_name, uid, admin_password,
+                'ir.module.module', 'read',
+                [module_ids, ['name', 'shortdesc', 'author', 'version', 'state', 'category_id', 'summary']]
+            )
+            
+            # Filter and format modules
+            formatted_modules = []
+            for module in modules:
+                # Skip base and technical modules that shouldn't be user-selectable
+                if module['name'] in ['base', 'web', 'web_enterprise']:
+                    continue
+                    
+                formatted_modules.append({
+                    'name': module['name'],
+                    'display_name': module['shortdesc'] or module['name'],
+                    'description': module.get('summary', ''),
+                    'state': module['state'],
+                    'category': module['category_id'][1] if module['category_id'] else 'Other',
+                    'author': module.get('author', ''),
+                    'version': module.get('version', '')
+                })
+            
+            print(f"[✓] Retrieved {len(formatted_modules)} available modules")
+            return formatted_modules
+            
+        except Exception as e:
+            print(f"[!] Failed to get available modules: {e}")
+            return []
+
     def get_modules_by_category(self, db_name: str, admin_user: str, admin_password: str) -> dict:
         """
         Get installed modules grouped by category.
