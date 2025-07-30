@@ -32,50 +32,12 @@
           <div class="d-flex gap-2">
             <button
               class="btn btn-outline-light btn-action"
-              onclick="refreshAllSystems()"
+              data-bs-toggle="modal"
+              data-bs-target="#maintenanceModal"
             >
-              <i class="fas fa-sync-alt me-2"></i>
-              Refresh Systems
+              <i class="fas fa-wrench me-2"></i>
+              Maintenance Mode
             </button>
-            <div class="dropdown">
-              <button
-                class="btn btn-outline-light dropdown-toggle btn-action"
-                type="button"
-                data-bs-toggle="dropdown"
-              >
-                <i class="fas fa-cog me-2"></i>
-                Admin Tools
-              </button>
-              <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                  <a class="dropdown-item" href="{{ url_for('dashboard') }}">
-                    <i class="fas fa-tachometer-alt me-2"></i>
-                    User Dashboard
-                  </a>
-                </li>
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="{{ url_for('master_admin.master_admin_dashboard') }}"
-                  >
-                    <i class="fas fa-building me-2"></i>
-                    Master Admin
-                  </a>
-                </li>
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <a
-                    class="dropdown-item"
-                    href="#"
-                    data-bs-toggle="modal"
-                    data-bs-target="#maintenanceModal"
-                  >
-                    <i class="fas fa-wrench me-2"></i>
-                    Maintenance Mode
-                  </a>
-                </li>
-              </ul>
-            </div>
           </div>
         </div>
       </div>
