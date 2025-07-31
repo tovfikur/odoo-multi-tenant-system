@@ -2,7 +2,7 @@
 <odoo noupdate="1">
     <!-- Default SaaS Controller Configuration -->
     <record id="default_saas_config" model="saas.controller">
-        <field name="database_name" eval="db.db_name"/>
+        <field name="database_name" eval="env.cr.dbname"/>
         <field name="max_users">10</field>
         <field name="user_limit_enabled">True</field>
         <field name="remove_odoo_branding">False</field>
