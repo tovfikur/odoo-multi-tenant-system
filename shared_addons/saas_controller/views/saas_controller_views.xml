@@ -33,13 +33,9 @@
                                     <field name="user_limit_enabled"/>
                                     <field name="max_users" attrs="{'readonly': [('user_limit_enabled', '=', False)]}"/>
                                     <field name="current_users"/>
-                                    <label for="user_status" string="User Status"/>
-                                    <div>
-                                        <field name="current_users" invisible="1"/>
-                                        <field name="max_users" invisible="1"/>
-                                        <span class="text-info">
-                                            Current Users / Max Users
-                                        </span>
+                                    <label string="Status Information"/>
+                                    <div class="text-info">
+                                        User limit monitoring is active
                                     </div>
                                 </group>
                             </group>
