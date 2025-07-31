@@ -92,8 +92,10 @@ except ImportError:
     
 try:
     from .billing import BillingService, register_unified_billing_routes
+    from .billing_routes import billing_bp
 except ImportError:
     from billing import BillingService, register_unified_billing_routes
+    from billing_routes import billing_bp
     
 
 
@@ -113,6 +115,7 @@ app.register_blueprint(master_admin_bp)
 app.register_blueprint(system_admin_bp)
 app.register_blueprint(support_bp)
 app.register_blueprint(support_admin_bp)
+app.register_blueprint(billing_bp)
 register_unified_billing_routes(app, csrf)
 
 # Add CSRF token to template context
