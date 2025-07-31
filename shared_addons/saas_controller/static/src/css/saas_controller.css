@@ -1,49 +1,105 @@
 /* SaaS Controller Custom Styles */
 
-/* Color Variables - Will be overridden by dynamic configuration */
+/* Brand Color Variables - Your Beautiful Jewel + Neutral Palette */
 :root {
-  --saas-primary-color: #017e84;
-  --saas-secondary-color: #875a7b;
-  --saas-accent-color: #017e84;
+  /* Primary Azure Colors */
+  --saas-primary-color: #1a73e8;
+  --saas-primary-dark: #174ea6;
+  --saas-primary-light: #4c9eff;
+  
+  /* Secondary Teal Colors */
+  --saas-secondary-color: #00bfa5;
+  --saas-secondary-dark: #00937a;
+  --saas-secondary-light: #33e1c6;
+  
+  /* Accent Coral Colors */
+  --saas-accent-color: #ff6f61;
+  --saas-accent-dark: #e05a4e;
+  --saas-accent-light: #ff8a7a;
+  
+  /* Support Violet Colors */
+  --saas-support-color: #9b51e0;
+  --saas-support-dark: #7a3eb0;
+  --saas-support-light: #b76deb;
+  
+  /* Neutrals & Text */
   --saas-background-color: #ffffff;
-  --saas-text-color: #212529;
-  --saas-link-color: #017e84;
+  --saas-text-color: #2e3a59;
+  --saas-text-secondary: #5c6b8a;
+  --saas-text-muted: #8a95aa;
+  --saas-link-color: #1a73e8;
+  
+  /* Transitions for Micro-interactions */
+  --saas-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --saas-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Main Navigation */
+/* Main Navigation - Premium Brand Styling */
 .o_main_navbar {
-  background-color: var(--saas-primary-color) !important;
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-dark) 100%) !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.15) !important;
+  transition: var(--saas-transition-smooth) !important;
+}
+
+.o_main_navbar:hover {
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2) !important;
 }
 
 .o_main_navbar .dropdown-toggle {
   color: white !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
-/* Buttons */
+.o_main_navbar .dropdown-toggle:hover {
+  transform: translateY(-1px) !important;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Buttons - Beautiful Hover Effects */
 .btn-primary {
-  background-color: var(--saas-primary-color) !important;
-  border-color: var(--saas-primary-color) !important;
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-dark) 100%) !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(26, 115, 232, 0.2) !important;
+  transition: var(--saas-transition-fast) !important;
+  font-weight: 500 !important;
 }
 
 .btn-primary:hover,
-.btn-primary:focus,
+.btn-primary:focus {
+  background: linear-gradient(135deg, var(--saas-primary-dark) 0%, var(--saas-primary-color) 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3) !important;
+}
+
 .btn-primary:active {
-  background-color: var(--saas-accent-color) !important;
-  border-color: var(--saas-accent-color) !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 6px rgba(26, 115, 232, 0.2) !important;
 }
 
 .btn-secondary {
-  background-color: var(--saas-secondary-color) !important;
-  border-color: var(--saas-secondary-color) !important;
+  background: linear-gradient(135deg, var(--saas-secondary-color) 0%, var(--saas-secondary-dark) 100%) !important;
+  border: none !important;
+  box-shadow: 0 2px 6px rgba(0, 191, 165, 0.2) !important;
+  transition: var(--saas-transition-fast) !important;
+  font-weight: 500 !important;
 }
 
-/* Links */
+.btn-secondary:hover,
+.btn-secondary:focus {
+  background: linear-gradient(135deg, var(--saas-secondary-dark) 0%, var(--saas-secondary-color) 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 191, 165, 0.3) !important;
+}
+
+/* Links - Smooth Transitions */
 a {
   color: var(--saas-link-color) !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
 a:hover {
   color: var(--saas-accent-color) !important;
+  transform: translateX(2px) !important;
 }
 
 /* Form Views */
@@ -55,14 +111,24 @@ a:hover {
   color: var(--saas-text-color) !important;
 }
 
-/* Cards and Panels */
+/* Cards and Panels - Subtle Hover Effects */
 .card {
   background-color: var(--saas-background-color) !important;
+  border: 1px solid rgba(26, 115, 232, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.08) !important;
+  transition: var(--saas-transition-smooth) !important;
+}
+
+.card:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.15) !important;
 }
 
 .card-header {
-  background-color: var(--saas-primary-color) !important;
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-dark) 100%) !important;
   color: white !important;
+  border-radius: 8px 8px 0 0 !important;
 }
 
 /* Badges and Status */
@@ -129,19 +195,24 @@ a:hover {
 /* Custom Login Page Styles */
 .o_database_list .list-group-item {
   border-color: var(--saas-primary-color) !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
 .o_database_list .list-group-item:hover {
-  background-color: rgba(1, 126, 132, 0.1) !important;
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  transform: translateX(4px) !important;
 }
 
-/* Menu customizations */
+/* Menu customizations - App Hover Effects */
 .o_apps .o_app {
   border-color: var(--saas-primary-color) !important;
+  transition: var(--saas-transition-smooth) !important;
 }
 
 .o_apps .o_app:hover {
-  background-color: rgba(1, 126, 132, 0.1) !important;
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  transform: scale(1.05) translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.2) !important;
 }
 
 /* Responsive adjustments */
@@ -167,15 +238,50 @@ a:hover {
   transition: opacity 0.3s ease;
 }
 
-/* Status indicators */
+/* Status indicators - Brand Colors */
 .saas-status-active {
-  color: #28a745;
+  color: var(--saas-secondary-color);
+  font-weight: 500;
 }
 
 .saas-status-inactive {
-  color: #dc3545;
+  color: var(--saas-accent-dark);
+  font-weight: 500;
 }
 
 .saas-status-syncing {
-  color: #ffc107;
+  color: var(--saas-support-color);
+  font-weight: 500;
+}
+
+/* Additional Micro-interactions */
+.o_field_widget,
+.o_form_label {
+  transition: var(--saas-transition-fast) !important;
+}
+
+.o_field_widget:hover {
+  transform: translateY(-1px) !important;
+}
+
+.o_list_table tbody tr {
+  transition: var(--saas-transition-fast) !important;
+}
+
+.o_list_table tbody tr:hover {
+  background-color: rgba(26, 115, 232, 0.05) !important;
+  transform: scale(1.002) !important;
+}
+
+/* Form Input Focus Effects */
+.o_input,
+.form-control {
+  transition: var(--saas-transition-fast) !important;
+}
+
+.o_input:focus,
+.form-control:focus {
+  border-color: var(--saas-primary-color) !important;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1) !important;
+  transform: scale(1.01) !important;
 }
