@@ -33,7 +33,7 @@
                                     <field name="user_limit_enabled"/>
                                     <field name="max_users" attrs="{'readonly': [('user_limit_enabled', '=', False)]}"/>
                                     <field name="current_users"/>
-                                    <label string="Status Information"/>
+                                    <label string="Status Information" class="o_form_label"/>
                                     <div class="text-info">
                                         User limit monitoring is active
                                     </div>
