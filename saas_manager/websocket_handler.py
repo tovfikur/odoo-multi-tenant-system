@@ -125,11 +125,11 @@ def setup_websocket_handlers(socketio, ws_manager):
         logger.info(f"User {user_id} connected via WebSocket (session: {session_id})")
     
     @socketio.on('disconnect')
-    def handle_disconnect():
+    def handle_disconnect(reason=None):
         """Handle client disconnection"""
         session_id = request.sid
         ws_manager.remove_user_session(session_id)
-        logger.info(f"WebSocket session disconnected: {session_id}")
+        logger.info(f"WebSocket session disconnected: {session_id}, reason: {reason}")
     
     @socketio.on('subscribe_tenant_updates')
     def handle_tenant_subscription(data):

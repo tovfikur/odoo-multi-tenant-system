@@ -130,6 +130,7 @@
           <div class="card-footer bg-transparent border-0 pt-0">
             <div class="row g-2">
               <div class="col-6">
+                {% if tenant.is_active %}
                 <a data-tenant-db="kdoo_{{ tenant.subdomain }}" 
                    class="btn btn-outline-primary btn-sm tenant-link w-100" 
                    target="_blank">
@@ -137,6 +138,13 @@
                   <span class="d-none d-md-inline">Open</span>
                   <span class="d-md-none">Open</span>
                 </a>
+                {% else %}
+                <button class="btn btn-outline-secondary btn-sm w-100" disabled style="opacity: 0.6; cursor: not-allowed;">
+                  <i class="fas fa-ban me-1"></i>
+                  <span class="d-none d-md-inline">Inactive</span>
+                  <span class="d-md-none">Inactive</span>
+                </button>
+                {% endif %}
               </div>
               <div class="col-6">
                 <a href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}" 

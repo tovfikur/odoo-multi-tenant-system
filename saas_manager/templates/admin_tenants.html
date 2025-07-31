@@ -183,6 +183,7 @@
               </div>
             </td>
             <td>
+              {% if tenant.is_active %}
               <a
                 data-tenant-db="kdoo_ipsum""
                 target="_blank"
@@ -191,6 +192,12 @@
                 {{ tenant.db_name }}.<domain>
                 <i class="fas fa-external-link-alt ms-1 small"></i>
               </a>
+              {% else %}
+              <span class="text-muted">
+                {{ tenant.db_name }}.<domain>
+                <i class="fas fa-ban ms-1 small"></i>
+              </span>
+              {% endif %}
             </td>
             <td>
               <span
@@ -243,6 +250,7 @@
                     </a>
                   </li>
                   <li>
+                    {% if tenant.is_active %}
                     <a
                       class="dropdown-item tenant-link"
                       data-tenant-db="kdoo_ipsum"
@@ -250,6 +258,11 @@
                     >
                       <i class="fas fa-external-link-alt me-2"></i>Open
                     </a>
+                    {% else %}
+                    <span class="dropdown-item text-muted" style="cursor: not-allowed;">
+                      <i class="fas fa-ban me-2"></i>Inactive
+                    </span>
+                    {% endif %}
                   </li>
                   <li><hr class="dropdown-divider" /></li>
                   <li>
