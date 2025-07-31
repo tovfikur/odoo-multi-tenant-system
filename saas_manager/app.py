@@ -316,8 +316,18 @@ def email_validator(form, field):
 
 @track_errors('login_form_validation')
 class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()])
+    username = StringField('Username or Email', validators=[DataRequired()])
     password = PasswordField('Password', validators=[DataRequired()])
+
+class ForgotPasswordForm(FlaskForm):
+    email = StringField('Email', validators=[DataRequired(), Email()])
+
+class ResetPasswordForm(FlaskForm):
+    password = PasswordField('New Password', validators=[DataRequired(), Length(min=6)])
+    confirm_password = PasswordField('Confirm Password', validators=[
+        DataRequired(), 
+        EqualTo('password', message='Passwords must match.')
+    ])
 
 @track_errors('register_form_validation')
 class RegisterForm(FlaskForm):
@@ -784,7 +794,12 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         try:
-            user = SaasUser.query.filter_by(username=form.username.data).first()
+            # Try to find user by username or email
+            username_or_email = form.username.data
+            user = SaasUser.query.filter(
+                (SaasUser.username == username_or_email) | 
+                (SaasUser.email == username_or_email)
+            ).first()
             if user and check_password_hash(user.password_hash, form.password.data) and user.is_active:
                 login_user(user)
                 user.last_login = datetime.utcnow()
@@ -839,6 +854,93 @@ def logout():
     logout_user()
     flash('You have been logged out.', 'info')
     return redirect(url_for('login'))
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+@track_errors('forgot_password_route')
+def forgot_password():
+    """Handle forgot password requests"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    form = ForgotPasswordForm()
+    if form.validate_on_submit():
+        try:
+            user = SaasUser.query.filter_by(email=form.email.data).first()
+            if user:
+                # Generate reset token
+                token = user.generate_reset_token()
+                db.session.commit()
+                
+                # Send reset email (simplified version for now)
+                # In production, you would use a proper email service
+                reset_url = url_for('reset_password', token=token, _external=True)
+                
+                # For now, just flash the reset link (in production, this would be emailed)
+                flash(f'Password reset instructions have been sent to your email. '
+                      f'For demo purposes, use this link: {reset_url}', 'success')
+                
+                # Log the password reset request
+                from models import AuditLog
+                audit_log = AuditLog(
+                    user_id=user.id,
+                    action='password_reset_requested',
+                    details={'email': user.email}
+                )
+                db.session.add(audit_log)
+                db.session.commit()
+                
+            else:
+                # Don't reveal whether email exists or not
+                flash('If your email is registered, you will receive reset instructions.', 'info')
+                
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            error_tracker.log_error(e, {'email': form.email.data})
+            flash('An error occurred. Please try again.', 'error')
+    
+    return render_template('forgot_password.html', form=form)
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+@track_errors('reset_password_route')
+def reset_password(token):
+    """Handle password reset with token"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    # Find user with valid token
+    user = SaasUser.query.filter_by(reset_token=token).first()
+    if not user or not user.verify_reset_token(token):
+        flash('Invalid or expired reset token. Please request a new one.', 'error')
+        return redirect(url_for('forgot_password'))
+    
+    form = ResetPasswordForm()
+    if form.validate_on_submit():
+        try:
+            # Update password
+            user.password_hash = generate_password_hash(form.password.data)
+            user.last_password_change = datetime.utcnow()
+            user.clear_reset_token()
+            db.session.commit()
+            
+            # Log the password reset
+            audit_log = AuditLog(
+                user_id=user.id,
+                action='password_reset_completed',
+                details={'email': user.email}
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+            
+            flash('Your password has been reset successfully. Please log in.', 'success')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            error_tracker.log_error(e, {'user_id': user.id})
+            flash('An error occurred while resetting your password. Please try again.', 'error')
+    
+    return render_template('reset_password.html', form=form, token=token)
 
 @app.route('/dashboard')
 @login_required

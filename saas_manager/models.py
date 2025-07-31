@@ -29,6 +29,10 @@ class SaasUser(db.Model, UserMixin):
     two_factor_enabled = db.Column(db.Boolean, default=False)
     two_factor_secret = db.Column(db.String(100))
     
+    # Password reset functionality
+    reset_token = db.Column(db.String(100))
+    reset_token_expires = db.Column(db.DateTime)
+    
     tenants = db.relationship('TenantUser', back_populates='user')
     public_keys = db.relationship('UserPublicKey', backref='user')
     
@@ -54,6 +58,25 @@ class SaasUser(db.Model, UserMixin):
                 return f"{names[0][0]}{names[1][0]}".upper()
             return names[0][0].upper()
         return self.username[0].upper()
+    
+    def generate_reset_token(self):
+        """Generate a secure password reset token"""
+        import secrets
+        token = secrets.token_urlsafe(32)
+        self.reset_token = token
+        self.reset_token_expires = datetime.utcnow() + timedelta(hours=1)  # Token expires in 1 hour
+        return token
+    
+    def verify_reset_token(self, token):
+        """Verify if the reset token is valid and not expired"""
+        return (self.reset_token == token and 
+                self.reset_token_expires and 
+                datetime.utcnow() < self.reset_token_expires)
+    
+    def clear_reset_token(self):
+        """Clear the reset token after use"""
+        self.reset_token = None
+        self.reset_token_expires = None
 
 class Tenant(db.Model):
     __tablename__ = 'tenants'
