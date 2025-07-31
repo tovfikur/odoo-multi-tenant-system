@@ -117,6 +117,38 @@
               </div>
             </div>
 
+            <!-- Billing Progress -->
+            <div class="billing-progress mb-3" data-tenant-id="{{ tenant.id }}">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <small style="color: var(--text-muted);">
+                  <i class="fas fa-clock me-1"></i>Billing Status
+                </small>
+                <div class="billing-notification-badge d-none">
+                  <i class="fas fa-exclamation-triangle text-warning"></i>
+                </div>
+              </div>
+              <div class="billing-info-loading">
+                <div class="progress" style="height: 6px;">
+                  <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" style="width: 100%"></div>
+                </div>
+                <small class="text-muted">Loading billing info...</small>
+              </div>
+              <div class="billing-info-content d-none">
+                <div class="progress mb-1" style="height: 6px;">
+                  <div class="progress-bar billing-progress-bar" style="width: 0%"></div>
+                </div>
+                <div class="d-flex justify-content-between">
+                  <small class="billing-status-text text-muted"></small>
+                  <small class="billing-days-remaining text-muted"></small>
+                </div>
+              </div>
+              <div class="billing-expired-content d-none">
+                <div class="alert alert-danger py-2 mb-2">
+                  <small><i class="fas fa-exclamation-triangle me-1"></i>Billing expired. Please renew.</small>
+                </div>
+              </div>
+            </div>
+
             <!-- Panel Stats -->
             <div class="row text-center mb-3 g-0">
               <div class="col-4">
@@ -154,7 +186,7 @@
 
           <!-- Action Buttons -->
           <div class="card-footer bg-transparent border-0 pt-0">
-            <div class="row g-2">
+            <div class="row g-2 panel-actions" data-tenant-id="{{ tenant.id }}">
               <div class="col-6">
                 {% if tenant.is_active %}
                 <a data-tenant-db="kdoo_{{ tenant.subdomain }}" 
@@ -174,10 +206,17 @@
               </div>
               <div class="col-6">
                 <a href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}" 
-                   class="btn btn-outline-secondary btn-sm w-100">
+                   class="btn btn-outline-secondary btn-sm w-100 default-manage-btn">
                   <i class="fas fa-cog me-1"></i>
                   <span class="d-none d-md-inline">Manage</span>
                   <span class="d-md-none">Manage</span>
+                </a>
+                <!-- Payment button (initially hidden) -->
+                <a href="{{ url_for('billing.initiate_payment', tenant_id=tenant.id) }}" 
+                   class="btn btn-warning btn-sm w-100 pay-to-renew-btn d-none">
+                  <i class="fas fa-credit-card me-1"></i>
+                  <span class="d-none d-md-inline">Pay to Renew</span>
+                  <span class="d-md-none">Pay</span>
                 </a>
               </div>
             </div>
@@ -221,6 +260,13 @@
           <i class="fas fa-plus fa-2x mb-2"></i>
           <span class="fw-bold">New Panel</span>
           <small class="mt-1" style="color: var(--text-muted);">Create another instance</small>
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="{{ url_for('billing.admin_billing_logs') }}" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+          <i class="fas fa-chart-line fa-2x mb-2"></i>
+          <span class="fw-bold">Billing Admin</span>
+          <small class="mt-1" style="color: var(--text-muted);">View billing logs</small>
         </a>
       </div>
       {% if current_user.is_admin %}
@@ -301,15 +347,134 @@
 
 {% block scripts %}
 <script>
-// Auto-refresh panel status every 30 seconds
+// Load billing information on page load
+document.addEventListener('DOMContentLoaded', function() {
+  document.querySelectorAll('.billing-progress').forEach(function(billingDiv) {
+    const tenantId = billingDiv.dataset.tenantId;
+    loadBillingInfo(tenantId, billingDiv);
+  });
+});
+
+// Auto-refresh panel status and billing every 30 seconds
 setInterval(function() {
   document.querySelectorAll(".panel-card").forEach(function(card) {
     const tenantId = getTenantIdFromCard(card);
     if (tenantId) {
       updateTenantStatus(tenantId, card);
+      
+      // Update billing info
+      const billingDiv = card.querySelector('.billing-progress');
+      if (billingDiv) {
+        loadBillingInfo(tenantId, billingDiv);
+      }
     }
   });
 }, 30000);
+
+// Function to load billing information
+function loadBillingInfo(tenantId, billingDiv) {
+  fetch(`/billing/panel/${tenantId}/info`)
+    .then(response => response.json())
+    .then(data => {
+      updateBillingDisplay(billingDiv, data);
+      updatePaymentButton(tenantId, data);
+    })
+    .catch(error => {
+      console.error('Error loading billing info:', error);
+      showBillingError(billingDiv);
+    });
+}
+
+// Function to update billing display
+function updateBillingDisplay(billingDiv, data) {
+  const loadingDiv = billingDiv.querySelector('.billing-info-loading');
+  const contentDiv = billingDiv.querySelector('.billing-info-content');
+  const expiredDiv = billingDiv.querySelector('.billing-expired-content');
+  const notificationBadge = billingDiv.querySelector('.billing-notification-badge');
+
+  // Hide loading
+  loadingDiv.classList.add('d-none');
+
+  if (data.status === 'no_active_cycle' || data.requires_payment) {
+    // Show expired state
+    contentDiv.classList.add('d-none');
+    expiredDiv.classList.remove('d-none');
+    notificationBadge.classList.remove('d-none');
+  } else {
+    // Show normal billing info
+    expiredDiv.classList.add('d-none');
+    contentDiv.classList.remove('d-none');
+    
+    // Update progress bar
+    const progressBar = contentDiv.querySelector('.billing-progress-bar');
+    const usagePercent = (data.hours_used / data.total_hours_allowed) * 100;
+    progressBar.style.width = usagePercent + '%';
+    
+    // Set progress bar color based on usage
+    progressBar.className = 'progress-bar billing-progress-bar';
+    if (usagePercent > 80) {
+      progressBar.classList.add('bg-danger');
+    } else if (usagePercent > 60) {
+      progressBar.classList.add('bg-warning');
+    } else {
+      progressBar.classList.add('bg-success');
+    }
+    
+    // Update text
+    const statusText = contentDiv.querySelector('.billing-status-text');
+    const daysText = contentDiv.querySelector('.billing-days-remaining');
+    
+    statusText.textContent = `${data.hours_used.toFixed(1)}/${data.total_hours_allowed} hours`;
+    daysText.textContent = `${data.days_remaining} days left`;
+    
+    // Show notification badge if reminder needed
+    if (data.days_remaining <= 7) {
+      notificationBadge.classList.remove('d-none');
+    } else {
+      notificationBadge.classList.add('d-none');
+    }
+  }
+}
+
+// Function to update payment button visibility
+function updatePaymentButton(tenantId, data) {
+  const panelActions = document.querySelector(`.panel-actions[data-tenant-id="${tenantId}"]`);
+  if (!panelActions) return;
+  
+  const manageBtn = panelActions.querySelector('.default-manage-btn');
+  const payBtn = panelActions.querySelector('.pay-to-renew-btn');
+  
+  if (data.requires_payment || data.status === 'no_active_cycle') {
+    // Show payment button, hide manage button
+    manageBtn.classList.add('d-none');
+    payBtn.classList.remove('d-none');
+  } else {
+    // Show manage button, hide payment button
+    manageBtn.classList.remove('d-none');
+    payBtn.classList.add('d-none');
+  }
+}
+
+// Function to show billing error
+function showBillingError(billingDiv) {
+  const loadingDiv = billingDiv.querySelector('.billing-info-loading');
+  const contentDiv = billingDiv.querySelector('.billing-info-content');
+  const expiredDiv = billingDiv.querySelector('.billing-expired-content');
+  
+  loadingDiv.classList.add('d-none');
+  contentDiv.classList.add('d-none');
+  expiredDiv.classList.add('d-none');
+  
+  // Show error state
+  billingDiv.innerHTML = `
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <small style="color: var(--text-muted);">
+        <i class="fas fa-clock me-1"></i>Billing Status
+      </small>
+    </div>
+    <small class="text-muted">Unable to load billing info</small>
+  `;
+}
 
 // Function to extract tenant ID from card
 function getTenantIdFromCard(card) {

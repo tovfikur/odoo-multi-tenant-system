@@ -469,6 +469,102 @@ class TenantBackup(db.Model):
     tenant = db.relationship('Tenant', backref='backups')
     initiator = db.relationship('SaasUser')
 
+class BillingCycle(db.Model):
+    """Track billing cycles for each tenant"""
+    __tablename__ = 'billing_cycles'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    cycle_start = db.Column(db.DateTime, default=datetime.utcnow)
+    cycle_end = db.Column(db.DateTime)
+    total_hours_allowed = db.Column(db.Integer, default=360)  # 30 days * 12 hours
+    hours_used = db.Column(db.Float, default=0.0)
+    status = db.Column(db.String(20), default='active')  # active, expired, renewed
+    reminder_sent = db.Column(db.Boolean, default=False)
+    auto_deactivated = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    tenant = db.relationship('Tenant', backref='billing_cycles')
+    
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        if not self.cycle_end:
+            self.cycle_end = self.cycle_start + timedelta(days=30)
+    
+    @property
+    def hours_remaining(self):
+        return max(0, self.total_hours_allowed - self.hours_used)
+    
+    @property
+    def days_remaining(self):
+        if self.cycle_end:
+            delta = self.cycle_end - datetime.utcnow()
+            return max(0, delta.days)
+        return 0
+    
+    @property
+    def is_expired(self):
+        return self.hours_used >= self.total_hours_allowed or datetime.utcnow() > self.cycle_end
+    
+    @property
+    def should_send_reminder(self):
+        return (not self.reminder_sent and 
+                self.hours_remaining <= 84 and  # 7 days * 12 hours
+                not self.is_expired)
+
+class UsageTracking(db.Model):
+    """Track hourly usage for each tenant"""
+    __tablename__ = 'usage_tracking'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    billing_cycle_id = db.Column(db.Integer, db.ForeignKey('billing_cycles.id'), nullable=False)
+    recorded_at = db.Column(db.DateTime, default=datetime.utcnow)
+    database_active = db.Column(db.Boolean, default=False)
+    uptime_hours = db.Column(db.Float, default=0.0)  # Fraction of hour the DB was active
+    downtime_reason = db.Column(db.String(100))  # maintenance, user_deactivated, expired, etc.
+    
+    tenant = db.relationship('Tenant', backref='usage_logs')
+    billing_cycle = db.relationship('BillingCycle', backref='usage_logs')
+
+class PaymentHistory(db.Model):
+    """Enhanced payment history for billing cycles"""
+    __tablename__ = 'payment_history'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    billing_cycle_id = db.Column(db.Integer, db.ForeignKey('billing_cycles.id'), nullable=True)
+    payment_id = db.Column(db.String(100), unique=True)
+    amount = db.Column(db.Float, nullable=False)
+    currency = db.Column(db.String(3), default='USD')
+    payment_method = db.Column(db.String(50))
+    status = db.Column(db.String(20), default='pending')  # pending, completed, failed, refunded
+    gateway_transaction_id = db.Column(db.String(200))
+    gateway_response = db.Column(db.JSON)
+    paid_at = db.Column(db.DateTime)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    tenant = db.relationship('Tenant', backref='payment_history')
+    billing_cycle = db.relationship('BillingCycle', backref='payments')
+
+class BillingNotification(db.Model):
+    """Track billing-related notifications and support tickets"""
+    __tablename__ = 'billing_notifications'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'), nullable=False)
+    billing_cycle_id = db.Column(db.Integer, db.ForeignKey('billing_cycles.id'), nullable=False)
+    support_ticket_id = db.Column(db.Integer, db.ForeignKey('support_tickets.id'), nullable=True)
+    notification_type = db.Column(db.String(50), nullable=False)  # reminder, expiry, renewal
+    message = db.Column(db.Text, nullable=False)
+    sent_at = db.Column(db.DateTime, default=datetime.utcnow)
+    viewed_at = db.Column(db.DateTime)
+    is_read = db.Column(db.Boolean, default=False)
+    
+    tenant = db.relationship('Tenant', backref='billing_notifications')
+    billing_cycle = db.relationship('BillingCycle', backref='notifications')
+    support_ticket = db.relationship('SupportTicket', backref='billing_notifications')
+
 
 
 def add_helper_methods_to_models():

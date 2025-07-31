@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Payment - {{ tenant.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .billing-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+        }
+        .billing-card {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: none;
+            border-radius: 15px;
+        }
+        .payment-method {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .payment-method:hover {
+            border-color: #007bff;
+            background-color: #f8f9ff;
+        }
+        .payment-method.active {
+            border-color: #007bff;
+            background-color: #f8f9ff;
+        }
+        .billing-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .progress-ring {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto;
+        }
+        .progress-ring-circle {
+            stroke-dasharray: 283;
+            stroke-dashoffset: 283;
+            transition: stroke-dashoffset 0.35s;
+            transform-origin: 50% 50%;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <div class="billing-header">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="mb-0"><i class="fas fa-credit-card me-2"></i>Panel Renewal</h1>
+                    <p class="mb-0">{{ tenant.name }}</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-light">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <!-- Billing Status Card -->
+                <div class="card billing-card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4"><i class="fas fa-chart-pie me-2"></i>Current Billing Status</h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="billing-info">
+                                    {% if billing_info %}
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <strong>Hours Used:</strong><br>
+                                            <span class="text-primary fs-4">{{ "%.1f"|format(billing_info.hours_used) }}</span> / {{ billing_info.total_hours_allowed }}
+                                        </div>
+                                        <div class="col-6">
+                                            <strong>Days Remaining:</strong><br>
+                                            <span class="text-warning fs-4">{{ billing_info.days_remaining }}</span> days
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mt-3">
+                                        <div class="progress" style="height: 8px;">
+                                            <div class="progress-bar 
+                                                {% if billing_info.hours_used / billing_info.total_hours_allowed > 0.8 %}bg-danger
+                                                {% elif billing_info.hours_used / billing_info.total_hours_allowed > 0.6 %}bg-warning
+                                                {% else %}bg-success{% endif %}" 
+                                                style="width: {{ (billing_info.hours_used / billing_info.total_hours_allowed * 100) }}%">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted">Usage Progress</small>
+                                    </div>
+                                    {% else %}
+                                    <div class="text-center text-danger">
+                                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                                        <p>Panel billing has expired. Payment required to reactivate.</p>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6 text-center">
+                                <div class="progress-ring">
+                                    <svg width="120" height="120">
+                                        <circle stroke="#e9ecef" stroke-width="8" fill="transparent" r="45" cx="60" cy="60"/>
+                                        <circle class="progress-ring-circle" 
+                                                stroke="{% if billing_info and billing_info.hours_used / billing_info.total_hours_allowed > 0.8 %}#dc3545{% elif billing_info and billing_info.hours_used / billing_info.total_hours_allowed > 0.6 %}#ffc107{% else %}#28a745{% endif %}" 
+                                                stroke-width="8" 
+                                                fill="transparent" 
+                                                r="45" 
+                                                cx="60" 
+                                                cy="60"
+                                                style="stroke-dashoffset: {{ 283 - (283 * (billing_info.hours_used / billing_info.total_hours_allowed if billing_info else 1)) }}"/>
+                                    </svg>
+                                </div>
+                                <p class="mt-2 mb-0">
+                                    <strong>
+                                        {% if billing_info %}
+                                            {{ "%.1f"|format((billing_info.hours_used / billing_info.total_hours_allowed * 100)) }}%
+                                        {% else %}
+                                            100%
+                                        {% endif %}
+                                    </strong><br>
+                                    <small class="text-muted">Used</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form Card -->
+                <div class="card billing-card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4"><i class="fas fa-payment me-2"></i>Renew Panel Subscription</h5>
+                        
+                        <form action="{{ url_for('billing.process_payment', tenant_id=tenant.id) }}" method="POST" id="paymentForm">
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label">Renewal Period</label>
+                                    <div class="card payment-method active" data-method="30days">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">30 Days (360 Hours)</h6>
+                                                <small class="text-muted">12 active hours per day</small>
+                                            </div>
+                                            <div class="text-end">
+                                                <h5 class="mb-0 text-primary">${{ "%.2f"|format(amount) }}</h5>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <label class="form-label">Payment Method</label>
+                                    <div class="payment-method" data-method="stripe">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fab fa-cc-stripe fa-2x text-primary me-3"></i>
+                                            <div>
+                                                <h6 class="mb-0">Credit Card</h6>
+                                                <small class="text-muted">Secure payment via Stripe</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="payment-method" data-method="paypal">
+                                        <div class="d-flex align-items-center">
+                                            <i class="fab fa-paypal fa-2x text-warning me-3"></i>
+                                            <div>
+                                                <h6 class="mb-0">PayPal</h6>
+                                                <small class="text-muted">Pay with PayPal account</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <input type="hidden" name="amount" value="{{ amount }}">
+                            <input type="hidden" name="payment_method" value="stripe" id="selectedPaymentMethod">
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="billing-info">
+                                        <h6>What you get:</h6>
+                                        <ul class="list-unstyled mb-0">
+                                            <li><i class="fas fa-check text-success me-2"></i>360 active hours (30 days)</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>12 hours per day allowance</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Full Odoo access</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>Automated backups</li>
+                                            <li><i class="fas fa-check text-success me-2"></i>24/7 support</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="billing-info">
+                                        <h6>Payment Summary:</h6>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Panel Renewal (30 days)</span>
+                                            <span>${{ "%.2f"|format(amount) }}</span>
+                                        </div>
+                                        <div class="d-flex justify-content-between mb-2">
+                                            <span>Taxes</span>
+                                            <span>$0.00</span>
+                                        </div>
+                                        <hr>
+                                        <div class="d-flex justify-content-between">
+                                            <strong>Total Amount</strong>
+                                            <strong class="text-primary">${{ "%.2f"|format(amount) }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-primary btn-lg px-5" id="payButton">
+                                    <i class="fas fa-lock me-2"></i>Pay Now & Activate Panel
+                                </button>
+                            </div>
+                            
+                            <p class="text-center mt-3 mb-0">
+                                <small class="text-muted">
+                                    <i class="fas fa-shield-alt me-1"></i>
+                                    Your payment is secured with 256-bit SSL encryption
+                                </small>
+                            </p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Payment method selection
+            const paymentMethods = document.querySelectorAll('.payment-method[data-method]');
+            const selectedMethodInput = document.getElementById('selectedPaymentMethod');
+            
+            paymentMethods.forEach(method => {
+                method.addEventListener('click', function() {
+                    // Remove active class from all methods
+                    paymentMethods.forEach(m => m.classList.remove('active'));
+                    
+                    // Add active class to clicked method
+                    this.classList.add('active');
+                    
+                    // Update hidden input
+                    selectedMethodInput.value = this.dataset.method;
+                });
+            });
+            
+            // Form submission
+            const paymentForm = document.getElementById('paymentForm');
+            const payButton = document.getElementById('payButton');
+            
+            paymentForm.addEventListener('submit', function(e) {
+                // Prevent double submission
+                payButton.disabled = true;
+                payButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Payment...';
+                
+                // In a real implementation, you would integrate with your payment gateway here
+                // For demo purposes, we'll just show the processing state
+                
+                setTimeout(() => {
+                    payButton.disabled = false;
+                    payButton.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Now & Activate Panel';
+                }, 3000);
+            });
+        });
+    </script>
+</body>
+</html>
