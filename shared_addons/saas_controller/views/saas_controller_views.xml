@@ -97,7 +97,7 @@
                         <!-- Resource Controls Tab -->
                         <page string="Resource Controls" name="resources">
                             <group>
-                                <group string="Storage & Email">
+                                <group string="Storage &amp; Email">
                                     <field name="max_storage_mb"/>
                                     <field name="max_email_per_day"/>
                                 </group>
