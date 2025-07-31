@@ -110,7 +110,7 @@ class CacheManager:
                 'subdomain': t.subdomain,
                 'status': t.status,
                 'plan': t.plan,
-                'is_active': t.status == 'active',
+                'is_active': t.is_active,  # Use actual database active status
                 'db_name': t.subdomain,
                 'max_users': getattr(t, 'max_users', 'N/A'),
                 'storage_limit': getattr(t, 'storage_limit', 'N/A'),

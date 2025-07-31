@@ -1089,6 +1089,23 @@ def manage_tenant(tenant_id):
             return redirect(url_for('dashboard'))
         
         tenant = Tenant.query.get_or_404(tenant_id)
+        
+        # Update database active status
+        try:
+            actual_db_status = odoo.is_active(tenant.database_name)
+            if tenant.is_active != actual_db_status:
+                tenant.is_active = actual_db_status
+                db.session.add(tenant)
+                db.session.commit()
+                
+                # Invalidate cache for this tenant
+                tenant_users = TenantUser.query.filter_by(tenant_id=tenant.id).all()
+                user_ids = [tu.user_id for tu in tenant_users]
+                cache_manager.invalidate_user_tenants_cache(user_ids)
+                cache_manager.invalidate_admin_stats_cache()
+        except Exception as e:
+            logger.warning(f"Could not check database status for {tenant.database_name}: {e}")
+        
         modules = odoo.get_installed_applications_count(tenant.database_name, tenant.admin_username, tenant.get_admin_password())
         storage_usage = odoo.get_database_storage_usage(tenant.database_name)['total_size_human']
         uptime = odoo.get_tenant_uptime(tenant.database_name)['uptime_human']
@@ -1111,6 +1128,30 @@ def manage_tenant(tenant_id):
 def admin_tenants():
     try:
         tenants = Tenant.query.all()
+        
+        # Update database active status for all tenants
+        updated_tenants = []
+        for tenant in tenants:
+            try:
+                actual_db_status = odoo.is_active(tenant.database_name)
+                if tenant.is_active != actual_db_status:
+                    tenant.is_active = actual_db_status
+                    db.session.add(tenant)
+                    updated_tenants.append(tenant.id)
+            except Exception as e:
+                logger.warning(f"Could not check database status for {tenant.database_name}: {e}")
+        
+        db.session.commit()
+        
+        # Invalidate cache for updated tenants
+        if updated_tenants:
+            cache_manager.invalidate_admin_stats_cache()
+            # Invalidate user caches for affected tenants
+            for tenant_id in updated_tenants:
+                tenant_users = TenantUser.query.filter_by(tenant_id=tenant_id).all()
+                user_ids = [tu.user_id for tu in tenant_users]
+                cache_manager.invalidate_user_tenants_cache(user_ids)
+        
         return render_template('admin_tenants.html', tenants=tenants)
     except Exception as e:
         error_tracker.log_error(e, {'admin_user': current_user.id})
