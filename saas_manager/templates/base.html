@@ -49,6 +49,23 @@
       href="{{ url_for('static', filename='css/style.css') }}"
       rel="stylesheet"
     />
+    
+    <!-- Avatar Circle Styles -->
+    <style>
+      .avatar-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        background: var(--primary);
+        color: white;
+        font-size: 0.8rem;
+      }
+    </style>
+    
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
 
     {% if current_user.is_authenticated %}
@@ -192,9 +209,18 @@
                 aria-expanded="false"
                 data-tooltip="User Menu"
               >
+                {% if current_user.profile_picture %}
+                <img
+                  src="{{ url_for('static', filename='uploads/profiles/' + current_user.profile_picture) }}"
+                  alt="Profile"
+                  class="me-2"
+                  style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover; border: 2px solid var(--primary);"
+                />
+                {% else %}
                 <div class="avatar-circle me-2">
-                  {{ current_user.username[0].upper() }}
+                  {{ current_user.get_avatar_initials() if current_user.get_avatar_initials else current_user.username[0].upper() }}
                 </div>
+                {% endif %}
                 <span>{{ current_user.username }}</span>
               </a>
               <ul class="dropdown-menu dropdown-menu-end">

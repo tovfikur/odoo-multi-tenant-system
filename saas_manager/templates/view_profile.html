@@ -294,7 +294,7 @@ endblock %} {% block content %}
             <div class="d-flex justify-content-between align-items-center">
               <small class="text-muted">
                 <i class="fas fa-calendar me-1"></i>
-                {{ tenant.created_at.strftime('%b %d, %Y') }}
+                {{ tenant.created_at }}
               </small>
               <div class="btn-group btn-group-sm">
                 {% if tenant.status == 'active' %}

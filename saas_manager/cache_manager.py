@@ -114,7 +114,7 @@ class CacheManager:
                 'db_name': t.subdomain,
                 'max_users': getattr(t, 'max_users', 'N/A'),
                 'storage_limit': getattr(t, 'storage_limit', 'N/A'),
-                'created_at': t.created_at.strftime('%Y-%m-%d') if t.created_at else None
+                'created_at': t.created_at.strftime('%b %d, %Y') if t.created_at else 'Not available'
             }
             for t in tenants
         ]
