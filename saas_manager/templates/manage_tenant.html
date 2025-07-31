@@ -203,10 +203,10 @@
                   <div class="flex-grow-1">
                     <div class="fw-semibold mb-1" style="color: var(--text-secondary); font-size: 0.9rem;">Subdomain</div>
                     <div>
-                      <a data-tenant-db="{{ tenant.db_name }}" target="_blank" 
+                      <a data-tenant-db="{{tenant.database_name}}" target="_blank" 
                          class="text-decoration-none tenant-link fw-bold" 
                          style="color: var(--primary); font-size: 1rem;">
-                        {{ tenant.db_name }}.<domain>
+                        {{tenant.database_name}}.<domain>
                         <i class="fas fa-external-link-alt ms-1" style="font-size: 0.8rem;"></i>
                       </a>
                     </div>

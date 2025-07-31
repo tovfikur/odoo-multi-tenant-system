@@ -1225,7 +1225,7 @@ def manage_tenant(tenant_id):
                       modules=modules, 
                       storage_usage=storage_usage, 
                       uptime=uptime, 
-                      odoo_user=odoo_user,
+                      odoo_user=odoo_user-1,
                       plans=plans_data,
                       tenant_id=tenant_id)
     except Exception as e:
@@ -2646,6 +2646,64 @@ def get_tenant_user_limit_api(subdomain):
         return jsonify({
             'success': False,
             'error': 'Error retrieving user limit information'
+        }), 500
+
+
+@app.route('/api/tenant/<subdomain>/config')
+@track_errors('get_tenant_config_api')
+def get_tenant_config_api(subdomain):
+    """API endpoint to get complete tenant configuration for SaaS Controller"""
+    try:
+        # Find tenant by subdomain
+        tenant = Tenant.query.filter_by(subdomain=subdomain).first()
+        if not tenant:
+            return jsonify({
+                'success': False,
+                'error': 'Tenant not found'
+            }), 404
+        
+        # Get subscription plan details
+        plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
+        
+        # Build configuration response
+        config = {
+            'success': True,
+            'tenant_id': tenant.id,
+            'subdomain': tenant.subdomain,
+            'status': tenant.status,
+            'plan': tenant.plan,
+            
+            # User limits
+            'max_users': plan.max_users if plan else tenant.max_users,
+            'user_limit_enabled': True,
+            
+            # Branding settings (can be customized per plan)
+            'remove_branding': plan.features.get('remove_branding', False) if plan and plan.features else False,
+            'custom_app_name': tenant.custom_app_name or 'Business Manager',
+            'custom_company_name': tenant.company_name,
+            
+            # Color schema (default or plan-specific)
+            'primary_color': plan.theme.get('primary_color', '#017e84') if plan and hasattr(plan, 'theme') and plan.theme else '#017e84',
+            'secondary_color': plan.theme.get('secondary_color', '#875a7b') if plan and hasattr(plan, 'theme') and plan.theme else '#875a7b',
+            'accent_color': plan.theme.get('accent_color', '#017e84') if plan and hasattr(plan, 'theme') and plan.theme else '#017e84',
+            
+            # Feature controls
+            'disable_apps_menu': plan.features.get('disable_apps_menu', False) if plan and plan.features else False,
+            'disable_settings_menu': plan.features.get('disable_settings_menu', False) if plan and plan.features else False,
+            'disable_debug_mode': plan.features.get('disable_debug_mode', True) if plan and plan.features else True,
+            
+            # Resource limits
+            'max_storage_mb': plan.storage_limit_mb if plan else 1024,
+            'max_email_per_day': plan.email_limit_per_day if plan else 100,
+        }
+        
+        return jsonify(config)
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'subdomain': subdomain, 'function': 'get_tenant_config_api'})
+        return jsonify({
+            'success': False,
+            'error': 'Error retrieving tenant configuration'
         }), 500
 
 @app.route('/api/tenant/<subdomain>/users')

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Custom Login Page Template -->
+    <template id="login_layout_custom" name="Custom Login Layout" inherit_id="web.login_layout">
+        <xpath expr="//div[@class='card-body']" position="before">
+            <t t-set="saas_config" t-value="request.env['saas.controller'].sudo().get_or_create_config()"/>
+            <t t-if="saas_config.custom_login_message">
+                <div class="alert alert-info">
+                    <t t-esc="saas_config.custom_login_message"/>
+                </div>
+            </t>
+        </xpath>
+        
+        <!-- Replace title if custom app name is set -->
+        <xpath expr="//title" position="replace">
+            <t t-set="saas_config" t-value="request.env['saas.controller'].sudo().get_or_create_config()"/>
+            <title>
+                <t t-if="saas_config.custom_app_name" t-esc="saas_config.custom_app_name"/>
+                <t t-else="">Odoo</t>
+            </title>
+        </xpath>
+    </template>
+
+    <!-- Hide Powered By Footer -->
+    <template id="hide_powered_by" name="Hide Powered By" inherit_id="web.layout">
+        <xpath expr="//div[contains(@class, 'o_sub_menu_footer')]" position="attributes">
+            <t t-set="saas_config" t-value="request.env['saas.controller'].sudo().get_or_create_config()"/>
+            <attribute name="style" t-if="saas_config.hide_poweredby">display: none !important;</attribute>
+        </xpath>
+    </template>
+
+    <!-- Custom CSS for Branding -->
+    <template id="custom_branding_css" name="Custom Branding CSS" inherit_id="web.assets_frontend">
+        <xpath expr="." position="inside">
+            <t t-set="saas_config" t-value="request.env['saas.controller'].sudo().get_or_create_config()"/>
+            <t t-if="saas_config.remove_odoo_branding">
+                <style>
+                    .o_sub_menu_footer,
+                    .powered_by,
+                    [data-section="about"] .oe_instance_title,
+                    .oe_instance_title {
+                        display: none !important;
+                    }
+                </style>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Backend Custom CSS -->
+    <template id="custom_backend_css" name="Custom Backend CSS" inherit_id="web.assets_backend">
+        <xpath expr="." position="inside">
+            <style id="saas_controller_dynamic_css">
+                /* This will be populated by the SaaS controller */
+            </style>
+        </xpath>
+    </template>
+</odoo>

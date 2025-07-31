@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- SaaS Controller Form View -->
+    <record id="view_saas_controller_form" model="ir.ui.view">
+        <field name="name">SaaS Controller Form</field>
+        <field name="model">saas.controller</field>
+        <field name="arch" type="xml">
+            <form string="SaaS Controller Configuration">
+                <header>
+                    <button name="sync_with_saas_manager" type="object" string="Sync with SaaS Manager" class="oe_highlight"/>
+                    <button name="apply_branding_config" type="object" string="Apply Configuration" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="database_name" readonly="1"/>
+                        </h1>
+                    </div>
+                    
+                    <group>
+                        <group string="Basic Configuration">
+                            <field name="is_active"/>
+                            <field name="saas_manager_url"/>
+                            <field name="last_sync"/>
+                        </group>
+                    </group>
+                    
+                    <notebook>
+                        <!-- User Limits Tab -->
+                        <page string="User Limits" name="user_limits">
+                            <group>
+                                <group string="User Limit Settings">
+                                    <field name="user_limit_enabled"/>
+                                    <field name="max_users" attrs="{'readonly': [('user_limit_enabled', '=', False)]}"/>
+                                    <field name="current_users"/>
+                                    <label for="remaining_users" string="Remaining Slots"/>
+                                    <div>
+                                        <span class="text-success" attrs="{'invisible': [('current_users', '>=', 'max_users')]}">
+                                            <field name="current_users" invisible="1"/>
+                                            <field name="max_users" invisible="1"/>
+                                            Available: <t t-esc="record.max_users.raw_value - record.current_users.raw_value"/> slots
+                                        </span>
+                                        <span class="text-danger" attrs="{'invisible': [('current_users', '&lt;', 'max_users')]}">
+                                            Limit reached!
+                                        </span>
+                                    </div>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <!-- Branding Tab -->
+                        <page string="Branding" name="branding">
+                            <group>
+                                <group string="Branding Options">
+                                    <field name="remove_odoo_branding"/>
+                                    <field name="hide_poweredby"/>
+                                    <field name="custom_app_name"/>
+                                </group>
+                                <group string="Company Branding">
+                                    <field name="custom_company_name"/>
+                                    <field name="custom_logo" widget="image" class="oe_avatar"/>
+                                    <field name="custom_favicon" widget="image"/>
+                                </group>
+                            </group>
+                            <group string="Login Page">
+                                <field name="custom_login_message" widget="text"/>
+                            </group>
+                        </page>
+                        
+                        <!-- Color Schema Tab -->
+                        <page string="Color Schema" name="colors">
+                            <group>
+                                <group string="Primary Colors">
+                                    <field name="primary_color" widget="color"/>
+                                    <field name="secondary_color" widget="color"/>
+                                    <field name="accent_color" widget="color"/>
+                                </group>
+                                <group string="Interface Colors">
+                                    <field name="background_color" widget="color"/>
+                                    <field name="text_color" widget="color"/>
+                                    <field name="link_color" widget="color"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-info" role="alert">
+                                <strong>Color Preview:</strong> Click "Apply Configuration" to see changes.
+                            </div>
+                        </page>
+                        
+                        <!-- Feature Controls Tab -->
+                        <page string="Feature Controls" name="features">
+                            <group>
+                                <group string="Menu Controls">
+                                    <field name="disable_apps_menu"/>
+                                    <field name="disable_settings_menu"/>
+                                    <field name="disable_debug_mode"/>
+                                </group>
+                            </group>
+                        </page>
+                        
+                        <!-- Resource Controls Tab -->
+                        <page string="Resource Controls" name="resources">
+                            <group>
+                                <group string="Storage & Email">
+                                    <field name="max_storage_mb"/>
+                                    <field name="max_email_per_day"/>
+                                </group>
+                                <group string="Module Controls">
+                                    <field name="allowed_modules" widget="text" placeholder="module1,module2,module3"/>
+                                </group>
+                            </group>
+                            <div class="alert alert-warning" role="alert">
+                                <strong>Note:</strong> Resource controls require additional development for full enforcement.
+                            </div>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- SaaS Controller Tree View -->
+    <record id="view_saas_controller_tree" model="ir.ui.view">
+        <field name="name">SaaS Controller Tree</field>
+        <field name="model">saas.controller</field>
+        <field name="arch" type="xml">
+            <tree string="SaaS Controllers">
+                <field name="database_name"/>
+                <field name="is_active"/>
+                <field name="max_users"/>
+                <field name="current_users"/>
+                <field name="remove_odoo_branding"/>
+                <field name="primary_color"/>
+                <field name="last_sync"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- SaaS Controller Action -->
+    <record id="action_saas_controller" model="ir.actions.act_window">
+        <field name="name">SaaS Controller</field>
+        <field name="res_model">saas.controller</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="oe_view_nocontent_create">
+                Click to create a new SaaS controller configuration.
+            </p>
+            <p>
+                SaaS Controller manages user limits, branding, colors, and features for your tenant.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_saas_controller_root" name="SaaS Controller" sequence="100" groups="base.group_system"/>
+    <menuitem id="menu_saas_controller" name="Configuration" parent="menu_saas_controller_root" action="action_saas_controller" sequence="10"/>
+</odoo>
