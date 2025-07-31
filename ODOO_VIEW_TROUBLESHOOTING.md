@@ -45,9 +45,13 @@ Label tag must contain a "for". To match label style without corresponding field
 ```
 
 ### **Solution:**
-Add the proper class for styling:
+Replace with a div element that has the proper class:
 ```xml
-<label string="Status Information" class="o_form_label"/>
+<!-- ✅ Best solution for Odoo 17.0+ -->
+<div class="o_form_label">Status Information</div>
+
+<!-- Alternative: Reference an existing field -->
+<label for="existing_field" string="Field Label"/>
 ```
 
 ---
