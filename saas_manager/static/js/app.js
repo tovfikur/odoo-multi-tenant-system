@@ -318,13 +318,20 @@ function renderLogs() {
 }
 
 function updateStats(stats) {
-  document.getElementById("total-logs").textContent = stats.total || 0;
-  document.getElementById("error-count").textContent = stats.error || 0;
-  document.getElementById("warning-count").textContent = stats.warning || 0;
-  document.getElementById("info-count").textContent = stats.info || 0;
-  document.getElementById("success-count").textContent = stats.success || 0;
-  document.getElementById("last-update").textContent = new Date(
-    stats.last_update
+  const totalLogs = document.getElementById("total-logs");
+  const errorCount = document.getElementById("error-count");
+  const warningCount = document.getElementById("warning-count");
+  const infoCount = document.getElementById("info-count");
+  const successCount = document.getElementById("success-count");
+  const lastUpdate = document.getElementById("last-update");
+  
+  if (totalLogs) totalLogs.textContent = stats.total || 0;
+  if (errorCount) errorCount.textContent = stats.error || 0;
+  if (warningCount) warningCount.textContent = stats.warning || 0;
+  if (infoCount) infoCount.textContent = stats.info || 0;
+  if (successCount) successCount.textContent = stats.success || 0;
+  if (lastUpdate) lastUpdate.textContent = new Date(
+    stats.last_update || Date.now()
   ).toLocaleTimeString();
 }
 

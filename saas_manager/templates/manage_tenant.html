@@ -190,7 +190,10 @@
                     <i class="fas fa-hdd text-info me-3" style="font-size: 1.1rem;"></i>
                     <div>
                       <div class="fw-semibold" style="color: var(--text-secondary); font-size: 0.9rem;">Storage</div>
-                      <div class="fw-bold" style="color: var(--text-primary); font-size: 1.1rem;">{{ tenant.storage_limit }} MB</div>
+                      <div class="fw-bold" style="color: var(--text-primary); font-size: 1.1rem;" id="storageDisplay">
+                        {% set current_plan = plans|selectattr('name', 'equalto', tenant.plan)|first %}
+                        {{ current_plan.storage_limit if current_plan else tenant.storage_limit }} MB
+                      </div>
                     </div>
                   </div>
                   <div class="text-end">
@@ -756,6 +759,12 @@ setInterval(function() {
 
 // Handle plan selection changes
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure document body exists
+    if (!document.body) {
+        console.warn('Document body not available, skipping plan selection setup');
+        return;
+    }
+    
     const planSelect = document.getElementById('planSelect');
     const maxUsersInput = document.getElementById('maxUsers');
     const storageLimitInput = document.getElementById('storageLimit');
@@ -804,6 +813,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (maxUsersDisplay) {
             maxUsersDisplay.textContent = plan.max_users + ' max';
         }
+        
+        // Update the storage display in the resource usage section
+        const storageDisplay = document.getElementById('storageDisplay');
+        if (storageDisplay) {
+            storageDisplay.textContent = plan.storage_limit + ' MB';
+        }
     }
 });
 
@@ -842,11 +857,17 @@ function saveTenantChanges() {
             if (result.plan_changed) {
                 location.reload(); // Reload to reflect all changes
             } else {
-                // Just update the display
+                // Just update the displays
                 const maxUsersDisplay = document.getElementById('maxUsersDisplay');
                 if (maxUsersDisplay) {
                     maxUsersDisplay.textContent = data.max_users + ' max';
                 }
+                
+                const storageDisplay = document.getElementById('storageDisplay');
+                if (storageDisplay) {
+                    storageDisplay.textContent = data.storage_limit + ' MB';
+                }
+                
                 // Close modal
                 const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
                 modal.hide();
@@ -1058,15 +1079,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Populate both available and installed apps when modal is shown
     const appManagementModal = document.getElementById('appManagementModal');
-    appManagementModal.addEventListener('show.bs.modal', function() {
-        populateApps(`/api/tenant/${tenantId}/apps/available`, 'availableAppsList');
-        populateApps(`/api/tenant/${tenantId}/apps/installed`, 'installedAppsList');
-    });
+    if (appManagementModal) {
+        appManagementModal.addEventListener('show.bs.modal', function() {
+            populateApps(`/api/tenant/${tenantId}/apps/available`, 'availableAppsList');
+            populateApps(`/api/tenant/${tenantId}/apps/installed`, 'installedAppsList');
+        });
+    }
 });
 
-
-
-
+// Backup/Restore functionality
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('backupFile');
     const confirmCheckbox = document.getElementById('confirmRestore');
@@ -1074,6 +1095,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const fileNameDisplay = document.querySelector('.file-name-display');
     const fileName = document.querySelector('.file-name');
     const uploadArea = document.querySelector('.file-upload-area');
+    
+    // Only proceed if all elements exist
+    if (!fileInput || !confirmCheckbox || !restoreBtn || !fileNameDisplay || !fileName || !uploadArea) {
+        console.log('Backup/restore elements not found, skipping initialization');
+        return;
+    }
     
     // File selection handler
     fileInput.addEventListener('change', function() {

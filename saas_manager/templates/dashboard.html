@@ -126,13 +126,19 @@
               <div class="col-4">
                 <div class="px-2" style="border-right: 1px solid var(--border-primary);">
                   <small class="d-block mb-1" style="color: var(--text-muted);">Users</small>
-                  <div class="fw-bold small" style="color: var(--text-primary);">{{ tenant.max_users }}</div>
+                  <div class="fw-bold small" style="color: var(--text-primary);">
+                    {% set plan_info = plans|selectattr('name', 'equalto', tenant.plan)|first if plans else None %}
+                    {{ plan_info.max_users if plan_info else tenant.max_users }}
+                  </div>
                 </div>
               </div>
               <div class="col-4">
                 <div class="ps-2">
                   <small class="d-block mb-1" style="color: var(--text-muted);">Storage</small>
-                  <div class="fw-bold small" style="color: var(--text-primary);">{{ tenant.storage_limit }}MB</div>
+                  <div class="fw-bold small" style="color: var(--text-primary);">
+                    {% set plan_info = plans|selectattr('name', 'equalto', tenant.plan)|first if plans else None %}
+                    {{ plan_info.storage_limit if plan_info else tenant.storage_limit }}MB
+                  </div>
                 </div>
               </div>
             </div>

@@ -1026,15 +1026,28 @@ def dashboard():
         
         if current_user.is_admin:
             stats = cache_manager.get_admin_stats()
+        
+        # Get subscription plans for plan-based display
+        plans = SubscriptionPlan.query.filter_by(is_active=True).all()
+        plans_data = [
+            {
+                'name': plan.name,
+                'max_users': plan.max_users,
+                'storage_limit': plan.storage_limit,
+                'price': plan.price
+            }
+            for plan in plans
+        ]
             
         return render_template('dashboard.html', 
                              tenants=user_tenants, 
                              stats=stats,
+                             plans=plans_data,
                              pending_registration=pending_registration)
     except Exception as e:
         error_tracker.log_error(e, {'user_id': current_user.id})
         flash('Error loading dashboard. Please try again.', 'error')
-        return render_template('dashboard.html', tenants=[], stats={})
+        return render_template('dashboard.html', tenants=[], stats={}, plans=[])
 
 
 @app.route('/tenant/create', methods=['GET', 'POST'])
