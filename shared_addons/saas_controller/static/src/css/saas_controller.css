@@ -1,234 +1,576 @@
-/* SaaS Controller Custom Styles - Odoo 17.0 Compatible */
-/* Auto Dark/Light Mode Based on OS Preference */
+/* SaaS Controller - Complete Variable Override System for Odoo 17.0 */
+/* This CSS overrides ALL Odoo variables for perfect dark/light mode control */
 
-/* Light Mode Variables (Default) */
+/* ===== LIGHT MODE VARIABLES (DEFAULT) ===== */
 :root {
-  /* Primary Azure Colors */
-  --saas-primary-color: #1a73e8;
+  /* ===== SaaS Brand Colors - Light Mode ===== */
+  --saas-primary: #1a73e8;
   --saas-primary-dark: #174ea6;
   --saas-primary-light: #4c9eff;
-
-  /* Secondary Teal Colors */
-  --saas-secondary-color: #00bfa5;
+  --saas-secondary: #00bfa5;
   --saas-secondary-dark: #00937a;
   --saas-secondary-light: #33e1c6;
-
-  /* Accent Coral Colors */
-  --saas-accent-color: #ff6f61;
+  --saas-accent: #ff6f61;
   --saas-accent-dark: #e05a4e;
-  --saas-accent-light: #ff8a7a;
+  --saas-support: #9b51e0;
 
-  /* Support Violet Colors */
-  --saas-support-color: #9b51e0;
-  --saas-support-dark: #7a3eb0;
-  --saas-support-light: #b76deb;
-
-  /* Light Mode Colors */
-  --saas-background-color: #ffffff;
-  --saas-background-secondary: #f8f9fa;
-  --saas-surface-color: #ffffff;
-  --saas-text-color: #2e3a59;
-  --saas-text-secondary: #5c6b8a;
-  --saas-text-muted: #8a95aa;
+  /* ===== Complete Light Theme System ===== */
+  --saas-bg-primary: #ffffff;
+  --saas-bg-secondary: #f8f9fa;
+  --saas-bg-tertiary: #e9ecef;
+  --saas-surface: #ffffff;
+  --saas-surface-hover: #f8f9fa;
+  --saas-text-primary: #212529;
+  --saas-text-secondary: #6c757d;
+  --saas-text-muted: #adb5bd;
   --saas-text-inverse: #ffffff;
-  --saas-link-color: #1a73e8;
-  --saas-border-color: #e1e5e9;
-  --saas-shadow-color: rgba(26, 115, 232, 0.15);
-  --saas-shadow-hover: rgba(26, 115, 232, 0.25);
+  --saas-border: #dee2e6;
+  --saas-border-light: #e9ecef;
+  --saas-shadow: rgba(0, 0, 0, 0.1);
+  --saas-shadow-hover: rgba(0, 0, 0, 0.15);
+  --saas-overlay: rgba(0, 0, 0, 0.5);
 
-  /* Transitions for Micro-interactions */
-  --saas-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --saas-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  --settings__tab-bg: var(--saas-background-secondary) !important;
+  /* ===== OVERRIDE ALL ODOO CORE VARIABLES - LIGHT MODE ===== */
+
+  /* Override Odoo Core Colors */
+  --o-color-1: var(--saas-primary) !important;
+  --o-color-2: var(--saas-secondary) !important;
+  --o-color-3: var(--saas-bg-secondary) !important;
+  --o-color-4: var(--saas-surface) !important;
+  --o-color-5: var(--saas-text-primary) !important;
+
+  /* Override Bootstrap Core Variables */
+  --primary: var(--saas-primary) !important;
+  --secondary: var(--saas-secondary) !important;
+  --body-bg: var(--saas-bg-primary) !important;
+  --body-color: var(--saas-text-primary) !important;
+  --white: var(--saas-surface) !important;
+  --black: var(--saas-text-primary) !important;
+
+  /* Override Gray Scale */
+  --gray-100: var(--saas-bg-secondary) !important;
+  --gray-200: var(--saas-bg-tertiary) !important;
+  --gray-300: var(--saas-border) !important;
+  --gray-400: var(--saas-border-light) !important;
+  --gray-500: var(--saas-text-muted) !important;
+  --gray-600: var(--saas-text-secondary) !important;
+  --gray-700: var(--saas-text-primary) !important;
+  --gray-800: var(--saas-text-primary) !important;
+  --gray-900: var(--saas-text-primary) !important;
+
+  /* Override Base Colors */
+  --base-white: var(--saas-surface) !important;
+  --base-100: var(--saas-bg-secondary) !important;
+  --base-200: var(--saas-bg-tertiary) !important;
+  --base-300: var(--saas-border) !important;
+  --base-400: var(--saas-border-light) !important;
+  --base-500: var(--saas-text-muted) !important;
+  --base-600: var(--saas-text-secondary) !important;
+  --base-700: var(--saas-text-primary) !important;
+  --base-800: var(--saas-text-primary) !important;
+  --base-900: var(--saas-text-primary) !important;
+  --base-black: var(--saas-text-primary) !important;
+
+  /* Override Color Combinations */
+  --o-cc1-bg: var(--saas-surface) !important;
+  --o-cc1-text: var(--saas-text-primary) !important;
+  --o-cc1-headings: var(--saas-text-primary) !important;
+  --o-cc1-link: var(--saas-primary) !important;
+  --o-cc1-btn-primary: var(--saas-primary) !important;
+  --o-cc1-btn-primary-text: var(--saas-text-inverse) !important;
+  --o-cc1-btn-secondary: var(--saas-secondary) !important;
+  --o-cc1-btn-secondary-text: var(--saas-text-inverse) !important;
+
+  --o-cc2-bg: var(--saas-bg-secondary) !important;
+  --o-cc2-text: var(--saas-text-primary) !important;
+  --o-cc2-headings: var(--saas-text-primary) !important;
+  --o-cc2-link: var(--saas-primary) !important;
+  --o-cc2-btn-primary: var(--saas-primary) !important;
+  --o-cc2-btn-secondary: var(--saas-secondary) !important;
+
+  --o-cc3-bg: var(--saas-bg-tertiary) !important;
+  --o-cc3-text: var(--saas-text-primary) !important;
+  --o-cc3-headings: var(--saas-text-primary) !important;
+  --o-cc3-link: var(--saas-primary) !important;
+  --o-cc3-btn-primary: var(--saas-primary) !important;
+  --o-cc3-btn-secondary: var(--saas-secondary) !important;
+
+  --o-cc4-bg: var(--saas-primary) !important;
+  --o-cc4-text: var(--saas-text-inverse) !important;
+  --o-cc4-headings: var(--saas-text-inverse) !important;
+  --o-cc4-link: var(--saas-text-inverse) !important;
+  --o-cc4-btn-primary: var(--saas-surface) !important;
+  --o-cc4-btn-primary-text: var(--saas-primary) !important;
+  --o-cc4-btn-secondary: var(--saas-secondary) !important;
+
+  --o-cc5-bg: var(--saas-text-primary) !important;
+  --o-cc5-text: var(--saas-text-inverse) !important;
+  --o-cc5-headings: var(--saas-text-inverse) !important;
+  --o-cc5-link: var(--saas-primary-light) !important;
+  --o-cc5-btn-primary: var(--saas-primary) !important;
+  --o-cc5-btn-secondary: var(--saas-secondary) !important;
+
+  /* Override Menu and Footer */
+  --menu: var(--saas-surface) !important;
+  --menu-bg: var(--saas-surface) !important;
+  --footer: var(--saas-text-primary) !important;
+  --footer-bg: var(--saas-text-primary) !important;
+  --menu-border-color: var(--saas-border) !important;
+
+  /* Override Input Colors */
+  --o-input-border-color: var(--saas-border) !important;
+  --o-caret-color: var(--saas-text-primary) !important;
+
+  /* Override Webclient */
+  --o-webclient-color-scheme: bright !important;
+
+  /* Transitions */
+  --saas-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --saas-transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Dark Mode Variables - Auto-applied based on OS preference */
+/* ===== DARK MODE VARIABLES - OS PREFERENCE DETECTION ===== */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Adjusted Primary Colors for Dark Mode */
-    --saas-primary-color: #4c9eff;
+    /* ===== SaaS Brand Colors - Dark Mode Adjusted ===== */
+    --saas-primary: #4c9eff;
     --saas-primary-dark: #1a73e8;
     --saas-primary-light: #7db6ff;
-
-    /* Adjusted Secondary Colors for Dark Mode */
-    --saas-secondary-color: #33e1c6;
+    --saas-secondary: #33e1c6;
     --saas-secondary-dark: #00bfa5;
     --saas-secondary-light: #66e8d3;
-
-    /* Adjusted Accent Colors for Dark Mode */
-    --saas-accent-color: #ff8a7a;
+    --saas-accent: #ff8a7a;
     --saas-accent-dark: #ff6f61;
-    --saas-accent-light: #ffa394;
+    --saas-support: #b76deb;
 
-    /* Dark Mode Colors */
-    --saas-background-color: #1a1d23;
-    --saas-background-secondary: #2d3238;
-    --saas-surface-color: #242830;
-    --saas-text-color: #e4e6ea;
-    --saas-text-secondary: #b8bcc5;
-    --saas-text-muted: #8a8f98;
-    --saas-text-inverse: #1a1d23;
-    --saas-link-color: #4c9eff;
-    --saas-border-color: #3a3f47;
-    --saas-shadow-color: rgba(0, 0, 0, 0.3);
+    /* ===== Complete Dark Theme System ===== */
+    --saas-bg-primary: #0d1117;
+    --saas-bg-secondary: #161b22;
+    --saas-bg-tertiary: #21262d;
+    --saas-surface: #161b22;
+    --saas-surface-hover: #21262d;
+    --saas-text-primary: #f0f6fc;
+    --saas-text-secondary: #8b949e;
+    --saas-text-muted: #6e7681;
+    --saas-text-inverse: #0d1117;
+    --saas-border: #30363d;
+    --saas-border-light: #21262d;
+    --saas-shadow: rgba(0, 0, 0, 0.3);
     --saas-shadow-hover: rgba(0, 0, 0, 0.5);
+    --saas-overlay: rgba(0, 0, 0, 0.8);
+
+    /* ===== OVERRIDE ALL ODOO CORE VARIABLES - DARK MODE ===== */
+
+    /* Override Odoo Core Colors */
+    --o-color-1: var(--saas-primary) !important;
+    --o-color-2: var(--saas-secondary) !important;
+    --o-color-3: var(--saas-bg-secondary) !important;
+    --o-color-4: var(--saas-surface) !important;
+    --o-color-5: var(--saas-text-primary) !important;
+
+    /* Override Bootstrap Core Variables */
+    --primary: var(--saas-primary) !important;
+    --secondary: var(--saas-secondary) !important;
+    --body-bg: var(--saas-bg-primary) !important;
+    --body-color: var(--saas-text-primary) !important;
+    --white: var(--saas-surface) !important;
+    --black: var(--saas-bg-primary) !important;
+
+    /* Override Gray Scale - Dark Mode */
+    --gray-100: var(--saas-bg-secondary) !important;
+    --gray-200: var(--saas-bg-tertiary) !important;
+    --gray-300: var(--saas-border) !important;
+    --gray-400: var(--saas-border-light) !important;
+    --gray-500: var(--saas-text-muted) !important;
+    --gray-600: var(--saas-text-secondary) !important;
+    --gray-700: var(--saas-text-primary) !important;
+    --gray-800: var(--saas-text-primary) !important;
+    --gray-900: var(--saas-text-primary) !important;
+
+    /* Override Base Colors - Dark Mode */
+    --base-white: var(--saas-surface) !important;
+    --base-100: var(--saas-bg-secondary) !important;
+    --base-200: var(--saas-bg-tertiary) !important;
+    --base-300: var(--saas-border) !important;
+    --base-400: var(--saas-border-light) !important;
+    --base-500: var(--saas-text-muted) !important;
+    --base-600: var(--saas-text-secondary) !important;
+    --base-700: var(--saas-text-primary) !important;
+    --base-800: var(--saas-text-primary) !important;
+    --base-900: var(--saas-text-primary) !important;
+    --base-black: var(--saas-bg-primary) !important;
+
+    /* Override Color Combinations - Dark Mode */
+    --o-cc1-bg: var(--saas-surface) !important;
+    --o-cc1-text: var(--saas-text-primary) !important;
+    --o-cc1-headings: var(--saas-text-primary) !important;
+    --o-cc1-link: var(--saas-primary) !important;
+    --o-cc1-btn-primary: var(--saas-primary) !important;
+    --o-cc1-btn-primary-text: var(--saas-text-inverse) !important;
+    --o-cc1-btn-secondary: var(--saas-secondary) !important;
+    --o-cc1-btn-secondary-text: var(--saas-text-inverse) !important;
+
+    --o-cc2-bg: var(--saas-bg-secondary) !important;
+    --o-cc2-text: var(--saas-text-primary) !important;
+    --o-cc2-headings: var(--saas-text-primary) !important;
+    --o-cc2-link: var(--saas-primary) !important;
+    --o-cc2-btn-primary: var(--saas-primary) !important;
+    --o-cc2-btn-secondary: var(--saas-secondary) !important;
+
+    --o-cc3-bg: var(--saas-bg-tertiary) !important;
+    --o-cc3-text: var(--saas-text-primary) !important;
+    --o-cc3-headings: var(--saas-text-primary) !important;
+    --o-cc3-link: var(--saas-primary) !important;
+    --o-cc3-btn-primary: var(--saas-primary) !important;
+    --o-cc3-btn-secondary: var(--saas-secondary) !important;
+
+    --o-cc4-bg: var(--saas-primary) !important;
+    --o-cc4-text: var(--saas-text-inverse) !important;
+    --o-cc4-headings: var(--saas-text-inverse) !important;
+    --o-cc4-link: var(--saas-text-inverse) !important;
+    --o-cc4-btn-primary: var(--saas-surface) !important;
+    --o-cc4-btn-primary-text: var(--saas-primary) !important;
+    --o-cc4-btn-secondary: var(--saas-secondary) !important;
+
+    --o-cc5-bg: var(--saas-text-primary) !important;
+    --o-cc5-text: var(--saas-text-inverse) !important;
+    --o-cc5-headings: var(--saas-text-inverse) !important;
+    --o-cc5-link: var(--saas-primary-light) !important;
+    --o-cc5-btn-primary: var(--saas-primary) !important;
+    --o-cc5-btn-secondary: var(--saas-secondary) !important;
+
+    /* Override Menu and Footer - Dark Mode */
+    --menu: var(--saas-surface) !important;
+    --menu-bg: var(--saas-surface) !important;
+    --footer: var(--saas-text-primary) !important;
+    --footer-bg: var(--saas-text-primary) !important;
+    --menu-border-color: var(--saas-border) !important;
+
+    /* Override Input Colors - Dark Mode */
+    --o-input-border-color: var(--saas-border) !important;
+    --o-caret-color: var(--saas-text-primary) !important;
+
+    /* Override Webclient - Dark Mode */
+    --o-webclient-color-scheme: dark !important;
   }
 }
 
-/* Base Body Styling */
-.bg-view,
-body {
-  background-color: var(--saas-background-color) !important;
-  color: var(--saas-text-color) !important;
-  transition: var(--saas-transition-smooth) !important;
+/* ===== UNIVERSAL BASE STYLING ===== */
+* {
+  transition: var(--saas-transition) !important;
 }
 
-/* Main Navigation - Fixed Text Contrast */
-.o_main_navbar {
+html,
+body {
+  background-color: var(--saas-bg-primary) !important;
+  color: var(--saas-text-primary) !important;
+  font-family: var(--font-sans-serif) !important;
+}
+
+/* ===== COMPLETE NAVIGATION OVERRIDE ===== */
+.o_main_navbar,
+.navbar,
+.o_navbar_apps_menu,
+.navbar-brand,
+.navbar-nav,
+.navbar-toggler {
   background: linear-gradient(
     135deg,
-    var(--saas-primary-color) 0%,
+    var(--saas-primary) 0%,
     var(--saas-primary-dark) 100%
   ) !important;
-  box-shadow: 0 2px 8px var(--saas-shadow-color) !important;
-  transition: var(--saas-transition-smooth) !important;
-  border-bottom: 1px solid var(--saas-border-color) !important;
+  border-bottom: 1px solid var(--saas-border) !important;
+  box-shadow: 0 2px 8px var(--saas-shadow) !important;
 }
 
-.o_main_navbar:hover {
-  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
-}
-
-/* Fixed Navigation Text Colors */
-.o_main_navbar .navbar-nav .nav-link,
-.o_main_navbar .dropdown-toggle,
-.o_main_navbar .navbar-brand,
-.o_main_navbar .navbar-text,
-.o_main_navbar .o_menu_toggle,
-.o_main_navbar .o_menu_sections .dropdown-toggle {
+/* ALL Navigation Text - Force Override */
+.o_main_navbar,
+.o_main_navbar *,
+.navbar,
+.navbar *,
+.o_navbar_apps_menu,
+.o_navbar_apps_menu *,
+.navbar-brand,
+.navbar-brand *,
+.navbar-nav,
+.navbar-nav *,
+.nav-link,
+.nav-link *,
+.dropdown-toggle,
+.dropdown-toggle *,
+.navbar-text,
+.navbar-text *,
+.o_menu_toggle,
+.o_menu_toggle *,
+.o_menu_sections,
+.o_menu_sections *,
+.o_menu_brand,
+.o_menu_brand * {
   color: var(--saas-text-inverse) !important;
-  transition: var(--saas-transition-fast) !important;
+  background-color: transparent !important;
 }
 
-.o_main_navbar .navbar-nav .nav-link:hover,
-.o_main_navbar .dropdown-toggle:hover,
-.o_main_navbar .navbar-brand:hover {
+.o_main_navbar *:hover,
+.navbar *:hover,
+.nav-link:hover,
+.dropdown-toggle:hover {
   color: rgba(255, 255, 255, 0.9) !important;
   transform: translateY(-1px) !important;
 }
 
-/* Dropdown Menu Fixes */
-.o_main_navbar .dropdown-menu {
-  background-color: var(--saas-surface-color) !important;
-  border: 1px solid var(--saas-border-color) !important;
-  box-shadow: 0 4px 12px var(--saas-shadow-color) !important;
+/* Dropdown Menus - Complete Override */
+.dropdown-menu,
+.o_main_navbar .dropdown-menu,
+.navbar .dropdown-menu {
+  background-color: var(--saas-surface) !important;
+  border: 1px solid var(--saas-border) !important;
+  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
+  color: var(--saas-text-primary) !important;
 }
 
-.o_main_navbar .dropdown-menu .dropdown-item {
-  color: var(--saas-text-color) !important;
-  transition: var(--saas-transition-fast) !important;
+.dropdown-item,
+.o_main_navbar .dropdown-item,
+.navbar .dropdown-item {
+  color: var(--saas-text-primary) !important;
+  background-color: transparent !important;
 }
 
-.o_main_navbar .dropdown-menu .dropdown-item:hover {
-  background-color: var(--saas-background-secondary) !important;
-  color: var(--saas-primary-color) !important;
+.dropdown-item:hover,
+.dropdown-item:focus,
+.o_main_navbar .dropdown-item:hover,
+.navbar .dropdown-item:hover {
+  background-color: var(--saas-surface-hover) !important;
+  color: var(--saas-primary) !important;
 }
 
-/* Buttons - Enhanced for Both Modes */
-.app_settings_block,
-.btn-primary {
+/* ===== COMPLETE BUTTON OVERRIDE ===== */
+.btn {
+  border: none !important;
+  font-weight: 500 !important;
+  transition: var(--saas-transition) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+.btn-primary,
+.btn.btn-primary {
   background: linear-gradient(
     135deg,
-    var(--saas-primary-color) 0%,
+    var(--saas-primary) 0%,
     var(--saas-primary-dark) 100%
   ) !important;
-  border: none !important;
   color: var(--saas-text-inverse) !important;
-  box-shadow: 0 2px 6px var(--saas-shadow-color) !important;
-  transition: var(--saas-transition-fast) !important;
-  font-weight: 500 !important;
+  box-shadow: 0 2px 6px var(--saas-shadow) !important;
 }
 
 .btn-primary:hover,
-.btn-primary:focus {
+.btn-primary:focus,
+.btn-primary:active,
+.btn-primary.active,
+.btn.btn-primary:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active {
   background: linear-gradient(
     135deg,
     var(--saas-primary-dark) 0%,
-    var(--saas-primary-color) 100%
+    var(--saas-primary) 100%
   ) !important;
   color: var(--saas-text-inverse) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
 }
 
-.btn-primary:active {
-  transform: translateY(0) !important;
-  box-shadow: 0 2px 6px var(--saas-shadow-color) !important;
-}
-
-.btn-secondary {
+.btn-secondary,
+.btn.btn-secondary {
   background: linear-gradient(
     135deg,
-    var(--saas-secondary-color) 0%,
+    var(--saas-secondary) 0%,
     var(--saas-secondary-dark) 100%
   ) !important;
-  border: none !important;
   color: var(--saas-text-inverse) !important;
-  box-shadow: 0 2px 6px var(--saas-shadow-color) !important;
-  transition: var(--saas-transition-fast) !important;
-  font-weight: 500 !important;
+  box-shadow: 0 2px 6px var(--saas-shadow) !important;
 }
 
 .btn-secondary:hover,
-.btn-secondary:focus {
+.btn-secondary:focus,
+.btn-secondary:active,
+.btn.btn-secondary:hover,
+.btn.btn-secondary:focus,
+.btn.btn-secondary:active {
   background: linear-gradient(
     135deg,
     var(--saas-secondary-dark) 0%,
-    var(--saas-secondary-color) 100%
+    var(--saas-secondary) 100%
   ) !important;
   color: var(--saas-text-inverse) !important;
   transform: translateY(-2px) !important;
   box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
 }
 
-/* Links - Improved Contrast */
-a {
-  color: var(--saas-link-color) !important;
-  transition: var(--saas-transition-fast) !important;
+.btn-outline-primary {
+  border: 2px solid var(--saas-primary) !important;
+  color: var(--saas-primary) !important;
+  background-color: transparent !important;
 }
 
-a:hover {
-  color: var(--saas-accent-color) !important;
-  transform: translateX(2px) !important;
-  text-decoration: none !important;
+.btn-outline-primary:hover,
+.btn-outline-primary:focus,
+.btn-outline-primary:active {
+  background-color: var(--saas-primary) !important;
+  color: var(--saas-text-inverse) !important;
 }
 
-/* Form Views - Dark Mode Compatible */
-.o_form_view {
-  background-color: var(--saas-background-color) !important;
+/* ===== COMPLETE FORM OVERRIDE ===== */
+.o_form_view,
+.o_action_manager,
+.o_main_content,
+.o_content,
+.o_view_controller {
+  background-color: var(--saas-bg-primary) !important;
+  color: var(--saas-text-primary) !important;
 }
 
+.o_form_sheet,
 .o_form_view .o_form_sheet {
-  background-color: var(--saas-surface-color) !important;
-  box-shadow: 0 2px 8px var(--saas-shadow-color) !important;
-  border-radius: 8px !important;
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
+  box-shadow: 0 2px 8px var(--saas-shadow) !important;
 }
 
-.o_form_view .o_form_label {
-  color: var(--saas-text-color) !important;
-}
-
+.o_form_label,
+.o_field_widget,
+.form-label,
+.form-text,
+.o_form_view .o_form_label,
 .o_form_view .o_field_widget {
-  color: var(--saas-text-color) !important;
+  color: var(--saas-text-primary) !important;
+  background-color: transparent !important;
 }
 
-/* Cards and Panels - Dark Mode Support */
-.card {
-  background-color: var(--saas-surface-color) !important;
-  border: 1px solid var(--saas-border-color) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px var(--saas-shadow-color) !important;
-  transition: var(--saas-transition-smooth) !important;
+/* ===== COMPLETE INPUT OVERRIDE ===== */
+input,
+select,
+textarea,
+.o_input,
+.form-control,
+.o_field_widget input,
+.o_field_widget select,
+.o_field_widget textarea,
+.o_searchview_input,
+.o_searchview .o_searchview_input,
+.form-select,
+.form-check-input {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.o_input:focus,
+.form-control:focus,
+.o_field_widget input:focus,
+.o_field_widget select:focus,
+.o_field_widget textarea:focus,
+.form-select:focus,
+.form-check-input:focus {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border-color: var(--saas-primary) !important;
+  box-shadow: 0 0 0 3px rgba(76, 158, 255, 0.2) !important;
+  transform: scale(1.01) !important;
+}
+
+/* ===== COMPLETE TABLE OVERRIDE ===== */
+.o_list_view,
+.table,
+.o_list_table,
+.table-responsive {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.o_list_table thead th,
+.table thead th,
+th {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border-bottom: 2px solid var(--saas-primary) !important;
+  border-color: var(--saas-border) !important;
+}
+
+.o_list_table tbody tr,
+.table tbody tr,
+tr {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.o_list_table tbody tr:hover,
+.table tbody tr:hover,
+tr:hover {
+  background-color: var(--saas-surface-hover) !important;
+  transform: scale(1.002) !important;
+}
+
+.o_list_table tbody td,
+.table tbody td,
+td {
+  border-color: var(--saas-border) !important;
+  color: var(--saas-text-primary) !important;
+  background-color: transparent !important;
+}
+
+/* ===== COMPLETE CONTROL PANEL OVERRIDE ===== */
+.o_control_panel,
+.o_cp_top,
+.o_cp_bottom {
+  background-color: var(--saas-surface) !important;
+  border-bottom: 1px solid var(--saas-border) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.o_control_panel *,
+.o_cp_searchview,
+.o_cp_searchview *,
+.o_searchview,
+.o_searchview * {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border-color: var(--saas-border) !important;
+}
+
+/* ===== COMPLETE KANBAN OVERRIDE ===== */
+.o_kanban_view {
+  background-color: var(--saas-bg-primary) !important;
+}
+
+.o_kanban_record {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
+  box-shadow: 0 2px 6px var(--saas-shadow) !important;
+}
+
+.o_kanban_record:hover {
+  background-color: var(--saas-surface-hover) !important;
+  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
+  transform: translateY(-2px) !important;
+}
+
+.o_kanban_record * {
+  color: var(--saas-text-primary) !important;
+}
+
+/* ===== COMPLETE CARD OVERRIDE ===== */
+.card,
+.card-body,
+.card-footer {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
+  box-shadow: 0 2px 8px var(--saas-shadow) !important;
 }
 
 .card:hover {
@@ -239,173 +581,357 @@ a:hover {
 .card-header {
   background: linear-gradient(
     135deg,
-    var(--saas-primary-color) 0%,
+    var(--saas-primary) 0%,
     var(--saas-primary-dark) 100%
   ) !important;
   color: var(--saas-text-inverse) !important;
-  border-radius: 8px 8px 0 0 !important;
-  border-bottom: 1px solid var(--saas-border-color) !important;
+  border-bottom: 1px solid var(--saas-border) !important;
 }
 
-.card-body {
-  background-color: var(--saas-surface-color) !important;
-  color: var(--saas-text-color) !important;
-}
-
-/* List Views - Dark Mode Compatible */
-.o_list_view {
-  background-color: var(--saas-background-color) !important;
-}
-
-.o_list_table {
-  background-color: var(--saas-surface-color) !important;
-  color: var(--saas-text-color) !important;
-}
-
-.o_list_table thead th {
-  background-color: var(--saas-background-secondary) !important;
-  color: var(--saas-text-color) !important;
-  border-bottom: 2px solid var(--saas-primary-color) !important;
-}
-
-.o_list_table tbody tr {
-  background-color: var(--saas-surface-color) !important;
-  color: var(--saas-text-color) !important;
-  transition: var(--saas-transition-fast) !important;
-}
-
-.o_list_table tbody tr:hover {
-  background-color: var(--saas-background-secondary) !important;
-  transform: scale(1.002) !important;
-}
-
-.o_list_table tbody td {
-  border-color: var(--saas-border-color) !important;
-}
-
-/* Control Panel */
-.o_control_panel {
-  background-color: var(--saas-surface-color) !important;
-  border-bottom: 1px solid var(--saas-border-color) !important;
-}
-
-.o_control_panel .o_cp_searchview {
-  background-color: var(--saas-background-secondary) !important;
-  border: 1px solid var(--saas-border-color) !important;
-}
-
-/* Sidebar and Menu */
-.o_main_content {
-  background-color: var(--saas-background-color) !important;
-}
-
-.o_action_manager {
-  background-color: var(--saas-background-color) !important;
-}
-
-/* Form Input Focus Effects - Dark Mode Compatible */
-.o_input,
-.form-control,
-.o_field_widget input,
-.o_field_widget select,
-.o_field_widget textarea {
-  background-color: var(--saas-surface-color) !important;
-  color: var(--saas-text-color) !important;
-  border: 1px solid var(--saas-border-color) !important;
-  transition: var(--saas-transition-fast) !important;
-}
-
-.o_input:focus,
-.form-control:focus,
-.o_field_widget input:focus,
-.o_field_widget select:focus,
-.o_field_widget textarea:focus {
-  background-color: var(--saas-surface-color) !important;
-  color: var(--saas-text-color) !important;
-  border-color: var(--saas-primary-color) !important;
-  box-shadow: 0 0 0 3px rgba(76, 158, 255, 0.2) !important;
-  transform: scale(1.01) !important;
-}
-
-/* Badges and Status - Dark Mode Compatible */
-.badge-primary {
-  background-color: var(--saas-primary-color) !important;
+.card-header * {
   color: var(--saas-text-inverse) !important;
 }
 
-.badge-secondary {
-  background-color: var(--saas-secondary-color) !important;
-  color: var(--saas-text-inverse) !important;
+/* ===== COMPLETE MODAL OVERRIDE ===== */
+.modal-content {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
 }
 
-/* Progress Bars */
-.progress {
-  background-color: var(--saas-background-secondary) !important;
+.modal-header,
+.modal-footer {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border-color: var(--saas-border) !important;
 }
 
-.progress-bar {
-  background-color: var(--saas-primary-color) !important;
+.modal-header *,
+.modal-footer *,
+.modal-body * {
+  color: var(--saas-text-primary) !important;
 }
 
-/* App Drawer - Dark Mode Support */
+.modal-backdrop {
+  background-color: var(--saas-overlay) !important;
+}
+
+/* ===== COMPLETE APP DRAWER OVERRIDE ===== */
 .o_apps {
-  background-color: var(--saas-background-color) !important;
+  background-color: var(--saas-bg-primary) !important;
 }
 
-.o_apps .o_app {
-  background-color: var(--saas-surface-color) !important;
-  border: 1px solid var(--saas-border-color) !important;
-  color: var(--saas-text-color) !important;
-  transition: var(--saas-transition-smooth) !important;
+.o_app {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
 }
 
-.o_apps .o_app:hover {
-  background-color: var(--saas-background-secondary) !important;
+.o_app:hover {
+  background-color: var(--saas-surface-hover) !important;
   transform: scale(1.05) translateY(-2px) !important;
   box-shadow: 0 8px 20px var(--saas-shadow-hover) !important;
 }
 
-.o_apps .o_app .o_caption {
-  color: var(--saas-text-color) !important;
+.o_app .o_caption,
+.o_app * {
+  color: var(--saas-text-primary) !important;
 }
 
-/* Database List - Login Page */
+/* ===== COMPLETE SIDEBAR OVERRIDE ===== */
+.o_menu_sections,
+.o_menu_brand {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.o_menu_sections .dropdown-item,
+.o_menu_sections * {
+  color: var(--saas-text-primary) !important;
+}
+
+.o_menu_sections .dropdown-item:hover {
+  background-color: var(--saas-surface-hover) !important;
+  color: var(--saas-primary) !important;
+}
+
+/* ===== COMPLETE LINK OVERRIDE ===== */
+a,
+a:link,
+a:visited {
+  color: var(--saas-primary) !important;
+}
+
+a:hover,
+a:focus,
+a:active {
+  color: var(--saas-accent) !important;
+  transform: translateX(2px) !important;
+  text-decoration: none !important;
+}
+
+/* ===== COMPLETE BADGE OVERRIDE ===== */
+.badge,
+.badge-primary,
+.badge.badge-primary {
+  background-color: var(--saas-primary) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+.badge-secondary,
+.badge.badge-secondary {
+  background-color: var(--saas-secondary) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+.badge-success,
+.badge.badge-success {
+  background-color: var(--saas-secondary) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+.badge-warning,
+.badge.badge-warning {
+  background-color: var(--saas-accent) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+.badge-danger,
+.badge.badge-danger {
+  background-color: var(--saas-accent-dark) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+/* ===== COMPLETE PROGRESS BAR OVERRIDE ===== */
+.progress {
+  background-color: var(--saas-bg-secondary) !important;
+}
+
+.progress-bar {
+  background-color: var(--saas-primary) !important;
+}
+
+/* ===== COMPLETE CALENDAR OVERRIDE ===== */
+.o_calendar_view {
+  background-color: var(--saas-bg-primary) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.fc-event {
+  background-color: var(--saas-primary) !important;
+  border-color: var(--saas-primary-dark) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+.fc-toolbar,
+.fc-view-container,
+.fc-day-header,
+.fc-day-number {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border-color: var(--saas-border) !important;
+}
+
+/* ===== COMPLETE DATABASE LIST OVERRIDE ===== */
 .o_database_list .list-group-item {
-  background-color: var(--saas-surface-color) !important;
-  border-color: var(--saas-border-color) !important;
-  color: var(--saas-text-color) !important;
-  transition: var(--saas-transition-fast) !important;
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border-color: var(--saas-border) !important;
 }
 
 .o_database_list .list-group-item:hover {
-  background-color: var(--saas-background-secondary) !important;
-  border-color: var(--saas-primary-color) !important;
+  background-color: var(--saas-surface-hover) !important;
+  border-color: var(--saas-primary) !important;
   transform: translateX(4px) !important;
 }
 
-/* Modal and Dialog Support */
-.modal-content {
-  background-color: var(--saas-surface-color) !important;
-  color: var(--saas-text-color) !important;
-  border: 1px solid var(--saas-border-color) !important;
+/* ===== COMPLETE LOGIN PAGE OVERRIDE ===== */
+.o_database_manager,
+.oe_login_form,
+.oe_login {
+  background-color: var(--saas-bg-primary) !important;
+  color: var(--saas-text-primary) !important;
 }
 
-.modal-header {
-  background-color: var(--saas-background-secondary) !important;
-  border-bottom: 1px solid var(--saas-border-color) !important;
+.oe_login_form input,
+.oe_login input {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
 }
 
-.modal-footer {
-  background-color: var(--saas-background-secondary) !important;
-  border-top: 1px solid var(--saas-border-color) !important;
+/* ===== COMPLETE BREADCRUMB OVERRIDE ===== */
+.breadcrumb,
+.o_control_panel .breadcrumb {
+  background-color: transparent !important;
+  color: var(--saas-text-primary) !important;
 }
 
-/* SaaS Controller Specific Styles */
+.breadcrumb-item,
+.breadcrumb-item a {
+  color: var(--saas-text-secondary) !important;
+}
+
+.breadcrumb-item.active {
+  color: var(--saas-text-primary) !important;
+}
+
+/* ===== COMPLETE ALERT OVERRIDE ===== */
+.alert {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
+}
+
+.alert-success {
+  background-color: rgba(0, 191, 165, 0.1) !important;
+  border-color: var(--saas-secondary) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.alert-warning {
+  background-color: rgba(255, 111, 97, 0.1) !important;
+  border-color: var(--saas-accent) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.alert-danger {
+  background-color: rgba(255, 111, 97, 0.2) !important;
+  border-color: var(--saas-accent-dark) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.alert-info {
+  background-color: rgba(76, 158, 255, 0.1) !important;
+  border-color: var(--saas-primary) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+/* ===== COMPLETE PAGINATION OVERRIDE ===== */
+.pagination {
+  background-color: transparent !important;
+}
+
+.page-link {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
+}
+
+.page-link:hover {
+  background-color: var(--saas-surface-hover) !important;
+  color: var(--saas-primary) !important;
+  border-color: var(--saas-primary) !important;
+}
+
+.page-item.active .page-link {
+  background-color: var(--saas-primary) !important;
+  border-color: var(--saas-primary) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+/* ===== COMPLETE TOOLTIP OVERRIDE ===== */
+.tooltip,
+.tooltip-inner {
+  background-color: var(--saas-text-primary) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+.bs-tooltip-top .arrow::before,
+.bs-tooltip-auto[x-placement^="top"] .arrow::before {
+  border-top-color: var(--saas-text-primary) !important;
+}
+
+.bs-tooltip-right .arrow::before,
+.bs-tooltip-auto[x-placement^="right"] .arrow::before {
+  border-right-color: var(--saas-text-primary) !important;
+}
+
+.bs-tooltip-bottom .arrow::before,
+.bs-tooltip-auto[x-placement^="bottom"] .arrow::before {
+  border-bottom-color: var(--saas-text-primary) !important;
+}
+
+.bs-tooltip-left .arrow::before,
+.bs-tooltip-auto[x-placement^="left"] .arrow::before {
+  border-left-color: var(--saas-text-primary) !important;
+}
+
+/* ===== COMPLETE POPOVER OVERRIDE ===== */
+.popover {
+  background-color: var(--saas-surface) !important;
+  border: 1px solid var(--saas-border) !important;
+  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
+}
+
+.popover-header {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border-bottom: 1px solid var(--saas-border) !important;
+}
+
+.popover-body {
+  color: var(--saas-text-primary) !important;
+}
+
+/* ===== COMPLETE TAB OVERRIDE ===== */
+.nav-tabs {
+  border-bottom: 1px solid var(--saas-border) !important;
+}
+
+.nav-tabs .nav-link {
+  background-color: transparent !important;
+  color: var(--saas-text-secondary) !important;
+  border: 1px solid transparent !important;
+}
+
+.nav-tabs .nav-link:hover {
+  border-color: var(--saas-border) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-primary) !important;
+  border-color: var(--saas-border) var(--saas-border) var(--saas-surface) !important;
+}
+
+.tab-content {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+/* ===== COMPLETE ACCORDION OVERRIDE ===== */
+.accordion-item {
+  background-color: var(--saas-surface) !important;
+  border: 1px solid var(--saas-border) !important;
+}
+
+.accordion-button {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border: none !important;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: var(--saas-primary) !important;
+  color: var(--saas-text-inverse) !important;
+}
+
+.accordion-body {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+/* ===== SAAS CONTROLLER SPECIFIC STYLES ===== */
 .saas-controller-form {
   max-width: 1200px;
   margin: 0 auto;
-  background-color: var(--saas-surface-color) !important;
-  color: var(--saas-text-color) !important;
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--saas-shadow) !important;
 }
 
 .saas-color-preview {
@@ -414,50 +940,47 @@ a:hover {
   border-radius: 4px;
   display: inline-block;
   margin-left: 10px;
-  border: 1px solid var(--saas-border-color) !important;
+  border: 1px solid var(--saas-border) !important;
 }
 
 .saas-limit-info {
   padding: 15px;
   border-radius: 8px;
   margin: 10px 0;
+  color: var(--saas-text-primary) !important;
 }
 
 .saas-limit-warning {
-  background-color: rgba(255, 193, 7, 0.1);
-  border: 1px solid var(--saas-accent-color);
-  color: var(--saas-text-color);
+  background-color: rgba(255, 111, 97, 0.1) !important;
+  border: 1px solid var(--saas-accent) !important;
 }
 
 .saas-limit-danger {
-  background-color: rgba(220, 53, 69, 0.1);
-  border: 1px solid var(--saas-accent-dark);
-  color: var(--saas-text-color);
+  background-color: rgba(255, 111, 97, 0.2) !important;
+  border: 1px solid var(--saas-accent-dark) !important;
 }
 
 .saas-limit-success {
-  background-color: rgba(0, 191, 165, 0.1);
-  border: 1px solid var(--saas-secondary-color);
-  color: var(--saas-text-color);
+  background-color: rgba(0, 191, 165, 0.1) !important;
+  border: 1px solid var(--saas-secondary) !important;
 }
 
-/* Status indicators - Brand Colors */
 .saas-status-active {
-  color: var(--saas-secondary-color) !important;
+  color: var(--saas-secondary) !important;
   font-weight: 500;
 }
 
 .saas-status-inactive {
-  color: var(--saas-accent-color) !important;
+  color: var(--saas-accent) !important;
   font-weight: 500;
 }
 
 .saas-status-syncing {
-  color: var(--saas-support-color) !important;
+  color: var(--saas-support) !important;
   font-weight: 500;
 }
 
-/* Hide Odoo Branding when configured */
+/* ===== HIDE BRANDING ===== */
 .saas-hide-branding .o_sub_menu_footer,
 .saas-hide-branding .powered_by,
 .saas-hide-branding [data-section="about"] .oe_instance_title,
@@ -465,7 +988,7 @@ a:hover {
   display: none !important;
 }
 
-/* Animation for configuration changes */
+/* ===== ANIMATIONS ===== */
 .saas-config-updating {
   opacity: 0.7;
   transition: opacity 0.3s ease;
@@ -476,37 +999,61 @@ a:hover {
   transition: opacity 0.3s ease;
 }
 
-/* Kanban View Support */
-.o_kanban_view {
-  background-color: var(--saas-background-color) !important;
+/* ===== COMPLETE SCROLLBAR OVERRIDE ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
 
-.o_kanban_record {
-  background-color: var(--saas-surface-color) !important;
-  border: 1px solid var(--saas-border-color) !important;
-  color: var(--saas-text-color) !important;
+::-webkit-scrollbar-track {
+  background: var(--saas-bg-secondary) !important;
 }
 
-.o_kanban_record:hover {
-  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
+::-webkit-scrollbar-thumb {
+  background: var(--saas-text-muted) !important;
+  border-radius: 4px;
 }
 
-/* Calendar View Support */
-.o_calendar_view {
-  background-color: var(--saas-background-color) !important;
-  color: var(--saas-text-color) !important;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--saas-text-secondary) !important;
 }
 
-.fc-event {
-  background-color: var(--saas-primary-color) !important;
-  border-color: var(--saas-primary-dark) !important;
-  color: var(--saas-text-inverse) !important;
+/* ===== COMPLETE CODE BLOCK OVERRIDE ===== */
+code,
+pre,
+.code {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
 }
 
-/* Responsive adjustments */
+/* ===== COMPLETE BLOCKQUOTE OVERRIDE ===== */
+blockquote {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border-left: 4px solid var(--saas-primary) !important;
+}
+
+/* ===== COMPLETE HR OVERRIDE ===== */
+hr {
+  border-color: var(--saas-border) !important;
+}
+
+/* ===== COMPLETE SPINNER OVERRIDE ===== */
+.spinner-border {
+  border-color: var(--saas-primary) !important;
+  border-right-color: transparent !important;
+}
+
+.spinner-grow {
+  background-color: var(--saas-primary) !important;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
 @media (max-width: 768px) {
   .saas-controller-form {
     padding: 10px;
+    margin: 10px;
   }
 
   .saas-color-preview {
@@ -517,41 +1064,145 @@ a:hover {
   .o_main_navbar .navbar-nav .nav-link {
     padding: 0.5rem !important;
   }
-}
 
-/* Print styles - Light mode only for better readability */
-@media print {
-  :root {
-    --saas-background-color: #ffffff !important;
-    --saas-text-color: #000000 !important;
-    --saas-surface-color: #ffffff !important;
-  }
-
-  .bg-view,
-  body {
-    background-color: white !important;
-    color: black !important;
+  .card {
+    margin-bottom: 1rem;
   }
 }
 
-/* Accessibility improvements */
+@media (max-width: 576px) {
+  .saas-controller-form {
+    padding: 5px;
+    margin: 5px;
+  }
+
+  .btn {
+    font-size: 0.8rem !important;
+    padding: 0.4rem 0.8rem !important;
+  }
+}
+
+/* ===== ACCESSIBILITY IMPROVEMENTS ===== */
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }
 
-/* High contrast mode support */
 @media (prefers-contrast: high) {
   :root {
-    --saas-border-color: #000000;
+    --saas-border: #000000 !important;
+    --saas-shadow: rgba(0, 0, 0, 0.5) !important;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
-      --saas-border-color: #ffffff;
+      --saas-border: #ffffff !important;
+      --saas-shadow: rgba(255, 255, 255, 0.3) !important;
     }
   }
+}
+
+/* ===== FOCUS INDICATORS ===== */
+*:focus {
+  outline: 2px solid var(--saas-primary) !important;
+  outline-offset: 2px !important;
+}
+
+button:focus,
+.btn:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  outline: 2px solid var(--saas-primary) !important;
+  outline-offset: 2px !important;
+  box-shadow: 0 0 0 3px rgba(76, 158, 255, 0.2) !important;
+}
+
+/* ===== PRINT STYLES ===== */
+@media print {
+  :root {
+    --saas-bg-primary: #ffffff !important;
+    --saas-text-primary: #000000 !important;
+    --saas-surface: #ffffff !important;
+    --saas-border: #000000 !important;
+  }
+
+  body,
+  * {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  .saas-controller-form {
+    box-shadow: none !important;
+  }
+}
+
+/* ===== FORCE OVERRIDE FOR STUBBORN ELEMENTS ===== */
+[style*="background-color"] {
+  background-color: var(--saas-surface) !important;
+}
+
+[style*="color"] {
+  color: var(--saas-text-primary) !important;
+}
+
+/* Force override any inline styles that might interfere */
+.o_main_navbar [style*="color"],
+.navbar [style*="color"] {
+  color: var(--saas-text-inverse) !important;
+}
+
+/* Final catch-all for any missed elements */
+.o_web_client,
+.o_web_client * {
+  border-color: var(--saas-border) !important;
+}
+
+.o_web_client .o_main_navbar,
+.o_web_client .o_main_navbar * {
+  color: var(--saas-text-inverse) !important;
+}
+
+/* Ensure all text elements have proper contrast */
+p,
+span,
+div,
+label,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--saas-text-primary) !important;
+}
+
+/* Exception for navigation elements */
+.o_main_navbar p,
+.o_main_navbar span,
+.o_main_navbar div,
+.o_main_navbar label,
+.o_main_navbar h1,
+.o_main_navbar h2,
+.o_main_navbar h3,
+.o_main_navbar h4,
+.o_main_navbar h5,
+.o_main_navbar h6,
+.navbar p,
+.navbar span,
+.navbar div,
+.navbar label,
+.navbar h1,
+.navbar h2,
+.navbar h3,
+.navbar h4,
+.navbar h5,
+.navbar h6 {
+  color: var(--saas-text-inverse) !important;
 }
