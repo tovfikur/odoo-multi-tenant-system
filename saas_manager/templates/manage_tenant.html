@@ -169,7 +169,10 @@
                     <i class="fas fa-users text-success me-3" style="font-size: 1.1rem;"></i>
                     <div>
                       <div class="fw-semibold" style="color: var(--text-secondary); font-size: 0.9rem;">Users</div>
-                      <div class="fw-bold" style="color: var(--text-primary); font-size: 1.1rem;">{{ tenant.max_users }} max</div>
+                      <div class="fw-bold" style="color: var(--text-primary); font-size: 1.1rem;" id="maxUsersDisplay">
+                        {% set current_plan = plans|selectattr('name', 'equalto', tenant.plan)|first %}
+                        {{ current_plan.max_users if current_plan else tenant.max_users }} max
+                      </div>
                     </div>
                   </div>
                   <div class="text-end">
@@ -488,10 +491,17 @@
           <div class="mb-3">
             <label for="planSelect" class="form-label">Plan</label>
             <select class="form-select" id="planSelect">
-              <option value="basic" {{ 'selected' if tenant.plan == 'basic' }}>Basic</option>
-              <option value="professional" {{ 'selected' if tenant.plan == 'professional' }}>Professional</option>
-              <option value="enterprise" {{ 'selected' if tenant.plan == 'enterprise' }}>Enterprise</option>
+              {% for plan in plans %}
+              <option value="{{ plan.name }}" {{ 'selected' if tenant.plan == plan.name }}>
+                {{ plan.display_name }} - ${{ "%.2f"|format(plan.price) }}/month
+              </option>
+              {% endfor %}
             </select>
+            <div class="form-text">
+              <small id="planDetails" class="text-muted">
+                <!-- Plan details will be shown here -->
+              </small>
+            </div>
           </div>
           
           <div class="mb-3">
@@ -507,7 +517,7 @@
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-        <button type="button" class="btn btn-primary">Save Changes</button>
+        <button type="button" class="btn btn-primary" onclick="saveTenantChanges()">Save Changes</button>
       </div>
     </div>
   </div>
@@ -729,6 +739,9 @@
 
 {% block scripts %}
 <script>
+// Plan data from backend
+const planData = {{ plans|tojson }};
+
 // Auto-refresh status every 30 seconds
 setInterval(function() {
     $.get('/api/tenant/{{ tenant.id }}/status')
@@ -740,6 +753,118 @@ setInterval(function() {
             statusBadge.text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
         });
 }, 30000);
+
+// Handle plan selection changes
+document.addEventListener('DOMContentLoaded', function() {
+    const planSelect = document.getElementById('planSelect');
+    const maxUsersInput = document.getElementById('maxUsers');
+    const storageLimitInput = document.getElementById('storageLimit');
+    
+    // Create plan lookup object for quick access
+    const planLookup = {};
+    planData.forEach(plan => {
+        planLookup[plan.name] = plan;
+    });
+    
+    // Update fields when plan changes
+    planSelect.addEventListener('change', function() {
+        const selectedPlan = planLookup[this.value];
+        if (selectedPlan) {
+            maxUsersInput.value = selectedPlan.max_users;
+            storageLimitInput.value = selectedPlan.storage_limit;
+            
+            // Update plan details display
+            updatePlanDetails(selectedPlan);
+            
+            // Also update the display in the main page
+            updateMainPageDisplay(selectedPlan);
+        }
+    });
+    
+    // Initialize plan details on page load
+    const currentPlan = planLookup[planSelect.value];
+    if (currentPlan) {
+        updatePlanDetails(currentPlan);
+    }
+    
+    function updatePlanDetails(plan) {
+        const planDetails = document.getElementById('planDetails');
+        if (planDetails) {
+            planDetails.innerHTML = `
+                <i class="fas fa-users"></i> ${plan.max_users} users • 
+                <i class="fas fa-hdd"></i> ${plan.storage_limit} MB storage • 
+                <i class="fas fa-dollar-sign"></i> $${plan.price.toFixed(2)}/month
+            `;
+        }
+    }
+    
+    function updateMainPageDisplay(plan) {
+        // Update the max users display in the resource usage section
+        const maxUsersDisplay = document.getElementById('maxUsersDisplay');
+        if (maxUsersDisplay) {
+            maxUsersDisplay.textContent = plan.max_users + ' max';
+        }
+    }
+});
+
+// Save tenant changes function
+function saveTenantChanges() {
+    const tenantName = document.getElementById('tenantName').value;
+    const planSelect = document.getElementById('planSelect').value;
+    const maxUsers = document.getElementById('maxUsers').value;
+    const storageLimit = document.getElementById('storageLimit').value;
+    
+    const data = {
+        name: tenantName,
+        plan: planSelect,
+        max_users: parseInt(maxUsers),
+        storage_limit: parseInt(storageLimit)
+    };
+    
+    // Show loading state
+    const saveBtn = document.querySelector('.btn-primary[onclick="saveTenantChanges()"]');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = 'Saving...';
+    saveBtn.disabled = true;
+    
+    fetch(`/api/tenant/{{ tenant.id }}/update`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            // Update the main page displays
+            if (result.plan_changed) {
+                location.reload(); // Reload to reflect all changes
+            } else {
+                // Just update the display
+                const maxUsersDisplay = document.getElementById('maxUsersDisplay');
+                if (maxUsersDisplay) {
+                    maxUsersDisplay.textContent = data.max_users + ' max';
+                }
+                // Close modal
+                const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+                modal.hide();
+            }
+        } else {
+            alert('Error: ' + result.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while saving changes.');
+    })
+    .finally(() => {
+        // Reset button state
+        saveBtn.textContent = originalText;
+        saveBtn.disabled = false;
+    });
+}
 
 // Delete confirmation
 document.getElementById('confirmDelete')?.addEventListener('input', function() {

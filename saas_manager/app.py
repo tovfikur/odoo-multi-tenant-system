@@ -1155,12 +1155,28 @@ def manage_tenant(tenant_id):
         storage_usage = odoo.get_database_storage_usage(tenant.database_name)['total_size_human']
         uptime = odoo.get_tenant_uptime(tenant.database_name)['uptime_human']
         odoo_user = odoo.get_users_count(tenant.database_name, tenant.admin_username, tenant.get_admin_password())['total_users']
+        
+        # Get available subscription plans for the edit modal
+        plans = SubscriptionPlan.query.filter_by(is_active=True).all()
+        plans_data = [
+            {
+                'name': plan.name,
+                'display_name': plan.name.capitalize(),
+                'price': plan.price,
+                'max_users': plan.max_users,
+                'storage_limit': plan.storage_limit,
+                'features': plan.features or []
+            }
+            for plan in plans
+        ]
+        
         return render_template('manage_tenant.html', 
                       tenant=tenant, 
                       modules=modules, 
                       storage_usage=storage_usage, 
                       uptime=uptime, 
                       odoo_user=odoo_user,
+                      plans=plans_data,
                       tenant_id=tenant_id)
     except Exception as e:
         error_tracker.log_error(e, {'tenant_id': tenant_id, 'user_id': current_user.id})
@@ -2697,6 +2713,112 @@ def update_tenant_user_limit_api(subdomain):
             'success': False,
             'error': 'Error updating user limit'
         }), 500
+
+@app.route('/api/tenant/<int:tenant_id>/update', methods=['POST'])
+@login_required
+@track_errors('update_tenant_settings')
+def update_tenant_settings(tenant_id):
+    """Update tenant settings from the management interface"""
+    try:
+        # Check if user has access to this tenant
+        if not current_user.is_admin:
+            tenant_user = TenantUser.query.filter_by(tenant_id=tenant_id, user_id=current_user.id).first()
+            if not tenant_user:
+                return jsonify({'success': False, 'message': 'Access denied'}), 403
+        
+        tenant = Tenant.query.get_or_404(tenant_id)
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'success': False, 'message': 'No data provided'}), 400
+        
+        # Track changes
+        changes = {}
+        plan_changed = False
+        
+        # Update tenant name if provided
+        if 'name' in data and data['name'] != tenant.name:
+            changes['name'] = {'old': tenant.name, 'new': data['name']}
+            tenant.name = data['name']
+        
+        # Update plan if provided
+        if 'plan' in data and data['plan'] != tenant.plan:
+            # Validate plan exists
+            plan = SubscriptionPlan.query.filter_by(name=data['plan'], is_active=True).first()
+            if not plan:
+                return jsonify({'success': False, 'message': 'Invalid plan selected'}), 400
+            
+            changes['plan'] = {'old': tenant.plan, 'new': data['plan']}
+            tenant.plan = data['plan']
+            tenant.max_users = plan.max_users
+            tenant.storage_limit = plan.storage_limit
+            plan_changed = True
+        
+        # Update max_users if provided and plan didn't change
+        if 'max_users' in data and not plan_changed:
+            new_max_users = int(data['max_users'])
+            if new_max_users != tenant.max_users:
+                changes['max_users'] = {'old': tenant.max_users, 'new': new_max_users}
+                tenant.max_users = new_max_users
+        
+        # Update storage_limit if provided and plan didn't change
+        if 'storage_limit' in data and not plan_changed:
+            new_storage_limit = int(data['storage_limit'])
+            if new_storage_limit != tenant.storage_limit:
+                changes['storage_limit'] = {'old': tenant.storage_limit, 'new': new_storage_limit}
+                tenant.storage_limit = new_storage_limit
+        
+        # Save changes
+        tenant.updated_at = datetime.utcnow()
+        db.session.commit()
+        
+        # Sync user limits if plan changed
+        if plan_changed:
+            try:
+                sync_result = sync_tenant_user_limits(tenant_id)
+                if not sync_result:
+                    logger.warning(f"Failed to sync user limits for tenant {tenant_id} after settings update")
+            except Exception as sync_error:
+                logger.warning(f"Error syncing user limits for tenant {tenant_id}: {sync_error}")
+        
+        # Create audit log
+        try:
+            audit_log = AuditLog(
+                user_id=current_user.id,
+                tenant_id=tenant_id,
+                action='tenant_settings_updated',
+                details={
+                    'changes': changes,
+                    'plan_changed': plan_changed
+                },
+                ip_address=request.remote_addr,
+                user_agent=str(request.user_agent)
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+        except Exception as audit_error:
+            logger.warning(f"Failed to create audit log for tenant settings update: {audit_error}")
+        
+        # Invalidate cache
+        invalidate_tenant_cache(tenant_id)
+        if current_user.id:
+            invalidate_user_cache(current_user.id)
+        
+        logger.info(f"Updated tenant {tenant_id} settings: {changes}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'Tenant settings updated successfully',
+            'changes': changes,
+            'plan_changed': plan_changed
+        })
+        
+    except ValueError as ve:
+        return jsonify({'success': False, 'message': f'Invalid data: {str(ve)}'}), 400
+    except Exception as e:
+        db.session.rollback()
+        error_tracker.log_error(e, {'tenant_id': tenant_id, 'user_id': current_user.id})
+        return jsonify({'success': False, 'message': 'Failed to update tenant settings'}), 500
 
 
 
