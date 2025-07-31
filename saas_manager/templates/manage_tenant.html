@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Manage Tenant - {{ tenant.name }} - Khudroo{% endblock %}
+{% block title %}Manage Panel - {{ tenant.name }} - Khudroo{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -12,7 +12,7 @@
         <li class="breadcrumb-item active" style="color: var(--text-primary); font-weight: 600;">{{ tenant.name }}</li>
       </ol>
     </nav>
-    <h2 style="color: var(--text-primary); margin-top: 1.5rem;"><i class="fas fa-cog me-2 text-primary"></i>Manage Tenant: {{ tenant.name }}</h2>
+    <h2 style="color: var(--text-primary); margin-top: 1.5rem;"><i class="fas fa-cog me-2 text-primary"></i>Manage Panel: {{ tenant.name }}</h2>
   </div>
 </div>
 
@@ -67,10 +67,10 @@
   </div>
 </div>
 
-<!-- Tenant Overview - Redesigned -->
+<!-- Panel Overview - Redesigned -->
 <div class="row mb-4">
   <div class="col-md-8">
-    <!-- Main Tenant Information Card -->
+    <!-- Main Panel Information Card -->
     <div class="card border-0 shadow-sm mb-4" style="border-radius: 16px;">
       <div class="card-header border-0" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 16px 16px 0 0;">
         <div class="d-flex align-items-center justify-content-between w-100">
@@ -80,7 +80,7 @@
             </div>
             <div>
               <h4 class="mb-1 text-white fw-bold">{{ tenant.name }}</h4>
-              <p class="mb-0" style="color: rgba(255, 255, 255, 0.8);">Tenant Configuration & Management</p>
+              <p class="mb-0" style="color: rgba(255, 255, 255, 0.8);">Panel Configuration & Management</p>
             </div>
           </div>
           <div>

@@ -15,7 +15,7 @@
     <div class="d-flex justify-content-between align-items-center">
       <div>
         <span class="metric-value">{{ stats.total_tenants }}</span>
-        <div class="metric-label">Total Tenants</div>
+        <div class="metric-label">Total Panels</div>
       </div>
       <div class="text-primary">
         <i class="fas fa-building fa-3x"></i>
@@ -27,7 +27,7 @@
     <div class="d-flex justify-content-between align-items-center">
       <div>
         <span class="metric-value text-success">{{ stats.active_tenants }}</span>
-        <div class="metric-label">Active Tenants</div>
+        <div class="metric-label">Active Panels</div>
       </div>
       <div class="text-success">
         <i class="fas fa-check-circle fa-3x"></i>
@@ -61,12 +61,12 @@
 </div>
 {% endif %}
 
-<!-- Tenants Section -->
+<!-- Panels Section -->
 <div class="card">
   <div class="card-header">
     <div class="d-flex justify-content-between align-items-center">
       <h4 class="mb-0">
-        <i class="fas fa-building me-2"></i>My Tenants
+        <i class="fas fa-building me-2"></i>My Panels
       </h4>
     </div>
   </div>
@@ -76,9 +76,9 @@
     <div class="row g-4">
       {% for tenant in tenants %}
       <div class="col-lg-4 col-md-6">
-        <div class="card h-100 tenant-card">
+        <div class="card h-100 panel-card">
           <div class="card-body">
-            <!-- Tenant Header -->
+            <!-- Panel Header -->
             <div class="d-flex justify-content-between align-items-start mb-3">
               <h5 class="card-title mb-0 fw-bold">{{ tenant.name }}</h5>
               <div class="d-flex flex-column align-items-end gap-1">
@@ -99,7 +99,7 @@
                     {%- else %} fa-question{% endif %} me-1"></i>
                   {{ 'Deactive' if not tenant.is_active else tenant.status.title() }}
                 </span>
-                <!-- Tenant Status -->
+                <!-- Panel Status -->
                 <span class="badge badge-sm {{ 'bg-success' if tenant.is_active else 'bg-secondary' }}">
                   <i class="fas {{ 'fa-power-off' if tenant.is_active else 'fa-power-off' }} me-1"></i>
                   {{ 'Online' if tenant.is_active else 'Offline' }}
@@ -107,7 +107,7 @@
               </div>
             </div>
 
-            <!-- Tenant URL -->
+            <!-- Panel URL -->
             <div class="mb-3">
               <small class="d-block mb-2" style="color: var(--text-muted);">
                 <i class="fas fa-globe me-1"></i>Instance URL
@@ -117,7 +117,7 @@
               </div>
             </div>
 
-            <!-- Tenant Stats -->
+            <!-- Panel Stats -->
             <div class="row text-center mb-3 g-0">
               <div class="col-4">
                 <div class="pe-2" style="border-right: 1px solid var(--border-primary);">
@@ -192,14 +192,14 @@
       <div class="mb-4">
         <i class="fas fa-building fa-5x mb-3 float-animation" style="color: var(--text-muted);"></i>
       </div>
-      <h4 class="mb-3" style="color: var(--text-muted);">No tenants yet</h4>
+      <h4 class="mb-3" style="color: var(--text-muted);">No panels yet</h4>
       <p class="mb-4" style="color: var(--text-muted);">
-        Get started by creating your first Khudroo tenant instance.<br>
+        Get started by creating your first Khudroo panel instance.<br>
         It only takes a few minutes to set up.
       </p>
       <a href="{{ url_for('create_tenant') }}" class="btn btn-primary btn-lg btn-action">
         <i class="fas fa-plus me-2"></i>
-        Create Your First Tenant
+        Create Your First Panel
       </a>
     </div>
     {% endif %}
@@ -219,7 +219,7 @@
       <div class="col-md-4">
         <a href="{{ url_for('create_tenant') }}" class="btn btn-outline-primary w-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
           <i class="fas fa-plus fa-2x mb-2"></i>
-          <span class="fw-bold">New Tenant</span>
+          <span class="fw-bold">New Panel</span>
           <small class="mt-1" style="color: var(--text-muted);">Create another instance</small>
         </a>
       </div>
@@ -228,7 +228,7 @@
         <a href="{{ url_for('admin_tenants') }}" class="btn btn-outline-secondary w-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
           <i class="fas fa-tools fa-2x mb-2"></i>
           <span class="fw-bold">Admin Panel</span>
-          <small class="mt-1" style="color: var(--text-muted);">Manage all tenants</small>
+          <small class="mt-1" style="color: var(--text-muted);">Manage all panels</small>
         </a>
       </div>
       <div class="col-md-4">
@@ -265,11 +265,11 @@
   padding: 0.25rem 0.5rem;
 }
 
-.tenant-card .badge {
+.panel-card .badge {
   transition: all 0.2s ease;
 }
 
-.tenant-card:hover .badge {
+.panel-card:hover .badge {
   transform: scale(1.05);
 }
 
@@ -301,9 +301,9 @@
 
 {% block scripts %}
 <script>
-// Auto-refresh tenant status every 30 seconds
+// Auto-refresh panel status every 30 seconds
 setInterval(function() {
-  document.querySelectorAll(".tenant-card").forEach(function(card) {
+  document.querySelectorAll(".panel-card").forEach(function(card) {
     const tenantId = getTenantIdFromCard(card);
     if (tenantId) {
       updateTenantStatus(tenantId, card);
