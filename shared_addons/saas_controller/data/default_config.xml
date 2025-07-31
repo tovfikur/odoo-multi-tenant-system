@@ -2,17 +2,17 @@
 <odoo noupdate="1">
     <!-- Default SaaS Controller Configuration -->
     <record id="default_saas_config" model="saas.controller">
-        <field name="database_name" eval="env.cr.dbname"/>
+        <field name="database_name">default_tenant</field>
         <field name="max_users">10</field>
         <field name="user_limit_enabled">True</field>
         <field name="remove_odoo_branding">False</field>
         <field name="custom_app_name">Business Manager</field>
-        <field name="primary_color">#017e84</field>
-        <field name="secondary_color">#875a7b</field>
-        <field name="accent_color">#017e84</field>
+        <field name="primary_color">#1a73e8</field>
+        <field name="secondary_color">#00bfa5</field>
+        <field name="accent_color">#ff6f61</field>
         <field name="background_color">#ffffff</field>
-        <field name="text_color">#212529</field>
-        <field name="link_color">#017e84</field>
+        <field name="text_color">#2e3a59</field>
+        <field name="link_color">#1a73e8</field>
         <field name="is_active">True</field>
     </record>
 
