@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <!-- Custom CSS for Branding -->
-    <template id="custom_branding_css" name="Custom Branding CSS" inherit_id="web.assets_frontend">
+    <template id="custom_branding_css" name="Custom Branding CSS" inherit_id="web.assets_web">
         <xpath expr="." position="inside">
             <style>
                 /* SaaS Controller Custom Branding CSS */

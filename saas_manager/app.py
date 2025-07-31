@@ -602,7 +602,6 @@ async def create_database(db_name, username='admin', password='admin',  modules=
         try:
             from models import Tenant
             from flask import current_app
-            from utils import error_tracker
             app_to_use = app if app else current_app
             
             # Create application context for background thread
