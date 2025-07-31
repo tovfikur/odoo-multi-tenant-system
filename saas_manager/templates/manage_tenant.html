@@ -1,6 +1,87 @@
 {% extends "base.html" %}
 {% block title %}Manage Panel - {{ tenant.name }} - Khudroo{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Beautiful Billing Card Animations */
+#billing-status-card {
+    transition: all 0.3s ease;
+}
+
+#billing-status-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+}
+
+.billing-hours-display, .billing-days-display {
+    transition: all 0.5s ease;
+    transform-origin: center;
+}
+
+.billing-hours-display:hover, .billing-days-display:hover {
+    transform: scale(1.1);
+}
+
+.billing-progress-bar {
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    background: linear-gradient(90deg, currentColor 0%, currentColor 100%);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.billing-notification-badge {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.7; transform: scale(1.1); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+.billing-status-badge {
+    transition: all 0.3s ease;
+}
+
+.billing-status-badge:hover {
+    transform: scale(1.05);
+}
+
+/* Beautiful loading animation */
+.billing-loading .spinner-border {
+    animation: customSpin 1.5s linear infinite;
+}
+
+@keyframes customSpin {
+    0% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(180deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(1); }
+}
+
+/* Card state transitions */
+.billing-active, .billing-expired, .billing-error {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+    0% { opacity: 0; transform: translateY(20px); }
+    100% { opacity: 1; transform: translateY(0); }
+}
+
+/* Progress bar glow effect */
+.progress-bar.bg-success {
+    box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+}
+
+.progress-bar.bg-warning {
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.5);
+}
+
+.progress-bar.bg-danger {
+    box-shadow: 0 0 10px rgba(220, 53, 69, 0.5);
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-4">
   <div class="col">
@@ -423,6 +504,132 @@
             </div>
         </div>
     </div>
+    
+    <!-- Billing Status Card -->
+    <div class="card shadow-sm border-0 mt-4" style="border-radius: 16px;" id="billing-status-card">
+        <div class="card-header text-white border-0" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); border-radius: 16px 16px 0 0;">
+            <div class="d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <div class="p-2 rounded-circle me-3" style="background: rgba(255, 255, 255, 0.2);">
+                        <i class="fas fa-chart-pie text-white"></i>
+                    </div>
+                    <h5 class="mb-0 fw-semibold">Billing Status</h5>
+                </div>
+                <div class="billing-notification-badge d-none">
+                    <i class="fas fa-exclamation-triangle text-warning"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-body p-4">
+            <!-- Loading State -->
+            <div class="billing-loading text-center py-3">
+                <div class="spinner-border text-primary mb-2" role="status" style="width: 2rem; height: 2rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="text-muted mb-0">Loading billing information...</p>
+            </div>
+            
+            <!-- Active Billing State -->
+            <div class="billing-active d-none">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="billing-hours-display fw-bold" style="font-size: 2rem; color: var(--primary);">0</div>
+                            <small class="text-muted">Hours Used</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="billing-days-display fw-bold" style="font-size: 2rem; color: var(--success);">30</div>
+                            <small class="text-muted">Days Remaining</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Progress Bar -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <small class="fw-semibold" style="color: var(--text-primary);">Billing Cycle Progress</small>
+                        <small class="billing-percentage text-muted">0%</small>
+                    </div>
+                    <div class="progress" style="height: 12px; border-radius: 10px; background-color: #e9ecef;">
+                        <div class="progress-bar billing-progress-bar" 
+                             style="border-radius: 10px; transition: all 0.5s ease;" 
+                             role="progressbar" 
+                             aria-valuemin="0" 
+                             aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Billing Details -->
+                <div class="row g-3">
+                    <div class="col-12">
+                        <div class="p-3 rounded" style="background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%); border: 1px solid var(--border-primary);">
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="billing-cycle-start text-muted small">Started</div>
+                                    <div class="fw-semibold small">-</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="billing-cycle-end text-muted small">Ends</div>
+                                    <div class="fw-semibold small">-</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="billing-status-text text-muted small">Status</div>
+                                    <div class="fw-semibold small">
+                                        <span class="badge bg-success billing-status-badge">Active</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Expired Billing State -->
+            <div class="billing-expired d-none">
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
+                    </div>
+                    <h5 class="text-danger mb-2">Billing Cycle Expired</h5>
+                    <p class="text-muted mb-3">Your panel has been deactivated due to billing expiry.</p>
+                    
+                    <!-- Payment Button -->
+                    <form action="{{ url_for('initiate_payment_route', tenant_id=tenant.id) }}" method="POST" class="mb-3">
+                        {{ csrf_token() }}
+                        <button type="submit" class="btn btn-warning px-4 py-2" style="border-radius: 12px; font-weight: 600;">
+                            <i class="fas fa-credit-card me-2"></i>Pay to Renew Panel
+                        </button>
+                    </form>
+                    
+                    <div class="alert alert-warning mb-0" style="border-radius: 12px;">
+                        <small>
+                            <i class="fas fa-info-circle me-1"></i>
+                            Complete payment to reactivate your panel and restore access.
+                        </small>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Error State -->
+            <div class="billing-error d-none">
+                <div class="text-center py-3">
+                    <div class="mb-3">
+                        <i class="fas fa-exclamation-circle text-warning" style="font-size: 2.5rem;"></i>
+                    </div>
+                    <h6 class="text-warning mb-2">Unable to Load Billing Info</h6>
+                    <p class="text-muted mb-3">Please refresh the page or contact support if the issue persists.</p>
+                    <button class="btn btn-outline-primary btn-sm" onclick="loadTenantBillingInfo()">
+                        <i class="fas fa-sync-alt me-1"></i>Retry
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
   </div>
 </div>
 
@@ -1167,7 +1374,218 @@ function submitRestoreForm() {
     document.getElementById('restoreForm').submit();
 }
 
+// Billing Status Management
+let billingUpdateInterval;
 
+// Load billing information on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadTenantBillingInfo();
+    
+    // Set up auto-refresh every 30 seconds
+    billingUpdateInterval = setInterval(loadTenantBillingInfo, 30000);
+});
+
+// Function to load tenant billing information
+function loadTenantBillingInfo() {
+    const tenantId = {{ tenant.id }};
+    
+    fetch(`/api/tenant/${tenantId}/status`)
+        .then(response => response.json())
+        .then(data => {
+            updateBillingDisplay(data);
+        })
+        .catch(error => {
+            console.error('Error loading billing info:', error);
+            showBillingError();
+        });
+}
+
+// Function to update billing display
+function updateBillingDisplay(data) {
+    const billingCard = document.getElementById('billing-status-card');
+    const loadingDiv = billingCard.querySelector('.billing-loading');
+    const activeDiv = billingCard.querySelector('.billing-active');
+    const expiredDiv = billingCard.querySelector('.billing-expired');
+    const errorDiv = billingCard.querySelector('.billing-error');
+    const notificationBadge = billingCard.querySelector('.billing-notification-badge');
+    
+    // Hide all states first
+    loadingDiv.classList.add('d-none');
+    activeDiv.classList.add('d-none');
+    expiredDiv.classList.add('d-none');
+    errorDiv.classList.add('d-none');
+    
+    if (!data.is_active || data.status === 'billing_expired' || data.status === 'failed') {
+        // Show expired state
+        expiredDiv.classList.remove('d-none');
+        notificationBadge.classList.remove('d-none');
+        
+        // Update header color to danger
+        const header = billingCard.querySelector('.card-header');
+        header.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+        
+    } else {
+        // Show active state
+        activeDiv.classList.remove('d-none');
+        notificationBadge.classList.add('d-none');
+        
+        // Simulate billing data based on tenant status
+        const hoursUsed = getBillingHours(data);
+        const daysRemaining = getBillingDays(data);
+        const usagePercent = (hoursUsed / 360) * 100;
+        
+        // Update displays
+        updateBillingNumbers(hoursUsed, daysRemaining, usagePercent);
+        updateProgressBar(usagePercent);
+        updateBillingDetails(data);
+        
+        // Update header color based on usage
+        updateHeaderColor(usagePercent);
+    }
+}
+
+// Function to calculate billing hours based on tenant status
+function getBillingHours(data) {
+    const now = new Date();
+    const created = new Date(data.created_at);
+    const daysSinceCreated = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+    
+    if (data.status === 'active') {
+        return Math.min(daysSinceCreated * 12, 360); // 12 hours per day, max 360
+    } else if (data.status === 'creating') {
+        return Math.min(daysSinceCreated * 2, 50); // Lower usage while creating
+    } else {
+        return Math.min(daysSinceCreated * 5, 100); // Minimal usage for pending
+    }
+}
+
+// Function to calculate remaining days
+function getBillingDays(data) {
+    const hoursUsed = getBillingHours(data);
+    const hoursRemaining = Math.max(0, 360 - hoursUsed);
+    return Math.ceil(hoursRemaining / 12);
+}
+
+// Function to update billing numbers
+function updateBillingNumbers(hoursUsed, daysRemaining, usagePercent) {
+    const hoursDisplay = document.querySelector('.billing-hours-display');
+    const daysDisplay = document.querySelector('.billing-days-display');
+    const percentageDisplay = document.querySelector('.billing-percentage');
+    
+    // Animate number changes
+    animateNumber(hoursDisplay, hoursUsed.toFixed(1));
+    animateNumber(daysDisplay, daysRemaining);
+    percentageDisplay.textContent = usagePercent.toFixed(1) + '%';
+}
+
+// Function to update progress bar
+function updateProgressBar(usagePercent) {
+    const progressBar = document.querySelector('.billing-progress-bar');
+    
+    // Set width with animation
+    progressBar.style.width = Math.min(usagePercent, 100) + '%';
+    
+    // Set color based on usage
+    progressBar.className = 'progress-bar billing-progress-bar';
+    if (usagePercent > 80) {
+        progressBar.classList.add('bg-danger');
+    } else if (usagePercent > 60) {
+        progressBar.classList.add('bg-warning');
+    } else {
+        progressBar.classList.add('bg-success');
+    }
+}
+
+// Function to update billing details
+function updateBillingDetails(data) {
+    const createdDate = new Date(data.created_at);
+    const endDate = new Date(createdDate);
+    endDate.setDate(endDate.getDate() + 30); // 30 days cycle
+    
+    // Update cycle dates
+    document.querySelector('.billing-cycle-start').nextElementSibling.textContent = 
+        createdDate.toLocaleDateString();
+    document.querySelector('.billing-cycle-end').nextElementSibling.textContent = 
+        endDate.toLocaleDateString();
+    
+    // Update status badge
+    const statusBadge = document.querySelector('.billing-status-badge');
+    statusBadge.className = 'badge billing-status-badge';
+    
+    if (data.status === 'active') {
+        statusBadge.classList.add('bg-success');
+        statusBadge.textContent = 'Active';
+    } else if (data.status === 'creating') {
+        statusBadge.classList.add('bg-info');
+        statusBadge.textContent = 'Creating';
+    } else {
+        statusBadge.classList.add('bg-warning');
+        statusBadge.textContent = 'Pending';
+    }
+}
+
+// Function to update header color based on usage
+function updateHeaderColor(usagePercent) {
+    const header = document.querySelector('#billing-status-card .card-header');
+    
+    if (usagePercent > 80) {
+        header.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+    } else if (usagePercent > 60) {
+        header.style.background = 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)';
+    } else {
+        header.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+    }
+}
+
+// Function to animate number changes
+function animateNumber(element, targetValue) {
+    const currentValue = parseFloat(element.textContent) || 0;
+    const target = parseFloat(targetValue);
+    const duration = 1000; // 1 second
+    const steps = 60; // 60 FPS
+    const increment = (target - currentValue) / steps;
+    
+    let current = currentValue;
+    let step = 0;
+    
+    const timer = setInterval(() => {
+        step++;
+        current += increment;
+        
+        if (step >= steps) {
+            current = target;
+            clearInterval(timer);
+        }
+        
+        element.textContent = current.toFixed(1);
+    }, duration / steps);
+}
+
+// Function to show billing error
+function showBillingError() {
+    const billingCard = document.getElementById('billing-status-card');
+    const loadingDiv = billingCard.querySelector('.billing-loading');
+    const activeDiv = billingCard.querySelector('.billing-active');
+    const expiredDiv = billingCard.querySelector('.billing-expired');
+    const errorDiv = billingCard.querySelector('.billing-error');
+    
+    // Hide all states and show error
+    loadingDiv.classList.add('d-none');
+    activeDiv.classList.add('d-none');
+    expiredDiv.classList.add('d-none');
+    errorDiv.classList.remove('d-none');
+    
+    // Update header color to warning
+    const header = billingCard.querySelector('.card-header');
+    header.style.background = 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)';
+}
+
+// Clean up interval when page unloads
+window.addEventListener('beforeunload', function() {
+    if (billingUpdateInterval) {
+        clearInterval(billingUpdateInterval);
+    }
+});
 
 </script>
 {% endblock %}
