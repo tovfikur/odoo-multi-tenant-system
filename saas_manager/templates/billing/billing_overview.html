@@ -308,7 +308,7 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                     {% else %}
                       {{ next_expiring.billing_info.get('hours_remaining', 0)|round(0) }} hours
                     {% endif %}
-                    on {{ next_expiring.billing_info.get('cycle_end')[:10] if next_expiring.billing_info.get('cycle_end') else 'Unknown' }}
+                    on {% if next_expiring.billing_info.get('cycle_end') %}{{ next_expiring.billing_info.get('cycle_end')|string|truncate(10, True, '') }}{% else %}Unknown{% endif %}
                   </p>
                 </div>
               </div>
