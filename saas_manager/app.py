@@ -399,7 +399,7 @@ def admin_required(f):
 async def create_database(db_name, username='admin', password='admin',  modules=None, app=None):
     """Create Odoo database ONLY after successful payment"""
     
-    default_modules = ['base', 'web', 'auth_signup', 'saas_controller']
+    default_modules = ['base', 'web', 'auth_signup', 'saas_controller', 'saas_user_limit']
     if modules is None:
         modules = default_modules
     else:
