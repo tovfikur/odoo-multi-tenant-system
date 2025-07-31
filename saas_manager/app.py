@@ -1653,12 +1653,14 @@ def tenant_status(tenant_id):
         if not tenant_user and not current_user.is_admin:
             return jsonify({'error': 'Access denied'}), 403
         return jsonify({
+            'success': True,
             'id': tenant.id,
             'name': tenant.name,
             'subdomain': tenant.subdomain,
             'status': tenant.status,
+            'is_active': tenant.is_active,
             'plan': tenant.plan,
-            'created_at': tenant.created_at.isoformat()
+            'created_at': tenant.created_at.isoformat() if tenant.created_at else None
         })
     except Exception as e:
         error_tracker.log_error(e, {'tenant_id': tenant_id, 'user_id': current_user.id})

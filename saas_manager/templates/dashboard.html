@@ -81,10 +81,28 @@
             <!-- Tenant Header -->
             <div class="d-flex justify-content-between align-items-start mb-3">
               <h5 class="card-title mb-0 fw-bold">{{ tenant.name }}</h5>
-              <span class="badge {{ 'bg-success' if tenant.is_active else 'bg-warning' }}">
-                <i class="fas {{ 'fa-check-circle' if tenant.is_active else 'fa-clock' }} me-1"></i>
-                {{ 'Active' if tenant.is_active else 'Inactive' }}
-              </span>
+              <div class="d-flex flex-column align-items-end gap-1">
+                <!-- Database Status -->
+                <span class="badge badge-sm 
+                  {%- if tenant.status == 'active' %} bg-success
+                  {%- elif tenant.status == 'creating' %} bg-info
+                  {%- elif tenant.status == 'pending' %} bg-warning
+                  {%- elif tenant.status == 'failed' %} bg-danger
+                  {%- else %} bg-secondary{% endif %}">
+                  <i class="fas 
+                    {%- if tenant.status == 'active' %} fa-database
+                    {%- elif tenant.status == 'creating' %} fa-cog fa-spin
+                    {%- elif tenant.status == 'pending' %} fa-clock
+                    {%- elif tenant.status == 'failed' %} fa-exclamation-triangle
+                    {%- else %} fa-question{% endif %} me-1"></i>
+                  {{ tenant.status.title() }}
+                </span>
+                <!-- Tenant Status -->
+                <span class="badge badge-sm {{ 'bg-success' if tenant.is_active else 'bg-secondary' }}">
+                  <i class="fas {{ 'fa-power-off' if tenant.is_active else 'fa-power-off' }} me-1"></i>
+                  {{ 'Online' if tenant.is_active else 'Offline' }}
+                </span>
+              </div>
             </div>
 
             <!-- Tenant URL -->
@@ -231,20 +249,171 @@
 {% endif %}
 {% endblock %}
 
+{% block extra_css %}
+<style>
+/* Enhanced status badges */
+.badge-sm {
+  font-size: 0.7rem;
+  padding: 0.25rem 0.5rem;
+}
+
+.tenant-card .badge {
+  transition: all 0.2s ease;
+}
+
+.tenant-card:hover .badge {
+  transform: scale(1.05);
+}
+
+/* Status-specific animations */
+.badge .fa-spin {
+  animation: spin 1s linear infinite;
+}
+
+.badge .fa-database {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.badge .fa-power-off {
+  font-size: 0.8em;
+}
+
+/* Pulse animation for active status */
+.pulse-animation {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+</style>
+{% endblock %}
+
 {% block scripts %}
 <script>
 // Auto-refresh tenant status every 30 seconds
 setInterval(function() {
   document.querySelectorAll(".tenant-card").forEach(function(card) {
-    const badge = card.querySelector(".badge");
-    if (badge) {
-      // Add subtle pulse animation to active badges
-      if (badge.classList.contains("bg-success")) {
-        badge.classList.add("pulse-animation");
-      }
+    const tenantId = getTenantIdFromCard(card);
+    if (tenantId) {
+      updateTenantStatus(tenantId, card);
     }
   });
 }, 30000);
+
+// Function to extract tenant ID from card
+function getTenantIdFromCard(card) {
+  const manageLink = card.querySelector('a[href*="manage_tenant"]');
+  if (manageLink) {
+    const match = manageLink.href.match(/tenant\/(\d+)/);
+    return match ? match[1] : null;
+  }
+  return null;
+}
+
+// Function to update tenant status
+function updateTenantStatus(tenantId, card) {
+  fetch(`/api/tenant/${tenantId}/status`)
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        updateStatusBadges(card, data.status, data.is_active);
+        updateActionButtons(card, data.status, data.is_active);
+      }
+    })
+    .catch(error => {
+      console.log('Status update failed for tenant', tenantId, error);
+    });
+}
+
+// Function to update status badges
+function updateStatusBadges(card, dbStatus, isActive) {
+  const badges = card.querySelectorAll('.badge');
+  
+  if (badges.length >= 2) {
+    const dbBadge = badges[0]; // Database status badge
+    const tenantBadge = badges[1]; // Tenant status badge
+    
+    // Update database status badge
+    dbBadge.className = 'badge badge-sm';
+    const statusIcon = dbBadge.querySelector('i');
+    
+    if (dbStatus === 'active') {
+      dbBadge.classList.add('bg-success');
+      statusIcon.className = 'fas fa-database me-1';
+      dbBadge.classList.add('pulse-animation');
+    } else if (dbStatus === 'creating') {
+      dbBadge.classList.add('bg-info');
+      statusIcon.className = 'fas fa-cog fa-spin me-1';
+    } else if (dbStatus === 'pending') {
+      dbBadge.classList.add('bg-warning');
+      statusIcon.className = 'fas fa-clock me-1';
+    } else if (dbStatus === 'failed') {
+      dbBadge.classList.add('bg-danger');
+      statusIcon.className = 'fas fa-exclamation-triangle me-1';
+    } else {
+      dbBadge.classList.add('bg-secondary');
+      statusIcon.className = 'fas fa-question me-1';
+    }
+    
+    // Update badge text
+    const statusText = dbBadge.childNodes[dbBadge.childNodes.length - 1];
+    if (statusText && statusText.nodeType === Node.TEXT_NODE) {
+      statusText.textContent = ' ' + dbStatus.charAt(0).toUpperCase() + dbStatus.slice(1);
+    }
+    
+    // Update tenant status badge
+    tenantBadge.className = `badge badge-sm ${isActive ? 'bg-success' : 'bg-secondary'}`;
+    const tenantIcon = tenantBadge.querySelector('i');
+    tenantIcon.className = 'fas fa-power-off me-1';
+    const tenantText = tenantBadge.childNodes[tenantBadge.childNodes.length - 1];
+    if (tenantText && tenantText.nodeType === Node.TEXT_NODE) {
+      tenantText.textContent = ' ' + (isActive ? 'Online' : 'Offline');
+    }
+  }
+}
+
+// Function to update action buttons based on status
+function updateActionButtons(card, dbStatus, isActive) {
+  const openButton = card.querySelector('.tenant-link');
+  const inactiveButton = card.querySelector('.btn-outline-secondary[disabled]');
+  
+  if (dbStatus === 'active' && isActive) {
+    if (inactiveButton) {
+      // Replace inactive button with active link
+      const newButton = document.createElement('a');
+      newButton.className = 'btn btn-outline-primary btn-sm tenant-link w-100';
+      newButton.setAttribute('data-tenant-db', `kdoo_${getTenantSubdomain(card)}`);
+      newButton.setAttribute('target', '_blank');
+      newButton.innerHTML = '<i class="fas fa-external-link-alt me-1"></i><span>Open</span>';
+      inactiveButton.parentNode.replaceChild(newButton, inactiveButton);
+    }
+  } else {
+    if (openButton && !openButton.disabled) {
+      // Replace active link with inactive button
+      const newButton = document.createElement('button');
+      newButton.className = 'btn btn-outline-secondary btn-sm w-100';
+      newButton.disabled = true;
+      newButton.style.opacity = '0.6';
+      newButton.style.cursor = 'not-allowed';
+      newButton.innerHTML = '<i class="fas fa-ban me-1"></i><span>Inactive</span>';
+      openButton.parentNode.replaceChild(newButton, openButton);
+    }
+  }
+}
+
+// Helper function to get tenant subdomain from card
+function getTenantSubdomain(card) {
+  const codeElement = card.querySelector('code');
+  if (codeElement) {
+    const text = codeElement.textContent;
+    const match = text.match(/kdoo_(\w+)\./);
+    return match ? match[1] : '';
+  }
+  return '';
+}
 
 // Add loading states to tenant links
 document.querySelectorAll(".tenant-link").forEach(function(link) {
