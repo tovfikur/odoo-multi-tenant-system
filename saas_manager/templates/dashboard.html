@@ -83,19 +83,21 @@
               <h5 class="card-title mb-0 fw-bold">{{ tenant.name }}</h5>
               <div class="d-flex flex-column align-items-end gap-1">
                 <!-- Database Status -->
-                <span class="badge badge-sm 
-                  {%- if tenant.status == 'active' %} bg-success
+                <span class="badge badge-sm
+                  {%- if not tenant.is_active %} bg-danger
+                  {%- elif tenant.status == 'active' %} bg-success
                   {%- elif tenant.status == 'creating' %} bg-info
                   {%- elif tenant.status == 'pending' %} bg-warning
                   {%- elif tenant.status == 'failed' %} bg-danger
                   {%- else %} bg-secondary{% endif %}">
-                  <i class="fas 
-                    {%- if tenant.status == 'active' %} fa-database
+                  <i class="fas
+                    {%- if not tenant.is_active %} fa-power-off
+                    {%- elif tenant.status == 'active' %} fa-database
                     {%- elif tenant.status == 'creating' %} fa-cog fa-spin
                     {%- elif tenant.status == 'pending' %} fa-clock
                     {%- elif tenant.status == 'failed' %} fa-exclamation-triangle
                     {%- else %} fa-question{% endif %} me-1"></i>
-                  {{ tenant.status.title() }}
+                  {{ 'Deactive' if not tenant.is_active else tenant.status.title() }}
                 </span>
                 <!-- Tenant Status -->
                 <span class="badge badge-sm {{ 'bg-success' if tenant.is_active else 'bg-secondary' }}">
