@@ -1,181 +1,576 @@
-/* SaaS Controller Custom Styles */
+/* SaaS Controller - Enhanced Brand Styling with Micro-Interactions */
+/* Based on your beautiful Jewel + Neutral Color Scheme */
 
-/* Color Variables - Will be overridden by dynamic configuration */
+/* Import Beautiful Fonts */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
+
+/* Brand Color Variables - Synced with your style.css */
 :root {
-    --saas-primary-color: #017e84;
-    --saas-secondary-color: #875a7b;
-    --saas-accent-color: #017e84;
-    --saas-background-color: #ffffff;
-    --saas-text-color: #212529;
-    --saas-link-color: #017e84;
+  /* Neutrals */
+  --neutral-ultra-light: #fbfdff;
+  --neutral-light-surface: #f4f6f8;
+  --neutral-mid-surface: #e3e8ef;
+  --neutral-dark-surface: #1e2128;
+  --neutral-deep-bg: #121417;
+
+  /* Primary "Azure" - Your Main Brand Color */
+  --azure-base: #1a73e8;
+  --azure-dark: #174ea6;
+  --azure-light: #4c9eff;
+
+  /* Secondary "Teal" */
+  --teal-base: #00bfa5;
+  --teal-dark: #00937a;
+  --teal-light: #33e1c6;
+
+  /* Accent "Coral" */
+  --coral-base: #ff6f61;
+  --coral-dark: #e05a4e;
+  --coral-light: #ff8a7a;
+
+  /* Support "Violet" */
+  --violet-base: #9b51e0;
+  --violet-dark: #7a3eb0;
+  --violet-light: #b76deb;
+
+  /* SaaS Controller Brand Variables */
+  --saas-primary-color: var(--azure-base);
+  --saas-primary-dark: var(--azure-dark);
+  --saas-primary-light: var(--azure-light);
+  --saas-secondary-color: var(--teal-base);
+  --saas-secondary-dark: var(--teal-dark);
+  --saas-secondary-light: var(--teal-light);
+  --saas-accent-color: var(--coral-base);
+  --saas-accent-dark: var(--coral-dark);
+  --saas-accent-light: var(--coral-light);
+  --saas-support-color: var(--violet-base);
+  --saas-support-dark: var(--violet-dark);
+  --saas-support-light: var(--violet-light);
+  
+  /* Typography & Text */
+  --saas-text-color: #2e3a59;
+  --saas-text-secondary: #5c6b8a;
+  --saas-text-muted: #8a95aa;
+  --saas-text-inverse: #ffffff;
+  --saas-link-color: var(--azure-base);
+  --saas-link-hover: var(--azure-light);
+  
+  /* Backgrounds */
+  --saas-background-color: #ffffff;
+  --saas-background-secondary: var(--neutral-ultra-light);
+  --saas-background-tertiary: var(--neutral-light-surface);
+  --saas-background-hover: var(--azure-light);
+  
+  /* Borders & Shadows */
+  --saas-border-color: var(--neutral-mid-surface);
+  --saas-border-focus: var(--azure-base);
+  --saas-shadow-sm: 0 1px 3px 0 rgba(26, 115, 232, 0.1), 0 1px 2px 0 rgba(26, 115, 232, 0.06);
+  --saas-shadow-md: 0 4px 6px -1px rgba(26, 115, 232, 0.1), 0 2px 4px -1px rgba(26, 115, 232, 0.06);
+  --saas-shadow-lg: 0 10px 15px -3px rgba(26, 115, 232, 0.1), 0 4px 6px -2px rgba(26, 115, 232, 0.05);
+  
+  /* Border Radius */
+  --saas-border-radius: 0.75rem;
+  --saas-border-radius-sm: 0.5rem;
+  --saas-border-radius-lg: 1rem;
+  
+  /* Transitions */
+  --saas-transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --saas-transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --saas-transition-slow: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* Main Navigation */
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --saas-background-color: var(--neutral-dark-surface);
+    --saas-background-secondary: var(--neutral-deep-bg);
+    --saas-background-tertiary: #2a2d35;
+    --saas-text-color: var(--neutral-mid-surface);
+    --saas-text-secondary: #a8b2c7;
+    --saas-text-muted: #8a95aa;
+    --saas-text-inverse: var(--neutral-deep-bg);
+    --saas-border-color: #3a3f48;
+    --saas-link-color: var(--azure-light);
+    --saas-link-hover: var(--azure-base);
+  }
+}
+
+/* Global Odoo Overrides with Brand Integration */
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+  color: var(--saas-text-color) !important;
+  background-color: var(--saas-background-secondary) !important;
+  transition: var(--saas-transition-base);
+}
+
+/* Navigation Bar - Premium Brand Styling */
 .o_main_navbar {
-    background-color: var(--saas-primary-color) !important;
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-dark) 100%) !important;
+  border-bottom: 1px solid var(--saas-primary-dark) !important;
+  box-shadow: var(--saas-shadow-md) !important;
+  backdrop-filter: blur(10px) !important;
+  transition: var(--saas-transition-base) !important;
 }
 
-.o_main_navbar .dropdown-toggle {
-    color: white !important;
+.o_main_navbar:hover {
+  box-shadow: var(--saas-shadow-lg) !important;
 }
 
-/* Buttons */
+/* Logo and Brand Elements */
+.o_menu_brand {
+  transition: var(--saas-transition-fast) !important;
+}
+
+.o_menu_brand:hover {
+  transform: scale(1.02) !important;
+}
+
+/* Navigation Items */
+.o_navbar_apps_menu .dropdown-toggle,
+.o_menu_sections .dropdown-toggle {
+  color: var(--saas-text-inverse) !important;
+  transition: var(--saas-transition-fast) !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  padding: 0.5rem 1rem !important;
+}
+
+.o_navbar_apps_menu .dropdown-toggle:hover,
+.o_menu_sections .dropdown-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
+}
+
+/* Primary Buttons - Beautiful Gradients */
 .btn-primary {
-    background-color: var(--saas-primary-color) !important;
-    border-color: var(--saas-primary-color) !important;
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-dark) 100%) !important;
+  border: none !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  color: var(--saas-text-inverse) !important;
+  font-weight: 500 !important;
+  transition: var(--saas-transition-fast) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
 }
 
-.btn-primary:hover,
-.btn-primary:focus,
+.btn-primary:hover {
+  background: linear-gradient(135deg, var(--saas-primary-dark) 0%, var(--saas-primary-color) 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--saas-shadow-md) !important;
+}
+
 .btn-primary:active {
-    background-color: var(--saas-accent-color) !important;
-    border-color: var(--saas-accent-color) !important;
+  transform: translateY(0) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
 }
 
+/* Secondary Buttons */
 .btn-secondary {
-    background-color: var(--saas-secondary-color) !important;
-    border-color: var(--saas-secondary-color) !important;
+  background: linear-gradient(135deg, var(--saas-secondary-color) 0%, var(--saas-secondary-dark) 100%) !important;
+  border: none !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  color: var(--saas-text-inverse) !important;
+  font-weight: 500 !important;
+  transition: var(--saas-transition-fast) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
 }
 
-/* Links */
+.btn-secondary:hover {
+  background: linear-gradient(135deg, var(--saas-secondary-dark) 0%, var(--saas-secondary-color) 100%) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: var(--saas-shadow-md) !important;
+}
+
+/* Links - Beautiful Hover Effects */
 a {
-    color: var(--saas-link-color) !important;
+  color: var(--saas-link-color) !important;
+  text-decoration: none !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
 a:hover {
-    color: var(--saas-accent-color) !important;
+  color: var(--saas-link-hover) !important;
+  transform: translateX(2px) !important;
 }
 
-/* Form Views */
-.o_form_view .o_form_sheet {
-    background-color: var(--saas-background-color) !important;
+/* Form Controls - Modern Input Styling */
+.form-control, 
+.o_input {
+  border: 2px solid var(--saas-border-color) !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  background-color: var(--saas-background-color) !important;
+  color: var(--saas-text-color) !important;
+  transition: var(--saas-transition-fast) !important;
+  font-family: "Inter", sans-serif !important;
 }
 
-.o_form_view .o_form_label {
-    color: var(--saas-text-color) !important;
+.form-control:focus, 
+.o_input:focus {
+  border-color: var(--saas-border-focus) !important;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1) !important;
+  transform: scale(1.01) !important;
+  background-color: var(--saas-background-color) !important;
 }
 
-/* Cards and Panels */
-.card {
-    background-color: var(--saas-background-color) !important;
+/* Cards and Panels - Premium Glass Effect */
+.card, 
+.o_form_view,
+.o_list_view {
+  background-color: var(--saas-background-color) !important;
+  border: 1px solid var(--saas-border-color) !important;
+  border-radius: var(--saas-border-radius) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
+  transition: var(--saas-transition-base) !important;
+  backdrop-filter: blur(10px) !important;
 }
 
-.card-header {
-    background-color: var(--saas-primary-color) !important;
-    color: white !important;
+.card:hover,
+.o_form_view:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: var(--saas-shadow-lg) !important;
 }
 
-/* Badges and Status */
-.badge-primary {
-    background-color: var(--saas-primary-color) !important;
+/* Table Styling - Modern Clean Look */
+.table {
+  background-color: var(--saas-background-color) !important;
+  border-radius: var(--saas-border-radius) !important;
+  overflow: hidden !important;
+  box-shadow: var(--saas-shadow-sm) !important;
 }
 
-.badge-secondary {
-    background-color: var(--saas-secondary-color) !important;
+.table thead th {
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-dark) 100%) !important;
+  color: var(--saas-text-inverse) !important;
+  border: none !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  font-size: 0.875rem !important;
 }
 
-/* Progress Bars */
-.progress-bar {
-    background-color: var(--saas-primary-color) !important;
+.table tbody tr {
+  border-bottom: 1px solid var(--saas-border-color) !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
-/* SaaS Controller Specific Styles */
-.saas-controller-form {
-    max-width: 1200px;
-    margin: 0 auto;
+.table tbody tr:hover {
+  background: linear-gradient(135deg, var(--saas-background-secondary) 0%, var(--saas-background-tertiary) 100%) !important;
+  transform: scale(1.005) !important;
 }
 
-.saas-color-preview {
-    width: 30px;
-    height: 30px;
-    border-radius: 4px;
-    display: inline-block;
-    margin-left: 10px;
-    border: 1px solid #ccc;
+/* Modal Dialogs - Beautiful Overlays */
+.modal-content {
+  border: none !important;
+  border-radius: var(--saas-border-radius-lg) !important;
+  box-shadow: var(--saas-shadow-lg) !important;
+  backdrop-filter: blur(20px) !important;
+  background-color: var(--saas-background-color) !important;
 }
 
-.saas-limit-info {
-    padding: 15px;
-    border-radius: 8px;
-    margin: 10px 0;
+.modal-header {
+  background: linear-gradient(135deg, var(--saas-background-tertiary) 0%, var(--saas-background-secondary) 100%) !important;
+  border-bottom: 1px solid var(--saas-border-color) !important;
+  border-radius: var(--saas-border-radius-lg) var(--saas-border-radius-lg) 0 0 !important;
 }
 
-.saas-limit-warning {
-    background-color: #fff3cd;
-    border: 1px solid #ffeaa7;
-    color: #856404;
+.modal-title {
+  color: var(--saas-text-color) !important;
+  font-weight: 600 !important;
+  font-family: "Inter", sans-serif !important;
 }
 
-.saas-limit-danger {
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    color: #721c24;
+/* Status Badges - Semantic Color Coding */
+.badge-success,
+.o_tag_success {
+  background: linear-gradient(135deg, var(--saas-secondary-color) 0%, var(--saas-secondary-dark) 100%) !important;
+  color: var(--saas-text-inverse) !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  font-weight: 500 !important;
 }
 
-.saas-limit-success {
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-    color: #155724;
+.badge-warning,
+.o_tag_warning {
+  background: linear-gradient(135deg, var(--saas-accent-color) 0%, var(--saas-accent-dark) 100%) !important;
+  color: var(--saas-text-inverse) !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  font-weight: 500 !important;
 }
 
-/* Hide Odoo Branding when configured */
-.saas-hide-branding .o_sub_menu_footer,
-.saas-hide-branding .powered_by,
-.saas-hide-branding [data-section="about"] .oe_instance_title,
-.saas-hide-branding .oe_instance_title {
-    display: none !important;
+.badge-info,
+.o_tag_info {
+  background: linear-gradient(135deg, var(--saas-support-color) 0%, var(--saas-support-dark) 100%) !important;
+  color: var(--saas-text-inverse) !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  font-weight: 500 !important;
 }
 
-/* Custom Login Page Styles */
-.o_database_list .list-group-item {
-    border-color: var(--saas-primary-color) !important;
+/* Dropdown Menus - Elegant Floating */
+.dropdown-menu {
+  background-color: var(--saas-background-color) !important;
+  border: 1px solid var(--saas-border-color) !important;
+  border-radius: var(--saas-border-radius) !important;
+  box-shadow: var(--saas-shadow-lg) !important;
+  backdrop-filter: blur(10px) !important;
+  padding: 0.5rem 0 !important;
 }
 
-.o_database_list .list-group-item:hover {
-    background-color: rgba(1, 126, 132, 0.1) !important;
+.dropdown-item {
+  color: var(--saas-text-color) !important;
+  transition: var(--saas-transition-fast) !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  margin: 0.125rem 0.5rem !important;
 }
 
-/* Menu customizations */
+.dropdown-item:hover {
+  background-color: var(--saas-background-tertiary) !important;
+  color: var(--saas-text-color) !important;
+  transform: translateX(4px) !important;
+}
+
+/* Hide Odoo Branding - Custom Branding */
+.o_sub_menu_footer,
+.powered_by,
+[data-section="about"] .oe_instance_title,
+.oe_instance_title {
+  display: none !important;
+}
+
+/* Custom App Menu Styling */
 .o_apps .o_app {
-    border-color: var(--saas-primary-color) !important;
+  transition: var(--saas-transition-fast) !important;
+  border-radius: var(--saas-border-radius) !important;
+  margin: 0.5rem !important;
 }
 
 .o_apps .o_app:hover {
-    background-color: rgba(1, 126, 132, 0.1) !important;
+  transform: scale(1.05) translateY(-2px) !important;
+  box-shadow: var(--saas-shadow-md) !important;
 }
 
-/* Responsive adjustments */
-@media (max-width: 768px) {
-    .saas-controller-form {
-        padding: 10px;
-    }
-    
-    .saas-color-preview {
-        width: 25px;
-        height: 25px;
-    }
+/* Progress Bars - Animated Progress */
+.progress {
+  background-color: var(--saas-background-tertiary) !important;
+  border-radius: var(--saas-border-radius-sm) !important;
+  height: 8px !important;
+  overflow: hidden !important;
 }
 
-/* Animation for configuration changes */
-.saas-config-updating {
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
+.progress-bar {
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-light) 100%) !important;
+  transition: var(--saas-transition-slow) !important;
+  border-radius: var(--saas-border-radius-sm) !important;
 }
 
-.saas-config-updated {
+/* Loading Animations */
+@keyframes pulse {
+  0%, 100% {
     opacity: 1;
-    transition: opacity 0.3s ease;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
-/* Status indicators */
-.saas-status-active {
-    color: #28a745;
+.o_loading {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
 }
 
-.saas-status-inactive {
-    color: #dc3545;
+/* Notification Toasts - Beautiful Alerts */
+.o_notification {
+  background-color: var(--saas-background-color) !important;
+  border: 1px solid var(--saas-border-color) !important;
+  border-radius: var(--saas-border-radius) !important;
+  box-shadow: var(--saas-shadow-lg) !important;
+  backdrop-filter: blur(20px) !important;
 }
 
-.saas-status-syncing {
-    color: #ffc107;
+.o_notification.o_notification_success {
+  border-left: 4px solid var(--saas-secondary-color) !important;
+}
+
+.o_notification.o_notification_warning {
+  border-left: 4px solid var(--saas-accent-color) !important;
+}
+
+.o_notification.o_notification_danger {
+  border-left: 4px solid var(--saas-accent-dark) !important;
+}
+
+/* Scrollbar Styling - Brand Colors */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--saas-primary-color) var(--saas-background-tertiary) !important;
+}
+
+*::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--saas-background-tertiary) !important;
+  border-radius: var(--saas-border-radius) !important;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--saas-primary-color) !important;
+  border-radius: var(--saas-border-radius) !important;
+  transition: var(--saas-transition-fast) !important;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--saas-primary-dark) !important;
+}
+
+/* Focus States - Accessibility */
+*:focus {
+  outline: 2px solid var(--saas-primary-color) !important;
+  outline-offset: 2px !important;
+}
+
+/* Micro-Interactions - Subtle Animations */
+.o_field_widget,
+.o_form_label,
+.o_list_button {
+  transition: var(--saas-transition-fast) !important;
+}
+
+.o_field_widget:hover {
+  transform: translateY(-1px) !important;
+}
+
+/* Search Bar - Modern Search Experience */
+.o_searchview {
+  border-radius: var(--saas-border-radius) !important;
+  background-color: var(--saas-background-color) !important;
+  border: 2px solid var(--saas-border-color) !important;
+  transition: var(--saas-transition-fast) !important;
+}
+
+.o_searchview:focus-within {
+  border-color: var(--saas-border-focus) !important;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1) !important;
+  transform: scale(1.01) !important;
+}
+
+/* List View Improvements */
+.o_list_table th {
+  background: linear-gradient(135deg, var(--saas-background-tertiary) 0%, var(--saas-background-secondary) 100%) !important;
+  color: var(--saas-text-color) !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid var(--saas-primary-color) !important;
+}
+
+.o_list_table tr:hover {
+  background-color: var(--saas-background-secondary) !important;
+  transform: scale(1.001) !important;
+}
+
+/* Form View Enhancements */
+.o_form_sheet {
+  background-color: var(--saas-background-color) !important;
+  border-radius: var(--saas-border-radius-lg) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
+  transition: var(--saas-transition-base) !important;
+}
+
+.o_form_sheet:hover {
+  box-shadow: var(--saas-shadow-md) !important;
+}
+
+/* Kanban View - Card-based Layout */
+.o_kanban_record {
+  background-color: var(--saas-background-color) !important;
+  border: 1px solid var(--saas-border-color) !important;
+  border-radius: var(--saas-border-radius) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
+  transition: var(--saas-transition-base) !important;
+}
+
+.o_kanban_record:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: var(--saas-shadow-lg) !important;
+}
+
+/* Custom Animation Classes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.fade-in-up {
+  animation: fadeInUp 0.5s ease-out !important;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.3s ease-out !important;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .o_main_navbar {
+    padding: 0.75rem !important;
+  }
+  
+  .card {
+    margin: 0.5rem !important;
+    border-radius: var(--saas-border-radius-sm) !important;
+  }
+  
+  .btn {
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.875rem !important;
+  }
+}
+
+/* High Contrast Mode Support */
+@media (prefers-contrast: high) {
+  :root {
+    --saas-border-color: #000 !important;
+    --saas-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3) !important;
+    --saas-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3) !important;
+    --saas-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+  }
+}
+
+/* Reduced Motion Support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Print Styles */
+@media print {
+  * {
+    box-shadow: none !important;
+    transform: none !important;
+    transition: none !important;
+    animation: none !important;
+  }
+  
+  .o_main_navbar,
+  .o_control_panel {
+    display: none !important;
+  }
 }
