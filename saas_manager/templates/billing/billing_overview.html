@@ -1,650 +1,925 @@
-{% extends "base.html" %} {% block title %}Billing Overview - Khudroo{% endblock
-%} {% block content %}
-<!-- Billing Overview Header -->
-<div class="billing-overview-header">
-  <div class="container">
-    <div class="row align-items-center">
-      <div class="col-md-8">
-        <h1 class="mb-0">
-          <i class="fas fa-file-invoice-dollar me-3"></i>Billing Overview
-        </h1>
-        <p class="mb-0 opacity-75">
-          Complete billing status and transaction history for all your panels
-        </p>
-      </div>
-      <div class="col-md-4 text-end">
-        <div class="d-flex gap-2 justify-content-end">
-          <button class="btn btn-light" onclick="window.print()">
-            <i class="fas fa-print me-2"></i>Print Report
-          </button>
-          <button class="btn btn-success" onclick="exportToPDF()">
-            <i class="fas fa-file-pdf me-2"></i>Export PDF
-          </button>
+{% extends "base.html" %}
+{% block title %}Billing Dashboard - {{ current_user.company_name or 'Khudroo' }}{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    --warning-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --info-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    --card-shadow: 0 10px 40px rgba(0,0,0,0.1);
+    --card-hover-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+/* Dashboard Layout */
+.billing-dashboard {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    padding: 2rem 0;
+}
+
+.dashboard-header {
+    background: var(--primary-gradient);
+    border-radius: 20px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.dashboard-header::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50% { transform: translateY(-10px) rotate(180deg); }
+}
+
+/* Modern Cards */
+.metric-card {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--card-shadow);
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.metric-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--primary-gradient);
+    transform: scaleX(0);
+    transition: transform 0.3s ease;
+}
+
+.metric-card:hover::before {
+    transform: scaleX(1);
+}
+
+.metric-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.metric-icon {
+    width: 70px;
+    height: 70px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.metric-value {
+    font-size: 2.8rem;
+    font-weight: 800;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.metric-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #6c757d;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-change {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-top: 0.5rem;
+}
+
+/* Panel Cards */
+.panel-card {
+    background: white;
+    border-radius: 20px;
+    box-shadow: var(--card-shadow);
+    transition: all 0.3s ease;
+    border: none;
+    margin-bottom: 1.5rem;
+    overflow: hidden;
+}
+
+.panel-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-hover-shadow);
+}
+
+.panel-header {
+    padding: 1.5rem 2rem 1rem;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.panel-body {
+    padding: 1.5rem 2rem;
+}
+
+.panel-footer {
+    padding: 1rem 2rem 1.5rem;
+    background: #f8f9fa;
+    border-top: 1px solid #e9ecef;
+}
+
+/* Status Indicators */
+.status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+.status-active { background: #28a745; }
+.status-inactive { background: #dc3545; }
+.status-creating { background: #ffc107; }
+
+/* Progress Bars */
+.usage-progress {
+    height: 12px;
+    border-radius: 10px;
+    background: #e9ecef;
+    overflow: hidden;
+    position: relative;
+}
+
+.usage-progress-bar {
+    height: 100%;
+    border-radius: 10px;
+    transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    overflow: hidden;
+}
+
+.usage-progress-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Transaction Cards */
+.transaction-item {
+    background: white;
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.transaction-item:hover {
+    transform: translateX(4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+}
+
+.transaction-success { border-left-color: #28a745; }
+.transaction-pending { border-left-color: #ffc107; }
+.transaction-failed { border-left-color: #dc3545; }
+
+/* Action Buttons */
+.action-btn {
+    border-radius: 12px;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.action-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.action-btn:hover::before {
+    left: 100%;
+}
+
+/* Filter Section */
+.filter-section {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: var(--card-shadow);
+    margin-bottom: 2rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .billing-dashboard {
+        padding: 1rem 0;
+    }
+    
+    .dashboard-header {
+        padding: 2rem 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .metric-value {
+        font-size: 2.2rem;
+    }
+    
+    .metric-card {
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+    }
+}
+
+/* Loading States */
+.loading-skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Notification Styles */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+}
+
+.notification {
+    background: white;
+    border-radius: 15px;
+    padding: 1rem 1.5rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    border-left: 4px solid;
+    animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .billing-dashboard {
+        background: linear-gradient(135deg, #2d3748 0%, #4a5568 100%);
+    }
+    
+    .metric-card, .panel-card, .filter-section, .transaction-item {
+        background: #2d3748;
+        color: white;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="billing-dashboard">
+    <div class="container-fluid">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="row align-items-center">
+                <div class="col-lg-8">
+                    <h1 class="mb-2 fw-bold">
+                        <i class="fas fa-chart-line me-3"></i>
+                        Billing Dashboard
+                    </h1>
+                    <p class="mb-0 opacity-90 fs-5">
+                        Real-time billing analytics and panel management
+                    </p>
+                    <small class="opacity-75">
+                        Last updated: <span id="lastUpdated">{{ moment().format('MMM DD, YYYY [at] HH:mm') }}</span>
+                    </small>
+                </div>
+                <div class="col-lg-4 text-end">
+                    <div class="d-flex gap-2 justify-content-end flex-wrap">
+                        <button class="btn btn-light btn-lg" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i>Print
+                        </button>
+                        <button class="btn btn-success btn-lg" onclick="exportData()">
+                            <i class="fas fa-download me-2"></i>Export
+                        </button>
+                        <button class="btn btn-info btn-lg" onclick="refreshDashboard()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+
+        <!-- Metrics Overview -->
+        <div class="row g-4 mb-4">
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: linear-gradient(135deg, #667eea, #764ba2); color: white;">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div class="metric-value">{{ billing_summary.total_tenants }}</div>
+                    <div class="metric-label">Total Panels</div>
+                    <div class="metric-change text-info">
+                        <i class="fas fa-arrow-up"></i> Active ecosystem
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: var(--success-gradient); color: white;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="metric-value">{{ billing_summary.active_tenants }}</div>
+                    <div class="metric-label">Active Panels</div>
+                    <div class="metric-change text-success">
+                        <i class="fas fa-arrow-up"></i> 
+                        {{ "%.1f"|format((billing_summary.active_tenants / billing_summary.total_tenants * 100) if billing_summary.total_tenants > 0 else 0) }}% uptime
+                    </div>
+                </div>
+            </div>
+
+            {% if current_user.is_admin %}
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: var(--info-gradient); color: white;">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="metric-value">${{ "%.0f"|format(billing_summary.total_spent) }}</div>
+                    <div class="metric-label">Total Revenue</div>
+                    <div class="metric-change text-info">
+                        <i class="fas fa-chart-line"></i> This month
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: var(--warning-gradient); color: white;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="metric-value">{{ billing_summary.inactive_tenants }}</div>
+                    <div class="metric-label">Inactive Panels</div>
+                    <div class="metric-change text-warning">
+                        <i class="fas fa-clock"></i> Needs attention
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="col-xl-3 col-lg-6 col-md-6">
+                <div class="metric-card">
+                    <div class="metric-icon" style="background: var(--warning-gradient); color: white;">
+                        <i class="fas fa-hourglass-half"></i>
+                    </div>
+                    <div class="metric-value">{{ billing_summary.pending_payments }}</div>
+                    <div class="metric-label">Pending Payments</div>
+                    <div class="metric-change text-warning">
+                        <i class="fas fa-credit-card"></i> Awaiting
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter & Controls -->
+        <div class="filter-section">
+            <div class="row align-items-center">
+                <div class="col-lg-6">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="fas fa-filter me-2 text-primary"></i>
+                        Panel Management
+                    </h5>
+                    <small class="text-muted">Filter and search your panels</small>
+                </div>
+                <div class="col-lg-6">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <select class="form-select" id="statusFilter">
+                                <option value="">All Status</option>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="creating">Creating</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fas fa-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Search panels...">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Panels Section -->
+            <div class="col-xl-8 col-lg-7">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="fw-bold">
+                        <i class="fas fa-server me-2 text-primary"></i>
+                        Your Panels
+                    </h4>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="toggleView()">
+                            <i class="fas fa-th-large me-1"></i>Grid View
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="loadAllBillingInfo()">
+                            <i class="fas fa-sync me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+
+                <div id="panelsContainer">
+                    {% for tenant in tenants %}
+                    <div class="panel-card" data-tenant-id="{{ tenant.id }}" data-status="{{ tenant.status }}">
+                        <div class="panel-header">
+                            <div class="row align-items-center">
+                                <div class="col-md-6">
+                                    <div class="d-flex align-items-center">
+                                        <span class="status-dot status-{{ 'active' if tenant.is_active else 'inactive' }}"></span>
+                                        <div>
+                                            <h6 class="mb-1 fw-bold">{{ tenant.name }}</h6>
+                                            <small class="text-muted">
+                                                <i class="fas fa-globe me-1"></i>
+                                                {{ tenant.subdomain }}.domain.com
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3 text-center">
+                                    <span class="badge bg-{{ 'success' if tenant.is_active else 'danger' }} fs-6 px-3 py-2">
+                                        {{ 'Active' if tenant.is_active else 'Inactive' }}
+                                    </span>
+                                    <div class="small text-muted mt-1">
+                                        <i class="fas fa-layer-group me-1"></i>
+                                        {{ tenant.plan.title() }} Plan
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="billing-status" data-tenant-id="{{ tenant.id }}">
+                                        <div class="usage-progress mb-2">
+                                            <div class="usage-progress-bar bg-secondary loading-skeleton" style="width: 0%"></div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted billing-text">
+                                                <i class="fas fa-spinner fa-spin me-1"></i>Loading...
+                                            </small>
+                                            <small class="text-muted billing-hours"></small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="panel-footer">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <a href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}" 
+                                       class="action-btn btn btn-outline-primary w-100">
+                                        <i class="fas fa-cog me-1"></i>Manage
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    {% if not tenant.is_active %}
+                                    <a href="{{ url_for('billing.initiate_payment', tenant_id=tenant.id) }}" 
+                                       class="action-btn btn btn-warning w-100">
+                                        <i class="fas fa-credit-card me-1"></i>Renew
+                                    </a>
+                                    {% else %}
+                                    <a href="https://kdoo_{{ tenant.subdomain }}.domain.com" 
+                                       target="_blank" class="action-btn btn btn-success w-100">
+                                        <i class="fas fa-external-link-alt me-1"></i>Open
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% if not tenants %}
+                    <div class="text-center py-5">
+                        <div class="mb-4">
+                            <i class="fas fa-server fa-4x text-muted"></i>
+                        </div>
+                        <h5 class="text-muted">No panels found</h5>
+                        <p class="text-muted">Create your first panel to get started</p>
+                        <a href="{{ url_for('main.dashboard') }}" class="btn btn-primary btn-lg">
+                            <i class="fas fa-plus me-2"></i>Create Panel
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Transactions Sidebar -->
+            <div class="col-xl-4 col-lg-5">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="fw-bold">
+                        <i class="fas fa-receipt me-2 text-success"></i>
+                        Transactions
+                    </h4>
+                    {% if current_user.is_admin %}
+                    <a href="{{ url_for('billing.admin_billing_logs') }}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-chart-bar me-1"></i>View All
+                    </a>
+                    {% endif %}
+                </div>
+
+                <div class="transactions-container" style="max-height: 600px; overflow-y: auto;">
+                    {% for transaction in transactions %}
+                    <div class="transaction-item transaction-{{ transaction.status.lower() }}">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold">
+                                    {{ transaction.get_tenant_name() if transaction.get_tenant_name else 'Unknown Panel' }}
+                                </h6>
+                                {% if current_user.is_admin and transaction.user %}
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ transaction.user.name }}
+                                </small>
+                                {% endif %}
+                            </div>
+                            <div class="text-end">
+                                <span class="fw-bold fs-5 text-{{ 'success' if transaction.status == 'VALIDATED' else 'warning' if transaction.status == 'PENDING' else 'danger' }}">
+                                    ${{ "%.2f"|format(transaction.amount) }}
+                                </span>
+                                <div class="small text-muted">{{ transaction.currency or 'USD' }}</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="badge bg-{{ 'success' if transaction.status == 'VALIDATED' else 'warning' if transaction.status == 'PENDING' else 'danger' }}">
+                                    {% if transaction.status == 'VALIDATED' %}
+                                        <i class="fas fa-check me-1"></i>Validated
+                                    {% elif transaction.status == 'PENDING' %}
+                                        <i class="fas fa-clock me-1"></i>Pending
+                                    {% elif transaction.status == 'FAILED' %}
+                                        <i class="fas fa-times me-1"></i>Failed
+                                    {% else %}
+                                        {{ transaction.status }}
+                                    {% endif %}
+                                </span>
+                                {% if transaction.payment_method %}
+                                <small class="text-muted ms-2">
+                                    <i class="fas fa-credit-card me-1"></i>{{ transaction.payment_method.title() }}
+                                </small>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">
+                                {{ transaction.created_at.strftime('%b %d') if transaction.created_at else 'N/A' }}
+                            </small>
+                        </div>
+
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-hashtag me-1"></i>{{ transaction.transaction_id }}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% if not transactions %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                        <h6 class="text-muted">No transactions yet</h6>
+                        <small class="text-muted">Your payment history will appear here</small>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if transactions|length >= 50 %}
+                <div class="text-center mt-3">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Showing latest 50 transactions
+                    </small>
+                </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
-  </div>
 </div>
 
-<div class="container">
-  <!-- Billing Summary Cards -->
-  <div class="row g-4 mb-5">
-    <div class="col-lg-3 col-md-6">
-      <div class="summary-card h-100">
-        <div class="card-body text-center">
-          <div
-            class="summary-icon bg-primary bg-opacity-10 text-primary mx-auto"
-          >
-            <i class="fas fa-server"></i>
-          </div>
-          <div class="summary-value text-primary">12</div>
-          <h6 class="text-muted mb-0">Total Panels</h6>
+<!-- Notification Container -->
+<div id="notificationContainer" class="notification-container"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Dashboard State
+let refreshInterval;
+let lastUpdateTime = new Date();
+
+// Initialize Dashboard
+document.addEventListener('DOMContentLoaded', function() {
+    initializeDashboard();
+});
+
+function initializeDashboard() {
+    loadAllBillingInfo();
+    setupFilters();
+    setupNotifications();
+    updateLastUpdatedTime();
+    
+    // Auto-refresh every 60 seconds
+    refreshInterval = setInterval(() => {
+        loadAllBillingInfo();
+        updateLastUpdatedTime();
+    }, 60000);
+    
+    // Check notifications every 30 seconds
+    setInterval(checkNotifications, 30000);
+}
+
+function updateLastUpdatedTime() {
+    const now = new Date();
+    document.getElementById('lastUpdated').textContent = 
+        now.toLocaleDateString() + ' at ' + now.toLocaleTimeString();
+}
+
+function loadAllBillingInfo() {
+    const billingElements = document.querySelectorAll('.billing-status[data-tenant-id]');
+    
+    billingElements.forEach(element => {
+        const tenantId = element.dataset.tenantId;
+        loadTenantBilling(tenantId, element);
+    });
+    
+    showNotification('Billing data refreshed', 'success');
+}
+
+function loadTenantBilling(tenantId, element) {
+    const progressBar = element.querySelector('.usage-progress-bar');
+    const billingText = element.querySelector('.billing-text');
+    const billingHours = element.querySelector('.billing-hours');
+    
+    fetch(`/billing/panel/${tenantId}/info`)
+        .then(response => response.json())
+        .then(data => {
+            updateBillingDisplay(element, data);
+        })
+        .catch(error => {
+            console.error('Error loading billing for tenant', tenantId, error);
+            progressBar.className = 'usage-progress-bar bg-danger';
+            progressBar.style.width = '100%';
+            billingText.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i>Error';
+            billingHours.textContent = '';
+        });
+}
+
+function updateBillingDisplay(element, data) {
+    const progressBar = element.querySelector('.usage-progress-bar');
+    const billingText = element.querySelector('.billing-text');
+    const billingHours = element.querySelector('.billing-hours');
+    
+    // Remove loading skeleton
+    progressBar.classList.remove('loading-skeleton');
+    
+    if (data.error) {
+        progressBar.className = 'usage-progress-bar bg-secondary';
+        progressBar.style.width = '0%';
+        billingText.innerHTML = '<i class="fas fa-info-circle me-1"></i>No data';
+        billingHours.textContent = '';
+        return;
+    }
+    
+    if (!data.current_cycle || data.current_cycle.is_expired) {
+        progressBar.className = 'usage-progress-bar bg-danger';
+        progressBar.style.width = '100%';
+        billingText.innerHTML = '<i class="fas fa-times-circle me-1"></i>Expired';
+        billingHours.textContent = '';
+        return;
+    }
+    
+    const cycle = data.current_cycle;
+    const hoursUsed = cycle.hours_used || 0;
+    const hoursAllowed = cycle.total_hours_allowed || 360;
+    const usagePercent = Math.min((hoursUsed / hoursAllowed) * 100, 100);
+    const daysRemaining = cycle.days_remaining || Math.ceil((hoursAllowed - hoursUsed) / 12);
+    
+    // Update progress bar
+    progressBar.style.width = usagePercent + '%';
+    
+    if (usagePercent >= 90) {
+        progressBar.className = 'usage-progress-bar bg-danger';
+        billingText.innerHTML = `<i class="fas fa-exclamation-triangle me-1"></i>Critical`;
+    } else if (usagePercent >= 75) {
+        progressBar.className = 'usage-progress-bar bg-warning';
+        billingText.innerHTML = `<i class="fas fa-clock me-1"></i>${daysRemaining}d left`;
+    } else {
+        progressBar.className = 'usage-progress-bar bg-success';
+        billingText.innerHTML = `<i class="fas fa-check-circle me-1"></i>${daysRemaining}d left`;
+    }
+    
+    billingHours.textContent = `${hoursUsed.toFixed(1)}h/${hoursAllowed}h`;
+}
+
+function setupFilters() {
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchInput');
+    
+    statusFilter.addEventListener('change', filterPanels);
+    searchInput.addEventListener('input', filterPanels);
+}
+
+function filterPanels() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const panelCards = document.querySelectorAll('.panel-card');
+    
+    let visibleCount = 0;
+    
+    panelCards.forEach(card => {
+        const cardStatus = card.dataset.status;
+        const cardText = card.textContent.toLowerCase();
+        
+        const matchesStatus = !statusFilter || cardStatus === statusFilter;
+        const matchesSearch = !searchTerm || cardText.includes(searchTerm);
+        
+        if (matchesStatus && matchesSearch) {
+            card.style.display = 'block';
+            card.style.animation = 'slideInLeft 0.3s ease';
+            visibleCount++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    showNotification(`Found ${visibleCount} panels`, 'info');
+}
+
+function setupNotifications() {
+    // Create notification container if needed
+    if (!document.getElementById('notificationContainer')) {
+        const container = document.createElement('div');
+        container.id = 'notificationContainer';
+        container.className = 'notification-container';
+        document.body.appendChild(container);
+    }
+}
+
+function showNotification(message, type = 'info') {
+    const container = document.getElementById('notificationContainer');
+    const notification = document.createElement('div');
+    
+    const colors = {
+        success: '#28a745',
+        warning: '#ffc107',
+        danger: '#dc3545',
+        info: '#17a2b8'
+    };
+    
+    notification.className = 'notification';
+    notification.style.borderLeftColor = colors[type];
+    notification.innerHTML = `
+        <div class="d-flex align-items-center">
+            <i class="fas fa-${type === 'success' ? 'check' : type === 'warning' ? 'exclamation-triangle' : type === 'danger' ? 'times' : 'info'}-circle me-2"></i>
+            <span>${message}</span>
+            <button type="button" class="btn-close ms-auto" onclick="this.parentElement.parentElement.remove()"></button>
         </div>
-      </div>
-    </div>
+    `;
+    
+    container.appendChild(notification);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 3000);
+}
 
-    <div class="col-lg-3 col-md-6">
-      <div class="summary-card h-100">
-        <div class="card-body text-center">
-          <div
-            class="summary-icon bg-success bg-opacity-10 text-success mx-auto"
-          >
-            <i class="fas fa-check-circle"></i>
-          </div>
-          <div class="summary-value text-success">9</div>
-          <h6 class="text-muted mb-0">Active Panels</h6>
-        </div>
-      </div>
-    </div>
+function checkNotifications() {
+    // Get unique tenant IDs
+    const tenantIds = [...new Set(Array.from(document.querySelectorAll('[data-tenant-id]')).map(el => el.dataset.tenantId))];
+    
+    tenantIds.forEach(tenantId => {
+        fetch(`/billing/notifications/${tenantId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.notifications && data.notifications.length > 0) {
+                    data.notifications.forEach(notification => {
+                        showNotification(notification.message, getNotificationType(notification.type));
+                        
+                        // Mark as read
+                        fetch(`/billing/notifications/${notification.id}/read`, { method: 'POST' });
+                    });
+                }
+            })
+            .catch(error => console.error('Error checking notifications:', error));
+    });
+}
 
-    <div class="col-lg-3 col-md-6">
-      <div class="summary-card h-100">
-        <div class="card-body text-center">
-          <div class="summary-icon bg-info bg-opacity-10 text-info mx-auto">
-            <i class="fas fa-dollar-sign"></i>
-          </div>
-          <div class="summary-value text-info">$2,450.00</div>
-          <h6 class="text-muted mb-0">Total Spent</h6>
-        </div>
-      </div>
-    </div>
+function getNotificationType(type) {
+    switch(type) {
+        case 'reminder': return 'warning';
+        case 'expiry': return 'danger';
+        case 'renewal': return 'success';
+        default: return 'info';
+    }
+}
 
-    <div class="col-lg-3 col-md-6">
-      <div class="summary-card h-100">
-        <div class="card-body text-center">
-          <div
-            class="summary-icon bg-warning bg-opacity-10 text-warning mx-auto"
-          >
-            <i class="fas fa-clock"></i>
-          </div>
-          <div class="summary-value text-warning">3</div>
-          <h6 class="text-muted mb-0">Pending Payments</h6>
-        </div>
-      </div>
-    </div>
-  </div>
+function refreshDashboard() {
+    const refreshBtn = event.target.closest('button');
+    const originalText = refreshBtn.innerHTML;
+    
+    refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Refreshing...';
+    refreshBtn.disabled = true;
+    
+    loadAllBillingInfo();
+    
+    setTimeout(() => {
+        refreshBtn.innerHTML = originalText;
+        refreshBtn.disabled = false;
+        showNotification('Dashboard refreshed successfully!', 'success');
+    }, 1500);
+}
 
-  <!-- Filter Section -->
-  <div class="filter-card">
-    <div class="row align-items-center">
-      <div class="col-md-6">
-        <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filter & Search</h5>
-      </div>
-      <div class="col-md-6">
-        <div class="row g-2">
-          <div class="col-6">
-            <select class="form-select" id="statusFilter">
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="creating">Creating</option>
-            </select>
-          </div>
-          <div class="col-6">
-            <input
-              type="text"
-              class="form-control"
-              id="searchInput"
-              placeholder="Search panels..."
-            />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+function exportData() {
+    const exportBtn = event.target.closest('button');
+    const originalText = exportBtn.innerHTML;
+    
+    exportBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Exporting...';
+    exportBtn.disabled = true;
+    
+    // Simulate export process
+    setTimeout(() => {
+        exportBtn.innerHTML = originalText;
+        exportBtn.disabled = false;
+        showNotification('Export functionality coming soon!', 'info');
+    }, 2000);
+}
 
-  <div class="row">
-    <!-- Panel Billing Status Section -->
-    <div class="col-lg-8">
-      <div class="section-header">
-        <h4 class="mb-0">
-          <i class="fas fa-server me-2"></i>Panel Billing Status
-        </h4>
-        <small class="text-muted"
-          >Real-time billing information for all your panels</small
-        >
-      </div>
+function toggleView() {
+    showNotification('Grid view functionality coming soon!', 'info');
+}
 
-      <div id="panelBillingContainer">
-        <!-- Panel 1 - Active -->
-        <div
-          class="tenant-billing-card"
-          data-tenant-id="1"
-          data-status="active"
-        >
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-md-6">
-                <div class="d-flex align-items-center">
-                  <div class="me-3">
-                    <div
-                      class="p-2 rounded-circle"
-                      style="background: rgba(40, 167, 69, 0.1)"
-                    >
-                      <i class="fas fa-check-circle text-success"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <h6 class="mb-1 fw-bold">E-commerce Store</h6>
-                    <small class="text-muted">ecommerce.domain.com</small>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-3">
-                <div class="text-center">
-                  <span class="tenant-status-badge bg-success text-white"
-                    >Active</span
-                  >
-                  <div class="small text-muted mt-1">Premium Plan</div>
-                </div>
-              </div>
-
-              <div class="col-md-3">
-                <div class="billing-info" data-tenant-id="1">
-                  <div class="text-center">
-                    <div
-                      class="billing-progress mb-2"
-                      title="Billing cycle usage"
-                    >
-                      <div
-                        class="progress-bar bg-success"
-                        style="width: 65%"
-                      ></div>
-                    </div>
-                    <small class="text-muted billing-status-text"
-                      >12 days left</small
-                    >
-                    <div class="mt-1">
-                      <small class="text-muted billing-hours-text"
-                        >234.5h / 360h</small
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-3">
-              <div class="row g-2">
-                <div class="col-6">
-                  <a href="#" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="fas fa-cog me-1"></i>Manage
-                  </a>
-                </div>
-                <div class="col-6">
-                  <a
-                    href="#"
-                    target="_blank"
-                    class="btn btn-success btn-sm w-100"
-                  >
-                    <i class="fas fa-external-link-alt me-1"></i>Open Panel
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 2 - Active -->
-        <div
-          class="tenant-billing-card"
-          data-tenant-id="2"
-          data-status="active"
-        >
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-md-6">
-                <div class="d-flex align-items-center">
-                  <div class="me-3">
-                    <div
-                      class="p-2 rounded-circle"
-                      style="background: rgba(40, 167, 69, 0.1)"
-                    >
-                      <i class="fas fa-check-circle text-success"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <h6 class="mb-1 fw-bold">CRM System</h6>
-                    <small class="text-muted">crm.domain.com</small>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-3">
-                <div class="text-center">
-                  <span class="tenant-status-badge bg-success text-white"
-                    >Active</span
-                  >
-                  <div class="small text-muted mt-1">Standard Plan</div>
-                </div>
-              </div>
-
-              <div class="col-md-3">
-                <div class="billing-info" data-tenant-id="2">
-                  <div class="text-center">
-                    <div
-                      class="billing-progress mb-2"
-                      title="Billing cycle usage"
-                    >
-                      <div
-                        class="progress-bar bg-warning"
-                        style="width: 85%"
-                      ></div>
-                    </div>
-                    <small class="text-muted billing-status-text"
-                      >4 days left</small
-                    >
-                    <div class="mt-1">
-                      <small class="text-muted billing-hours-text"
-                        >306.0h / 360h</small
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-3">
-              <div class="row g-2">
-                <div class="col-6">
-                  <a href="#" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="fas fa-cog me-1"></i>Manage
-                  </a>
-                </div>
-                <div class="col-6">
-                  <a
-                    href="#"
-                    target="_blank"
-                    class="btn btn-success btn-sm w-100"
-                  >
-                    <i class="fas fa-external-link-alt me-1"></i>Open Panel
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 3 - Inactive -->
-        <div
-          class="tenant-billing-card"
-          data-tenant-id="3"
-          data-status="inactive"
-        >
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-md-6">
-                <div class="d-flex align-items-center">
-                  <div class="me-3">
-                    <div
-                      class="p-2 rounded-circle"
-                      style="background: rgba(220, 53, 69, 0.1)"
-                    >
-                      <i class="fas fa-times-circle text-danger"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <h6 class="mb-1 fw-bold">Inventory Management</h6>
-                    <small class="text-muted">inventory.domain.com</small>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-3">
-                <div class="text-center">
-                  <span class="tenant-status-badge bg-danger text-white"
-                    >Inactive</span
-                  >
-                  <div class="small text-muted mt-1">Basic Plan</div>
-                </div>
-              </div>
-
-              <div class="col-md-3">
-                <div class="billing-info" data-tenant-id="3">
-                  <div class="text-center">
-                    <div
-                      class="billing-progress mb-2"
-                      title="Billing cycle usage"
-                    >
-                      <div
-                        class="progress-bar bg-danger"
-                        style="width: 100%"
-                      ></div>
-                    </div>
-                    <small class="text-muted billing-status-text"
-                      >Expired</small
-                    >
-                    <div class="mt-1">
-                      <small class="text-muted billing-hours-text"
-                        >360.0h / 360h</small
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-3">
-              <div class="row g-2">
-                <div class="col-6">
-                  <a href="#" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="fas fa-cog me-1"></i>Manage
-                  </a>
-                </div>
-                <div class="col-6">
-                  <a href="#" class="btn btn-warning btn-sm w-100">
-                    <i class="fas fa-credit-card me-1"></i>Pay to Renew
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Panel 4 - Active -->
-        <div
-          class="tenant-billing-card"
-          data-tenant-id="4"
-          data-status="active"
-        >
-          <div class="card-body">
-            <div class="row align-items-center">
-              <div class="col-md-6">
-                <div class="d-flex align-items-center">
-                  <div class="me-3">
-                    <div
-                      class="p-2 rounded-circle"
-                      style="background: rgba(40, 167, 69, 0.1)"
-                    >
-                      <i class="fas fa-check-circle text-success"></i>
-                    </div>
-                  </div>
-                  <div>
-                    <h6 class="mb-1 fw-bold">HR Management</h6>
-                    <small class="text-muted">hr.domain.com</small>
-                  </div>
-                </div>
-              </div>
-
-              <div class="col-md-3">
-                <div class="text-center">
-                  <span class="tenant-status-badge bg-success text-white"
-                    >Active</span
-                  >
-                  <div class="small text-muted mt-1">Enterprise Plan</div>
-                </div>
-              </div>
-
-              <div class="col-md-3">
-                <div class="billing-info" data-tenant-id="4">
-                  <div class="text-center">
-                    <div
-                      class="billing-progress mb-2"
-                      title="Billing cycle usage"
-                    >
-                      <div
-                        class="progress-bar bg-success"
-                        style="width: 35%"
-                      ></div>
-                    </div>
-                    <small class="text-muted billing-status-text"
-                      >18 days left</small
-                    >
-                    <div class="mt-1">
-                      <small class="text-muted billing-hours-text"
-                        >126.0h / 360h</small
-                      >
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="mt-3">
-              <div class="row g-2">
-                <div class="col-6">
-                  <a href="#" class="btn btn-outline-primary btn-sm w-100">
-                    <i class="fas fa-cog me-1"></i>Manage
-                  </a>
-                </div>
-                <div class="col-6">
-                  <a
-                    href="#"
-                    target="_blank"
-                    class="btn btn-success btn-sm w-100"
-                  >
-                    <i class="fas fa-external-link-alt me-1"></i>Open Panel
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Transaction History Section -->
-    <div class="col-lg-4">
-      <div class="section-header">
-        <h4 class="mb-0">
-          <i class="fas fa-receipt me-2"></i>Recent Transactions
-        </h4>
-        <small class="text-muted">Latest payment activity</small>
-      </div>
-
-      <div style="max-height: 600px; overflow-y: auto" id="transactionsList">
-        <!-- Transaction 1 -->
-        <div class="transaction-card">
-          <div class="card-body p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <h6 class="mb-1">E-commerce Store</h6>
-                <small class="text-muted" title="Transaction ID">
-                  <i class="fas fa-hashtag"></i> TXN-2024-001
-                </small>
-                <br /><small class="text-muted" title="Gateway Transaction ID">
-                  <i class="fas fa-external-link-alt"></i> pay_9xG2K8pQ3fH7mN
-                </small>
-              </div>
-              <div class="text-end">
-                <div class="transaction-amount text-success">$89.00</div>
-                <small class="text-muted">USD</small>
-                <br /><small class="text-muted">
-                  <i class="fas fa-credit-card"></i> Card
-                </small>
-              </div>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="d-flex align-items-center gap-2">
-                <span class="transaction-status bg-success text-white">
-                  <i class="fas fa-check"></i> Validated
-                </span>
-              </div>
-              <div class="text-end">
-                <small class="text-muted">Jan 15, 2024 at 2:30 PM</small>
-                <br /><small class="text-success">
-                  <i class="fas fa-check-circle"></i> Jan 15, 2024
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Transaction 2 -->
-        <div class="transaction-card">
-          <div class="card-body p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <h6 class="mb-1">CRM System</h6>
-                <small class="text-muted" title="Transaction ID">
-                  <i class="fas fa-hashtag"></i> TXN-2024-002
-                </small>
-                <br /><small class="text-muted" title="Gateway Transaction ID">
-                  <i class="fas fa-external-link-alt"></i> pay_7mF4J9nR2eH8pL
-                </small>
-              </div>
-              <div class="text-end">
-                <div class="transaction-amount text-warning">$59.00</div>
-                <small class="text-muted">USD</small>
-                <br /><small class="text-muted">
-                  <i class="fas fa-credit-card"></i> Card
-                </small>
-              </div>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="d-flex align-items-center gap-2">
-                <span class="transaction-status bg-warning text-white">
-                  <i class="fas fa-clock"></i> Pending
-                </span>
-              </div>
-              <div class="text-end">
-                <small class="text-muted">Jan 14, 2024 at 11:45 AM</small>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Transaction 3 -->
-        <div class="transaction-card">
-          <div class="card-body p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <h6 class="mb-1">HR Management</h6>
-                <small class="text-muted" title="Transaction ID">
-                  <i class="fas fa-hashtag"></i> TXN-2024-003
-                </small>
-                <br /><small class="text-muted" title="Gateway Transaction ID">
-                  <i class="fas fa-external-link-alt"></i> pay_5kH3L7oP1dG6rM
-                </small>
-              </div>
-              <div class="text-end">
-                <div class="transaction-amount text-success">$149.00</div>
-                <small class="text-muted">USD</small>
-                <br /><small class="text-muted">
-                  <i class="fas fa-credit-card"></i> Card
-                </small>
-              </div>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="d-flex align-items-center gap-2">
-                <span class="transaction-status bg-success text-white">
-                  <i class="fas fa-check"></i> Validated
-                </span>
-              </div>
-              <div class="text-end">
-                <small class="text-muted">Jan 12, 2024 at 4:20 PM</small>
-                <br /><small class="text-success">
-                  <i class="fas fa-check-circle"></i> Jan 12, 2024
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Transaction 4 -->
-        <div class="transaction-card">
-          <div class="card-body p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <h6 class="mb-1">Inventory Management</h6>
-                <small class="text-muted" title="Transaction ID">
-                  <i class="fas fa-hashtag"></i> TXN-2024-004
-                </small>
-              </div>
-              <div class="text-end">
-                <div class="transaction-amount text-danger">$39.00</div>
-                <small class="text-muted">USD</small>
-                <br /><small class="text-muted">
-                  <i class="fas fa-credit-card"></i> Card
-                </small>
-              </div>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="d-flex align-items-center gap-2">
-                <span class="transaction-status bg-danger text-white">
-                  <i class="fas fa-times"></i> Failed
-                </span>
-              </div>
-              <div class="text-end">
-                <small class="text-muted">Jan 10, 2024 at 9:15 AM</small>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Transaction 5 -->
-        <div class="transaction-card">
-          <div class="card-body p-3">
-            <div class="d-flex justify-content-between align-items-start mb-2">
-              <div>
-                <h6 class="mb-1">Project Management</h6>
-                <small class="text-muted" title="Transaction ID">
-                  <i class="fas fa-hashtag"></i> TXN-2024-005
-                </small>
-                <br /><small class="text-muted" title="Gateway Transaction ID">
-                  <i class="fas fa-external-link-alt"></i> pay_2nB8M4qS6fJ9wK
-                </small>
-              </div>
-              <div class="text-end">
-                <div class="transaction-amount text-success">$79.00</div>
-                <small class="text-muted">USD</small>
-                <br /><small class="text-muted">
-                  <i class="fas fa-credit-card"></i> Card
-                </small>
-              </div>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center">
-              <div class="d-flex align-items-center gap-2">
-                <span class="transaction-status bg-success text-white">
-                  <i class="fas fa-check"></i> Validated
-                </span>
-              </div>
-              <div class="text-end">
-                <small class="text-muted">Jan 08, 2024 at 1:45 PM</small>
-                <br /><small class="text-success">
-                  <i class="fas fa-check-circle"></i> Jan 08, 2024
-                </small>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="text-center mt-3">
-        <small class="text-muted">
-          <i class="fas fa-info-circle"></i> Showing latest 50 transactions
-          <br /><a href="#" class="btn btn-link btn-sm p-0"
-            >View all billing logs</a
-          >
-        </small>
-      </div>
-    </div>
-  </div>
-</div>
+// Add CSS animations
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInLeft {
+        from { transform: translateX(-20px); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+`;
+document.head.appendChild(style);
+</script>
 {% endblock %}
