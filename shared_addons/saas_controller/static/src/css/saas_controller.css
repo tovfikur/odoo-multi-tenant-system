@@ -75,6 +75,7 @@
 }
 
 /* Base Body Styling */
+.bg-view,
 body {
   background-color: var(--saas-background-color) !important;
   color: var(--saas-text-color) !important;
@@ -524,6 +525,7 @@ a:hover {
     --saas-surface-color: #ffffff !important;
   }
 
+  .bg-view,
   body {
     background-color: white !important;
     color: black !important;
