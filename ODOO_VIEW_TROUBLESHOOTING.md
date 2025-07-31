@@ -105,6 +105,37 @@ Escape operators in attributes:
 
 ---
 
+## ❌ **Error 4: Deprecated Attrs Attribute (Odoo 17.0+)**
+
+### **Error Message:**
+```
+Since 17.0, the "attrs" and "states" attributes are no longer used.
+```
+
+### **Problem:**
+```xml
+<field name="max_users" attrs="{'readonly': [('user_limit_enabled', '=', False)]}"/>
+<!-- Deprecated attrs syntax -->
+```
+
+### **Solution:**
+Use the new Odoo 17.0 syntax for conditional attributes:
+```xml
+<!-- ✅ New Odoo 17.0 syntax -->
+<field name="max_users" readonly="user_limit_enabled == False"/>
+
+<!-- ✅ Other examples -->
+<div invisible="share == True">Content</div>
+<field name="field_name" required="state == 'draft'"/>
+```
+
+**Common Conversions:**
+- `attrs="{'readonly': [('field', '=', value)]}"` → `readonly="field == value"`
+- `attrs="{'invisible': [('field', '=', value)]}"` → `invisible="field == value"`
+- `attrs="{'required': [('field', '=', value)]}"` → `required="field == value"`
+
+---
+
 ## ✅ **Best Practices for Odoo Views**
 
 ### **1. Label Usage**

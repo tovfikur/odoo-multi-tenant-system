@@ -31,7 +31,7 @@
                             <group>
                                 <group string="User Limit Settings">
                                     <field name="user_limit_enabled"/>
-                                    <field name="max_users" attrs="{'readonly': [('user_limit_enabled', '=', False)]}"/>
+                                    <field name="max_users" readonly="user_limit_enabled == False"/>
                                     <field name="current_users"/>
                                     <div class="o_form_label">Status Information</div>
                                     <div class="text-info">
