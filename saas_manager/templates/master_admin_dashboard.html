@@ -597,6 +597,15 @@
                   <i class="fas fa-download me-2"></i>Export System Data
                 </button>
               </div>
+              <div class="col-md-6">
+                <button
+                  class="btn btn-outline-primary w-100"
+                  onclick="Dashboard.openEmailSettings()"
+                  style="border-radius: 12px; padding: 1rem; font-weight: 500"
+                >
+                  <i class="fas fa-envelope-open-text me-2"></i>Email Settings
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1532,6 +1541,204 @@
           style="border-radius: 12px"
         >
           Update Plan
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Email Settings Modal -->
+<div class="modal fade" id="emailSettingsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="border-radius: 16px; border: none">
+      <div
+        class="modal-header border-0"
+        style="
+          background: linear-gradient(
+            135deg,
+            var(--primary) 0%,
+            var(--primary-dark) 100%
+          );
+          border-radius: 16px 16px 0 0;
+        "
+      >
+        <h5 class="modal-title text-white fw-semibold">
+          <i class="fas fa-envelope-open-text me-2"></i>Email Settings Configuration
+        </h5>
+        <button
+          type="button"
+          class="btn-close btn-close-white"
+          data-bs-dismiss="modal"
+        ></button>
+      </div>
+      <div class="modal-body p-4">
+        <form id="emailSettingsForm">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label
+                class="form-label fw-semibold"
+                style="color: var(--text-primary)"
+                >SMTP Server</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                name="smtp_server"
+                id="smtp_server"
+                placeholder="smtp.gmail.com"
+                required
+                style="border-radius: 12px"
+              />
+            </div>
+            <div class="col-md-6">
+              <label
+                class="form-label fw-semibold"
+                style="color: var(--text-primary)"
+                >SMTP Port</label
+              >
+              <input
+                type="number"
+                class="form-control"
+                name="smtp_port"
+                id="smtp_port"
+                placeholder="587"
+                required
+                style="border-radius: 12px"
+              />
+            </div>
+            <div class="col-md-6">
+              <label
+                class="form-label fw-semibold"
+                style="color: var(--text-primary)"
+                >Username/Email</label
+              >
+              <input
+                type="email"
+                class="form-control"
+                name="smtp_username"
+                id="smtp_username"
+                placeholder="your-email@gmail.com"
+                required
+                style="border-radius: 12px"
+              />
+            </div>
+            <div class="col-md-6">
+              <label
+                class="form-label fw-semibold"
+                style="color: var(--text-primary)"
+                >Password</label
+              >
+              <div class="input-group">
+                <input
+                  type="password"
+                  class="form-control"
+                  name="smtp_password"
+                  id="smtp_password"
+                  placeholder="App Password"
+                  required
+                  style="border-radius: 12px 0 0 12px"
+                />
+                <button
+                  class="btn btn-outline-secondary"
+                  type="button"
+                  onclick="Dashboard.togglePasswordVisibility('smtp_password')"
+                  style="border-radius: 0 12px 12px 0"
+                >
+                  <i class="fas fa-eye" id="smtp_password_icon"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label
+                class="form-label fw-semibold"
+                style="color: var(--text-primary)"
+                >From Name</label
+              >
+              <input
+                type="text"
+                class="form-control"
+                name="email_from_name"
+                id="email_from_name"
+                placeholder="SaaS Manager"
+                style="border-radius: 12px"
+              />
+            </div>
+            <div class="col-md-6">
+              <label
+                class="form-label fw-semibold"
+                style="color: var(--text-primary)"
+                >From Email</label
+              >
+              <input
+                type="email"
+                class="form-control"
+                name="email_from_address"
+                id="email_from_address"
+                placeholder="noreply@yourdomain.com"
+                style="border-radius: 12px"
+              />
+            </div>
+            <div class="col-12">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="smtp_use_tls"
+                  name="smtp_use_tls"
+                  checked
+                />
+                <label
+                  class="form-check-label fw-semibold"
+                  style="color: var(--text-primary)"
+                  for="smtp_use_tls"
+                >
+                  Use TLS/STARTTLS (Recommended)
+                </label>
+              </div>
+            </div>
+            <div class="col-12">
+              <div
+                class="alert alert-info"
+                style="border-radius: 12px; border: none; background: var(--bg-info); color: var(--text-info)"
+              >
+                <i class="fas fa-info-circle me-2"></i>
+                <strong>Gmail Users:</strong> Use "smtp.gmail.com" with port 587 and generate an App Password instead of your regular password.
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+      <div
+        class="modal-footer border-0"
+        style="
+          background: var(--bg-secondary);
+          border-radius: 0 0 16px 16px;
+        "
+      >
+        <button
+          type="button"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+          style="border-radius: 12px"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-info"
+          onclick="Dashboard.testEmailSettings()"
+          style="border-radius: 12px"
+        >
+          <i class="fas fa-paper-plane me-2"></i>Test Email
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          onclick="Dashboard.saveEmailSettings()"
+          style="border-radius: 12px"
+        >
+          <i class="fas fa-save me-2"></i>Save Settings
         </button>
       </div>
     </div>
@@ -3113,6 +3320,138 @@
     },
     async exportFullSystem() {
       /* Implementation */
+    },
+
+    // Email Settings Functions
+    async openEmailSettings() {
+      try {
+        this.showLoading();
+        
+        // Load current email settings
+        const response = await fetch('/master-admin/email-settings');
+        const result = await response.json();
+        
+        if (result.success) {
+          // Populate form with current settings
+          const settings = result.settings;
+          document.getElementById('smtp_server').value = settings.smtp_server || '';
+          document.getElementById('smtp_port').value = settings.smtp_port || '587';
+          document.getElementById('smtp_username').value = settings.smtp_username || '';
+          document.getElementById('smtp_password').value = settings.smtp_password || '';
+          document.getElementById('email_from_name').value = settings.email_from_name || '';
+          document.getElementById('email_from_address').value = settings.email_from_address || '';
+          document.getElementById('smtp_use_tls').checked = settings.smtp_use_tls !== 'false';
+        }
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('emailSettingsModal'));
+        modal.show();
+        
+      } catch (error) {
+        this.showAlert('danger', 'Failed to load email settings');
+        console.error('Email settings error:', error);
+      } finally {
+        this.hideLoading();
+      }
+    },
+
+    async saveEmailSettings() {
+      try {
+        this.showLoading();
+        
+        // Collect form data
+        const form = document.getElementById('emailSettingsForm');
+        const formData = new FormData(form);
+        
+        // Convert to JSON for consistency with backend
+        const jsonData = {};
+        for (let [key, value] of formData.entries()) {
+          jsonData[key] = value;
+        }
+        jsonData.smtp_use_tls = document.getElementById('smtp_use_tls').checked ? 'true' : 'false';
+        
+        // Send to server
+        const response = await fetch('/master-admin/email-settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify(jsonData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          this.showAlert('success', 'Email settings saved successfully');
+          // Close modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('emailSettingsModal'));
+          modal.hide();
+        } else {
+          this.showAlert('danger', result.message || 'Failed to save email settings');
+        }
+        
+      } catch (error) {
+        this.showAlert('danger', 'Failed to save email settings');
+        console.error('Save email settings error:', error);
+      } finally {
+        this.hideLoading();
+      }
+    },
+
+    async testEmailSettings() {
+      try {
+        this.showLoading();
+        
+        // Collect form data
+        const form = document.getElementById('emailSettingsForm');
+        const formData = new FormData(form);
+        
+        // Convert to JSON for consistency with backend
+        const jsonData = {};
+        for (let [key, value] of formData.entries()) {
+          jsonData[key] = value;
+        }
+        jsonData.smtp_use_tls = document.getElementById('smtp_use_tls').checked ? 'true' : 'false';
+        jsonData.test_email = true;
+        
+        // Send test email
+        const response = await fetch('/master-admin/email-settings', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token() }}'
+          },
+          body: JSON.stringify(jsonData)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          this.showAlert('success', 'Test email sent successfully! Check your inbox.');
+        } else {
+          this.showAlert('warning', result.message || 'Email test failed');
+        }
+        
+      } catch (error) {
+        this.showAlert('danger', 'Failed to send test email');
+        console.error('Test email error:', error);
+      } finally {
+        this.hideLoading();
+      }
+    },
+
+    togglePasswordVisibility(fieldId) {
+      const field = document.getElementById(fieldId);
+      const icon = document.getElementById(fieldId + '_icon');
+      
+      if (field.type === 'password') {
+        field.type = 'text';
+        icon.className = 'fas fa-eye-slash';
+      } else {
+        field.type = 'password';
+        icon.className = 'fas fa-eye';
+      }
     },
 
     // Refresh functions

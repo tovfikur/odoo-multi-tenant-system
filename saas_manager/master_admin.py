@@ -15,7 +15,7 @@ from sqlalchemy.orm import joinedload
 
 from models import (
     SaasUser, Tenant, TenantUser, SubscriptionPlan,
-    CredentialAccess, WorkerInstance, UserPublicKey, AuditLog
+    CredentialAccess, WorkerInstance, UserPublicKey, AuditLog, SystemSetting
 )
 from db import db
 from OdooDatabaseManager import OdooDatabaseManager
@@ -67,6 +67,88 @@ def log_admin_action(action, details=None):
         print(f"[ADMIN LOG] {current_user.username}: {action} - {details}")
     except Exception as e:
         print(f"[ADMIN LOG ERROR] Failed to log action: {e}")
+
+@master_admin_bp.route('/master-admin/email-settings', methods=['GET', 'POST'])
+@login_required
+@require_admin()
+@track_errors('email_settings')
+def email_settings():
+    """Manage SMTP email configuration"""
+    if request.method == 'GET':
+        # Get current email settings
+        settings = {}
+        email_keys = [
+            'smtp_server', 'smtp_port', 'smtp_username', 'smtp_password',
+            'smtp_use_tls', 'email_from_name', 'email_from_address'
+        ]
+        
+        for key in email_keys:
+            setting = SystemSetting.query.filter_by(key=key).first()
+            settings[key] = setting.value if setting else ''
+        
+        return jsonify({'success': True, 'settings': settings})
+    
+    if request.method == 'POST':
+        try:
+            data = request.json
+            email_settings = {
+                'smtp_server': data.get('smtp_server', 'smtp.gmail.com'),
+                'smtp_port': data.get('smtp_port', '587'),
+                'smtp_username': data.get('smtp_username', ''),
+                'smtp_password': data.get('smtp_password', ''),
+                'smtp_use_tls': data.get('smtp_use_tls', 'true'),
+                'email_from_name': data.get('email_from_name', 'SaaS Manager'),
+                'email_from_address': data.get('email_from_address', '')
+            }
+            
+            # Update or create settings
+            for key, value in email_settings.items():
+                setting = SystemSetting.query.filter_by(key=key).first()
+                if setting:
+                    setting.value = value
+                    setting.updated_by = current_user.id
+                    setting.updated_at = datetime.utcnow()
+                else:
+                    setting = SystemSetting(
+                        key=key,
+                        value=value,
+                        value_type='string',
+                        description=f'SMTP {key.replace("_", " ").title()}',
+                        category='email',
+                        updated_by=current_user.id
+                    )
+                    db.session.add(setting)
+            
+            db.session.commit()
+            
+            # Test email configuration if requested
+            if data.get('test_email'):
+                from email_config import EmailManager
+                success, message = EmailManager.send_email(
+                    current_user.email,
+                    'Test Email Configuration',
+                    'This is a test email to verify SMTP configuration.',
+                    is_html=False
+                )
+                
+                if not success:
+                    return jsonify({
+                        'success': False, 
+                        'message': f'Settings saved but email test failed: {message}'
+                    })
+            
+            log_admin_action('email_settings_updated', {
+                'smtp_server': email_settings['smtp_server'],
+                'smtp_port': email_settings['smtp_port'],
+                'smtp_username': email_settings['smtp_username']
+            })
+            
+            return jsonify({'success': True, 'message': 'Email settings updated successfully'})
+            
+        except Exception as e:
+            db.session.rollback()
+            error_tracker.log_error(e, {'admin_user': current_user.id})
+            return jsonify({'success': False, 'message': 'Failed to update email settings'}), 500
 
 # ================= PACKAGE/PLAN MANAGEMENT =================
 

@@ -871,13 +871,24 @@ def forgot_password():
                 token = user.generate_reset_token()
                 db.session.commit()
                 
-                # Send reset email (simplified version for now)
-                # In production, you would use a proper email service
-                reset_url = url_for('reset_password', token=token, _external=True)
-                
-                # For now, just flash the reset link (in production, this would be emailed)
-                flash(f'Password reset instructions have been sent to your email. '
-                      f'For demo purposes, use this link: {reset_url}', 'success')
+                # Send reset email using EmailManager
+                try:
+                    from email_config import EmailManager
+                    success, message = EmailManager.send_password_reset_email(user, token)
+                    
+                    if success:
+                        flash('Password reset instructions have been sent to your email.', 'success')
+                    else:
+                        flash(f'Failed to send reset email: {message}. Please contact administrator.', 'error')
+                        # Fallback: show reset link for demo purposes
+                        reset_url = url_for('reset_password', token=token, _external=True)
+                        flash(f'For demo purposes, use this link: {reset_url}', 'info')
+                        
+                except Exception as email_error:
+                    error_tracker.log_error(email_error, {'email': user.email, 'context': 'password_reset_email'})
+                    # Fallback: show reset link for demo purposes
+                    reset_url = url_for('reset_password', token=token, _external=True)
+                    flash(f'Email service unavailable. For demo purposes, use this link: {reset_url}', 'info')
                 
                 # Log the password reset request
                 from models import AuditLog
