@@ -28,6 +28,7 @@ import docker
 import psycopg2
 import redis
 import requests
+from urllib.parse import urlparse
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
@@ -106,6 +107,26 @@ def run_async_in_background(coro):
         loop.run_until_complete(coro)
     finally:
         loop.close()
+
+def get_tenant_domain_url(tenant):
+    """Generate dynamic domain URL for tenant based on current request"""
+    try:
+        # Get the current domain from the request
+        if request:
+            host = request.host
+            # Remove port if present
+            if ':' in host:
+                host = host.split(':')[0]
+            
+            # Create the full domain URL
+            scheme = 'https' if request.is_secure else 'http'
+            return f"{scheme}://kdoo_{tenant.subdomain}.{host}"
+        else:
+            # Fallback to configured domain
+            return f"https://kdoo_{tenant.subdomain}.domain.com"
+    except Exception:
+        # Fallback to default domain
+        return f"https://kdoo_{tenant.subdomain}.domain.com"
 
 # Create Flask app
 app, csrf = create_app()
@@ -3295,6 +3316,9 @@ def delete_avatar():
 def billing_overview():
     """Billing overview page showing all tenant billing status and transaction logs"""
     try:
+        from billing_service import BillingService
+        billing_service = BillingService()
+        
         # Get all tenants for the current user
         if current_user.is_admin:
             # Admin can see all tenants
@@ -3304,6 +3328,55 @@ def billing_overview():
             tenant_users = TenantUser.query.filter_by(user_id=current_user.id).all()
             tenant_ids = [tu.tenant_id for tu in tenant_users]
             tenants = Tenant.query.filter(Tenant.id.in_(tenant_ids)).order_by(Tenant.created_at.desc()).all()
+        
+        # Enhance tenants with detailed billing information
+        enhanced_tenants = []
+        for tenant in tenants:
+            billing_info = billing_service.get_tenant_billing_info(tenant.id)
+            
+            # Add billing info as tenant attributes
+            tenant.billing_info = billing_info
+            tenant.domain_url = get_tenant_domain_url(tenant)
+            
+            # Calculate accurate billing status
+            if billing_info:
+                if billing_info.get('status') == 'no_active_cycle':
+                    tenant.billing_status = 'expired'
+                    tenant.billing_status_label = '❌ Expired'
+                    tenant.billing_status_class = 'danger'
+                elif billing_info.get('is_expired'):
+                    tenant.billing_status = 'expired'
+                    tenant.billing_status_label = '❌ Expired'
+                    tenant.billing_status_class = 'danger'
+                elif billing_info.get('days_remaining', 0) <= 7 and billing_info.get('days_remaining', 0) > 0:
+                    tenant.billing_status = 'expiring_soon'
+                    tenant.billing_status_label = f'⚠️ Expires in {billing_info.get("days_remaining")} days'
+                    tenant.billing_status_class = 'warning'
+                elif billing_info.get('hours_remaining', 0) <= 24 and billing_info.get('hours_remaining', 0) > 0:
+                    tenant.billing_status = 'expiring_soon'
+                    tenant.billing_status_label = f'⚠️ Expires in {billing_info.get("hours_remaining"):.0f} hours'
+                    tenant.billing_status_class = 'warning'
+                else:
+                    days_left = billing_info.get('days_remaining', 0)
+                    hours_left = billing_info.get('hours_remaining', 0)
+                    if days_left > 0:
+                        tenant.billing_status = 'active'
+                        tenant.billing_status_label = f'✅ Active ({days_left}d left)'
+                        tenant.billing_status_class = 'success'
+                    elif hours_left > 0:
+                        tenant.billing_status = 'active'
+                        tenant.billing_status_label = f'✅ Active ({hours_left:.0f}h left)'
+                        tenant.billing_status_class = 'success'
+                    else:
+                        tenant.billing_status = 'expired'
+                        tenant.billing_status_label = '❌ Expired'
+                        tenant.billing_status_class = 'danger'
+            else:
+                tenant.billing_status = 'unknown'
+                tenant.billing_status_label = '❓ Unknown'
+                tenant.billing_status_class = 'secondary'
+            
+            enhanced_tenants.append(tenant)
         
         # Get payment transactions for the user's tenants
         tenant_ids = [t.id for t in tenants]
@@ -3319,7 +3392,8 @@ def billing_overview():
         
         # Calculate billing summary
         total_tenants = len(tenants)
-        active_tenants = len([t for t in tenants if t.is_active])
+        active_tenants = len([t for t in tenants if t.is_active and (not hasattr(t, 'billing_info') or not t.billing_info or not t.billing_info.get('is_expired', False))])
+        expired_tenants = len([t for t in tenants if hasattr(t, 'billing_info') and t.billing_info and t.billing_info.get('is_expired', False)])
         total_spent = sum([t.amount for t in transactions if t.status == 'VALIDATED'])
         pending_payments = len([t for t in transactions if t.status == 'PENDING'])
         
@@ -3327,15 +3401,17 @@ def billing_overview():
             'total_tenants': total_tenants,
             'active_tenants': active_tenants,
             'inactive_tenants': total_tenants - active_tenants,
+            'expired_tenants': expired_tenants,
             'total_spent': total_spent,
             'pending_payments': pending_payments,
             'recent_transactions': len(transactions)
         }
         
         return render_template('billing/billing_overview.html', 
-                             tenants=tenants,
+                             tenants=enhanced_tenants,
                              transactions=transactions,
-                             billing_summary=billing_summary)
+                             billing_summary=billing_summary,
+                             now=datetime.utcnow())
         
     except Exception as e:
         error_tracker.log_error(e, {'user_id': current_user.id, 'function': 'billing_overview'})

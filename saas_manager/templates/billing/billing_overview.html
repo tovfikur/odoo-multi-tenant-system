@@ -1,5 +1,46 @@
 {% extends "base.html" %} {% block title %}Billing Dashboard - {{
-current_user.company_name or 'Khudroo' }}{% endblock %} {% block content %}
+current_user.company_name or 'Khudroo' }}{% endblock %} 
+
+{% block extra_head %}
+<style>
+.billing-status-active { animation: pulse-green 2s infinite; }
+.billing-status-warning { animation: pulse-orange 2s infinite; }
+.billing-status-expired { animation: pulse-red 2s infinite; }
+
+@keyframes pulse-green {
+  0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
+}
+
+@keyframes pulse-orange {
+  0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
+}
+
+@keyframes pulse-red {
+  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+  70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+}
+
+.next-billing-info {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 15px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.domain-link:hover {
+  text-decoration: underline !important;
+  color: #0d6efd !important;
+}
+</style>
+{% endblock %}
+
+{% block content %}
 <div class="bg-light min-vh-100">
   <div class="container-fluid px-4 py-4">
     <!-- Dashboard Header -->
@@ -135,6 +176,29 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block content %}
       </div>
       {% endif %}
 
+      {% if billing_summary.get('expired_tenants', 0) > 0 %}
+      <div class="col-xl-3 col-lg-6 col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body p-4">
+            <div class="d-flex align-items-center">
+              <div class="bg-danger bg-gradient rounded-3 p-3 me-3">
+                <i class="fas fa-times-circle fs-4 text-white"></i>
+              </div>
+              <div class="flex-grow-1">
+                <h3 class="fw-bold mb-0 text-danger">
+                  {{ billing_summary.expired_tenants }}
+                </h3>
+                <p class="text-muted mb-0 small fw-medium">EXPIRED PANELS</p>
+                <small class="text-danger">
+                  <i class="fas fa-credit-card me-1"></i>Payment required
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
       <div class="col-xl-3 col-lg-6 col-md-6">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body p-4">
@@ -206,6 +270,46 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block content %}
       </div>
     </div>
 
+    <!-- Next Billing Info -->
+    {% if tenants and tenants|length > 0 %}
+    {% set next_expiring = tenants|selectattr('billing_info')|selectattr('billing_status', 'in', ['active', 'expiring_soon'])|sort(attribute='billing_info.days_remaining')|first %}
+    {% if next_expiring and next_expiring.billing_info %}
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="next-billing-info">
+          <div class="row align-items-center">
+            <div class="col-lg-8">
+              <div class="d-flex align-items-center">
+                <div class="bg-white bg-opacity-25 rounded-3 p-2 me-3">
+                  <i class="fas fa-calendar-alt fs-4"></i>
+                </div>
+                <div>
+                  <h6 class="mb-0 fw-bold">Next Billing Cycle</h6>
+                  <p class="mb-0 opacity-75 small">
+                    <strong>{{ next_expiring.name }}</strong> expires in 
+                    {% if next_expiring.billing_info.get('days_remaining', 0) > 0 %}
+                      {{ next_expiring.billing_info.get('days_remaining') }} days
+                    {% else %}
+                      {{ next_expiring.billing_info.get('hours_remaining', 0)|round(0) }} hours
+                    {% endif %}
+                    on {{ next_expiring.billing_info.get('cycle_end')[:10] if next_expiring.billing_info.get('cycle_end') else 'Unknown' }}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+              <a href="{{ url_for('billing.initiate_payment', tenant_id=next_expiring.id) }}" 
+                 class="btn btn-light btn-sm">
+                <i class="fas fa-credit-card me-1"></i>Renew Early
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
     <!-- Main Content -->
     <div class="row">
       <!-- Panels Section -->
@@ -237,38 +341,58 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block content %}
                   <div class="col-lg-5">
                     <div class="d-flex align-items-center">
                       <div class="me-3">
-                        {% if tenant.is_active %}
+                        {% if tenant.billing_status == 'active' %}
                         <div
-                          class="bg-success rounded-circle d-flex align-items-center justify-content-center"
+                          class="bg-success rounded-circle d-flex align-items-center justify-content-center billing-status-active"
                           style="width: 40px; height: 40px"
+                          title="Active billing cycle"
                         >
                           <i class="fas fa-check text-white"></i>
                         </div>
-                        {% else %}
+                        {% elif tenant.billing_status == 'expiring_soon' %}
                         <div
-                          class="bg-danger rounded-circle d-flex align-items-center justify-content-center"
+                          class="bg-warning rounded-circle d-flex align-items-center justify-content-center billing-status-warning"
                           style="width: 40px; height: 40px"
+                          title="Expires soon"
+                        >
+                          <i class="fas fa-clock text-white"></i>
+                        </div>
+                        {% elif tenant.billing_status == 'expired' %}
+                        <div
+                          class="bg-danger rounded-circle d-flex align-items-center justify-content-center billing-status-expired"
+                          style="width: 40px; height: 40px"
+                          title="Billing expired"
                         >
                           <i class="fas fa-times text-white"></i>
+                        </div>
+                        {% else %}
+                        <div
+                          class="bg-secondary rounded-circle d-flex align-items-center justify-content-center"
+                          style="width: 40px; height: 40px"
+                          title="Unknown status"
+                        >
+                          <i class="fas fa-question text-white"></i>
                         </div>
                         {% endif %}
                       </div>
                       <div>
                         <h6 class="mb-1 fw-bold">{{ tenant.name }}</h6>
                         <small class="text-muted">
-                          <i class="fas fa-globe me-1"></i>{{ tenant.subdomain
-                          }}.domain.com
+                          <i class="fas fa-globe me-1"></i>
+                          <a href="{{ tenant.domain_url }}" target="_blank" class="text-decoration-none text-muted domain-link">
+                            {{ tenant.subdomain }}.{{ request.host }}
+                          </a>
                         </small>
                         <div class="mt-1">
                           <span
-                            class="badge bg-{{ 'success' if tenant.is_active else 'danger' }} bg-opacity-25 text-{{ 'success' if tenant.is_active else 'danger' }}"
+                            class="badge bg-{{ tenant.billing_status_class }} bg-opacity-25 text-{{ tenant.billing_status_class }}"
                           >
-                            {{ 'Active' if tenant.is_active else 'Inactive' }}
+                            {{ tenant.billing_status_label }}
                           </span>
                           <span
                             class="badge bg-info bg-opacity-25 text-info ms-1"
                           >
-                            {{ tenant.plan.title() }} Plan
+                            {{ tenant.plan.title() if tenant.plan else 'Standard' }} Plan
                           </span>
                         </div>
                       </div>
@@ -278,19 +402,43 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block content %}
                   <!-- Usage Progress -->
                   <div class="col-lg-4">
                     <div class="text-center">
+                      {% if tenant.billing_info and tenant.billing_info.get('total_hours_allowed') %}
+                      {% set hours_used = tenant.billing_info.get('hours_used', 0) %}
+                      {% set total_hours = tenant.billing_info.get('total_hours_allowed', 360) %}
+                      {% set usage_percent = (hours_used / total_hours * 100) if total_hours > 0 else 0 %}
+                      {% set progress_class = 'bg-success' if usage_percent < 70 else 'bg-warning' if usage_percent < 90 else 'bg-danger' %}
                       <div class="progress mb-2" style="height: 8px">
                         <div
-                          class="progress-bar bg-success"
+                          class="progress-bar {{ progress_class }}"
                           role="progressbar"
-                          style="width: 45%"
+                          style="width: {{ usage_percent }}%"
+                          title="{{ usage_percent|round(1) }}% used"
                         ></div>
                       </div>
                       <div class="d-flex justify-content-between">
                         <small class="text-muted">
-                          <i class="fas fa-clock me-1"></i>15d left
+                          <i class="fas fa-clock me-1"></i>
+                          {% if tenant.billing_info.get('days_remaining', 0) > 0 %}
+                            {{ tenant.billing_info.get('days_remaining') }}d left
+                          {% elif tenant.billing_info.get('hours_remaining', 0) > 0 %}
+                            {{ tenant.billing_info.get('hours_remaining')|round(0) }}h left
+                          {% else %}
+                            Expired
+                          {% endif %}
                         </small>
-                        <small class="text-muted">162h/360h</small>
+                        <small class="text-muted">{{ hours_used|round(1) }}h/{{ total_hours }}h</small>
                       </div>
+                      {% else %}
+                      <div class="progress mb-2" style="height: 8px">
+                        <div class="progress-bar bg-secondary" role="progressbar" style="width: 0%"></div>
+                      </div>
+                      <div class="d-flex justify-content-between">
+                        <small class="text-muted">
+                          <i class="fas fa-question-circle me-1"></i>No billing data
+                        </small>
+                        <small class="text-muted">-/-</small>
+                      </div>
+                      {% endif %}
                     </div>
                   </div>
 
@@ -300,21 +448,33 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block content %}
                       <a
                         href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}"
                         class="btn btn-outline-primary btn-sm flex-fill flex-lg-grow-0"
+                        title="Manage tenant settings"
                       >
                         <i class="fas fa-cog me-1"></i>Manage
                       </a>
-                      {% if not tenant.is_active %}
+                      {% if tenant.billing_status == 'expired' or (tenant.billing_info and tenant.billing_info.get('requires_payment')) %}
                       <a
                         href="{{ url_for('billing.initiate_payment', tenant_id=tenant.id) }}"
                         class="btn btn-warning btn-sm flex-fill flex-lg-grow-0"
+                        title="Renew billing cycle"
+                      >
+                        <i class="fas fa-credit-card me-1"></i>Pay Now
+                      </a>
+                      {% elif tenant.billing_status == 'expiring_soon' %}
+                      <a
+                        href="{{ url_for('billing.initiate_payment', tenant_id=tenant.id) }}"
+                        class="btn btn-outline-warning btn-sm flex-fill flex-lg-grow-0"
+                        title="Renew early"
                       >
                         <i class="fas fa-credit-card me-1"></i>Renew
                       </a>
-                      {% else %}
+                      {% endif %}
+                      {% if tenant.is_active and tenant.billing_status != 'expired' %}
                       <a
-                        href="https://kdoo_{{ tenant.subdomain }}.domain.com"
+                        href="{{ tenant.domain_url }}"
                         target="_blank"
                         class="btn btn-success btn-sm flex-fill flex-lg-grow-0"
+                        title="Open panel in new tab"
                       >
                         <i class="fas fa-external-link-alt me-1"></i>Open
                       </a>
@@ -406,8 +566,13 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block content %}
                     transaction.get_tenant_name else 'Unknown Panel' }}
                   </h6>
                   {% if current_user.is_admin and transaction.user %}
-                  <small class="text-muted">
+                  <small class="text-muted d-block">
                     <i class="fas fa-user me-1"></i>{{ transaction.user.name }}
+                  </small>
+                  {% endif %}
+                  {% if transaction.tenant and transaction.tenant.subdomain %}
+                  <small class="text-muted d-block">
+                    <i class="fas fa-globe me-1"></i>{{ transaction.tenant.subdomain }}.{{ request.host }}
                   </small>
                   {% endif %}
                   <div class="mt-1">
