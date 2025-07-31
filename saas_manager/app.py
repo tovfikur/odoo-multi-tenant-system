@@ -602,6 +602,7 @@ async def create_database(db_name, username='admin', password='admin',  modules=
         try:
             from models import Tenant
             from flask import current_app
+            from utils import error_tracker
             app_to_use = app if app else current_app
             
             # Create application context for background thread
@@ -609,8 +610,20 @@ async def create_database(db_name, username='admin', password='admin',  modules=
                 tenant = Tenant.query.filter_by(database_name=db_name).first()
                 if tenant:
                     tenant.status = 'active'  # Change from 'creating' to 'active'
+                    tenant.is_active = True  # Ensure is_active is also set
                     db.session.commit()
                     logger.info(f"Updated tenant {tenant.id} status to active after successful database creation")
+                    
+                    # Create billing cycle immediately for newly activated tenant
+                    try:
+                        from billing_service import BillingService
+                        billing_service = BillingService()
+                        billing_cycle = billing_service.create_billing_cycle(tenant.id)
+                        logger.info(f"Created initial billing cycle for tenant {tenant.id}: {billing_cycle.id}")
+                    except Exception as billing_error:
+                        logger.error(f"Failed to create billing cycle for tenant {tenant.id}: {billing_error}")
+                        # Don't fail tenant activation for billing cycle creation error
+                        error_tracker.log_error(billing_error, {'tenant_id': tenant.id, 'function': 'create_initial_billing_cycle'})
                     
                     # Trigger real-time update (also needs app context)
                     try:
@@ -3339,42 +3352,52 @@ def billing_overview():
             tenant.domain_url = get_tenant_domain_url(tenant)
             
             # Calculate accurate billing status
-            if billing_info:
-                if billing_info.get('status') == 'no_active_cycle':
+            if billing_info and billing_info.get('status') != 'no_active_cycle':
+                # Tenant has an active billing cycle
+                is_expired = billing_info.get('is_expired', False)
+                days_remaining = billing_info.get('days_remaining', 0)
+                hours_remaining = billing_info.get('hours_remaining', 0)
+                
+                if is_expired:
                     tenant.billing_status = 'expired'
                     tenant.billing_status_label = '❌ Expired'
                     tenant.billing_status_class = 'danger'
-                elif billing_info.get('is_expired'):
-                    tenant.billing_status = 'expired'
-                    tenant.billing_status_label = '❌ Expired'
-                    tenant.billing_status_class = 'danger'
-                elif billing_info.get('days_remaining', 0) <= 7 and billing_info.get('days_remaining', 0) > 0:
-                    tenant.billing_status = 'expiring_soon'
-                    tenant.billing_status_label = f'⚠️ Expires in {billing_info.get("days_remaining")} days'
-                    tenant.billing_status_class = 'warning'
-                elif billing_info.get('hours_remaining', 0) <= 24 and billing_info.get('hours_remaining', 0) > 0:
-                    tenant.billing_status = 'expiring_soon'
-                    tenant.billing_status_label = f'⚠️ Expires in {billing_info.get("hours_remaining"):.0f} hours'
-                    tenant.billing_status_class = 'warning'
-                else:
-                    days_left = billing_info.get('days_remaining', 0)
-                    hours_left = billing_info.get('hours_remaining', 0)
-                    if days_left > 0:
-                        tenant.billing_status = 'active'
-                        tenant.billing_status_label = f'✅ Active ({days_left}d left)'
-                        tenant.billing_status_class = 'success'
-                    elif hours_left > 0:
-                        tenant.billing_status = 'active'
-                        tenant.billing_status_label = f'✅ Active ({hours_left:.0f}h left)'
-                        tenant.billing_status_class = 'success'
+                elif days_remaining <= 2 and hours_remaining <= 48:
+                    # Critical - less than 2 days or 48 hours
+                    if days_remaining > 0:
+                        tenant.billing_status = 'expiring_soon'
+                        tenant.billing_status_label = f'⚠️ Expires in {days_remaining}d'
+                        tenant.billing_status_class = 'warning'
+                    elif hours_remaining > 0:
+                        tenant.billing_status = 'expiring_soon'
+                        tenant.billing_status_label = f'⚠️ Expires in {hours_remaining:.0f}h'
+                        tenant.billing_status_class = 'warning'
                     else:
                         tenant.billing_status = 'expired'
                         tenant.billing_status_label = '❌ Expired'
                         tenant.billing_status_class = 'danger'
+                elif days_remaining <= 7:
+                    # Warning - less than 7 days
+                    tenant.billing_status = 'expiring_soon'
+                    tenant.billing_status_label = f'⚠️ Expires in {days_remaining}d'
+                    tenant.billing_status_class = 'warning'
+                else:
+                    # Active with sufficient time
+                    tenant.billing_status = 'active'
+                    tenant.billing_status_label = f'✅ Active ({days_remaining}d left)'
+                    tenant.billing_status_class = 'success'
             else:
-                tenant.billing_status = 'unknown'
-                tenant.billing_status_label = '❓ Unknown'
-                tenant.billing_status_class = 'secondary'
+                # No billing cycle or inactive tenant
+                if tenant.is_active and tenant.status == 'active':
+                    # Just activated, billing cycle should be created
+                    tenant.billing_status = 'pending'
+                    tenant.billing_status_label = '🔄 Initializing'
+                    tenant.billing_status_class = 'info'
+                else:
+                    # Truly expired or inactive
+                    tenant.billing_status = 'expired'
+                    tenant.billing_status_label = '❌ Payment Required'
+                    tenant.billing_status_class = 'danger'
             
             enhanced_tenants.append(tenant)
         

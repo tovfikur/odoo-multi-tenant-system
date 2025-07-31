@@ -37,11 +37,27 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
   text-decoration: underline !important;
   color: #0d6efd !important;
 }
+
+/* Dark mode compatibility */
+@media (prefers-color-scheme: dark) {
+  .card {
+    background-color: var(--bs-dark) !important;
+    border: 1px solid rgba(255, 255, 255, 0.125) !important;
+  }
+  
+  .next-billing-info {
+    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%) !important;
+  }
+  
+  .bg-light {
+    background-color: var(--bs-dark) !important;
+  }
+}
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="bg-light min-vh-100">
+<div class="min-vh-100" style="background-color: var(--bs-body-bg);">
   <div class="container-fluid px-4 py-4">
     <!-- Dashboard Header -->
     <div class="row mb-4">
@@ -365,6 +381,14 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                         >
                           <i class="fas fa-times text-white"></i>
                         </div>
+                        {% elif tenant.billing_status == 'pending' %}
+                        <div
+                          class="bg-info rounded-circle d-flex align-items-center justify-content-center"
+                          style="width: 40px; height: 40px"
+                          title="Billing cycle initializing"
+                        >
+                          <i class="fas fa-sync fa-spin text-white"></i>
+                        </div>
                         {% else %}
                         <div
                           class="bg-secondary rounded-circle d-flex align-items-center justify-content-center"
@@ -392,7 +416,11 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                           <span
                             class="badge bg-info bg-opacity-25 text-info ms-1"
                           >
-                            {{ tenant.plan.title() if tenant.plan else 'Standard' }} Plan
+                            {% if hasattr(tenant, 'plan') and tenant.plan %}
+                              {{ tenant.plan.title() }} Plan
+                            {% else %}
+                              Standard Plan
+                            {% endif %}
                           </span>
                         </div>
                       </div>
@@ -468,8 +496,16 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                       >
                         <i class="fas fa-credit-card me-1"></i>Renew
                       </a>
+                      {% elif tenant.billing_status == 'pending' %}
+                      <button
+                        class="btn btn-outline-info btn-sm flex-fill flex-lg-grow-0"
+                        disabled
+                        title="Billing cycle is being initialized"
+                      >
+                        <i class="fas fa-sync fa-spin me-1"></i>Initializing
+                      </button>
                       {% endif %}
-                      {% if tenant.is_active and tenant.billing_status != 'expired' %}
+                      {% if tenant.is_active and tenant.billing_status not in ['expired', 'pending'] %}
                       <a
                         href="{{ tenant.domain_url }}"
                         target="_blank"
