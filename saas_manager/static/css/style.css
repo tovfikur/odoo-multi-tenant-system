@@ -165,6 +165,9 @@
 .text-muted {
   color: var(--text-muted) !important;
 }
+.text-inverse {
+  color: var(--text-inverse) !important;
+}
 .breadcrumb-item.active {
   color: var(--text-muted) !important;
 }
