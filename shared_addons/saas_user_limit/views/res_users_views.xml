@@ -38,9 +38,9 @@
                     <div class="oe_title">
                         <h1>User Limit Status</h1>
                     </div>
-                    <group>
-                        <field name="get_user_limit_info" widget="progressbar"/>
-                    </group>
+                    <div class="alert alert-info">
+                        <p>Check user limit information by clicking the "User Limit Info" button in the user form.</p>
+                    </div>
                 </sheet>
             </form>
         </field>

@@ -27,23 +27,12 @@
                         </group>
                     </group>
                     
-                    <!-- User Limit Progress Bar -->
+                    <!-- User Limit Status -->
                     <group string="User Limit Status">
-                        <field name="current_users" invisible="1"/>
-                        <field name="max_users" invisible="1"/>
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="progress" style="height: 20px;">
-                                    <div class="progress-bar progress-bar-info" 
-                                         role="progressbar" 
-                                         style="width: 0%;"
-                                         attrs="{'style': 'width: ' + str(min(100, round((current_users or 0) / (max_users or 1) * 100, 1))) + '%'}">
-                                        <span class="progress-text">
-                                            <field name="current_users"/> / <field name="max_users"/> users
-                                        </span>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="alert alert-info">
+                            <strong>Current Usage:</strong> 
+                            <field name="current_users" readonly="1"/> / 
+                            <field name="max_users" readonly="1"/> users
                         </div>
                     </group>
                 </sheet>
