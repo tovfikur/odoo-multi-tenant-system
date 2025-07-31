@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Custom CSS for Branding -->
-    <template id="custom_branding_css" name="Custom Branding CSS" inherit_id="web.assets_web">
+
+
+    <!-- Backend Custom CSS -->
+    <template id="custom_backend_css" name="Custom Backend CSS" inherit_id="web.assets_backend">
         <xpath expr="." position="inside">
-            <style>
+            <style id="saas_controller_dynamic_css">
                 /* SaaS Controller Custom Branding CSS */
                 .o_sub_menu_footer,
                 .powered_by,
@@ -12,20 +14,13 @@
                     display: none !important;
                 }
                 
-                /* Custom color variables will be injected by SaaS Controller */
+                /* Custom color variables */
                 :root {
                     --saas-primary-color: #017e84;
                     --saas-secondary-color: #875a7b;
                     --saas-accent-color: #017e84;
                 }
-            </style>
-        </xpath>
-    </template>
-
-    <!-- Backend Custom CSS -->
-    <template id="custom_backend_css" name="Custom Backend CSS" inherit_id="web.assets_backend">
-        <xpath expr="." position="inside">
-            <style id="saas_controller_dynamic_css">
+                
                 /* SaaS Controller Dynamic CSS - populated by the controller */
                 .o_main_navbar {
                     background-color: var(--saas-primary-color, #017e84) !important;
