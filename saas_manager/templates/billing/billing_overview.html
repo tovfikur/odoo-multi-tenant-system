@@ -416,7 +416,7 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                           <span
                             class="badge bg-info bg-opacity-25 text-info ms-1"
                           >
-                            {% if hasattr(tenant, 'plan') and tenant.plan %}
+                            {% if tenant.plan and tenant.plan.strip() %}
                               {{ tenant.plan.title() }} Plan
                             {% else %}
                               Standard Plan
