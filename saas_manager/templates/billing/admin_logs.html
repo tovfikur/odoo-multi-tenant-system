@@ -76,19 +76,35 @@
                     <div class="logs-container">
                         {% if logs %}
                             {% for log in logs %}
-                            <div class="log-entry">
+                            <div class="log-entry border-start border-{% if log.level == 'ERROR' %}danger{% elif log.level == 'WARNING' %}warning{% else %}info{% endif %} border-3">
                                 <div class="d-flex justify-content-between align-items-start">
-                                    <div>
-                                        <h6 class="mb-1 fw-bold">{{ log.tenant_name or 'Unknown Tenant' }}</h6>
-                                        <p class="mb-1">{{ log.message or 'No message available' }}</p>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <h6 class="mb-0 fw-bold me-3">{{ log.tenant_name or 'Unknown Tenant' }}</h6>
+                                            <span class="badge bg-secondary fs-6">{{ log.type.replace('_', ' ').title() }}</span>
+                                        </div>
+                                        <p class="mb-2">{{ log.message or 'No message available' }}</p>
+                                        {% if log.amount %}
+                                        <div class="mb-2">
+                                            <strong class="text-success">${{ "%.2f"|format(log.amount) }}</strong>
+                                            <small class="text-muted">{{ log.currency or 'USD' }}</small>
+                                        </div>
+                                        {% endif %}
                                         <small class="text-muted">
                                             <i class="fas fa-clock me-1"></i>
                                             {{ log.timestamp.strftime('%b %d, %Y at %I:%M %p') if log.timestamp else 'No timestamp' }}
                                         </small>
                                     </div>
-                                    <span class="badge bg-{% if log.level == 'ERROR' %}danger{% elif log.level == 'WARNING' %}warning{% else %}info{% endif %}">
-                                        {{ log.level or 'INFO' }}
-                                    </span>
+                                    <div class="text-end">
+                                        <span class="badge bg-{% if log.level == 'ERROR' %}danger{% elif log.level == 'WARNING' %}warning{% else %}info{% endif %} mb-2">
+                                            {{ log.level or 'INFO' }}
+                                        </span>
+                                        {% if log.status %}
+                                        <div>
+                                            <small class="text-muted">Status: {{ log.status }}</small>
+                                        </div>
+                                        {% endif %}
+                                    </div>
                                 </div>
                             </div>
                             {% endfor %}
@@ -102,6 +118,10 @@
                                     {% else %}
                                         The billing system is running but no logs have been generated yet
                                     {% endif %}
+                                </p>
+                                <p class="text-info">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Logs include payment transactions, billing cycles, and notifications
                                 </p>
                             </div>
                         {% endif %}

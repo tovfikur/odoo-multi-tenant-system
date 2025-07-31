@@ -5,7 +5,7 @@ from flask import current_app
 from db import db
 from models import (
     Tenant, BillingCycle, UsageTracking, PaymentHistory, 
-    BillingNotification, SupportTicket, SaasUser
+    BillingNotification, SupportTicket, SaasUser, PaymentTransaction
 )
 from OdooDatabaseManager import OdooDatabaseManager
 
@@ -406,32 +406,90 @@ class BillingService:
     def get_admin_billing_logs(self, tenant_id=None):
         """Get billing logs for admin panel"""
         try:
-            # Use explicit join conditions to avoid ambiguity
-            query = db.session.query(
-                Tenant.name.label('tenant_name'),
-                Tenant.created_at.label('creation_date'),
-                BillingCycle.cycle_start,
-                BillingCycle.cycle_end,
-                BillingCycle.hours_used,
-                BillingCycle.status.label('cycle_status'),
-                PaymentHistory.amount,
-                PaymentHistory.paid_at,
-                BillingNotification.notification_type,
-                BillingNotification.sent_at
-            ).select_from(
-                Tenant
-            ).outerjoin(
-                BillingCycle, Tenant.id == BillingCycle.tenant_id
-            ).outerjoin(
-                PaymentHistory, Tenant.id == PaymentHistory.tenant_id
-            ).outerjoin(
-                BillingNotification, Tenant.id == BillingNotification.tenant_id
-            )
+            # Create a comprehensive billing logs view
+            logs = []
+            
+            # Get basic tenant and billing cycle information
+            base_query = db.session.query(Tenant).outerjoin(BillingCycle, Tenant.id == BillingCycle.tenant_id)
             
             if tenant_id:
-                query = query.filter(Tenant.id == tenant_id)
+                base_query = base_query.filter(Tenant.id == tenant_id)
             
-            return query.order_by(Tenant.name, BillingCycle.cycle_start.desc()).all()
+            tenants_data = base_query.all()
+            
+            for tenant in tenants_data:
+                # Get payment transactions for this tenant
+                payment_transactions = PaymentTransaction.query.filter_by(tenant_id=tenant.id).order_by(PaymentTransaction.created_at.desc()).all()
+                
+                # Get payment history for this tenant
+                payment_history = PaymentHistory.query.filter_by(tenant_id=tenant.id).order_by(PaymentHistory.created_at.desc()).all()
+                
+                # Get billing cycles for this tenant
+                billing_cycles = BillingCycle.query.filter_by(tenant_id=tenant.id).order_by(BillingCycle.cycle_start.desc()).all()
+                
+                # Get notifications for this tenant
+                notifications = BillingNotification.query.filter_by(tenant_id=tenant.id).order_by(BillingNotification.sent_at.desc()).all()
+                
+                # Create log entries for payment transactions
+                for pt in payment_transactions:
+                    logs.append({
+                        'tenant_name': tenant.name,
+                        'tenant_id': tenant.id,
+                        'type': 'payment_transaction',
+                        'message': f'Payment transaction {pt.transaction_id} - {pt.status}',
+                        'amount': pt.amount,
+                        'currency': pt.currency,
+                        'status': pt.status,
+                        'timestamp': pt.created_at,
+                        'level': 'INFO' if pt.status == 'VALIDATED' else 'WARNING' if pt.status == 'PENDING' else 'ERROR'
+                    })
+                
+                # Create log entries for payment history
+                for ph in payment_history:
+                    logs.append({
+                        'tenant_name': tenant.name,
+                        'tenant_id': tenant.id,
+                        'type': 'payment_history',
+                        'message': f'Payment history entry - {ph.status}',
+                        'amount': ph.amount,
+                        'currency': ph.currency,
+                        'status': ph.status,
+                        'timestamp': ph.created_at,
+                        'level': 'INFO' if ph.status == 'completed' else 'WARNING' if ph.status == 'pending' else 'ERROR'
+                    })
+                
+                # Create log entries for billing cycles
+                for bc in billing_cycles:
+                    logs.append({
+                        'tenant_name': tenant.name,
+                        'tenant_id': tenant.id,
+                        'type': 'billing_cycle',
+                        'message': f'Billing cycle {bc.status} - {bc.hours_used:.1f}h/{bc.total_hours_allowed}h used',
+                        'amount': None,
+                        'currency': None,
+                        'status': bc.status,
+                        'timestamp': bc.cycle_start,
+                        'level': 'INFO' if bc.status == 'active' else 'WARNING' if bc.status == 'expired' else 'INFO'
+                    })
+                
+                # Create log entries for notifications
+                for notif in notifications:
+                    logs.append({
+                        'tenant_name': tenant.name,
+                        'tenant_id': tenant.id,
+                        'type': 'notification',
+                        'message': f'{notif.notification_type}: {notif.message}',
+                        'amount': None,
+                        'currency': None,
+                        'status': notif.notification_type,
+                        'timestamp': notif.sent_at,
+                        'level': 'WARNING' if notif.notification_type == 'reminder' else 'ERROR' if notif.notification_type == 'expiry' else 'INFO'
+                    })
+            
+            # Sort all logs by timestamp, most recent first
+            logs.sort(key=lambda x: x['timestamp'] or datetime.min, reverse=True)
+            
+            return logs
             
         except Exception as e:
             logger.error(f"Error getting admin billing logs: {str(e)}")
