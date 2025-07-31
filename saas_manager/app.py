@@ -2594,8 +2594,10 @@ def view_profile():
         # Get user's tenants
         user_tenants = cache_manager.get_user_tenants(current_user.id)
         
-        # Get recent activity (last 10 audit logs)
+        # Get recent activity (last 10 audit logs), excluding system-level activities
+        system_actions = ['redis_flush', 'system_maintenance', 'cache_clear', 'backup_created']
         recent_activity = AuditLog.query.filter_by(user_id=current_user.id)\
+            .filter(~AuditLog.action.in_(system_actions))\
             .order_by(AuditLog.created_at.desc())\
             .limit(10).all()
         

@@ -338,7 +338,10 @@ endblock %} {% block content %}
           </h5>
         </div>
         <div class="card-body p-0">
-          {% if recent_activity %} {% for activity in recent_activity %}
+          {% if recent_activity %} 
+          {% for activity in recent_activity %}
+          {# Skip system-level activities #}
+          {% if not (activity.action and ('redis' in activity.action.lower() or 'system' in activity.action.lower() or 'backup' in activity.action.lower() or 'maintenance' in activity.action.lower())) %}
           <div
             class="p-3"
             style="border-bottom: 1px solid var(--border-primary)"
@@ -369,12 +372,39 @@ endblock %} {% block content %}
                 </h6>
                 {% if activity.details %}
                 <p class="mb-1 text-muted small">
-                  {% if activity.action == 'profile_updated' %} Updated profile
-                  information{% if activity.details.password_changed %} and
-                  password{% endif %} {% elif activity.action ==
-                  'tenant_created' %} Created tenant: {{
-                  activity.details.get('name', 'Unknown') }} {% else %} {{
-                  activity.details|truncate(50) }} {% endif %}
+                  {% if activity.action == 'profile_updated' %}
+                    Updated profile information{% if activity.details.password_changed %} and password{% endif %}
+                  {% elif activity.action == 'tenant_created' %}
+                    Created tenant: {{ activity.details.get('name', 'Unknown') }}
+                  {% elif activity.action == 'plan_created' %}
+                    Created subscription plan: {{ activity.details.get('plan_name', 'Unknown Plan') }}
+                  {% elif activity.action == 'plan_updated' %}
+                    {% set plan_name = activity.details.get('plan_name', 'Unknown Plan') %}
+                    Updated subscription plan: {{ plan_name }}
+                    {% if activity.details.get('old_values') and activity.details.get('new_values') %}
+                      {% set old_vals = activity.details.old_values %}
+                      {% set new_vals = activity.details.new_values %}
+                      {% if old_vals.price != new_vals.price %}
+                        - Changed price from ${{ old_vals.price }} to ${{ new_vals.price }}
+                      {% elif old_vals.max_users != new_vals.max_users %}
+                        - Changed max users from {{ old_vals.max_users }} to {{ new_vals.max_users }}
+                      {% elif old_vals.storage_limit != new_vals.storage_limit %}
+                        - Changed storage limit from {{ old_vals.storage_limit }}MB to {{ new_vals.storage_limit }}MB
+                      {% endif %}
+                    {% endif %}
+                  {% elif activity.action == 'plan_deleted' %}
+                    Deleted subscription plan: {{ activity.details.get('plan_name', 'Unknown Plan') }}
+                  {% elif activity.action == 'user_login' %}
+                    Logged into the system
+                  {% elif activity.action == 'password_changed' %}
+                    Changed account password
+                  {% elif activity.action == 'tenant_status_changed' %}
+                    Changed tenant status: {{ activity.details.get('tenant_name', 'Unknown') }}
+                  {% elif 'redis' in activity.action.lower() or 'system' in activity.action.lower() %}
+                    {# Hide system-level activities for regular users #}
+                  {% else %}
+                    {{ activity.action.replace('_', ' ').title() }}
+                  {% endif %}
                 </p>
                 {% endif %}
                 <small class="text-muted">
@@ -384,6 +414,7 @@ endblock %} {% block content %}
               </div>
             </div>
           </div>
+          {% endif %}
           {% endfor %} {% else %}
           <div class="text-center py-4">
             <i class="fas fa-history fa-2x text-muted mb-2"></i>
