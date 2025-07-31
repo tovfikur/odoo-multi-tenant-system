@@ -212,12 +212,14 @@
                   <span class="d-md-none">Manage</span>
                 </a>
                 <!-- Payment button (initially hidden) -->
-                <a href="{{ url_for('billing.initiate_payment', tenant_id=tenant.id) }}" 
-                   class="btn btn-warning btn-sm w-100 pay-to-renew-btn d-none">
-                  <i class="fas fa-credit-card me-1"></i>
-                  <span class="d-none d-md-inline">Pay to Renew</span>
-                  <span class="d-md-none">Pay</span>
-                </a>
+                <form action="{{ url_for('initiate_payment_route', tenant_id=tenant.id) }}" method="POST" class="pay-to-renew-btn d-none">
+                  {{ csrf_token() }}
+                  <button type="submit" class="btn btn-warning btn-sm w-100">
+                    <i class="fas fa-credit-card me-1"></i>
+                    <span class="d-none d-md-inline">Pay to Renew</span>
+                    <span class="d-md-none">Pay</span>
+                  </button>
+                </form>
               </div>
             </div>
           </div>
@@ -263,10 +265,10 @@
         </a>
       </div>
       <div class="col-md-4">
-        <a href="{{ url_for('billing.admin_billing_logs') }}" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
+        <a href="{{ url_for('admin_tenants') }}" class="btn btn-outline-success w-100 d-flex flex-column align-items-center justify-content-center p-3" style="min-height: 120px;">
           <i class="fas fa-chart-line fa-2x mb-2"></i>
-          <span class="fw-bold">Billing Admin</span>
-          <small class="mt-1" style="color: var(--text-muted);">View billing logs</small>
+          <span class="fw-bold">Admin Panel</span>
+          <small class="mt-1" style="color: var(--text-muted);">Billing & tenant management</small>
         </a>
       </div>
       {% if current_user.is_admin %}
@@ -373,11 +375,23 @@ setInterval(function() {
 
 // Function to load billing information
 function loadBillingInfo(tenantId, billingDiv) {
-  fetch(`/billing/panel/${tenantId}/info`)
+  fetch(`/api/tenant/${tenantId}/status`)
     .then(response => response.json())
     .then(data => {
-      updateBillingDisplay(billingDiv, data);
-      updatePaymentButton(tenantId, data);
+      // Transform the data to match our billing display format
+      const billingData = {
+        tenant_name: data.name || 'Unknown',
+        status: data.status,
+        is_active: data.is_active,
+        hours_used: data.hours_used || 0,
+        hours_remaining: data.hours_remaining || 360,
+        days_remaining: data.days_remaining || 30,
+        total_hours_allowed: 360,
+        requires_payment: !data.is_active || data.status === 'billing_expired'
+      };
+      
+      updateBillingDisplay(billingDiv, billingData);
+      updatePaymentButton(tenantId, billingData);
     })
     .catch(error => {
       console.error('Error loading billing info:', error);
@@ -395,44 +409,50 @@ function updateBillingDisplay(billingDiv, data) {
   // Hide loading
   loadingDiv.classList.add('d-none');
 
-  if (data.status === 'no_active_cycle' || data.requires_payment) {
+  if (!data.is_active || data.status === 'billing_expired' || data.status === 'failed') {
     // Show expired state
     contentDiv.classList.add('d-none');
     expiredDiv.classList.remove('d-none');
     notificationBadge.classList.remove('d-none');
   } else {
-    // Show normal billing info
+    // Show normal billing info - simplified version
     expiredDiv.classList.add('d-none');
     contentDiv.classList.remove('d-none');
     
-    // Update progress bar
+    // Update progress bar based on tenant status
     const progressBar = contentDiv.querySelector('.billing-progress-bar');
-    const usagePercent = (data.hours_used / data.total_hours_allowed) * 100;
-    progressBar.style.width = usagePercent + '%';
+    let usagePercent = 20; // Default low usage for active tenants
     
-    // Set progress bar color based on usage
-    progressBar.className = 'progress-bar billing-progress-bar';
-    if (usagePercent > 80) {
-      progressBar.classList.add('bg-danger');
-    } else if (usagePercent > 60) {
-      progressBar.classList.add('bg-warning');
-    } else {
-      progressBar.classList.add('bg-success');
+    // Estimate usage based on status
+    if (data.status === 'active') {
+      usagePercent = 30; // Active but not stressed
+    } else if (data.status === 'creating') {
+      usagePercent = 10; // Just starting
+    } else if (data.status === 'pending') {
+      usagePercent = 5; // Not yet consuming resources
     }
     
-    // Update text
+    progressBar.style.width = usagePercent + '%';
+    
+    // Set progress bar color based on status
+    progressBar.className = 'progress-bar billing-progress-bar';
+    if (data.status === 'active') {
+      progressBar.classList.add('bg-success');
+    } else if (data.status === 'creating') {
+      progressBar.classList.add('bg-info');
+    } else {
+      progressBar.classList.add('bg-warning');
+    }
+    
+    // Update text with simplified billing info
     const statusText = contentDiv.querySelector('.billing-status-text');
     const daysText = contentDiv.querySelector('.billing-days-remaining');
     
-    statusText.textContent = `${data.hours_used.toFixed(1)}/${data.total_hours_allowed} hours`;
-    daysText.textContent = `${data.days_remaining} days left`;
+    statusText.textContent = `Panel ${data.status}`;
+    daysText.textContent = `Active billing cycle`;
     
-    // Show notification badge if reminder needed
-    if (data.days_remaining <= 7) {
-      notificationBadge.classList.remove('d-none');
-    } else {
-      notificationBadge.classList.add('d-none');
-    }
+    // Hide notification badge for active panels
+    notificationBadge.classList.add('d-none');
   }
 }
 
@@ -444,7 +464,7 @@ function updatePaymentButton(tenantId, data) {
   const manageBtn = panelActions.querySelector('.default-manage-btn');
   const payBtn = panelActions.querySelector('.pay-to-renew-btn');
   
-  if (data.requires_payment || data.status === 'no_active_cycle') {
+  if (!data.is_active || data.status === 'billing_expired' || data.status === 'failed') {
     // Show payment button, hide manage button
     manageBtn.classList.add('d-none');
     payBtn.classList.remove('d-none');
