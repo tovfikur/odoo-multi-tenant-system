@@ -11,7 +11,15 @@ import logging
 billing_bp = Blueprint('billing', __name__, url_prefix='/billing')
 logger = logging.getLogger(__name__)
 
-billing_service = BillingService()
+# Initialize billing service lazily to avoid import-time issues
+billing_service = None
+
+def get_billing_service():
+    """Get billing service instance, create if needed"""
+    global billing_service
+    if billing_service is None:
+        billing_service = BillingService()
+    return billing_service
 
 @billing_bp.route('/panel/<int:tenant_id>/info')
 @login_required
@@ -27,7 +35,7 @@ def panel_billing_info(tenant_id):
             if not tenant_user:
                 return jsonify({'error': 'Access denied'}), 403
         
-        billing_info = billing_service.get_tenant_billing_info(tenant_id)
+        billing_info = get_billing_service().get_tenant_billing_info(tenant_id)
         
         if not billing_info:
             return jsonify({'error': 'Billing information not found'}), 404
@@ -58,7 +66,7 @@ def initiate_payment(tenant_id):
             flash('Panel not found', 'error')
             return redirect(url_for('main.dashboard'))
         
-        billing_info = billing_service.get_tenant_billing_info(tenant_id)
+        billing_info = get_billing_service().get_tenant_billing_info(tenant_id)
         
         # Get payment amount from plan or default
         amount = 50.00  # Default amount, you can make this configurable
@@ -111,7 +119,7 @@ def process_payment(tenant_id):
         }
         
         # Process the payment
-        payment = billing_service.process_payment(tenant_id, payment_data)
+        payment = get_billing_service().process_payment(tenant_id, payment_data)
         
         flash('Payment processed successfully! Your panel has been reactivated.', 'success')
         return redirect(url_for('main.dashboard'))
@@ -144,7 +152,7 @@ def payment_callback(tenant_id):
                 'response': callback_data
             }
             
-            billing_service.process_payment(tenant_id, payment_data)
+            get_billing_service().process_payment(tenant_id, payment_data)
             
         return jsonify({'status': 'received'})
         
@@ -229,7 +237,7 @@ def admin_billing_logs():
         tenant_id = request.args.get('tenant_id')
         
         # Get billing logs
-        logs = billing_service.get_admin_billing_logs(tenant_id)
+        logs = get_billing_service().get_admin_billing_logs(tenant_id)
         
         # Get all tenants for filter dropdown
         tenants = Tenant.query.order_by(Tenant.name).all()
@@ -338,7 +346,7 @@ def cron_hourly_tracking():
         if auth_token != expected_token:
             return jsonify({'error': 'Unauthorized'}), 401
         
-        billing_service.track_hourly_usage()
+        get_billing_service().track_hourly_usage()
         
         return jsonify({
             'status': 'success',

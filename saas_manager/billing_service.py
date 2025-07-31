@@ -17,7 +17,21 @@ class BillingService:
     """Service to handle usage-based billing operations"""
     
     def __init__(self):
-        self.db_manager = OdooDatabaseManager()
+        self.db_manager = None  # Initialize lazily when needed
+    
+    def get_db_manager(self):
+        """Get database manager, initialize if needed"""
+        if self.db_manager is None:
+            try:
+                # Initialize with default values or from config
+                from flask import current_app
+                odoo_url = current_app.config.get('ODOO_MASTER_URL', 'http://odoo_master:8069')
+                master_pwd = current_app.config.get('ODOO_MASTER_PASSWORD', 'admin')
+                self.db_manager = OdooDatabaseManager(odoo_url, master_pwd)
+            except Exception as e:
+                logger.warning(f"Could not initialize OdooDatabaseManager: {e}")
+                self.db_manager = None
+        return self.db_manager
     
     def create_billing_cycle(self, tenant_id):
         """Create a new billing cycle for a tenant"""
@@ -140,7 +154,12 @@ class BillingService:
                 return False
             
             # Try to ping the database
-            return self.db_manager.check_database_exists(tenant.database_name)
+            db_manager = self.get_db_manager()
+            if db_manager:
+                return db_manager.check_database_exists(tenant.database_name)
+            else:
+                # If db_manager not available, fall back to checking status
+                return tenant.is_active and tenant.status == 'active'
             
         except Exception as e:
             logger.warning(f"Could not check database status for {tenant.name}: {str(e)}")
