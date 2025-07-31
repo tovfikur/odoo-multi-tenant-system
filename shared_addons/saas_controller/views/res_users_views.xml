@@ -12,11 +12,10 @@
                     <div>
                         <strong>User Limits:</strong>
                         <span class="ml-2">
-                            Current: <t t-esc="context.get('current_users', 0)"/> / 
-                            Max: <t t-esc="context.get('max_users', 10)"/> users
+                            User limit monitoring is active
                         </span>
                         <span class="ml-3 text-muted">
-                            (<t t-esc="context.get('remaining_users', 0)"/> slots available)
+                            (Check SaaS Controller configuration for details)
                         </span>
                     </div>
                 </div>

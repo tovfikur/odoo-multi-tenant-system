@@ -136,6 +136,36 @@ Use the new Odoo 17.0 syntax for conditional attributes:
 
 ---
 
+## ❌ **Error 5: Forbidden OWL Directive (Odoo 17.0+)**
+
+### **Error Message:**
+```
+Forbidden owl directive used in arch (t-esc).
+```
+
+### **Problem:**
+```xml
+<span>Current: <t t-esc="context.get('current_users', 0)"/> users</span>
+<!-- QWeb template syntax not allowed in regular views -->
+```
+
+### **Solution:**
+Replace QWeb template directives with regular text or field references:
+```xml
+<!-- ❌ Bad: QWeb template syntax -->
+<span>Current: <t t-esc="context.get('current_users', 0)"/> users</span>
+
+<!-- ✅ Good: Regular text -->
+<span>User limit monitoring is active</span>
+
+<!-- ✅ Good: Field reference (if field exists) -->
+<span><field name="current_users"/> users</span>
+```
+
+**Note:** QWeb directives like `t-esc`, `t-if`, `t-foreach` are only allowed in QWeb templates, not in regular Odoo views.
+
+---
+
 ## ✅ **Best Practices for Odoo Views**
 
 ### **1. Label Usage**
