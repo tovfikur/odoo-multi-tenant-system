@@ -1,63 +1,83 @@
 {% extends "base.html" %} {% block title %}Billing Dashboard - {{
-current_user.company_name or 'Khudroo' }}{% endblock %} 
-
-{% block extra_head %}
+current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
 <style>
-.billing-status-active { animation: pulse-green 2s infinite; }
-.billing-status-warning { animation: pulse-orange 2s infinite; }
-.billing-status-expired { animation: pulse-red 2s infinite; }
-
-@keyframes pulse-green {
-  0% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(40, 167, 69, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(40, 167, 69, 0); }
-}
-
-@keyframes pulse-orange {
-  0% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(255, 193, 7, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 193, 7, 0); }
-}
-
-@keyframes pulse-red {
-  0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
-  70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
-}
-
-.next-billing-info {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 15px;
-  padding: 1rem;
-  margin-bottom: 1rem;
-}
-
-.domain-link:hover {
-  text-decoration: underline !important;
-  color: #0d6efd !important;
-}
-
-/* Dark mode compatibility */
-@media (prefers-color-scheme: dark) {
-  .card {
-    background-color: var(--bs-dark) !important;
-    border: 1px solid rgba(255, 255, 255, 0.125) !important;
+  .billing-status-active {
+    animation: pulse-green 2s infinite;
   }
-  
+  .billing-status-warning {
+    animation: pulse-orange 2s infinite;
+  }
+  .billing-status-expired {
+    animation: pulse-red 2s infinite;
+  }
+
+  @keyframes pulse-green {
+    0% {
+      box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+    }
+  }
+
+  @keyframes pulse-orange {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+    }
+  }
+
+  @keyframes pulse-red {
+    0% {
+      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+  }
+
   .next-billing-info {
-    background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%) !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 15px;
+    padding: 1rem;
+    margin-bottom: 1rem;
   }
-  
-  .bg-light {
-    background-color: var(--bs-dark) !important;
-  }
-}
-</style>
-{% endblock %}
 
-{% block content %}
-<div class="min-vh-100" style="background-color: var(--bs-body-bg);">
+  .domain-link:hover {
+    text-decoration: underline !important;
+    color: #0d6efd !important;
+  }
+
+  /* Dark mode compatibility */
+  @media (prefers-color-scheme: dark) {
+    .card {
+      background-color: var(--bs-dark) !important;
+      border: 1px solid rgba(255, 255, 255, 0.125) !important;
+    }
+
+    .next-billing-info {
+      background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%) !important;
+    }
+
+    .bg-light {
+      background-color: var(--bs-dark) !important;
+    }
+  }
+</style>
+{% endblock %} {% block content %}
+<div class="min-vh-100">
   <div class="container-fluid px-4 py-4">
     <!-- Dashboard Header -->
     <div class="row mb-4">
@@ -71,7 +91,7 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                 </div>
                 <div>
                   <h1 class="mb-0 fw-bold fs-2">Billing Dashboard</h1>
-                  <p class="mb-0 opacity-75 fs-6">
+                  <p class="mb-0 opacity-75 fs-6 text-muted">
                     Real-time billing analytics and panel management
                   </p>
                 </div>
@@ -190,9 +210,7 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
           </div>
         </div>
       </div>
-      {% endif %}
-
-      {% if billing_summary.get('expired_tenants', 0) > 0 %}
+      {% endif %} {% if billing_summary.get('expired_tenants', 0) > 0 %}
       <div class="col-xl-3 col-lg-6 col-md-6">
         <div class="card border-0 shadow-sm h-100">
           <div class="card-body p-4">
@@ -287,9 +305,11 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
     </div>
 
     <!-- Next Billing Info -->
-    {% if tenants and tenants|length > 0 %}
-    {% set next_expiring = tenants|selectattr('billing_info')|selectattr('billing_status', 'in', ['active', 'expiring_soon'])|sort(attribute='billing_info.days_remaining')|first %}
-    {% if next_expiring and next_expiring.billing_info %}
+    {% if tenants and tenants|length > 0 %} {% set next_expiring =
+    tenants|selectattr('billing_info')|selectattr('billing_status', 'in',
+    ['active',
+    'expiring_soon'])|sort(attribute='billing_info.days_remaining')|first %} {%
+    if next_expiring and next_expiring.billing_info %}
     <div class="row mb-4">
       <div class="col-12">
         <div class="next-billing-info">
@@ -302,20 +322,24 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                 <div>
                   <h6 class="mb-0 fw-bold">Next Billing Cycle</h6>
                   <p class="mb-0 opacity-75 small">
-                    <strong>{{ next_expiring.name }}</strong> expires in 
-                    {% if next_expiring.billing_info.get('days_remaining', 0) > 0 %}
-                      {{ next_expiring.billing_info.get('days_remaining') }} days
-                    {% else %}
-                      {{ next_expiring.billing_info.get('hours_remaining', 0)|round(0) }} hours
-                    {% endif %}
-                    on {% if next_expiring.billing_info.get('cycle_end') %}{{ next_expiring.billing_info.get('cycle_end')|string|truncate(10, True, '') }}{% else %}Unknown{% endif %}
+                    <strong>{{ next_expiring.name }}</strong> expires in {% if
+                    next_expiring.billing_info.get('days_remaining', 0) > 0 %}
+                    {{ next_expiring.billing_info.get('days_remaining') }} days
+                    {% else %} {{
+                    next_expiring.billing_info.get('hours_remaining',
+                    0)|round(0) }} hours {% endif %} on {% if
+                    next_expiring.billing_info.get('cycle_end') %}{{
+                    next_expiring.billing_info.get('cycle_end')|string|truncate(10,
+                    True, '') }}{% else %}Unknown{% endif %}
                   </p>
                 </div>
               </div>
             </div>
             <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
-              <a href="{{ url_for('billing.initiate_payment', tenant_id=next_expiring.id) }}" 
-                 class="btn btn-light btn-sm">
+              <a
+                href="{{ url_for('billing.initiate_payment', tenant_id=next_expiring.id) }}"
+                class="btn btn-light btn-sm"
+              >
                 <i class="fas fa-credit-card me-1"></i>Renew Early
               </a>
             </div>
@@ -323,8 +347,7 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
         </div>
       </div>
     </div>
-    {% endif %}
-    {% endif %}
+    {% endif %} {% endif %}
 
     <!-- Main Content -->
     <div class="row">
@@ -403,7 +426,11 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                         <h6 class="mb-1 fw-bold">{{ tenant.name }}</h6>
                         <small class="text-muted">
                           <i class="fas fa-globe me-1"></i>
-                          <a href="{{ tenant.domain_url }}" target="_blank" class="text-decoration-none text-muted domain-link">
+                          <a
+                            href="{{ tenant.domain_url }}"
+                            target="_blank"
+                            class="text-decoration-none text-muted domain-link"
+                          >
                             {{ tenant.subdomain }}.{{ request.host }}
                           </a>
                         </small>
@@ -416,10 +443,8 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                           <span
                             class="badge bg-info bg-opacity-25 text-info ms-1"
                           >
-                            {% if tenant.plan and tenant.plan.strip() %}
-                              {{ tenant.plan.title() }} Plan
-                            {% else %}
-                              Standard Plan
+                            {% if tenant.plan and tenant.plan.strip() %} {{
+                            tenant.plan.title() }} Plan {% else %} Standard Plan
                             {% endif %}
                           </span>
                         </div>
@@ -430,11 +455,15 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                   <!-- Usage Progress -->
                   <div class="col-lg-4">
                     <div class="text-center">
-                      {% if tenant.billing_info and tenant.billing_info.get('total_hours_allowed') %}
-                      {% set hours_used = tenant.billing_info.get('hours_used', 0) %}
-                      {% set total_hours = tenant.billing_info.get('total_hours_allowed', 360) %}
-                      {% set usage_percent = (hours_used / total_hours * 100) if total_hours > 0 else 0 %}
-                      {% set progress_class = 'bg-success' if usage_percent < 70 else 'bg-warning' if usage_percent < 90 else 'bg-danger' %}
+                      {% if tenant.billing_info and
+                      tenant.billing_info.get('total_hours_allowed') %} {% set
+                      hours_used = tenant.billing_info.get('hours_used', 0) %}
+                      {% set total_hours =
+                      tenant.billing_info.get('total_hours_allowed', 360) %} {%
+                      set usage_percent = (hours_used / total_hours * 100) if
+                      total_hours > 0 else 0 %} {% set progress_class =
+                      'bg-success' if usage_percent < 70 else 'bg-warning' if
+                      usage_percent < 90 else 'bg-danger' %}
                       <div class="progress mb-2" style="height: 8px">
                         <div
                           class="progress-bar {{ progress_class }}"
@@ -446,23 +475,29 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                       <div class="d-flex justify-content-between">
                         <small class="text-muted">
                           <i class="fas fa-clock me-1"></i>
-                          {% if tenant.billing_info.get('days_remaining', 0) > 0 %}
-                            {{ tenant.billing_info.get('days_remaining') }}d left
-                          {% elif tenant.billing_info.get('hours_remaining', 0) > 0 %}
-                            {{ tenant.billing_info.get('hours_remaining')|round(0) }}h left
-                          {% else %}
-                            Expired
-                          {% endif %}
+                          {% if tenant.billing_info.get('days_remaining', 0) > 0
+                          %} {{ tenant.billing_info.get('days_remaining') }}d
+                          left {% elif
+                          tenant.billing_info.get('hours_remaining', 0) > 0 %}
+                          {{ tenant.billing_info.get('hours_remaining')|round(0)
+                          }}h left {% else %} Expired {% endif %}
                         </small>
-                        <small class="text-muted">{{ hours_used|round(1) }}h/{{ total_hours }}h</small>
+                        <small class="text-muted"
+                          >{{ hours_used|round(1) }}h/{{ total_hours }}h</small
+                        >
                       </div>
                       {% else %}
                       <div class="progress mb-2" style="height: 8px">
-                        <div class="progress-bar bg-secondary" role="progressbar" style="width: 0%"></div>
+                        <div
+                          class="progress-bar bg-secondary"
+                          role="progressbar"
+                          style="width: 0%"
+                        ></div>
                       </div>
                       <div class="d-flex justify-content-between">
                         <small class="text-muted">
-                          <i class="fas fa-question-circle me-1"></i>No billing data
+                          <i class="fas fa-question-circle me-1"></i>No billing
+                          data
                         </small>
                         <small class="text-muted">-/-</small>
                       </div>
@@ -480,7 +515,9 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                       >
                         <i class="fas fa-cog me-1"></i>Manage
                       </a>
-                      {% if tenant.billing_status == 'expired' or (tenant.billing_info and tenant.billing_info.get('requires_payment')) %}
+                      {% if tenant.billing_status == 'expired' or
+                      (tenant.billing_info and
+                      tenant.billing_info.get('requires_payment')) %}
                       <a
                         href="{{ url_for('billing.initiate_payment', tenant_id=tenant.id) }}"
                         class="btn btn-warning btn-sm flex-fill flex-lg-grow-0"
@@ -504,8 +541,8 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                       >
                         <i class="fas fa-sync fa-spin me-1"></i>Initializing
                       </button>
-                      {% endif %}
-                      {% if tenant.is_active and tenant.billing_status not in ['expired', 'pending'] %}
+                      {% endif %} {% if tenant.is_active and
+                      tenant.billing_status not in ['expired', 'pending'] %}
                       <a
                         href="{{ tenant.domain_url }}"
                         target="_blank"
@@ -605,10 +642,11 @@ current_user.company_name or 'Khudroo' }}{% endblock %}
                   <small class="text-muted d-block">
                     <i class="fas fa-user me-1"></i>{{ transaction.user.name }}
                   </small>
-                  {% endif %}
-                  {% if transaction.tenant and transaction.tenant.subdomain %}
+                  {% endif %} {% if transaction.tenant and
+                  transaction.tenant.subdomain %}
                   <small class="text-muted d-block">
-                    <i class="fas fa-globe me-1"></i>{{ transaction.tenant.subdomain }}.{{ request.host }}
+                    <i class="fas fa-globe me-1"></i>{{
+                    transaction.tenant.subdomain }}.{{ request.host }}
                   </small>
                   {% endif %}
                   <div class="mt-1">
