@@ -1,36 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-
-
-    <!-- Backend Custom CSS -->
-    <template id="custom_backend_css" name="Custom Backend CSS" inherit_id="web.assets_backend">
-        <xpath expr="." position="inside">
-            <style id="saas_controller_dynamic_css">
-                /* SaaS Controller Custom Branding CSS */
-                .o_sub_menu_footer,
-                .powered_by,
-                [data-section="about"] .oe_instance_title,
-                .oe_instance_title {
-                    display: none !important;
-                }
-                
-                /* Custom color variables */
-                :root {
-                    --saas-primary-color: #017e84;
-                    --saas-secondary-color: #875a7b;
-                    --saas-accent-color: #017e84;
-                }
-                
-                /* SaaS Controller Dynamic CSS - populated by the controller */
-                .o_main_navbar {
-                    background-color: var(--saas-primary-color, #017e84) !important;
-                }
-                
-                .btn-primary {
-                    background-color: var(--saas-primary-color, #017e84) !important;
-                    border-color: var(--saas-primary-color, #017e84) !important;
-                }
-            </style>
-        </xpath>
-    </template>
+    <!-- No templates - web asset bundles don't exist in this Odoo setup -->
 </odoo>
