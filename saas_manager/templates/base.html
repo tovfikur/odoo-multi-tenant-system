@@ -137,6 +137,17 @@
             </li>
 
             <li class="nav-item">
+              <a
+                class="nav-link"
+                href="{{ url_for('billing_overview') }}"
+                data-tooltip="View Billing & Transactions"
+                >
+                <i class="fas fa-file-invoice-dollar"></i>
+                <span>Billing</span>
+                </a>
+            </li>
+
+            <li class="nav-item">
               <a class="nav-link" href="{{ url_for('support.tickets') }}">
                 <i class="fas fa-headset"></i> Support
               </a>

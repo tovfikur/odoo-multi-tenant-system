@@ -1,0 +1,498 @@
+{% extends "base.html" %}
+{% block title %}Billing Overview - Khudroo{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Beautiful Billing Overview Styles */
+.billing-overview-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 20px 20px;
+}
+
+.summary-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.summary-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+}
+
+.summary-card .card-body {
+    padding: 2rem;
+}
+
+.summary-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.summary-value {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.tenant-billing-card {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.tenant-billing-card:hover {
+    box-shadow: 0 10px 25px rgba(0,0,0,0.12);
+    transform: translateY(-2px);
+}
+
+.tenant-status-badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.billing-progress {
+    height: 8px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #e9ecef;
+}
+
+.billing-progress .progress-bar {
+    border-radius: 10px;
+    transition: all 0.5s ease;
+}
+
+.transaction-card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    margin-bottom: 1rem;
+    transition: all 0.2s ease;
+}
+
+.transaction-card:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.transaction-status {
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.transaction-amount {
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+
+.section-header {
+    background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-tertiary) 100%);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--border-primary);
+}
+
+.filter-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.billing-chart-container {
+    position: relative;
+    height: 300px;
+    background: white;
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .summary-value {
+        font-size: 2rem;
+    }
+    
+    .billing-overview-header {
+        padding: 1.5rem 0;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Billing Overview Header -->
+<div class="billing-overview-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="mb-0"><i class="fas fa-file-invoice-dollar me-3"></i>Billing Overview</h1>
+                <p class="mb-0 opacity-75">Complete billing status and transaction history for all your panels</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="d-flex gap-2 justify-content-end">
+                    <button class="btn btn-light" onclick="window.print()">
+                        <i class="fas fa-print me-2"></i>Print Report
+                    </button>
+                    <button class="btn btn-success" onclick="exportToPDF()">
+                        <i class="fas fa-file-pdf me-2"></i>Export PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <!-- Billing Summary Cards -->
+    <div class="row g-4 mb-5">
+        <div class="col-lg-3 col-md-6">
+            <div class="summary-card h-100">
+                <div class="card-body text-center">
+                    <div class="summary-icon bg-primary bg-opacity-10 text-primary mx-auto">
+                        <i class="fas fa-server"></i>
+                    </div>
+                    <div class="summary-value text-primary">{{ billing_summary.total_tenants }}</div>
+                    <h6 class="text-muted mb-0">Total Panels</h6>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="summary-card h-100">
+                <div class="card-body text-center">
+                    <div class="summary-icon bg-success bg-opacity-10 text-success mx-auto">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <div class="summary-value text-success">{{ billing_summary.active_tenants }}</div>
+                    <h6 class="text-muted mb-0">Active Panels</h6>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="summary-card h-100">
+                <div class="card-body text-center">
+                    <div class="summary-icon bg-info bg-opacity-10 text-info mx-auto">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div class="summary-value text-info">${{ "%.2f"|format(billing_summary.total_spent) }}</div>
+                    <h6 class="text-muted mb-0">Total Spent</h6>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6">
+            <div class="summary-card h-100">
+                <div class="card-body text-center">
+                    <div class="summary-icon bg-warning bg-opacity-10 text-warning mx-auto">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="summary-value text-warning">{{ billing_summary.pending_payments }}</div>
+                    <h6 class="text-muted mb-0">Pending Payments</h6>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-card">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h5 class="mb-0"><i class="fas fa-filter me-2"></i>Filter & Search</h5>
+            </div>
+            <div class="col-md-6">
+                <div class="row g-2">
+                    <div class="col-6">
+                        <select class="form-select" id="statusFilter">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="inactive">Inactive</option>
+                            <option value="creating">Creating</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <input type="text" class="form-control" id="searchInput" placeholder="Search panels...">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Panel Billing Status Section -->
+        <div class="col-lg-8">
+            <div class="section-header">
+                <h4 class="mb-0"><i class="fas fa-server me-2"></i>Panel Billing Status</h4>
+                <small class="text-muted">Real-time billing information for all your panels</small>
+            </div>
+            
+            <div id="panelBillingContainer">
+                {% for tenant in tenants %}
+                <div class="tenant-billing-card" data-tenant-id="{{ tenant.id }}" data-status="{{ tenant.status }}">
+                    <div class="card-body">
+                        <div class="row align-items-center">
+                            <div class="col-md-6">
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <div class="p-2 rounded-circle" style="background: {% if tenant.is_active %}rgba(40, 167, 69, 0.1){% else %}rgba(220, 53, 69, 0.1){% endif %};">
+                                            <i class="fas {% if tenant.is_active %}fa-check-circle text-success{% else %}fa-times-circle text-danger{% endif %}"></i>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <h6 class="mb-1 fw-bold">{{ tenant.name }}</h6>
+                                        <small class="text-muted">{{ tenant.subdomain }}.domain.com</small>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <span class="tenant-status-badge bg-{% if tenant.is_active %}success{% else %}danger{% endif %} text-white">
+                                        {% if tenant.is_active %}Active{% else %}Inactive{% endif %}
+                                    </span>
+                                    <div class="small text-muted mt-1">{{ tenant.plan.title() }} Plan</div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <div class="billing-info" data-tenant-id="{{ tenant.id }}">
+                                    <div class="text-center">
+                                        <div class="billing-progress mb-2">
+                                            <div class="progress-bar bg-success" style="width: 30%"></div>
+                                        </div>
+                                        <small class="text-muted billing-status-text">Loading...</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-3">
+                            <div class="row g-2">
+                                <div class="col-6">
+                                    <a href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}" class="btn btn-outline-primary btn-sm w-100">
+                                        <i class="fas fa-cog me-1"></i>Manage
+                                    </a>
+                                </div>
+                                <div class="col-6">
+                                    {% if not tenant.is_active %}
+                                    <form action="{{ url_for('initiate_payment_route', tenant_id=tenant.id) }}" method="POST" class="w-100">
+                                        {{ csrf_token() }}
+                                        <button type="submit" class="btn btn-warning btn-sm w-100">
+                                            <i class="fas fa-credit-card me-1"></i>Pay to Renew
+                                        </button>
+                                    </form>
+                                    {% else %}
+                                    <a href="kdoo_{{ tenant.subdomain }}.domain.com" target="_blank" class="btn btn-success btn-sm w-100">
+                                        <i class="fas fa-external-link-alt me-1"></i>Open Panel
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Transaction History Section -->
+        <div class="col-lg-4">
+            <div class="section-header">
+                <h4 class="mb-0"><i class="fas fa-receipt me-2"></i>Recent Transactions</h4>
+                <small class="text-muted">Latest payment activity</small>
+            </div>
+            
+            <div style="max-height: 600px; overflow-y: auto;">
+                {% for transaction in transactions %}
+                <div class="transaction-card">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h6 class="mb-1">{{ transaction.get_tenant_name() }}</h6>
+                                <small class="text-muted">{{ transaction.transaction_id }}</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="transaction-amount text-{% if transaction.status == 'VALIDATED' %}success{% elif transaction.status == 'PENDING' %}warning{% else %}danger{% endif %}">
+                                    ${{ "%.2f"|format(transaction.amount) }}
+                                </div>
+                                <small class="text-muted">{{ transaction.currency }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="transaction-status bg-{% if transaction.status == 'VALIDATED' %}success{% elif transaction.status == 'PENDING' %}warning{% else %}danger{% endif %} text-white">
+                                {{ transaction.status }}
+                            </span>
+                            <small class="text-muted">
+                                {{ transaction.created_at.strftime('%b %d, %Y') if transaction.created_at else 'N/A' }}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not transactions %}
+                <div class="text-center py-5">
+                    <i class="fas fa-receipt fa-3x text-muted mb-3"></i>
+                    <h6 class="text-muted">No transactions yet</h6>
+                    <p class="text-muted">Your payment history will appear here</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Load billing information for all panels on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAllBillingInfo();
+    
+    // Set up filters
+    setupFilters();
+    
+    // Auto-refresh every 60 seconds
+    setInterval(loadAllBillingInfo, 60000);
+});
+
+// Function to load billing info for all panels
+function loadAllBillingInfo() {
+    const billingInfoElements = document.querySelectorAll('.billing-info[data-tenant-id]');
+    
+    billingInfoElements.forEach(element => {
+        const tenantId = element.dataset.tenantId;
+        loadPanelBillingInfo(tenantId, element);
+    });
+}
+
+// Function to load billing info for a specific panel
+function loadPanelBillingInfo(tenantId, element) {
+    fetch(`/api/tenant/${tenantId}/status`)
+        .then(response => response.json())
+        .then(data => {
+            updatePanelBillingDisplay(element, data);
+        })
+        .catch(error => {
+            console.error('Error loading billing info for tenant', tenantId, error);
+            element.querySelector('.billing-status-text').textContent = 'Error loading';
+        });
+}
+
+// Function to update panel billing display
+function updatePanelBillingDisplay(element, data) {
+    const progressBar = element.querySelector('.progress-bar');
+    const statusText = element.querySelector('.billing-status-text');
+    
+    if (!data.is_active || data.status === 'billing_expired') {
+        // Expired state
+        progressBar.style.width = '100%';
+        progressBar.className = 'progress-bar bg-danger';
+        statusText.textContent = 'Billing Expired';
+    } else {
+        // Active state - calculate estimated usage
+        const created = new Date(data.created_at);
+        const now = new Date();
+        const daysSinceCreated = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+        
+        let estimatedHours = 0;
+        if (data.status === 'active') {
+            estimatedHours = Math.min(daysSinceCreated * 12, 360);
+        } else if (data.status === 'creating') {
+            estimatedHours = Math.min(daysSinceCreated * 2, 50);
+        } else {
+            estimatedHours = Math.min(daysSinceCreated * 5, 100);
+        }
+        
+        const usagePercent = (estimatedHours / 360) * 100;
+        const daysRemaining = Math.ceil((360 - estimatedHours) / 12);
+        
+        progressBar.style.width = Math.min(usagePercent, 100) + '%';
+        
+        if (usagePercent > 80) {
+            progressBar.className = 'progress-bar bg-danger';
+        } else if (usagePercent > 60) {
+            progressBar.className = 'progress-bar bg-warning';
+        } else {
+            progressBar.className = 'progress-bar bg-success';
+        }
+        
+        statusText.textContent = `${daysRemaining} days left`;
+    }
+}
+
+// Function to setup filters
+function setupFilters() {
+    const statusFilter = document.getElementById('statusFilter');
+    const searchInput = document.getElementById('searchInput');
+    
+    statusFilter.addEventListener('change', filterPanels);
+    searchInput.addEventListener('input', filterPanels);
+}
+
+// Function to filter panels
+function filterPanels() {
+    const statusFilter = document.getElementById('statusFilter').value;
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const panelCards = document.querySelectorAll('.tenant-billing-card');
+    
+    panelCards.forEach(card => {
+        const cardStatus = card.dataset.status;
+        const cardText = card.textContent.toLowerCase();
+        
+        const matchesStatus = !statusFilter || cardStatus === statusFilter;
+        const matchesSearch = !searchTerm || cardText.includes(searchTerm);
+        
+        if (matchesStatus && matchesSearch) {
+            card.style.display = 'block';
+            card.style.animation = 'fadeInUp 0.3s ease';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+}
+
+// Function to export to PDF (placeholder)
+function exportToPDF() {
+    alert('PDF export functionality will be implemented soon!');
+}
+
+// CSS animation keyframes
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

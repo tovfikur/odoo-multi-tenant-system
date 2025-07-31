@@ -3286,6 +3286,59 @@ def delete_avatar():
         error_tracker.log_error(e, {'user_id': current_user.id})
         return jsonify({'error': 'Failed to delete avatar'}), 500
 
+@app.route('/billing/overview')
+@login_required
+@track_errors('billing_overview_route')
+def billing_overview():
+    """Billing overview page showing all tenant billing status and transaction logs"""
+    try:
+        # Get all tenants for the current user
+        if current_user.is_admin:
+            # Admin can see all tenants
+            tenants = Tenant.query.order_by(Tenant.created_at.desc()).all()
+        else:
+            # Regular user sees only their tenants
+            tenant_users = TenantUser.query.filter_by(user_id=current_user.id).all()
+            tenant_ids = [tu.tenant_id for tu in tenant_users]
+            tenants = Tenant.query.filter(Tenant.id.in_(tenant_ids)).order_by(Tenant.created_at.desc()).all()
+        
+        # Get payment transactions for the user's tenants
+        tenant_ids = [t.id for t in tenants]
+        
+        if current_user.is_admin:
+            # Admin sees all transactions
+            transactions = PaymentTransaction.query.order_by(PaymentTransaction.created_at.desc()).limit(50).all()
+        else:
+            # User sees only their transactions
+            transactions = PaymentTransaction.query.filter(
+                PaymentTransaction.user_id == current_user.id
+            ).order_by(PaymentTransaction.created_at.desc()).limit(50).all()
+        
+        # Calculate billing summary
+        total_tenants = len(tenants)
+        active_tenants = len([t for t in tenants if t.is_active])
+        total_spent = sum([t.amount for t in transactions if t.status == 'VALIDATED'])
+        pending_payments = len([t for t in transactions if t.status == 'PENDING'])
+        
+        billing_summary = {
+            'total_tenants': total_tenants,
+            'active_tenants': active_tenants,
+            'inactive_tenants': total_tenants - active_tenants,
+            'total_spent': total_spent,
+            'pending_payments': pending_payments,
+            'recent_transactions': len(transactions)
+        }
+        
+        return render_template('billing/billing_overview.html', 
+                             tenants=tenants,
+                             transactions=transactions,
+                             billing_summary=billing_summary)
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'user_id': current_user.id, 'function': 'billing_overview'})
+        flash('Error loading billing overview. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
+
 # Add this after your app initialization in app.py
 
 @app.template_global()
