@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- SaaS Config Form View -->
+    <record id="view_saas_config_form" model="ir.ui.view">
+        <field name="name">saas.config.form</field>
+        <field name="model">saas.config</field>
+        <field name="arch" type="xml">
+            <form string="SaaS Configuration">
+                <header>
+                    <button name="sync_with_saas_manager" string="Sync with SaaS Manager" type="object" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="database_name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="max_users"/>
+                            <field name="current_users"/>
+                            <field name="is_active"/>
+                        </group>
+                        <group>
+                            <field name="saas_manager_url"/>
+                            <field name="last_sync" readonly="1"/>
+                        </group>
+                    </group>
+                    
+                    <!-- User Limit Progress Bar -->
+                    <group string="User Limit Status">
+                        <field name="current_users" invisible="1"/>
+                        <field name="max_users" invisible="1"/>
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar progress-bar-info" 
+                                         role="progressbar" 
+                                         style="width: 0%;"
+                                         attrs="{'style': 'width: ' + str(min(100, round((current_users or 0) / (max_users or 1) * 100, 1))) + '%'}">
+                                        <span class="progress-text">
+                                            <field name="current_users"/> / <field name="max_users"/> users
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- SaaS Config Tree View -->
+    <record id="view_saas_config_tree" model="ir.ui.view">
+        <field name="name">saas.config.tree</field>
+        <field name="model">saas.config</field>
+        <field name="arch" type="xml">
+            <tree string="SaaS Configurations">
+                <field name="database_name"/>
+                <field name="current_users"/>
+                <field name="max_users"/>
+                <field name="last_sync"/>
+                <field name="is_active"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- SaaS Config Action -->
+    <record id="action_saas_config" model="ir.actions.act_window">
+        <field name="name">SaaS Configuration</field>
+        <field name="res_model">saas.config</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure SaaS user limits for this tenant
+            </p>
+            <p>
+                Set maximum user limits and sync with SaaS Manager.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_saas_config"
+              name="SaaS Configuration"
+              parent="base.menu_administration"
+              action="action_saas_config"
+              sequence="100"
+              groups="base.group_system"/>
+</odoo>

@@ -480,6 +480,17 @@ def change_tenant_plan(tenant_id):
         tenant.storage_limit = plan.storage_limit
         db.session.commit()
         
+        # Sync user limits with Odoo instance
+        try:
+            from app import sync_tenant_user_limits
+            sync_result = sync_tenant_user_limits(tenant_id)
+            if sync_result:
+                logger.info(f"Successfully synced user limits for tenant {tenant_id} after plan change")
+            else:
+                logger.warning(f"Failed to sync user limits for tenant {tenant_id} after plan change")
+        except Exception as sync_error:
+            logger.warning(f"Error syncing user limits for tenant {tenant_id}: {sync_error}")
+        
         log_admin_action('tenant_plan_changed', {
             'tenant_id': tenant_id,
             'old_plan': old_plan,

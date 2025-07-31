@@ -121,6 +121,8 @@ services:
       - odoo_master_data:/var/lib/odoo
       - odoo_master_logs:/var/log/odoo
       - ./odoo_master/addons:/mnt/extra-addons
+      - ./shared_addons:/mnt/shared-addons
+      - odoo_filestore:/opt/odoo/filestore
       - ./odoo_master/config/odoo.conf:/etc/odoo/odoo.conf
       - ./branding:/opt/odoo/branding
       - ./branding/img/favicon.ico:/usr/lib/python3/dist-packages/odoo/addons/web/static/img/favicon.ico
@@ -155,6 +157,7 @@ services:
       - odoo_filestore:/var/lib/odoo
       - odoo_worker_logs:/var/log/odoo
       - ./odoo_workers/addons:/mnt/extra-addons
+      - ./shared_addons:/mnt/shared-addons
       - ./odoo_workers/config/odoo.conf:/etc/odoo/odoo.conf
       - ./branding:/opt/odoo/branding
       - ./branding/img/favicon.ico:/usr/lib/python3/dist-packages/odoo/addons/web/static/img/favicon.ico
@@ -181,6 +184,7 @@ services:
       - odoo_filestore:/var/lib/odoo
       - odoo_worker_logs:/var/log/odoo
       - ./odoo_workers/addons:/mnt/extra-addons
+      - ./shared_addons:/mnt/shared-addons
       - ./odoo_workers/config/odoo.conf:/etc/odoo/odoo.conf
       - ./branding:/opt/odoo/branding
       - ./branding/img/favicon.ico:/usr/lib/python3/dist-packages/odoo/addons/web/static/img/favicon.ico

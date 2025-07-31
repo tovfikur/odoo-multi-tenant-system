@@ -375,7 +375,7 @@ def admin_required(f):
 async def create_database(db_name, username='admin', password='admin',  modules=None, app=None):
     """Create Odoo database ONLY after successful payment"""
     
-    default_modules = ['base', 'web', 'auth_signup']
+    default_modules = ['base', 'web', 'auth_signup', 'saas_user_limit']
     if modules is None:
         modules = default_modules
     else:
@@ -473,6 +473,51 @@ async def create_database(db_name, username='admin', password='admin',  modules=
             except Exception as e:
                 logger.warning(f"Failed to check field {field} in {model}: {str(e)}")
                 return False
+        
+        # Initialize SaaS user limit configuration
+        try:
+            # Get tenant from database name
+            if db_name.startswith('kdoo_'):
+                subdomain = db_name[5:]  # Remove 'kdoo_' prefix
+                tenant = None
+                with app.app_context():
+                    tenant = Tenant.query.filter_by(subdomain=subdomain).first()
+                
+                if tenant:
+                    # Get max_users from tenant plan
+                    plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
+                    max_users = plan.max_users if plan else tenant.max_users or 10
+                    
+                    # Create or update SaaS config in Odoo
+                    try:
+                        # Check if saas.config model exists (should be installed with saas_user_limit module)
+                        model_exists = models.execute_kw(
+                            db_name, uid, password,
+                            'ir.model', 'search',
+                            [[['model', '=', 'saas.config']]]
+                        )
+                        
+                        if model_exists:
+                            # Create SaaS configuration
+                            config_id = models.execute_kw(
+                                db_name, uid, password,
+                                'saas.config', 'create',
+                                [{
+                                    'database_name': db_name,
+                                    'max_users': max_users,
+                                    'saas_manager_url': 'http://saas_manager:8000'
+                                }]
+                            )
+                            logger.info(f"Created SaaS config for {db_name} with max_users: {max_users}")
+                        else:
+                            logger.warning(f"saas.config model not found in {db_name}, user limits may not be enforced")
+                    except Exception as config_error:
+                        logger.warning(f"Failed to create SaaS config for {db_name}: {config_error}")
+                else:
+                    logger.warning(f"Tenant not found for database {db_name}")
+        except Exception as saas_config_error:
+            logger.warning(f"Failed to initialize SaaS user limit config for {db_name}: {saas_config_error}")
+        
         print("[✓] Odoo Database created successfully.")
 
         # Disable signup
@@ -2499,6 +2544,160 @@ def validate_subdomain_api(subdomain):
             'message': 'Error checking subdomain availability'
         }), 500
 
+@app.route('/api/tenant/<subdomain>/user-limit')
+@track_errors('get_tenant_user_limit_api')
+def get_tenant_user_limit_api(subdomain):
+    """API endpoint to get tenant user limit information for sync with Odoo"""
+    try:
+        # Find tenant by subdomain
+        tenant = Tenant.query.filter_by(subdomain=subdomain).first()
+        if not tenant:
+            return jsonify({
+                'success': False,
+                'error': 'Tenant not found'
+            }), 404
+        
+        # Get subscription plan details
+        plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
+        max_users = plan.max_users if plan else tenant.max_users
+        
+        # Get current user count from TenantUser table
+        current_user_count = TenantUser.query.filter_by(tenant_id=tenant.id).count()
+        
+        return jsonify({
+            'success': True,
+            'max_users': max_users,
+            'current_users': current_user_count,
+            'remaining_users': max(0, max_users - current_user_count),
+            'tenant_status': tenant.status,
+            'plan': tenant.plan
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'subdomain': subdomain, 'function': 'get_tenant_user_limit_api'})
+        return jsonify({
+            'success': False,
+            'error': 'Error retrieving user limit information'
+        }), 500
+
+@app.route('/api/tenant/<subdomain>/users')
+@track_errors('get_tenant_users_api')
+def get_tenant_users_api(subdomain):
+    """API endpoint to get tenant users information"""
+    try:
+        # Find tenant by subdomain
+        tenant = Tenant.query.filter_by(subdomain=subdomain).first()
+        if not tenant:
+            return jsonify({
+                'success': False,
+                'error': 'Tenant not found'
+            }), 404
+        
+        # Get users from TenantUser table
+        tenant_users = TenantUser.query.filter_by(tenant_id=tenant.id).all()
+        users_data = []
+        
+        for tu in tenant_users:
+            user = tu.user
+            users_data.append({
+                'id': user.id,
+                'username': user.username,
+                'email': user.email,
+                'role': tu.role,
+                'created_at': tu.created_at.isoformat() if tu.created_at else None
+            })
+        
+        return jsonify({
+            'success': True,
+            'users': users_data,
+            'total_users': len(users_data),
+            'max_users': tenant.max_users
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'subdomain': subdomain, 'function': 'get_tenant_users_api'})
+        return jsonify({
+            'success': False,
+            'error': 'Error retrieving tenant users'
+        }), 500
+
+@app.route('/api/tenant/<subdomain>/user-limit', methods=['PUT'])
+@track_errors('update_tenant_user_limit_api')
+def update_tenant_user_limit_api(subdomain):
+    """API endpoint to update tenant user limit"""
+    try:
+        # Find tenant by subdomain
+        tenant = Tenant.query.filter_by(subdomain=subdomain).first()
+        if not tenant:
+            return jsonify({
+                'success': False,
+                'error': 'Tenant not found'
+            }), 404
+        
+        data = request.get_json()
+        if not data or 'max_users' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'max_users parameter is required'
+            }), 400
+        
+        max_users = int(data['max_users'])
+        if max_users < 1:
+            return jsonify({
+                'success': False,
+                'error': 'max_users must be at least 1'
+            }), 400
+        
+        # Update tenant max_users
+        old_max_users = tenant.max_users
+        tenant.max_users = max_users
+        tenant.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        # Create audit log
+        try:
+            audit_log = AuditLog(
+                tenant_id=tenant.id,
+                action='user_limit_updated',
+                details={
+                    'old_max_users': old_max_users,
+                    'new_max_users': max_users,
+                    'updated_via': 'api'
+                },
+                ip_address=request.remote_addr,
+                user_agent=str(request.user_agent)
+            )
+            db.session.add(audit_log)
+            db.session.commit()
+        except Exception as audit_error:
+            logger.warning(f"Failed to create audit log for user limit update: {audit_error}")
+        
+        # Invalidate cache
+        invalidate_tenant_cache(tenant.id)
+        
+        logger.info(f"Updated user limit for tenant {subdomain} from {old_max_users} to {max_users}")
+        
+        return jsonify({
+            'success': True,
+            'message': 'User limit updated successfully',
+            'old_max_users': old_max_users,
+            'new_max_users': max_users
+        })
+        
+    except ValueError:
+        return jsonify({
+            'success': False,
+            'error': 'max_users must be a valid integer'
+        }), 400
+    except Exception as e:
+        db.session.rollback()
+        error_tracker.log_error(e, {'subdomain': subdomain, 'function': 'update_tenant_user_limit_api'})
+        return jsonify({
+            'success': False,
+            'error': 'Error updating user limit'
+        }), 500
+
 
 
 # Template filter for better status display
@@ -2610,6 +2809,77 @@ def delete_profile_picture(filename):
         return True
     except Exception as e:
         error_tracker.log_error(e, {'filename': filename, 'function': 'delete_profile_picture'})
+        return False
+
+@track_errors('sync_tenant_user_limits')
+def sync_tenant_user_limits(tenant_id):
+    """Sync user limits with Odoo instance when plan changes"""
+    try:
+        tenant = Tenant.query.get(tenant_id)
+        if not tenant:
+            logger.warning(f"Tenant {tenant_id} not found for user limit sync")
+            return False
+        
+        # Get plan details
+        plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
+        max_users = plan.max_users if plan else tenant.max_users
+        
+        # Update tenant max_users if it differs from plan
+        if tenant.max_users != max_users:
+            tenant.max_users = max_users
+            tenant.updated_at = datetime.utcnow()
+            db.session.commit()
+            logger.info(f"Updated tenant {tenant.subdomain} max_users to {max_users}")
+        
+        # Try to notify Odoo instance about the limit change
+        try:
+            import xmlrpc.client
+            
+            # Connect to Odoo and update SaaS config
+            odoo_url = os.environ.get('ODOO_URL', 'http://odoo_master:8069')
+            db_name = f"kdoo_{tenant.subdomain}"
+            
+            # Use admin credentials to update the config
+            common = xmlrpc.client.ServerProxy(f"{odoo_url}/xmlrpc/2/common")
+            uid = common.authenticate(db_name, tenant.admin_username, tenant.get_admin_password(), {})
+            
+            if uid:
+                models = xmlrpc.client.ServerProxy(f"{odoo_url}/xmlrpc/2/object")
+                
+                # Search for existing SaaS config
+                config_ids = models.execute_kw(
+                    db_name, uid, tenant.get_admin_password(),
+                    'saas.config', 'search',
+                    [[('database_name', '=', db_name)]]
+                )
+                
+                if config_ids:
+                    # Update existing config
+                    models.execute_kw(
+                        db_name, uid, tenant.get_admin_password(),
+                        'saas.config', 'write',
+                        [config_ids, {'max_users': max_users}]
+                    )
+                else:
+                    # Create new config
+                    models.execute_kw(
+                        db_name, uid, tenant.get_admin_password(),
+                        'saas.config', 'create',
+                        [{'database_name': db_name, 'max_users': max_users}]
+                    )
+                
+                logger.info(f"Successfully synced user limit {max_users} to Odoo for tenant {tenant.subdomain}")
+                return True
+            else:
+                logger.warning(f"Failed to authenticate with Odoo for tenant {tenant.subdomain}")
+                
+        except Exception as odoo_error:
+            logger.warning(f"Failed to sync user limit to Odoo for tenant {tenant.subdomain}: {odoo_error}")
+        
+        return True  # Return True even if Odoo sync failed, as SaaS Manager was updated
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'tenant_id': tenant_id, 'function': 'sync_tenant_user_limits'})
         return False
 
 # Add these routes to your app.py

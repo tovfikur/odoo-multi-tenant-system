@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add User Limit Info to Users Form -->
+    <record id="view_users_form_inherit" model="ir.ui.view">
+        <field name="name">res.users.form.inherit</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button name="action_show_user_limit_info" 
+                        string="User Limit Info" 
+                        type="object" 
+                        class="btn-secondary"
+                        groups="base.group_system"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add User Limit Info to Users List -->
+    <record id="view_users_tree_inherit" model="ir.ui.view">
+        <field name="name">res.users.tree.inherit</field>
+        <field name="model">res.users</field>
+        <field name="inherit_id" ref="base.view_users_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="attributes">
+                <attribute name="create">true</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- User Limit Dashboard Widget -->
+    <record id="user_limit_dashboard" model="ir.ui.view">
+        <field name="name">user.limit.dashboard</field>
+        <field name="model">res.users</field>
+        <field name="arch" type="xml">
+            <form string="User Limit Dashboard">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>User Limit Status</h1>
+                    </div>
+                    <group>
+                        <field name="get_user_limit_info" widget="progressbar"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>
