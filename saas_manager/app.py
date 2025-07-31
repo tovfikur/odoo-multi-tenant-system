@@ -399,7 +399,7 @@ def admin_required(f):
 async def create_database(db_name, username='admin', password='admin',  modules=None, app=None):
     """Create Odoo database ONLY after successful payment"""
     
-    default_modules = ['base', 'web', 'auth_signup', 'saas_user_limit', 'saas_controller']
+    default_modules = ['base', 'web', 'auth_signup', 'saas_controller']
     if modules is None:
         modules = default_modules
     else:
@@ -514,29 +514,29 @@ async def create_database(db_name, username='admin', password='admin',  modules=
                     
                     # Create or update SaaS config in Odoo
                     try:
-                        # Check if saas.config model exists (should be installed with saas_user_limit module)
+                        # Check if saas.controller model exists (should be installed with saas_controller module)
                         model_exists = models.execute_kw(
                             db_name, uid, password,
                             'ir.model', 'search',
-                            [[['model', '=', 'saas.config']]]
+                            [[['model', '=', 'saas.controller']]]
                         )
                         
                         if model_exists:
-                            # Create SaaS configuration
+                            # Create SaaS controller configuration
                             config_id = models.execute_kw(
                                 db_name, uid, password,
-                                'saas.config', 'create',
+                                'saas.controller', 'create',
                                 [{
                                     'database_name': db_name,
                                     'max_users': max_users,
                                     'saas_manager_url': 'http://saas_manager:8000'
                                 }]
                             )
-                            logger.info(f"Created SaaS config for {db_name} with max_users: {max_users}")
+                            logger.info(f"Created SaaS controller config for {db_name} with max_users: {max_users}")
                         else:
-                            logger.warning(f"saas.config model not found in {db_name}, user limits may not be enforced")
+                            logger.warning(f"saas.controller model not found in {db_name}, user limits may not be enforced")
                     except Exception as config_error:
-                        logger.warning(f"Failed to create SaaS config for {db_name}: {config_error}")
+                        logger.warning(f"Failed to create SaaS controller config for {db_name}: {config_error}")
                 else:
                     logger.warning(f"Tenant not found for database {db_name}")
         except Exception as saas_config_error:
@@ -3078,10 +3078,10 @@ def sync_tenant_user_limits(tenant_id):
             if uid:
                 models = xmlrpc.client.ServerProxy(f"{odoo_url}/xmlrpc/2/object")
                 
-                # Search for existing SaaS config
+                # Search for existing SaaS controller config
                 config_ids = models.execute_kw(
                     db_name, uid, tenant.get_admin_password(),
-                    'saas.config', 'search',
+                    'saas.controller', 'search',
                     [[('database_name', '=', db_name)]]
                 )
                 
@@ -3089,14 +3089,14 @@ def sync_tenant_user_limits(tenant_id):
                     # Update existing config
                     models.execute_kw(
                         db_name, uid, tenant.get_admin_password(),
-                        'saas.config', 'write',
+                        'saas.controller', 'write',
                         [config_ids, {'max_users': max_users}]
                     )
                 else:
                     # Create new config
                     models.execute_kw(
                         db_name, uid, tenant.get_admin_password(),
-                        'saas.config', 'create',
+                        'saas.controller', 'create',
                         [{'database_name': db_name, 'max_users': max_users}]
                     )
                 

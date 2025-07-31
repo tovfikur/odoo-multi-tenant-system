@@ -33,15 +33,12 @@
                                     <field name="user_limit_enabled"/>
                                     <field name="max_users" attrs="{'readonly': [('user_limit_enabled', '=', False)]}"/>
                                     <field name="current_users"/>
-                                    <label for="remaining_users" string="Remaining Slots"/>
+                                    <label for="user_status" string="User Status"/>
                                     <div>
-                                        <span class="text-success" attrs="{'invisible': [('current_users', '>=', 'max_users')]}">
-                                            <field name="current_users" invisible="1"/>
-                                            <field name="max_users" invisible="1"/>
-                                            Available: <t t-esc="record.max_users.raw_value - record.current_users.raw_value"/> slots
-                                        </span>
-                                        <span class="text-danger" attrs="{'invisible': [('current_users', '&lt;', 'max_users')]}">
-                                            Limit reached!
+                                        <field name="current_users" invisible="1"/>
+                                        <field name="max_users" invisible="1"/>
+                                        <span class="text-info">
+                                            Current Users / Max Users
                                         </span>
                                     </div>
                                 </group>
