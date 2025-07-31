@@ -406,6 +406,7 @@ class BillingService:
     def get_admin_billing_logs(self, tenant_id=None):
         """Get billing logs for admin panel"""
         try:
+            # Use explicit join conditions to avoid ambiguity
             query = db.session.query(
                 Tenant.name.label('tenant_name'),
                 Tenant.created_at.label('creation_date'),
@@ -417,7 +418,15 @@ class BillingService:
                 PaymentHistory.paid_at,
                 BillingNotification.notification_type,
                 BillingNotification.sent_at
-            ).select_from(Tenant).outerjoin(BillingCycle).outerjoin(PaymentHistory).outerjoin(BillingNotification)
+            ).select_from(
+                Tenant
+            ).outerjoin(
+                BillingCycle, Tenant.id == BillingCycle.tenant_id
+            ).outerjoin(
+                PaymentHistory, Tenant.id == PaymentHistory.tenant_id
+            ).outerjoin(
+                BillingNotification, Tenant.id == BillingNotification.tenant_id
+            )
             
             if tenant_id:
                 query = query.filter(Tenant.id == tenant_id)
