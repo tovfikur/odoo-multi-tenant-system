@@ -1,348 +1,403 @@
-/* SaaS Controller - Improved Contrast & Clean UI for Odoo 17.0 */
-/* Enhanced color system with better accessibility and brand dominance */
+/* ========================================
+   ENHANCED ODOO 17.0 THEME - COMPLETE OVERRIDE
+   Light/Dark Mode Support with Brand Colors
+   ======================================== */
 
-/* ===== LIGHT MODE VARIABLES (DEFAULT) ===== */
+/* ===== CSS CUSTOM PROPERTIES SYSTEM ===== */
 :root {
-  /* ===== Enhanced SaaS Brand Colors - Light Mode ===== */
-  --saas-primary: #1a73e8;
-  --saas-primary-hover: #1557b0;
-  --saas-primary-light: #e8f0fe;
-  --saas-primary-dark: #0d47a1;
-  --saas-secondary: #00acc1;
-  --saas-secondary-hover: #00838f;
-  --saas-secondary-light: #e0f7fa;
-  --saas-accent: #f57c00;
-  --saas-accent-hover: #e65100;
-  --saas-accent-light: #fff3e0;
-  --saas-success: #2e7d32;
-  --saas-success-light: #e8f5e8;
-  --saas-warning: #f57c00;
-  --saas-warning-light: #fff3e0;
-  --saas-error: #d32f2f;
-  --saas-error-light: #ffebee;
+  /* === BRAND COLOR SYSTEM === */
+  --brand-primary: #1a73e8;
+  --brand-primary-hover: #1557b0;
+  --brand-primary-light: #e8f0fe;
+  --brand-primary-dark: #0d47a1;
+  --brand-secondary: #00acc1;
+  --brand-secondary-hover: #00838f;
+  --brand-accent: #f57c00;
+  --brand-success: #2e7d32;
+  --brand-warning: #f57c00;
+  --brand-error: #d32f2f;
 
-  /* ===== Enhanced Light Theme System - Better Contrast ===== */
-  --saas-bg-primary: #ffffff;
-  --saas-bg-secondary: #f5f7fa;
-  --saas-bg-tertiary: #e1e5e9;
-  --saas-bg-elevated: #ffffff;
-  --saas-surface: #ffffff;
-  --saas-surface-hover: #f8fafc;
-  --saas-surface-selected: #e3f2fd;
-  --saas-text-primary: #1e293b;
-  --saas-text-secondary: #475569;
-  --saas-text-tertiary: #64748b;
-  --saas-text-muted: #94a3b8;
-  --saas-text-inverse: #ffffff;
-  --saas-text-on-primary: #ffffff;
-  --saas-border-light: #f1f5f9;
-  --saas-border: #e2e8f0;
-  --saas-border-strong: #cbd5e1;
-  --saas-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --saas-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+  /* === LIGHT MODE THEME === */
+  --o-bg-1: #ffffff;
+  --o-bg-2: #f8fafc;
+  --o-bg-3: #f1f5f9;
+  --o-bg-4: #e2e8f0;
+  --o-bg-5: #cbd5e1;
+  --o-surface: #ffffff;
+  --o-surface-hover: #f8fafc;
+  --o-surface-active: #e3f2fd;
+
+  --o-text-1: #0f172a;
+  --o-text-2: #334155;
+  --o-text-3: #64748b;
+  --o-text-4: #94a3b8;
+  --o-text-5: #cbd5e1;
+  --o-text-inverse: #ffffff;
+
+  --o-border-1: #f1f5f9;
+  --o-border-2: #e2e8f0;
+  --o-border-3: #cbd5e1;
+  --o-border-4: #94a3b8;
+
+  --o-shadow-1: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --o-shadow-2: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
     0 1px 2px -1px rgba(0, 0, 0, 0.1);
-  --saas-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+  --o-shadow-3: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
     0 2px 4px -2px rgba(0, 0, 0, 0.1);
-  --saas-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+  --o-shadow-4: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -4px rgba(0, 0, 0, 0.1);
-  --saas-overlay: rgba(15, 23, 42, 0.6);
 
-  /* ===== ENHANCED ODOO CORE OVERRIDES - LIGHT MODE ===== */
-  --o-color-1: var(--saas-primary) !important;
-  --o-color-2: var(--saas-secondary) !important;
-  --o-color-3: var(--saas-bg-secondary) !important;
-  --o-color-4: var(--saas-surface) !important;
-  --o-color-5: var(--saas-text-primary) !important;
+  /* === ODOO SPECIFIC OVERRIDES === */
+  --o-color-1: var(--brand-primary);
+  --o-color-2: var(--brand-secondary);
+  --o-color-3: var(--o-bg-2);
+  --o-color-4: var(--o-surface);
+  --o-color-5: var(--o-text-1);
 
-  /* Enhanced Bootstrap Variables */
-  --bs-primary: var(--saas-primary) !important;
-  --bs-secondary: var(--saas-text-tertiary) !important;
-  --bs-success: var(--saas-success) !important;
-  --bs-warning: var(--saas-warning) !important;
-  --bs-danger: var(--saas-error) !important;
-  --bs-body-bg: var(--saas-bg-primary) !important;
-  --bs-body-color: var(--saas-text-primary) !important;
-  --bs-border-color: var(--saas-border) !important;
+  /* === BOOTSTRAP OVERRIDES === */
+  --bs-primary: var(--brand-primary);
+  --bs-secondary: var(--o-text-3);
+  --bs-success: var(--brand-success);
+  --bs-warning: var(--brand-warning);
+  --bs-danger: var(--brand-error);
+  --bs-body-bg: var(--o-bg-1);
+  --bs-body-color: var(--o-text-1);
+  --bs-border-color: var(--o-border-2);
 
-  /* Enhanced Gray Scale */
-  --bs-gray-100: var(--saas-bg-secondary) !important;
-  --bs-gray-200: var(--saas-bg-tertiary) !important;
-  --bs-gray-300: var(--saas-border) !important;
-  --bs-gray-400: var(--saas-border-strong) !important;
-  --bs-gray-500: var(--saas-text-muted) !important;
-  --bs-gray-600: var(--saas-text-tertiary) !important;
-  --bs-gray-700: var(--saas-text-secondary) !important;
-  --bs-gray-800: var(--saas-text-primary) !important;
-  --bs-gray-900: var(--saas-text-primary) !important;
+  /* === TRANSITIONS === */
+  --o-transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  --o-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --o-transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-  /* Enhanced Color Combinations */
-  --o-cc1-bg: var(--saas-surface) !important;
-  --o-cc1-text: var(--saas-text-primary) !important;
-  --o-cc1-headings: var(--saas-text-primary) !important;
-  --o-cc1-link: var(--saas-primary) !important;
-  --o-cc1-btn-primary: var(--saas-primary) !important;
-  --o-cc1-btn-primary-text: var(--saas-text-on-primary) !important;
-
-  --o-cc2-bg: var(--saas-bg-secondary) !important;
-  --o-cc2-text: var(--saas-text-primary) !important;
-  --o-cc2-headings: var(--saas-text-primary) !important;
-  --o-cc2-link: var(--saas-primary) !important;
-
-  --o-cc3-bg: var(--saas-bg-tertiary) !important;
-  --o-cc3-text: var(--saas-text-primary) !important;
-  --o-cc3-headings: var(--saas-text-primary) !important;
-
-  --o-cc4-bg: var(--saas-primary) !important;
-  --o-cc4-text: var(--saas-text-on-primary) !important;
-  --o-cc4-headings: var(--saas-text-on-primary) !important;
-  --o-cc4-link: var(--saas-text-on-primary) !important;
-
-  --o-cc5-bg: var(--saas-text-primary) !important;
-  --o-cc5-text: var(--saas-text-inverse) !important;
-  --o-cc5-headings: var(--saas-text-inverse) !important;
-
-  /* Menu and Input Overrides */
-  --o-navbar-height: 56px;
-  --o-input-border-color: var(--saas-border) !important;
-  --o-caret-color: var(--saas-text-primary) !important;
-  --o-webclient-color-scheme: light !important;
-
-  /* Transitions */
-  --saas-transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  --saas-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  --saas-transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  /* === Z-INDEX SYSTEM === */
+  --z-dropdown: 1000;
+  --z-sticky: 1020;
+  --z-fixed: 1030;
+  --z-modal-backdrop: 1040;
+  --z-modal: 1050;
+  --z-popover: 1060;
+  --z-tooltip: 1070;
+  --z-toast: 1080;
 }
 
-/* ===== DARK MODE VARIABLES - Enhanced Contrast ===== */
+/* ===== DARK MODE OVERRIDES ===== */
+[data-bs-theme="dark"],
+.o_dark_mode,
+body.o_dark {
+  --brand-primary: #3b82f6;
+  --brand-primary-hover: #2563eb;
+  --brand-primary-light: #1e293b;
+  --brand-secondary: #06b6d4;
+  --brand-accent: #f59e0b;
+  --brand-success: #10b981;
+  --brand-warning: #f59e0b;
+  --brand-error: #ef4444;
+
+  --o-bg-1: #0f172a;
+  --o-bg-2: #1e293b;
+  --o-bg-3: #334155;
+  --o-bg-4: #475569;
+  --o-bg-5: #64748b;
+  --o-surface: #1e293b;
+  --o-surface-hover: #334155;
+  --o-surface-active: #1e3a8a;
+
+  --o-text-1: #f8fafc;
+  --o-text-2: #e2e8f0;
+  --o-text-3: #cbd5e1;
+  --o-text-4: #94a3b8;
+  --o-text-5: #64748b;
+  --o-text-inverse: #0f172a;
+
+  --o-border-1: #1e293b;
+  --o-border-2: #334155;
+  --o-border-3: #475569;
+  --o-border-4: #64748b;
+
+  --o-shadow-1: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --o-shadow-2: 0 1px 3px 0 rgba(0, 0, 0, 0.4),
+    0 1px 2px -1px rgba(0, 0, 0, 0.4);
+  --o-shadow-3: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
+    0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --o-shadow-4: 0 10px 15px -3px rgba(0, 0, 0, 0.4),
+    0 4px 6px -4px rgba(0, 0, 0, 0.4);
+}
+
+/* Auto dark mode based on system preference */
 @media (prefers-color-scheme: dark) {
-  :root {
-    /* ===== Enhanced SaaS Brand Colors - Dark Mode ===== */
-    --saas-primary: #3b82f6;
-    --saas-primary-hover: #2563eb;
-    --saas-primary-light: #1e293b;
-    --saas-primary-dark: #1d4ed8;
-    --saas-secondary: #06b6d4;
-    --saas-secondary-hover: #0891b2;
-    --saas-secondary-light: #0f172a;
-    --saas-accent: #f59e0b;
-    --saas-accent-hover: #d97706;
-    --saas-accent-light: #1c1917;
-    --saas-success: #10b981;
-    --saas-success-light: #064e3b;
-    --saas-warning: #f59e0b;
-    --saas-warning-light: #1c1917;
-    --saas-error: #ef4444;
-    --saas-error-light: #1f1012;
+  :root:not([data-bs-theme="light"]) {
+    --brand-primary: #3b82f6;
+    --brand-primary-hover: #2563eb;
+    --brand-primary-light: #1e293b;
+    --brand-secondary: #06b6d4;
+    --brand-accent: #f59e0b;
+    --brand-success: #10b981;
+    --brand-warning: #f59e0b;
+    --brand-error: #ef4444;
 
-    /* ===== Enhanced Dark Theme System - Better Contrast ===== */
-    --saas-bg-primary: #0f172a;
-    --saas-bg-secondary: #1e293b;
-    --saas-bg-tertiary: #334155;
-    --saas-bg-elevated: #1e293b;
-    --saas-surface: #1e293b;
-    --saas-surface-hover: #334155;
-    --saas-surface-selected: #1e3a8a;
-    --saas-text-primary: #f8fafc;
-    --saas-text-secondary: #cbd5e1;
-    --saas-text-tertiary: #94a3b8;
-    --saas-text-muted: #64748b;
-    --saas-text-inverse: #0f172a;
-    --saas-text-on-primary: #ffffff;
-    --saas-border-light: #1e293b;
-    --saas-border: #334155;
-    --saas-border-strong: #475569;
-    --saas-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-    --saas-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4),
+    --o-bg-1: #0f172a;
+    --o-bg-2: #1e293b;
+    --o-bg-3: #334155;
+    --o-bg-4: #475569;
+    --o-bg-5: #64748b;
+    --o-surface: #1e293b;
+    --o-surface-hover: #334155;
+    --o-surface-active: #1e3a8a;
+
+    --o-text-1: #f8fafc;
+    --o-text-2: #e2e8f0;
+    --o-text-3: #cbd5e1;
+    --o-text-4: #94a3b8;
+    --o-text-5: #64748b;
+    --o-text-inverse: #0f172a;
+
+    --o-border-1: #1e293b;
+    --o-border-2: #334155;
+    --o-border-3: #475569;
+    --o-border-4: #64748b;
+
+    --o-shadow-1: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --o-shadow-2: 0 1px 3px 0 rgba(0, 0, 0, 0.4),
       0 1px 2px -1px rgba(0, 0, 0, 0.4);
-    --saas-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
+    --o-shadow-3: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
       0 2px 4px -2px rgba(0, 0, 0, 0.4);
-    --saas-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4),
+    --o-shadow-4: 0 10px 15px -3px rgba(0, 0, 0, 0.4),
       0 4px 6px -4px rgba(0, 0, 0, 0.4);
-    --saas-overlay: rgba(0, 0, 0, 0.8);
-
-    /* ===== ENHANCED ODOO CORE OVERRIDES - DARK MODE ===== */
-    --o-color-1: var(--saas-primary) !important;
-    --o-color-2: var(--saas-secondary) !important;
-    --o-color-3: var(--saas-bg-secondary) !important;
-    --o-color-4: var(--saas-surface) !important;
-    --o-color-5: var(--saas-text-primary) !important;
-
-    /* Enhanced Bootstrap Variables - Dark */
-    --bs-primary: var(--saas-primary) !important;
-    --bs-secondary: var(--saas-text-tertiary) !important;
-    --bs-success: var(--saas-success) !important;
-    --bs-warning: var(--saas-warning) !important;
-    --bs-danger: var(--saas-error) !important;
-    --bs-body-bg: var(--saas-bg-primary) !important;
-    --bs-body-color: var(--saas-text-primary) !important;
-    --bs-border-color: var(--saas-border) !important;
-
-    /* Enhanced Gray Scale - Dark */
-    --bs-gray-100: var(--saas-bg-secondary) !important;
-    --bs-gray-200: var(--saas-bg-tertiary) !important;
-    --bs-gray-300: var(--saas-border) !important;
-    --bs-gray-400: var(--saas-border-strong) !important;
-    --bs-gray-500: var(--saas-text-muted) !important;
-    --bs-gray-600: var(--saas-text-tertiary) !important;
-    --bs-gray-700: var(--saas-text-secondary) !important;
-    --bs-gray-800: var(--saas-text-primary) !important;
-    --bs-gray-900: var(--saas-text-primary) !important;
-
-    /* Enhanced Color Combinations - Dark */
-    --o-cc1-bg: var(--saas-surface) !important;
-    --o-cc1-text: var(--saas-text-primary) !important;
-    --o-cc1-headings: var(--saas-text-primary) !important;
-    --o-cc1-link: var(--saas-primary) !important;
-    --o-cc1-btn-primary: var(--saas-primary) !important;
-    --o-cc1-btn-primary-text: var(--saas-text-on-primary) !important;
-
-    --o-cc2-bg: var(--saas-bg-secondary) !important;
-    --o-cc2-text: var(--saas-text-primary) !important;
-    --o-cc2-headings: var(--saas-text-primary) !important;
-    --o-cc2-link: var(--saas-primary) !important;
-
-    --o-cc3-bg: var(--saas-bg-tertiary) !important;
-    --o-cc3-text: var(--saas-text-primary) !important;
-    --o-cc3-headings: var(--saas-text-primary) !important;
-
-    --o-cc4-bg: var(--saas-primary) !important;
-    --o-cc4-text: var(--saas-text-on-primary) !important;
-    --o-cc4-headings: var(--saas-text-on-primary) !important;
-    --o-cc4-link: var(--saas-text-on-primary) !important;
-
-    --o-cc5-bg: var(--saas-text-primary) !important;
-    --o-cc5-text: var(--saas-text-inverse) !important;
-    --o-cc5-headings: var(--saas-text-inverse) !important;
-
-    /* Override Webclient - Dark Mode */
-    --o-webclient-color-scheme: dark !important;
   }
 }
 
-/* ===== UNIVERSAL BASE STYLING ===== */
+/* ===== BASE RESET AND TYPOGRAPHY ===== */
 * {
-  transition: var(--saas-transition-fast) !important;
+  transition: var(--o-transition-fast);
 }
 
 html,
 body {
-  background-color: var(--saas-bg-primary) !important;
-  color: var(--saas-text-primary) !important;
+  background-color: var(--o-bg-1) !important;
+  color: var(--o-text-1) !important;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif !important;
   line-height: 1.5 !important;
 }
 
-/* ===== ENHANCED NAVIGATION SYSTEM ===== */
+/* Typography Scale */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.h1,
+.h2,
+.h3,
+.h4,
+.h5,
+.h6 {
+  color: var(--o-text-1) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
+  margin-bottom: 0.5rem !important;
+}
+
+h1,
+.h1 {
+  font-size: 2rem !important;
+}
+h2,
+.h2 {
+  font-size: 1.75rem !important;
+}
+h3,
+.h3 {
+  font-size: 1.5rem !important;
+}
+h4,
+.h4 {
+  font-size: 1.25rem !important;
+}
+h5,
+.h5 {
+  font-size: 1.125rem !important;
+}
+h6,
+.h6 {
+  font-size: 1rem !important;
+}
+
+p {
+  color: var(--o-text-2) !important;
+}
+small,
+.small {
+  color: var(--o-text-3) !important;
+}
+
+/* ===== ODOO MAIN STRUCTURE ===== */
+.o_web_client {
+  background-color: var(--o-bg-1) !important;
+  color: var(--o-text-1) !important;
+}
+
+.o_action_manager,
+.o_main_content,
+.o_content {
+  background-color: var(--o-bg-1) !important;
+  color: var(--o-text-1) !important;
+}
+
+/* ===== NAVIGATION SYSTEM ===== */
 .o_main_navbar,
-.navbar,
-.o_navbar_apps_menu {
-  background: var(--saas-primary) !important;
+.navbar {
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary) 0%,
+    var(--brand-primary-hover) 100%
+  ) !important;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-  box-shadow: var(--saas-shadow-sm) !important;
+  box-shadow: var(--o-shadow-2) !important;
   backdrop-filter: blur(8px) !important;
-  height: var(--o-navbar-height) !important;
+  height: 56px !important;
+  z-index: var(--z-fixed) !important;
 }
 
-/* Navigation Text - Clean Override */
-.o_main_navbar,
-.o_main_navbar *,
-.navbar,
-.navbar *,
-.o_navbar_apps_menu,
-.o_navbar_apps_menu *,
-.navbar-brand,
-.navbar-brand *,
-.navbar-nav .nav-link,
-.navbar-nav .nav-link *,
+/* Navigation Links */
+.o_main_navbar a,
+.o_main_navbar button,
+.o_main_navbar .nav-link,
+.navbar a,
+.navbar button,
+.navbar .nav-link,
 .o_menu_toggle,
-.o_menu_toggle * {
-  color: var(--saas-text-on-primary) !important;
+.navbar-brand {
+  color: var(--o-text-inverse) !important;
   font-weight: 500 !important;
+  text-decoration: none !important;
+  transition: var(--o-transition-fast) !important;
 }
 
-.navbar-nav .nav-link:hover,
-.navbar-nav .nav-link:focus,
+.o_main_navbar a:hover,
+.o_main_navbar button:hover,
+.navbar a:hover,
+.navbar button:hover,
 .o_menu_toggle:hover {
   background-color: rgba(255, 255, 255, 0.1) !important;
   border-radius: 6px !important;
-  transform: none !important;
+  color: var(--o-text-inverse) !important;
+  text-decoration: none !important;
 }
 
-/* Enhanced Dropdown Menus */
+/* Apps Menu */
+.o_navbar_apps_menu {
+  background: var(--brand-primary) !important;
+  color: var(--o-text-inverse) !important;
+  z-index: var(--z-dropdown) !important;
+}
+
+/* ===== DROPDOWN SYSTEM ===== */
 .dropdown-menu {
-  background-color: var(--saas-bg-elevated) !important;
-  border: 1px solid var(--saas-border) !important;
-  box-shadow: var(--saas-shadow-lg) !important;
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
   border-radius: 8px !important;
-  padding: 4px !important;
+  box-shadow: var(--o-shadow-4) !important;
+  padding: 8px !important;
+  z-index: var(--z-dropdown) !important;
 }
 
 .dropdown-item {
-  color: var(--saas-text-primary) !important;
-  border-radius: 4px !important;
+  color: var(--o-text-1) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
   margin: 2px 0 !important;
   font-weight: 400 !important;
+  transition: var(--o-transition-fast) !important;
 }
 
 .dropdown-item:hover,
-.dropdown-item:focus {
-  background-color: var(--saas-surface-hover) !important;
-  color: var(--saas-primary) !important;
+.dropdown-item:focus,
+.dropdown-item.active {
+  background-color: var(--o-surface-hover) !important;
+  color: var(--brand-primary) !important;
 }
 
-/* ===== ENHANCED BUTTON SYSTEM ===== */
+.dropdown-divider {
+  border-color: var(--o-border-2) !important;
+  margin: 4px 0 !important;
+}
+
+/* ===== BUTTON SYSTEM ===== */
 .btn {
   border: none !important;
   font-weight: 500 !important;
   border-radius: 6px !important;
-  transition: var(--saas-transition) !important;
-  position: relative !important;
-  overflow: hidden !important;
+  padding: 0.5rem 1rem !important;
+  transition: var(--o-transition) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-decoration: none !important;
+  cursor: pointer !important;
 }
 
+.btn:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+  outline: none !important;
+}
+
+/* Primary Button */
 .btn-primary {
-  background-color: var(--saas-primary) !important;
-  color: var(--saas-text-on-primary) !important;
-  box-shadow: var(--saas-shadow-sm) !important;
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary) 0%,
+    var(--brand-primary-hover) 100%
+  ) !important;
+  color: var(--o-text-inverse) !important;
+  box-shadow: var(--o-shadow-2) !important;
 }
 
 .btn-primary:hover,
 .btn-primary:focus,
 .btn-primary:active {
-  background-color: var(--saas-primary-hover) !important;
-  color: var(--saas-text-on-primary) !important;
-  box-shadow: var(--saas-shadow-md) !important;
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary-hover) 0%,
+    var(--brand-primary-dark) 100%
+  ) !important;
+  color: var(--o-text-inverse) !important;
+  box-shadow: var(--o-shadow-3) !important;
   transform: translateY(-1px) !important;
 }
 
+/* Secondary Button */
 .btn-secondary {
-  background-color: var(--saas-bg-tertiary) !important;
-  color: var(--saas-text-primary) !important;
-  box-shadow: var(--saas-shadow-xs) !important;
+  background-color: var(--o-bg-3) !important;
+  color: var(--o-text-1) !important;
+  box-shadow: var(--o-shadow-1) !important;
 }
 
 .btn-secondary:hover,
 .btn-secondary:focus,
 .btn-secondary:active {
-  background-color: var(--saas-border-strong) !important;
-  color: var(--saas-text-primary) !important;
-  box-shadow: var(--saas-shadow-sm) !important;
+  background-color: var(--o-bg-4) !important;
+  color: var(--o-text-1) !important;
+  box-shadow: var(--o-shadow-2) !important;
 }
 
+/* Outline Button */
 .btn-outline-primary {
-  border: 2px solid var(--saas-primary) !important;
-  color: var(--saas-primary) !important;
+  border: 2px solid var(--brand-primary) !important;
+  color: var(--brand-primary) !important;
   background-color: transparent !important;
 }
 
 .btn-outline-primary:hover,
 .btn-outline-primary:focus,
 .btn-outline-primary:active {
-  background-color: var(--saas-primary) !important;
-  color: var(--saas-text-on-primary) !important;
+  background-color: var(--brand-primary) !important;
+  color: var(--o-text-inverse) !important;
+  border-color: var(--brand-primary) !important;
 }
 
+/* Button Sizes */
 .btn-sm {
   padding: 0.375rem 0.75rem !important;
   font-size: 0.875rem !important;
@@ -353,46 +408,60 @@ body {
   font-size: 1.125rem !important;
 }
 
-/* ===== ENHANCED FORM SYSTEM ===== */
-.o_form_view,
-.o_action_manager,
-.o_main_content,
-.o_content {
-  background-color: var(--saas-bg-primary) !important;
-  color: var(--saas-text-primary) !important;
+/* ===== FORM SYSTEM ===== */
+.o_form_view {
+  background-color: var(--o-bg-1) !important;
+  color: var(--o-text-1) !important;
 }
 
 .o_form_sheet {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
-  border-radius: 8px !important;
-  box-shadow: var(--saas-shadow-sm) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--o-shadow-2) !important;
   padding: 24px !important;
+  margin: 16px !important;
 }
 
+.o_form_sheet_bg {
+  background-color: var(--o-surface) !important;
+}
+
+/* Form Labels */
 .o_form_label,
-.form-label {
-  color: var(--saas-text-secondary) !important;
+.form-label,
+label {
+  color: var(--o-text-2) !important;
   font-weight: 500 !important;
   margin-bottom: 0.5rem !important;
+  font-size: 0.875rem !important;
 }
 
-/* ===== ENHANCED INPUT SYSTEM ===== */
+/* Required Field Indicator */
+.o_required_modifier .o_form_label:after,
+.o_required_modifier label:after {
+  content: " *" !important;
+  color: var(--brand-error) !important;
+  font-weight: bold !important;
+}
+
+/* ===== INPUT SYSTEM ===== */
 .form-control,
 .o_input,
-input,
+input:not([type="checkbox"]):not([type="radio"]),
 select,
 textarea,
 .o_field_widget input,
 .o_field_widget select,
 .o_field_widget textarea {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
   border-radius: 6px !important;
   padding: 0.5rem 0.75rem !important;
-  transition: var(--saas-transition) !important;
+  font-size: 0.875rem !important;
+  transition: var(--o-transition) !important;
 }
 
 .form-control:focus,
@@ -403,434 +472,510 @@ textarea:focus,
 .o_field_widget input:focus,
 .o_field_widget select:focus,
 .o_field_widget textarea:focus {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border-color: var(--saas-primary) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border-color: var(--brand-primary) !important;
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
   outline: none !important;
 }
 
-/* ===== ENHANCED TABLE SYSTEM ===== */
+.form-control:disabled,
+.o_input:disabled,
+input:disabled,
+select:disabled,
+textarea:disabled {
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-4) !important;
+  border-color: var(--o-border-2) !important;
+  cursor: not-allowed !important;
+}
+
+/* Placeholder Styling */
+.form-control::placeholder,
+.o_input::placeholder,
+input::placeholder,
+textarea::placeholder {
+  color: var(--o-text-4) !important;
+  opacity: 1 !important;
+}
+
+/* ===== CHECKBOX AND RADIO SYSTEM ===== */
+input[type="checkbox"],
+input[type="radio"],
+.form-check-input {
+  width: 1rem !important;
+  height: 1rem !important;
+  border: 2px solid var(--o-border-3) !important;
+  background-color: var(--o-surface) !important;
+  transition: var(--o-transition-fast) !important;
+}
+
+input[type="checkbox"]:checked,
+input[type="radio"]:checked,
+.form-check-input:checked {
+  background-color: var(--brand-primary) !important;
+  border-color: var(--brand-primary) !important;
+}
+
+input[type="checkbox"]:focus,
+input[type="radio"]:focus,
+.form-check-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2) !important;
+  outline: none !important;
+}
+
+/* ===== TABLE AND LIST SYSTEM ===== */
 .o_list_view,
 .table,
 .o_list_table {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
   border-radius: 8px !important;
   overflow: hidden !important;
-  box-shadow: var(--saas-shadow-sm) !important;
+  box-shadow: var(--o-shadow-2) !important;
+  border: 1px solid var(--o-border-2) !important;
 }
 
+/* Table Headers */
 .o_list_table thead th,
 .table thead th,
 th {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-secondary) !important;
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-2) !important;
   font-weight: 600 !important;
-  border-bottom: 2px solid var(--saas-border) !important;
-  padding: 0.75rem !important;
+  font-size: 0.875rem !important;
+  border-bottom: 2px solid var(--o-border-2) !important;
+  border-right: 1px solid var(--o-border-1) !important;
+  padding: 12px 16px !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
 }
 
+/* Table Rows */
 .o_list_table tbody tr,
 .table tbody tr,
 tr {
-  background-color: var(--saas-surface) !important;
-  transition: var(--saas-transition-fast) !important;
+  background-color: var(--o-surface) !important;
+  transition: var(--o-transition-fast) !important;
+  border-bottom: 1px solid var(--o-border-1) !important;
 }
 
 .o_list_table tbody tr:hover,
 .table tbody tr:hover,
 tr:hover {
-  background-color: var(--saas-surface-hover) !important;
+  background-color: var(--o-surface-hover) !important;
 }
 
+.o_list_table tbody tr.o_selected_row,
+.table tbody tr.o_selected_row,
+tr.o_selected_row {
+  background-color: var(--o-surface-active) !important;
+}
+
+/* Table Cells */
 .o_list_table tbody td,
 .table tbody td,
 td {
-  color: var(--saas-text-primary) !important;
-  border-color: var(--saas-border-light) !important;
-  padding: 0.75rem !important;
+  color: var(--o-text-1) !important;
+  border-right: 1px solid var(--o-border-1) !important;
+  padding: 12px 16px !important;
+  font-size: 0.875rem !important;
+  vertical-align: middle !important;
 }
 
-/* ===== ENHANCED CONTROL PANEL ===== */
+/* ===== CONTROL PANEL ===== */
 .o_control_panel {
-  background-color: var(--saas-bg-elevated) !important;
-  border-bottom: 1px solid var(--saas-border) !important;
+  background-color: var(--o-surface) !important;
+  border-bottom: 1px solid var(--o-border-2) !important;
   border-radius: 8px 8px 0 0 !important;
-  padding: 1rem !important;
+  padding: 16px !important;
+  margin-bottom: 0 !important;
 }
 
+.o_control_panel_main {
+  display: flex !important;
+  align-items: center !important;
+  gap: 16px !important;
+}
+
+/* Search View */
 .o_cp_searchview,
 .o_searchview {
-  background-color: var(--saas-surface) !important;
-  border: 1px solid var(--saas-border) !important;
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
   border-radius: 6px !important;
+  padding: 4px 8px !important;
+  min-width: 300px !important;
 }
 
-.o_searchview_input {
+.o_searchview_input,
+.o_searchview_input_container input {
   background-color: transparent !important;
-  color: var(--saas-text-primary) !important;
+  color: var(--o-text-1) !important;
   border: none !important;
+  outline: none !important;
+  padding: 4px 8px !important;
+  font-size: 0.875rem !important;
 }
 
-/* ===== ENHANCED KANBAN SYSTEM ===== */
+.o_searchview_input::placeholder {
+  color: var(--o-text-4) !important;
+}
+
+/* ===== KANBAN SYSTEM ===== */
 .o_kanban_view {
-  background-color: var(--saas-bg-primary) !important;
-  padding: 1rem !important;
+  background-color: var(--o-bg-1) !important;
+  padding: 16px !important;
+}
+
+.o_kanban_group {
+  background-color: var(--o-bg-2) !important;
+  border-radius: 8px !important;
+  margin: 0 8px !important;
+  padding: 12px !important;
+  min-height: 500px !important;
+}
+
+.o_kanban_header {
+  background-color: var(--o-bg-3) !important;
+  color: var(--o-text-1) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  margin-bottom: 12px !important;
+  font-weight: 600 !important;
 }
 
 .o_kanban_record {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
   border-radius: 8px !important;
-  box-shadow: var(--saas-shadow-xs) !important;
-  transition: var(--saas-transition) !important;
-  margin-bottom: 0.75rem !important;
+  box-shadow: var(--o-shadow-1) !important;
+  padding: 16px !important;
+  margin-bottom: 12px !important;
+  transition: var(--o-transition) !important;
+  cursor: pointer !important;
 }
 
 .o_kanban_record:hover {
-  box-shadow: var(--saas-shadow-md) !important;
+  box-shadow: var(--o-shadow-3) !important;
   transform: translateY(-2px) !important;
-  border-color: var(--saas-primary) !important;
+  border-color: var(--brand-primary) !important;
 }
 
-/* ===== ENHANCED CARD SYSTEM ===== */
+/* ===== CARD SYSTEM ===== */
 .card {
-  background-color: var(--saas-surface) !important;
-  border: 1px solid var(--saas-border) !important;
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
   border-radius: 8px !important;
-  box-shadow: var(--saas-shadow-sm) !important;
-  transition: var(--saas-transition) !important;
+  box-shadow: var(--o-shadow-2) !important;
+  transition: var(--o-transition) !important;
+  overflow: hidden !important;
 }
 
 .card:hover {
-  box-shadow: var(--saas-shadow-md) !important;
-  transform: translateY(-1px) !important;
+  box-shadow: var(--o-shadow-3) !important;
+  transform: translateY(-2px) !important;
 }
 
 .card-header {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
-  border-bottom: 1px solid var(--saas-border) !important;
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-1) !important;
+  border-bottom: 1px solid var(--o-border-2) !important;
   font-weight: 600 !important;
-  padding: 1rem !important;
+  padding: 16px 20px !important;
 }
 
 .card-body {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  padding: 1rem !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  padding: 20px !important;
 }
 
 .card-footer {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-secondary) !important;
-  border-top: 1px solid var(--saas-border) !important;
-  padding: 0.75rem 1rem !important;
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-3) !important;
+  border-top: 1px solid var(--o-border-2) !important;
+  padding: 12px 20px !important;
 }
 
-/* ===== ENHANCED MODAL SYSTEM ===== */
+/* ===== MODAL SYSTEM ===== */
+.modal-backdrop {
+  background-color: rgba(15, 23, 42, 0.8) !important;
+  z-index: var(--z-modal-backdrop) !important;
+}
+
+.modal {
+  z-index: var(--z-modal) !important;
+}
+
 .modal-content {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
   border: none !important;
   border-radius: 12px !important;
-  box-shadow: var(--saas-shadow-lg) !important;
+  box-shadow: var(--o-shadow-4) !important;
+  overflow: hidden !important;
 }
 
 .modal-header {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
-  border-bottom: 1px solid var(--saas-border) !important;
-  border-radius: 12px 12px 0 0 !important;
-  padding: 1.25rem !important;
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-1) !important;
+  border-bottom: 1px solid var(--o-border-2) !important;
+  padding: 20px 24px !important;
+}
+
+.modal-title {
+  color: var(--o-text-1) !important;
+  font-weight: 600 !important;
+  font-size: 1.25rem !important;
 }
 
 .modal-body {
-  padding: 1.25rem !important;
+  padding: 24px !important;
+  color: var(--o-text-1) !important;
 }
 
 .modal-footer {
-  background-color: var(--saas-bg-secondary) !important;
-  border-top: 1px solid var(--saas-border) !important;
-  border-radius: 0 0 12px 12px !important;
-  padding: 1rem 1.25rem !important;
+  background-color: var(--o-bg-2) !important;
+  border-top: 1px solid var(--o-border-2) !important;
+  padding: 16px 24px !important;
+  display: flex !important;
+  justify-content: flex-end !important;
+  gap: 12px !important;
 }
 
-.modal-backdrop {
-  background-color: var(--saas-overlay) !important;
+/* Close Button */
+.btn-close {
+  background: none !important;
+  border: none !important;
+  font-size: 1.5rem !important;
+  color: var(--o-text-3) !important;
+  opacity: 1 !important;
 }
 
-/* ===== ENHANCED LINK SYSTEM ===== */
-a {
-  color: var(--saas-primary) !important;
-  text-decoration: none !important;
-  transition: var(--saas-transition-fast) !important;
+.btn-close:hover {
+  color: var(--o-text-1) !important;
 }
 
-a:hover,
-a:focus {
-  color: var(--saas-primary-hover) !important;
-  text-decoration: underline !important;
+/* ===== ALERT SYSTEM ===== */
+.alert {
+  border: none !important;
+  border-left: 4px solid !important;
+  border-radius: 8px !important;
+  padding: 16px 20px !important;
+  margin-bottom: 16px !important;
+  font-weight: 500 !important;
 }
 
-/* ===== ENHANCED BADGE SYSTEM ===== */
+.alert-success {
+  background-color: rgba(46, 125, 50, 0.1) !important;
+  color: var(--brand-success) !important;
+  border-left-color: var(--brand-success) !important;
+}
+
+.alert-warning {
+  background-color: rgba(245, 124, 0, 0.1) !important;
+  color: var(--brand-warning) !important;
+  border-left-color: var(--brand-warning) !important;
+}
+
+.alert-danger {
+  background-color: rgba(211, 47, 47, 0.1) !important;
+  color: var(--brand-error) !important;
+  border-left-color: var(--brand-error) !important;
+}
+
+.alert-info {
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  color: var(--brand-primary) !important;
+  border-left-color: var(--brand-primary) !important;
+}
+
+/* ===== BADGE SYSTEM ===== */
 .badge {
   font-weight: 500 !important;
-  border-radius: 4px !important;
-  padding: 0.25rem 0.5rem !important;
+  border-radius: 12px !important;
+  padding: 4px 8px !important;
   font-size: 0.75rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
 }
 
 .badge-primary {
-  background-color: var(--saas-primary) !important;
-  color: var(--saas-text-on-primary) !important;
+  background-color: var(--brand-primary) !important;
+  color: var(--o-text-inverse) !important;
 }
 
 .badge-secondary {
-  background-color: var(--saas-bg-tertiary) !important;
-  color: var(--saas-text-primary) !important;
+  background-color: var(--o-bg-4) !important;
+  color: var(--o-text-1) !important;
 }
 
 .badge-success {
-  background-color: var(--saas-success) !important;
+  background-color: var(--brand-success) !important;
   color: white !important;
 }
 
 .badge-warning {
-  background-color: var(--saas-warning) !important;
+  background-color: var(--brand-warning) !important;
   color: white !important;
 }
 
 .badge-danger {
-  background-color: var(--saas-error) !important;
+  background-color: var(--brand-error) !important;
   color: white !important;
 }
 
-/* ===== ENHANCED ALERT SYSTEM ===== */
-.alert {
-  border: none !important;
-  border-radius: 8px !important;
-  padding: 1rem !important;
-  margin-bottom: 1rem !important;
-  border-left: 4px solid !important;
-}
-
-.alert-success {
-  background-color: var(--saas-success-light) !important;
-  color: var(--saas-success) !important;
-  border-left-color: var(--saas-success) !important;
-}
-
-.alert-warning {
-  background-color: var(--saas-warning-light) !important;
-  color: var(--saas-warning) !important;
-  border-left-color: var(--saas-warning) !important;
-}
-
-.alert-danger {
-  background-color: var(--saas-error-light) !important;
-  color: var(--saas-error) !important;
-  border-left-color: var(--saas-error) !important;
-}
-
-.alert-info {
-  background-color: var(--saas-primary-light) !important;
-  color: var(--saas-primary) !important;
-  border-left-color: var(--saas-primary) !important;
-}
-
-/* ===== ENHANCED PAGINATION ===== */
+/* ===== PAGINATION SYSTEM ===== */
 .pagination {
+  margin: 0 !important;
+  gap: 4px !important;
+}
+
+.page-item {
   margin: 0 !important;
 }
 
 .page-link {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
-  padding: 0.75rem 1rem !important;
-  transition: var(--saas-transition-fast) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  font-size: 0.875rem !important;
+  transition: var(--o-transition-fast) !important;
+  text-decoration: none !important;
 }
 
 .page-link:hover,
 .page-link:focus {
-  background-color: var(--saas-surface-hover) !important;
-  color: var(--saas-primary) !important;
-  border-color: var(--saas-primary) !important;
+  background-color: var(--o-surface-hover) !important;
+  color: var(--brand-primary) !important;
+  border-color: var(--brand-primary) !important;
   text-decoration: none !important;
+  transform: translateY(-1px) !important;
 }
 
 .page-item.active .page-link {
-  background-color: var(--saas-primary) !important;
-  border-color: var(--saas-primary) !important;
-  color: var(--saas-text-on-primary) !important;
+  background-color: var(--brand-primary) !important;
+  border-color: var(--brand-primary) !important;
+  color: var(--o-text-inverse) !important;
+  box-shadow: var(--o-shadow-2) !important;
 }
 
 .page-item.disabled .page-link {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-muted) !important;
-  border-color: var(--saas-border) !important;
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-4) !important;
+  border-color: var(--o-border-2) !important;
+  cursor: not-allowed !important;
 }
 
-/* ===== ENHANCED TOOLTIP SYSTEM ===== */
-.tooltip {
-  font-size: 0.875rem !important;
-}
-
-.tooltip-inner {
-  background-color: var(--saas-text-primary) !important;
-  color: var(--saas-text-inverse) !important;
-  border-radius: 6px !important;
-  padding: 0.5rem 0.75rem !important;
-  max-width: 200px !important;
-}
-
-.bs-tooltip-top .tooltip-arrow::before,
-.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
-  border-top-color: var(--saas-text-primary) !important;
-}
-
-.bs-tooltip-right .tooltip-arrow::before,
-.bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before {
-  border-right-color: var(--saas-text-primary) !important;
-}
-
-.bs-tooltip-bottom .tooltip-arrow::before,
-.bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
-  border-bottom-color: var(--saas-text-primary) !important;
-}
-
-.bs-tooltip-left .tooltip-arrow::before,
-.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
-  border-left-color: var(--saas-text-primary) !important;
-}
-
-/* ===== ENHANCED POPOVER SYSTEM ===== */
-.popover {
-  background-color: var(--saas-surface) !important;
-  border: 1px solid var(--saas-border) !important;
-  border-radius: 8px !important;
-  box-shadow: var(--saas-shadow-lg) !important;
-  max-width: 300px !important;
-}
-
-.popover-header {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
-  border-bottom: 1px solid var(--saas-border) !important;
-  border-radius: 8px 8px 0 0 !important;
-  padding: 0.75rem 1rem !important;
-  font-weight: 600 !important;
-}
-
-.popover-body {
-  color: var(--saas-text-primary) !important;
-  padding: 1rem !important;
-}
-
-/* ===== ENHANCED TAB SYSTEM ===== */
+/* ===== TAB SYSTEM ===== */
 .nav-tabs {
-  border-bottom: 2px solid var(--saas-border) !important;
-  margin-bottom: 1rem !important;
+  border-bottom: 2px solid var(--o-border-2) !important;
+  margin-bottom: 16px !important;
+  gap: 4px !important;
 }
 
 .nav-tabs .nav-link {
   background-color: transparent !important;
-  color: var(--saas-text-secondary) !important;
+  color: var(--o-text-3) !important;
   border: none !important;
-  padding: 0.75rem 1rem !important;
+  border-bottom: 2px solid transparent !important;
+  padding: 12px 16px !important;
   font-weight: 500 !important;
   border-radius: 6px 6px 0 0 !important;
-  margin-right: 0.25rem !important;
-  transition: var(--saas-transition-fast) !important;
+  transition: var(--o-transition-fast) !important;
+  text-decoration: none !important;
 }
 
 .nav-tabs .nav-link:hover,
 .nav-tabs .nav-link:focus {
-  color: var(--saas-text-primary) !important;
-  background-color: var(--saas-surface-hover) !important;
+  color: var(--o-text-1) !important;
+  background-color: var(--o-surface-hover) !important;
+  border-bottom-color: var(--o-border-3) !important;
 }
 
 .nav-tabs .nav-link.active {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-primary) !important;
-  border-bottom: 2px solid var(--saas-primary) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--brand-primary) !important;
+  border-bottom-color: var(--brand-primary) !important;
   font-weight: 600 !important;
 }
 
 .tab-content {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  padding: 1.5rem !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  padding: 24px !important;
   border-radius: 0 8px 8px 8px !important;
-  box-shadow: var(--saas-shadow-sm) !important;
+  box-shadow: var(--o-shadow-2) !important;
+  border: 1px solid var(--o-border-2) !important;
 }
 
-/* ===== ENHANCED ACCORDION SYSTEM ===== */
+/* ===== ACCORDION SYSTEM ===== */
 .accordion {
   border-radius: 8px !important;
   overflow: hidden !important;
+  border: 1px solid var(--o-border-2) !important;
 }
 
 .accordion-item {
-  background-color: var(--saas-surface) !important;
-  border: 1px solid var(--saas-border) !important;
-  border-bottom: none !important;
+  background-color: var(--o-surface) !important;
+  border: none !important;
+  border-bottom: 1px solid var(--o-border-2) !important;
 }
 
 .accordion-item:last-child {
-  border-bottom: 1px solid var(--saas-border) !important;
-  border-radius: 0 0 8px 8px !important;
-}
-
-.accordion-item:first-child {
-  border-radius: 8px 8px 0 0 !important;
+  border-bottom: none !important;
 }
 
 .accordion-button {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-1) !important;
   border: none !important;
-  padding: 1rem 1.25rem !important;
+  padding: 16px 20px !important;
   font-weight: 500 !important;
-  transition: var(--saas-transition-fast) !important;
+  transition: var(--o-transition-fast) !important;
+  box-shadow: none !important;
 }
 
 .accordion-button:hover {
-  background-color: var(--saas-surface-hover) !important;
+  background-color: var(--o-surface-hover) !important;
 }
 
 .accordion-button:not(.collapsed) {
-  background-color: var(--saas-primary-light) !important;
-  color: var(--saas-primary) !important;
+  background-color: var(--brand-primary-light) !important;
+  color: var(--brand-primary) !important;
   font-weight: 600 !important;
-  box-shadow: none !important;
 }
 
 .accordion-button::after {
   background-image: none !important;
   content: "▼" !important;
-  color: var(--saas-text-secondary) !important;
+  font-size: 0.875rem !important;
+  color: var(--o-text-3) !important;
   transition: transform 0.2s ease-in-out !important;
+  transform: rotate(0deg) !important;
 }
 
 .accordion-button:not(.collapsed)::after {
   transform: rotate(180deg) !important;
-  color: var(--saas-primary) !important;
+  color: var(--brand-primary) !important;
 }
 
 .accordion-body {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  padding: 1.25rem !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  padding: 20px !important;
+  border-top: 1px solid var(--o-border-2) !important;
 }
 
-/* ===== ENHANCED PROGRESS SYSTEM ===== */
+/* ===== PROGRESS SYSTEM ===== */
 .progress {
-  background-color: var(--saas-bg-secondary) !important;
-  border-radius: 6px !important;
+  background-color: var(--o-bg-2) !important;
+  border-radius: 8px !important;
   height: 8px !important;
   overflow: hidden !important;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
@@ -839,10 +984,10 @@ a:focus {
 .progress-bar {
   background: linear-gradient(
     90deg,
-    var(--saas-primary),
-    var(--saas-primary-hover)
+    var(--brand-primary),
+    var(--brand-primary-hover)
   ) !important;
-  border-radius: 6px !important;
+  border-radius: 8px !important;
   transition: width 0.6s ease !important;
 }
 
@@ -857,385 +1002,478 @@ a:focus {
     transparent 75%,
     transparent
   ) !important;
-  background-size: 1rem 1rem !important;
+  background-size: 16px 16px !important;
 }
 
-/* ===== ENHANCED CALENDAR SYSTEM ===== */
+/* ===== TOOLTIP SYSTEM ===== */
+.tooltip {
+  font-size: 0.75rem !important;
+  z-index: var(--z-tooltip) !important;
+}
+
+.tooltip-inner {
+  background-color: var(--o-text-1) !important;
+  color: var(--o-text-inverse) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  max-width: 250px !important;
+  font-weight: 500 !important;
+  box-shadow: var(--o-shadow-3) !important;
+}
+
+.tooltip.bs-tooltip-top .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
+  border-top-color: var(--o-text-1) !important;
+}
+
+.tooltip.bs-tooltip-right .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="right"]
+  .tooltip-arrow::before {
+  border-right-color: var(--o-text-1) !important;
+}
+
+.tooltip.bs-tooltip-bottom .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="bottom"]
+  .tooltip-arrow::before {
+  border-bottom-color: var(--o-text-1) !important;
+}
+
+.tooltip.bs-tooltip-left .tooltip-arrow::before,
+.tooltip.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
+  border-left-color: var(--o-text-1) !important;
+}
+
+/* ===== POPOVER SYSTEM ===== */
+.popover {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--o-shadow-4) !important;
+  max-width: 350px !important;
+  z-index: var(--z-popover) !important;
+}
+
+.popover-header {
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-1) !important;
+  border-bottom: 1px solid var(--o-border-2) !important;
+  border-radius: 8px 8px 0 0 !important;
+  padding: 12px 16px !important;
+  font-weight: 600 !important;
+}
+
+.popover-body {
+  color: var(--o-text-1) !important;
+  padding: 16px !important;
+}
+
+/* ===== LINK SYSTEM ===== */
+a {
+  color: var(--brand-primary) !important;
+  text-decoration: none !important;
+  transition: var(--o-transition-fast) !important;
+}
+
+a:hover,
+a:focus {
+  color: var(--brand-primary-hover) !important;
+  text-decoration: underline !important;
+}
+
+/* Navigation links override */
+.o_main_navbar a,
+.navbar a {
+  color: var(--o-text-inverse) !important;
+}
+
+.o_main_navbar a:hover,
+.navbar a:hover {
+  color: var(--o-text-inverse) !important;
+  text-decoration: none !important;
+}
+
+/* ===== BREADCRUMB SYSTEM ===== */
+.breadcrumb {
+  background-color: transparent !important;
+  padding: 12px 0 !important;
+  margin-bottom: 16px !important;
+  font-size: 0.875rem !important;
+}
+
+.breadcrumb-item {
+  color: var(--o-text-3) !important;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: "/" !important;
+  color: var(--o-text-4) !important;
+  margin: 0 8px !important;
+}
+
+.breadcrumb-item.active {
+  color: var(--o-text-1) !important;
+  font-weight: 500 !important;
+}
+
+.breadcrumb-item a {
+  color: var(--o-text-3) !important;
+  text-decoration: none !important;
+}
+
+.breadcrumb-item a:hover {
+  color: var(--brand-primary) !important;
+}
+
+/* ===== CALENDAR SYSTEM ===== */
 .o_calendar_view {
-  background-color: var(--saas-bg-primary) !important;
-  color: var(--saas-text-primary) !important;
+  background-color: var(--o-bg-1) !important;
+  color: var(--o-text-1) !important;
+}
+
+.fc {
+  background-color: var(--o-surface) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: var(--o-shadow-2) !important;
 }
 
 .fc-event {
-  background-color: var(--saas-primary) !important;
-  border-color: var(--saas-primary-hover) !important;
-  color: var(--saas-text-on-primary) !important;
-  border-radius: 4px !important;
+  background-color: var(--brand-primary) !important;
+  border-color: var(--brand-primary-hover) !important;
+  color: var(--o-text-inverse) !important;
+  border-radius: 6px !important;
   font-weight: 500 !important;
+  padding: 4px 8px !important;
 }
 
 .fc-toolbar,
 .fc-view-container,
-.fc-day-header,
+.fc-day-header {
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border-color: var(--o-border-2) !important;
+}
+
 .fc-day-number {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border-color: var(--saas-border) !important;
+  color: var(--o-text-1) !important;
 }
 
 .fc-today {
-  background-color: var(--saas-primary-light) !important;
+  background-color: rgba(26, 115, 232, 0.05) !important;
 }
 
-/* ===== ENHANCED APP DRAWER ===== */
+.fc-button {
+  background-color: var(--o-bg-3) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 6px !important;
+}
+
+.fc-button:hover {
+  background-color: var(--o-bg-4) !important;
+}
+
+.fc-button-primary {
+  background-color: var(--brand-primary) !important;
+  border-color: var(--brand-primary) !important;
+  color: var(--o-text-inverse) !important;
+}
+
+/* ===== APP DRAWER SYSTEM ===== */
 .o_apps {
-  background-color: var(--saas-bg-primary) !important;
-  padding: 2rem !important;
+  background-color: var(--o-bg-1) !important;
+  padding: 32px !important;
+  min-height: 100vh !important;
 }
 
-.o_app {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
+.o_apps .o_app {
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
   border-radius: 12px !important;
-  padding: 1.5rem !important;
+  padding: 24px !important;
   text-align: center !important;
-  transition: var(--saas-transition) !important;
-  box-shadow: var(--saas-shadow-xs) !important;
+  transition: var(--o-transition) !important;
+  box-shadow: var(--o-shadow-2) !important;
+  text-decoration: none !important;
+  display: block !important;
 }
 
-.o_app:hover {
-  background-color: var(--saas-surface-hover) !important;
+.o_apps .o_app:hover {
+  background-color: var(--o-surface-hover) !important;
   transform: translateY(-4px) !important;
-  box-shadow: var(--saas-shadow-lg) !important;
-  border-color: var(--saas-primary) !important;
+  box-shadow: var(--o-shadow-4) !important;
+  border-color: var(--brand-primary) !important;
+  text-decoration: none !important;
 }
 
-.o_app .o_caption {
-  color: var(--saas-text-primary) !important;
+.o_apps .o_app .o_app_icon {
+  width: 64px !important;
+  height: 64px !important;
+  margin: 0 auto 16px !important;
+  border-radius: 12px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 32px !important;
+  background: linear-gradient(
+    135deg,
+    var(--brand-primary),
+    var(--brand-primary-hover)
+  ) !important;
+  color: var(--o-text-inverse) !important;
+}
+
+.o_apps .o_app .o_caption {
+  color: var(--o-text-1) !important;
   font-weight: 600 !important;
-  margin-top: 0.75rem !important;
+  font-size: 0.875rem !important;
+  margin-top: 12px !important;
 }
 
-/* ===== ENHANCED SCROLLBAR ===== */
+/* ===== SIDEBAR SYSTEM ===== */
+.o_main_sidebar,
+.o_menu_sections {
+  background-color: var(--o-bg-2) !important;
+  border-right: 1px solid var(--o-border-2) !important;
+  min-height: 100vh !important;
+  padding: 16px 0 !important;
+}
+
+.o_menu_sections .o_nav_entry {
+  color: var(--o-text-2) !important;
+  padding: 8px 16px !important;
+  margin: 2px 8px !important;
+  border-radius: 6px !important;
+  transition: var(--o-transition-fast) !important;
+  text-decoration: none !important;
+  display: block !important;
+}
+
+.o_menu_sections .o_nav_entry:hover,
+.o_menu_sections .o_nav_entry.active {
+  background-color: var(--o-surface-hover) !important;
+  color: var(--brand-primary) !important;
+  text-decoration: none !important;
+}
+
+/* ===== SCROLLBAR SYSTEM ===== */
 ::-webkit-scrollbar {
   width: 8px !important;
   height: 8px !important;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--saas-bg-secondary) !important;
+  background: var(--o-bg-2) !important;
   border-radius: 4px !important;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--saas-text-muted) !important;
+  background: var(--o-text-4) !important;
   border-radius: 4px !important;
-  transition: var(--saas-transition-fast) !important;
+  transition: var(--o-transition-fast) !important;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--saas-text-tertiary) !important;
+  background: var(--o-text-3) !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: var(--o-bg-2) !important;
 }
 
 /* Firefox Scrollbar */
 * {
   scrollbar-width: thin !important;
-  scrollbar-color: var(--saas-text-muted) var(--saas-bg-secondary) !important;
+  scrollbar-color: var(--o-text-4) var(--o-bg-2) !important;
 }
 
-/* ===== ENHANCED BREADCRUMB SYSTEM ===== */
-.breadcrumb {
-  background-color: transparent !important;
-  padding: 0.75rem 0 !important;
-  margin-bottom: 1rem !important;
-  font-size: 0.875rem !important;
-}
-
-.breadcrumb-item {
-  color: var(--saas-text-tertiary) !important;
-}
-
-.breadcrumb-item + .breadcrumb-item::before {
-  content: "/" !important;
-  color: var(--saas-text-muted) !important;
-  margin: 0 0.5rem !important;
-}
-
-.breadcrumb-item.active {
-  color: var(--saas-text-primary) !important;
-  font-weight: 500 !important;
-}
-
-.breadcrumb-item a {
-  color: var(--saas-text-tertiary) !important;
-  text-decoration: none !important;
-}
-
-.breadcrumb-item a:hover {
-  color: var(--saas-primary) !important;
-}
-
-/* ===== ENHANCED LOGIN PAGE ===== */
+/* ===== LOGIN PAGE SYSTEM ===== */
 .o_database_manager,
 .oe_login_form,
 .oe_login {
   background: linear-gradient(
     135deg,
-    var(--saas-primary) 0%,
-    var(--saas-primary-dark) 100%
+    var(--brand-primary) 0%,
+    var(--brand-primary-dark) 100%
   ) !important;
   min-height: 100vh !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
+  padding: 20px !important;
 }
 
-.oe_login_form {
-  background-color: var(--saas-surface) !important;
+.oe_login_form,
+.o_database_manager .o_database_list {
+  background-color: var(--o-surface) !important;
   border-radius: 12px !important;
-  padding: 2rem !important;
-  box-shadow: var(--saas-shadow-lg) !important;
+  padding: 32px !important;
+  box-shadow: var(--o-shadow-4) !important;
   max-width: 400px !important;
   width: 100% !important;
-  margin: 1rem !important;
+  border: 1px solid var(--o-border-2) !important;
 }
 
 .oe_login_form h1,
-.oe_login h1 {
-  color: var(--saas-text-primary) !important;
+.oe_login h1,
+.o_database_manager h1 {
+  color: var(--o-text-1) !important;
   text-align: center !important;
-  margin-bottom: 1.5rem !important;
+  margin-bottom: 24px !important;
   font-weight: 700 !important;
+  font-size: 1.75rem !important;
 }
 
 .oe_login_form input,
-.oe_login input {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
+.oe_login input,
+.o_database_manager input {
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
   border-radius: 6px !important;
-  padding: 0.75rem !important;
+  padding: 12px 16px !important;
   width: 100% !important;
-  margin-bottom: 1rem !important;
+  margin-bottom: 16px !important;
+  font-size: 0.875rem !important;
 }
 
-/* ===== ENHANCED DATABASE LIST ===== */
-.o_database_list {
-  background-color: var(--saas-surface) !important;
-  border-radius: 8px !important;
-  overflow: hidden !important;
-  box-shadow: var(--saas-shadow-sm) !important;
+.oe_login_form input:focus,
+.oe_login input:focus,
+.o_database_manager input:focus {
+  border-color: var(--brand-primary) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
 }
 
+/* Database List */
 .o_database_list .list-group-item {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border-color: var(--saas-border) !important;
-  padding: 1rem 1.25rem !important;
-  transition: var(--saas-transition-fast) !important;
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 6px !important;
+  padding: 16px 20px !important;
+  margin-bottom: 8px !important;
+  transition: var(--o-transition-fast) !important;
+  text-decoration: none !important;
+  display: block !important;
 }
 
 .o_database_list .list-group-item:hover {
-  background-color: var(--saas-surface-hover) !important;
-  border-color: var(--saas-primary) !important;
+  background-color: var(--o-surface-hover) !important;
+  border-color: var(--brand-primary) !important;
   transform: translateX(4px) !important;
-  color: var(--saas-primary) !important;
+  color: var(--brand-primary) !important;
+  text-decoration: none !important;
 }
 
-/* ===== SAAS CONTROLLER SPECIFIC STYLES ===== */
-.saas-controller-wrapper {
-  max-width: 1200px !important;
-  margin: 0 auto !important;
-  padding: 2rem !important;
+/* ===== LOADING STATES ===== */
+.o_loading {
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+  position: relative !important;
 }
 
-.saas-controller-form {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border-radius: 12px !important;
-  box-shadow: var(--saas-shadow-md) !important;
-  overflow: hidden !important;
-}
-
-.saas-controller-header {
-  background: linear-gradient(
-    135deg,
-    var(--saas-primary) 0%,
-    var(--saas-primary-hover) 100%
-  ) !important;
-  color: var(--saas-text-on-primary) !important;
-  padding: 1.5rem 2rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
-
-.saas-controller-header h2 {
-  margin: 0 !important;
-  font-weight: 700 !important;
-  font-size: 1.5rem !important;
-}
-
-.saas-controller-body {
-  padding: 2rem !important;
-}
-
-.saas-color-preview {
-  width: 32px !important;
-  height: 32px !important;
-  border-radius: 6px !important;
-  display: inline-block !important;
-  margin-left: 0.75rem !important;
-  border: 2px solid var(--saas-border) !important;
-  box-shadow: var(--saas-shadow-xs) !important;
-}
-
-.saas-section {
-  margin-bottom: 2rem !important;
-  padding: 1.5rem !important;
-  background-color: var(--saas-bg-secondary) !important;
-  border-radius: 8px !important;
-}
-
-.saas-section-title {
-  color: var(--saas-text-primary) !important;
-  font-weight: 600 !important;
-  font-size: 1.125rem !important;
-  margin-bottom: 1rem !important;
-  display: flex !important;
-  align-items: center !important;
-}
-
-.saas-section-title::before {
+.o_loading::after {
   content: "" !important;
-  width: 4px !important;
-  height: 20px !important;
-  background-color: var(--saas-primary) !important;
-  margin-right: 0.75rem !important;
-  border-radius: 2px !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 24px !important;
+  height: 24px !important;
+  margin: -12px 0 0 -12px !important;
+  border: 3px solid var(--brand-primary) !important;
+  border-radius: 50% !important;
+  border-top-color: transparent !important;
+  animation: spin 1s linear infinite !important;
+  z-index: 10 !important;
 }
 
-.saas-limit-info {
-  padding: 1rem !important;
-  border-radius: 8px !important;
-  margin: 1rem 0 !important;
-  border-left: 4px solid !important;
-  font-weight: 500 !important;
-}
-
-.saas-limit-success {
-  background-color: var(--saas-success-light) !important;
-  color: var(--saas-success) !important;
-  border-left-color: var(--saas-success) !important;
-}
-
-.saas-limit-warning {
-  background-color: var(--saas-warning-light) !important;
-  color: var(--saas-warning) !important;
-  border-left-color: var(--saas-warning) !important;
-}
-
-.saas-limit-danger {
-  background-color: var(--saas-error-light) !important;
-  color: var(--saas-error) !important;
-  border-left-color: var(--saas-error) !important;
-}
-
-.saas-status-badge {
-  display: inline-flex !important;
-  align-items: center !important;
-  padding: 0.25rem 0.75rem !important;
-  border-radius: 12px !important;
-  font-size: 0.75rem !important;
-  font-weight: 600 !important;
-  text-transform: uppercase !important;
-  letter-spacing: 0.025em !important;
-}
-
-.saas-status-active {
-  background-color: var(--saas-success-light) !important;
-  color: var(--saas-success) !important;
-}
-
-.saas-status-inactive {
-  background-color: var(--saas-error-light) !important;
-  color: var(--saas-error) !important;
-}
-
-.saas-status-syncing {
-  background-color: var(--saas-warning-light) !important;
-  color: var(--saas-warning) !important;
-}
-
-.saas-config-grid {
-  display: grid !important;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-  gap: 1.5rem !important;
-  margin-top: 1.5rem !important;
-}
-
-.saas-config-card {
-  background-color: var(--saas-surface) !important;
-  border: 1px solid var(--saas-border) !important;
-  border-radius: 8px !important;
-  padding: 1.5rem !important;
-  transition: var(--saas-transition) !important;
-}
-
-.saas-config-card:hover {
-  border-color: var(--saas-primary) !important;
-  box-shadow: var(--saas-shadow-md) !important;
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
-@media (max-width: 1024px) {
-  .saas-controller-wrapper {
-    padding: 1rem !important;
+@media (max-width: 1200px) {
+  .o_form_sheet {
+    margin: 8px !important;
+    padding: 16px !important;
   }
 
-  .saas-config-grid {
-    grid-template-columns: 1fr !important;
+  .o_apps {
+    padding: 16px !important;
   }
 }
 
 @media (max-width: 768px) {
-  .saas-controller-header {
-    padding: 1rem !important;
+  .o_control_panel {
+    padding: 12px !important;
   }
 
-  .saas-controller-body {
-    padding: 1rem !important;
+  .o_control_panel_main {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
   }
 
-  .saas-section {
-    padding: 1rem !important;
+  .o_cp_searchview,
+  .o_searchview {
+    min-width: auto !important;
+    width: 100% !important;
   }
 
-  .navbar-nav .nav-link {
-    padding: 0.5rem 0.75rem !important;
+  .o_kanban_view {
+    padding: 8px !important;
   }
 
-  .btn {
-    padding: 0.5rem 1rem !important;
+  .modal-body,
+  .modal-header,
+  .modal-footer {
+    padding: 16px !important;
+  }
+
+  .card-body,
+  .card-header,
+  .card-footer {
+    padding: 16px !important;
+  }
+
+  .o_form_sheet {
+    margin: 4px !important;
+    padding: 12px !important;
   }
 }
 
 @media (max-width: 576px) {
-  .saas-controller-wrapper {
-    padding: 0.5rem !important;
-  }
-
-  .saas-controller-header h2 {
-    font-size: 1.25rem !important;
-  }
-
-  .saas-color-preview {
-    width: 24px !important;
-    height: 24px !important;
-  }
-
   .btn {
+    padding: 8px 12px !important;
     font-size: 0.875rem !important;
-    padding: 0.5rem 0.75rem !important;
+  }
+
+  .btn-lg {
+    padding: 12px 16px !important;
+    font-size: 1rem !important;
+  }
+
+  .btn-sm {
+    padding: 4px 8px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .o_apps {
+    padding: 8px !important;
+  }
+
+  .o_apps .o_app {
+    padding: 16px !important;
+  }
+
+  .o_apps .o_app .o_app_icon {
+    width: 48px !important;
+    height: 48px !important;
+    font-size: 24px !important;
   }
 }
 
@@ -1250,23 +1488,25 @@ a:focus {
 
 @media (prefers-contrast: high) {
   :root {
-    --saas-border: #000000 !important;
-    --saas-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
-    --saas-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4) !important;
+    --o-border-2: #000000 !important;
+    --o-border-3: #000000 !important;
+    --o-shadow-1: 0 1px 2px 0 rgba(0, 0, 0, 0.5) !important;
+    --o-shadow-2: 0 1px 3px 0 rgba(0, 0, 0, 0.6) !important;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --saas-border: #ffffff !important;
-      --saas-text-primary: #ffffff !important;
-      --saas-bg-primary: #000000 !important;
-    }
+  [data-bs-theme="dark"],
+  .o_dark_mode,
+  body.o_dark {
+    --o-border-2: #ffffff !important;
+    --o-border-3: #ffffff !important;
+    --o-text-1: #ffffff !important;
+    --o-bg-1: #000000 !important;
   }
 }
 
 /* ===== FOCUS MANAGEMENT ===== */
 :focus-visible {
-  outline: 2px solid var(--saas-primary) !important;
+  outline: 2px solid var(--brand-primary) !important;
   outline-offset: 2px !important;
   border-radius: 4px !important;
 }
@@ -1275,8 +1515,9 @@ a:focus {
 .form-control:focus-visible,
 input:focus-visible,
 select:focus-visible,
-textarea:focus-visible {
-  outline: 2px solid var(--saas-primary) !important;
+textarea:focus-visible,
+.o_input:focus-visible {
+  outline: 2px solid var(--brand-primary) !important;
   outline-offset: 2px !important;
   box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
 }
@@ -1284,25 +1525,490 @@ textarea:focus-visible {
 /* ===== PRINT STYLES ===== */
 @media print {
   :root {
-    --saas-bg-primary: #ffffff !important;
-    --saas-text-primary: #000000 !important;
-    --saas-surface: #ffffff !important;
-    --saas-border: #cccccc !important;
+    --o-bg-1: #ffffff !important;
+    --o-text-1: #000000 !important;
+    --o-surface: #ffffff !important;
+    --o-border-2: #cccccc !important;
   }
 
-  .saas-controller-form {
+  .o_main_navbar,
+  .navbar,
+  .o_control_panel,
+  .btn,
+  .modal,
+  .dropdown-menu {
+    display: none !important;
+  }
+
+  .o_form_sheet,
+  .card,
+  .table {
     box-shadow: none !important;
     border: 1px solid #cccccc !important;
   }
-
-  .navbar,
-  .o_main_navbar {
-    display: none !important;
-  }
 }
 
-/* ===== ANIMATION KEYFRAMES ===== */
-@keyframes saas-fade-in {
+/* ===== UTILITY CLASSES ===== */
+.text-primary {
+  color: var(--brand-primary) !important;
+}
+.text-secondary {
+  color: var(--o-text-3) !important;
+}
+.text-success {
+  color: var(--brand-success) !important;
+}
+.text-warning {
+  color: var(--brand-warning) !important;
+}
+.text-danger {
+  color: var(--brand-error) !important;
+}
+.text-muted {
+  color: var(--o-text-4) !important;
+}
+
+.bg-primary {
+  background-color: var(--brand-primary) !important;
+}
+.bg-secondary {
+  background-color: var(--o-bg-3) !important;
+}
+.bg-success {
+  background-color: var(--brand-success) !important;
+}
+.bg-warning {
+  background-color: var(--brand-warning) !important;
+}
+.bg-danger {
+  background-color: var(--brand-error) !important;
+}
+.bg-light {
+  background-color: var(--o-bg-2) !important;
+}
+.bg-dark {
+  background-color: var(--o-bg-4) !important;
+}
+
+.border {
+  border: 1px solid var(--o-border-2) !important;
+}
+.border-primary {
+  border-color: var(--brand-primary) !important;
+}
+.border-secondary {
+  border-color: var(--o-border-3) !important;
+}
+
+.rounded {
+  border-radius: 6px !important;
+}
+.rounded-lg {
+  border-radius: 8px !important;
+}
+.rounded-xl {
+  border-radius: 12px !important;
+}
+
+.shadow-sm {
+  box-shadow: var(--o-shadow-1) !important;
+}
+.shadow {
+  box-shadow: var(--o-shadow-2) !important;
+}
+.shadow-lg {
+  box-shadow: var(--o-shadow-3) !important;
+}
+.shadow-xl {
+  box-shadow: var(--o-shadow-4) !important;
+}
+
+/* ===== FORCE OVERRIDES FOR STUBBORN ELEMENTS ===== */
+/* These rules handle inline styles and third-party components */
+.o_web_client * {
+  border-color: var(--o-border-2) !important;
+}
+
+.o_web_client
+  [style*="background-color"]:not(.o_main_navbar):not(.navbar):not(.fc-event) {
+  background-color: var(--o-surface) !important;
+}
+
+.o_web_client
+  [style*="color"]:not(.o_main_navbar *):not(.navbar *):not(.fc-event *) {
+  color: var(--o-text-1) !important;
+}
+
+/* Ensure navigation keeps its styling */
+.o_main_navbar,
+.o_main_navbar *,
+.navbar,
+.navbar * {
+  color: var(--o-text-inverse) !important;
+}
+
+/* Override any remaining Bootstrap defaults */
+.table-striped > tbody > tr:nth-of-type(odd) > td,
+.table-striped > tbody > tr:nth-of-type(odd) > th {
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > td,
+[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > th {
+  background-color: rgba(255, 255, 255, 0.02) !important;
+}
+
+/* Final cleanup for any missed Odoo-specific elements */
+.o_field_widget,
+.o_field_char,
+.o_field_text,
+.o_field_integer,
+.o_field_float,
+.o_field_monetary,
+.o_field_selection,
+.o_field_boolean,
+.o_field_date,
+.o_field_datetime {
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+}
+
+.o_field_widget input,
+.o_field_widget select,
+.o_field_widget textarea {
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border-color: var(--o-border-2) !important;
+}
+
+/* Special handling for Many2one fields */
+.o_field_many2one .o_input_dropdown {
+  background-color: var(--o-surface) !important;
+  border-color: var(--o-border-2) !important;
+}
+
+.o_field_many2one .o_m2o_dropdown_option {
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+}
+
+.o_field_many2one .o_m2o_dropdown_option:hover {
+  background-color: var(--o-surface-hover) !important;
+  color: var(--brand-primary) !important;
+}
+
+/* Status bar styling */
+.o_statusbar_status {
+  background-color: var(--o-bg-2) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 8px !important;
+  margin-bottom: 16px !important;
+}
+
+.o_statusbar_status .btn {
+  background-color: var(--o-bg-3) !important;
+  color: var(--o-text-2) !important;
+  border: 1px solid var(--o-border-2) !important;
+  margin: 0 4px !important;
+}
+
+.o_statusbar_status .btn.btn-primary,
+.o_statusbar_status .btn.o_arrow_button_current {
+  background-color: var(--brand-primary) !important;
+  color: var(--o-text-inverse) !important;
+  border-color: var(--brand-primary) !important;
+}
+
+/* Chatter and activities */
+.o_chatter {
+  background-color: var(--o-bg-1) !important;
+  border-top: 1px solid var(--o-border-2) !important;
+  padding: 16px !important;
+}
+
+.o_mail_thread {
+  background-color: var(--o-surface) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+}
+
+.o_mail_thread .o_thread_message {
+  background-color: var(--o-bg-2) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 12px !important;
+  margin-bottom: 12px !important;
+}
+
+.o_mail_thread .o_thread_message_core {
+  color: var(--o-text-1) !important;
+}
+
+/* Activity styling */
+.o_activity {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  margin-bottom: 12px !important;
+}
+
+.o_activity_title {
+  color: var(--o-text-1) !important;
+  font-weight: 600 !important;
+}
+
+.o_activity_summary {
+  color: var(--o-text-2) !important;
+}
+
+/* Notebook (tabs in forms) */
+.o_notebook {
+  margin-top: 16px !important;
+}
+
+.o_notebook .nav-tabs {
+  border-bottom: 2px solid var(--o-border-2) !important;
+  margin-bottom: 0 !important;
+}
+
+.o_notebook .nav-tabs .nav-link {
+  color: var(--o-text-3) !important;
+  border: none !important;
+  border-bottom: 2px solid transparent !important;
+  background: none !important;
+  padding: 12px 20px !important;
+}
+
+.o_notebook .nav-tabs .nav-link:hover {
+  color: var(--o-text-1) !important;
+  border-bottom-color: var(--o-border-3) !important;
+}
+
+.o_notebook .nav-tabs .nav-link.active {
+  color: var(--brand-primary) !important;
+  border-bottom-color: var(--brand-primary) !important;
+  font-weight: 600 !important;
+}
+
+.o_notebook .tab-content {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-top: none !important;
+  border-radius: 0 0 8px 8px !important;
+  padding: 20px !important;
+}
+
+/* Smart buttons */
+.oe_button_box {
+  margin-bottom: 16px !important;
+}
+
+.oe_stat_button {
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 12px 16px !important;
+  margin: 4px !important;
+  transition: var(--o-transition-fast) !important;
+  text-align: center !important;
+  min-height: 60px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+}
+
+.oe_stat_button:hover {
+  background-color: var(--o-surface-hover) !important;
+  border-color: var(--brand-primary) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: var(--o-shadow-2) !important;
+}
+
+.oe_stat_button .o_stat_value {
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  color: var(--brand-primary) !important;
+}
+
+.oe_stat_button .o_stat_text {
+  font-size: 0.75rem !important;
+  color: var(--o-text-3) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+}
+
+/* Graph and pivot views */
+.o_graph_view,
+.o_pivot_view {
+  background-color: var(--o-bg-1) !important;
+  padding: 16px !important;
+}
+
+.o_graph_canvas_container,
+.o_pivot_table {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  box-shadow: var(--o-shadow-2) !important;
+}
+
+/* Dashboard styling */
+.o_dashboard {
+  background-color: var(--o-bg-1) !important;
+  padding: 16px !important;
+}
+
+.o_dashboard_item {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 20px !important;
+  margin-bottom: 16px !important;
+  box-shadow: var(--o-shadow-2) !important;
+  transition: var(--o-transition) !important;
+}
+
+.o_dashboard_item:hover {
+  box-shadow: var(--o-shadow-3) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* Settings and configuration pages */
+.o_setting_container {
+  background-color: var(--o-bg-1) !important;
+}
+
+.o_setting_box {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 20px !important;
+  margin-bottom: 16px !important;
+  box-shadow: var(--o-shadow-1) !important;
+}
+
+.o_setting_left_pane {
+  color: var(--o-text-1) !important;
+}
+
+.o_setting_right_pane {
+  color: var(--o-text-2) !important;
+}
+
+/* Website builder specific */
+.o_website_preview {
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: var(--o-shadow-3) !important;
+}
+
+/* Discuss (chat) styling */
+.o_mail_discuss {
+  background-color: var(--o-bg-1) !important;
+}
+
+.o_mail_discuss_sidebar {
+  background-color: var(--o-bg-2) !important;
+  border-right: 1px solid var(--o-border-2) !important;
+}
+
+.o_mail_discuss_content {
+  background-color: var(--o-surface) !important;
+}
+
+.o_composer {
+  background-color: var(--o-surface) !important;
+  border-top: 1px solid var(--o-border-2) !important;
+  padding: 16px !important;
+}
+
+.o_composer_input {
+  background-color: var(--o-bg-2) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  resize: vertical !important;
+  min-height: 40px !important;
+}
+
+/* PDF viewer */
+.o_pdf_viewer {
+  background-color: var(--o-bg-2) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+}
+
+/* Special handling for specific modules */
+
+/* Accounting specific */
+.o_account_reports_summary {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+/* POS specific */
+.pos {
+  background-color: var(--o-bg-1) !important;
+}
+
+.pos .o_pos_orderlines {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+}
+
+/* Manufacturing specific */
+.o_mrp_bom {
+  background-color: var(--o-surface) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+}
+
+/* Project specific */
+.o_project_kanban {
+  background-color: var(--o-bg-1) !important;
+  padding: 16px !important;
+}
+
+.o_project_kanban .o_kanban_group {
+  background-color: var(--o-bg-2) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 8px !important;
+  padding: 16px !important;
+  margin: 0 8px !important;
+}
+
+/* Dark mode toggle button (if present) */
+.o_theme_toggle {
+  background-color: var(--o-bg-3) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 50% !important;
+  width: 40px !important;
+  height: 40px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: var(--o-transition) !important;
+}
+
+.o_theme_toggle:hover {
+  background-color: var(--o-surface-hover) !important;
+  border-color: var(--brand-primary) !important;
+  color: var(--brand-primary) !important;
+}
+
+/* Animation keyframes for enhanced interactions */
+@keyframes fadeIn {
   from {
     opacity: 0;
     transform: translateY(10px);
@@ -1313,7 +2019,7 @@ textarea:focus-visible {
   }
 }
 
-@keyframes saas-slide-in {
+@keyframes slideIn {
   from {
     transform: translateX(-100%);
   }
@@ -1322,130 +2028,144 @@ textarea:focus-visible {
   }
 }
 
-.saas-animate-in {
-  animation: saas-fade-in 0.3s ease-out !important;
-}
-
-.saas-slide-in {
-  animation: saas-slide-in 0.3s ease-out !important;
-}
-
-/* ===== UTILITY CLASSES ===== */
-.saas-text-primary {
-  color: var(--saas-text-primary) !important;
-}
-.saas-text-secondary {
-  color: var(--saas-text-secondary) !important;
-}
-.saas-text-muted {
-  color: var(--saas-text-muted) !important;
-}
-.saas-bg-primary {
-  background-color: var(--saas-bg-primary) !important;
-}
-.saas-bg-surface {
-  background-color: var(--saas-surface) !important;
-}
-.saas-border {
-  border: 1px solid var(--saas-border) !important;
-}
-.saas-rounded {
-  border-radius: 6px !important;
-}
-.saas-shadow {
-  box-shadow: var(--saas-shadow-sm) !important;
-}
-
-/* ===== FORCE OVERRIDES FOR STUBBORN ELEMENTS ===== */
-[style*="background-color"]:not(.o_main_navbar):not(.navbar) {
-  background-color: var(--saas-surface) !important;
-}
-
-[style*="color"]:not(.o_main_navbar *):not(.navbar *) {
-  color: var(--saas-text-primary) !important;
-}
-
-/* Navigation specific overrides */
-.o_main_navbar [style*="color"],
-.navbar [style*="color"] {
-  color: var(--saas-text-on-primary) !important;
-}
-
-/* Ensure text elements have proper hierarchy */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  color: var(--saas-text-primary) !important;
-  font-weight: 600 !important;
-  line-height: 1.2 !important;
-}
-
-h1 {
-  font-size: 2rem !important;
-}
-h2 {
-  font-size: 1.75rem !important;
-}
-h3 {
-  font-size: 1.5rem !important;
-}
-h4 {
-  font-size: 1.25rem !important;
-}
-h5 {
-  font-size: 1.125rem !important;
-}
-h6 {
-  font-size: 1rem !important;
-}
-
-/* Exception for navigation headers */
-.o_main_navbar h1,
-.o_main_navbar h2,
-.o_main_navbar h3,
-.o_main_navbar h4,
-.o_main_navbar h5,
-.o_main_navbar h6,
-.navbar h1,
-.navbar h2,
-.navbar h3,
-.navbar h4,
-.navbar h5,
-.navbar h6 {
-  color: var(--saas-text-on-primary) !important;
-}
-
-/* Final cleanup for any missed elements */
-.o_web_client * {
-  border-color: var(--saas-border) !important;
-}
-
-/* Loading states */
-.saas-loading {
-  opacity: 0.6 !important;
-  pointer-events: none !important;
-  position: relative !important;
-}
-
-.saas-loading::after {
-  content: "" !important;
-  position: absolute !important;
-  top: 50% !important;
-  left: 50% !important;
-  width: 20px !important;
-  height: 20px !important;
-  margin: -10px 0 0 -10px !important;
-  border: 2px solid var(--saas-primary) !important;
-  border-radius: 50% !important;
-  border-top-color: transparent !important;
-  animation: spin 1s linear infinite !important;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
   }
 }
+
+/* Apply animations to specific elements */
+.o_form_sheet {
+  animation: fadeIn 0.3s ease-out !important;
+}
+
+.o_kanban_record {
+  animation: fadeIn 0.2s ease-out !important;
+}
+
+.modal-content {
+  animation: fadeIn 0.2s ease-out !important;
+}
+
+.dropdown-menu {
+  animation: fadeIn 0.15s ease-out !important;
+}
+
+/* Loading pulse animation */
+.o_loading_pulse {
+  animation: pulse 1.5s ease-in-out infinite !important;
+}
+
+/* Custom scrollbar for specific containers */
+.o_content,
+.o_main_content,
+.modal-body,
+.o_chatter {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--o-text-4) transparent !important;
+}
+
+.o_content::-webkit-scrollbar,
+.o_main_content::-webkit-scrollbar,
+.modal-body::-webkit-scrollbar,
+.o_chatter::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.o_content::-webkit-scrollbar-track,
+.o_main_content::-webkit-scrollbar-track,
+.modal-body::-webkit-scrollbar-track,
+.o_chatter::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+
+.o_content::-webkit-scrollbar-thumb,
+.o_main_content::-webkit-scrollbar-thumb,
+.modal-body::-webkit-scrollbar-thumb,
+.o_chatter::-webkit-scrollbar-thumb {
+  background: var(--o-text-4) !important;
+  border-radius: 3px !important;
+}
+
+/* Ensure proper contrast for text on colored backgrounds */
+.bg-primary,
+.btn-primary,
+.badge-primary,
+.alert-info {
+  color: var(--o-text-inverse) !important;
+}
+
+.bg-success,
+.btn-success,
+.badge-success,
+.alert-success {
+  color: white !important;
+}
+
+.bg-warning,
+.btn-warning,
+.badge-warning,
+.alert-warning {
+  color: white !important;
+}
+
+.bg-danger,
+.btn-danger,
+.badge-danger,
+.alert-danger {
+  color: white !important;
+}
+
+/* Ensure all text inputs have consistent styling */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+input[type="tel"],
+input[type="url"],
+input[type="search"] {
+  background-color: var(--o-surface) !important;
+  color: var(--o-text-1) !important;
+  border: 1px solid var(--o-border-2) !important;
+  border-radius: 6px !important;
+  padding: 8px 12px !important;
+  transition: var(--o-transition-fast) !important;
+}
+
+/* Final catch-all rules to ensure consistency */
+.o_web_client {
+  color-scheme: light dark !important;
+}
+
+[data-bs-theme="dark"] .o_web_client,
+.o_dark_mode .o_web_client,
+body.o_dark .o_web_client {
+  color-scheme: dark !important;
+}
+
+/* Hide scrollbars in specific contexts but keep functionality */
+.o_kanban_view::-webkit-scrollbar {
+  display: none !important;
+}
+
+.o_kanban_view {
+  -ms-overflow-style: none !important;
+  scrollbar-width: none !important;
+}
+
+/* Ensure proper spacing and alignment */
+.o_web_client .o_content {
+  min-height: calc(100vh - 56px) !important;
+}
+
+/* Final override for any remaining inconsistencies */
+* {
+  box-sizing: border-box !important;
+}
+
+/* End of Enhanced Odoo 17.0 Theme */
