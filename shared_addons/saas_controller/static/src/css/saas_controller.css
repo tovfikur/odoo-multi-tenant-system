@@ -34,25 +34,42 @@
   box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2) !important;
 }
 
-/* Navbar Brand, Nav Entries, and Dropdown Toggles - Google Caveat Font */
+/* Navbar Brand, Nav Entries, and Dropdown Toggles - Google Caveat Font - AGGRESSIVE OVERRIDE */
 .o_main_navbar .o_menu_brand,
 .o_main_navbar .o_nav_entry,
-.o_main_navbar .dropdown-toggle {
+.o_main_navbar .dropdown-toggle,
+.o_main_navbar .o_menu_brand *,
+.o_main_navbar .o_nav_entry *,
+.o_main_navbar .dropdown-toggle *,
+body .o_main_navbar .o_menu_brand,
+body .o_main_navbar .o_nav_entry,
+body .o_main_navbar .dropdown-toggle {
   color: white !important;
-  font-family: var(--saas-font-caveat) !important;
+  font-family: 'Caveat', cursive !important;
   font-weight: 500 !important;
-  transition: var(--saas-transition-font) !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
   letter-spacing: 0.5px !important;
+  font-style: normal !important;
+  text-decoration: none !important;
+  font-size: inherit !important;
 }
 
 .o_main_navbar .o_menu_brand:hover,
 .o_main_navbar .o_nav_entry:hover,
-.o_main_navbar .dropdown-toggle:hover {
+.o_main_navbar .dropdown-toggle:hover,
+.o_main_navbar .o_menu_brand:hover *,
+.o_main_navbar .o_nav_entry:hover *,
+.o_main_navbar .dropdown-toggle:hover *,
+body .o_main_navbar .o_menu_brand:hover,
+body .o_main_navbar .o_nav_entry:hover,
+body .o_main_navbar .dropdown-toggle:hover {
   color: white !important;
-  font-family: var(--saas-font-system) !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
   font-weight: 500 !important;
   transform: scale(1.02) !important;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  font-style: normal !important;
+  text-decoration: none !important;
 }
 
 /* Other navbar items */

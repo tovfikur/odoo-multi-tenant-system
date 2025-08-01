@@ -22,6 +22,9 @@
             this.styleNavbar();
             this.setupMutationObserver();
             
+            // Periodic font enforcement
+            setInterval(this.enforceFonts.bind(this), 1000);
+            
             console.log('✅ SaaS Navbar Styler: Ready!');
         },
         
@@ -35,7 +38,7 @@
                 navbar.style.setProperty('box-shadow', '0 2px 8px rgba(26, 115, 232, 0.15)', 'important');
             }
             
-            // Style navbar brand, nav entries, and dropdown toggles with Google Caveat font
+            // Style navbar brand, nav entries, and dropdown toggles with Google Caveat font - AGGRESSIVE
             var navSpecialItems = document.querySelectorAll('.o_main_navbar .o_menu_brand, .o_main_navbar .o_nav_entry, .o_main_navbar .dropdown-toggle');
             navSpecialItems.forEach(function(item) {
                 item.style.setProperty('color', 'white', 'important');
@@ -43,6 +46,16 @@
                 item.style.setProperty('font-weight', '500', 'important');
                 item.style.setProperty('letter-spacing', '0.5px', 'important');
                 item.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', 'important');
+                item.style.setProperty('font-style', 'normal', 'important');
+                item.style.setProperty('text-decoration', 'none', 'important');
+                
+                // Also style child elements
+                var children = item.querySelectorAll('*');
+                children.forEach(function(child) {
+                    child.style.setProperty('font-family', '"Caveat", cursive', 'important');
+                    child.style.setProperty('font-weight', '500', 'important');
+                    child.style.setProperty('color', 'white', 'important');
+                });
             });
             
             // Style other navbar items
@@ -75,6 +88,30 @@
                 item.style.setProperty('color', PRIMARY_COLOR, 'important');
                 item.style.setProperty('border-radius', '4px', 'important');
                 item.style.setProperty('margin', '2px 4px', 'important');
+            });
+        },
+        
+        /**
+         * Aggressively enforce font styles
+         */
+        enforceFonts: function() {
+            // Force Caveat font on navbar elements
+            var navSpecialItems = document.querySelectorAll('.o_main_navbar .o_menu_brand, .o_main_navbar .o_nav_entry, .o_main_navbar .dropdown-toggle');
+            navSpecialItems.forEach(function(item) {
+                if (!item.style.fontFamily || !item.style.fontFamily.includes('Caveat')) {
+                    item.style.setProperty('font-family', '"Caveat", cursive', 'important');
+                    item.style.setProperty('font-weight', '500', 'important');
+                    item.style.setProperty('color', 'white', 'important');
+                    item.style.setProperty('letter-spacing', '0.5px', 'important');
+                }
+                
+                // Also enforce on children
+                var children = item.querySelectorAll('*');
+                children.forEach(function(child) {
+                    child.style.setProperty('font-family', '"Caveat", cursive', 'important');
+                    child.style.setProperty('font-weight', '500', 'important');
+                    child.style.setProperty('color', 'white', 'important');
+                });
             });
         },
         
