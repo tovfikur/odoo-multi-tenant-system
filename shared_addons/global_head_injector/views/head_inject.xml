@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Inject CSS and JS into web assets -->
+        <template id="global_head_assets" inherit_id="web.layout">
+            <xpath expr="//head" position="inside">
+                <link rel="stylesheet" type="text/css" href="/static/css/odoo.css"/>
+                <script type="text/javascript" src="/static/js/odoo.js"></script>
+            </xpath>
+        </template>
+        
+        <!-- Also inject into webclient for backend -->
+        <template id="global_head_webclient" inherit_id="web.webclient_bootstrap">
+            <xpath expr="//head" position="inside">
+                <link rel="stylesheet" type="text/css" href="/static/css/odoo.css"/>
+                <script type="text/javascript" src="/static/js/odoo.js"></script>
+            </xpath>
+        </template>
+        
+        <!-- Inject into frontend layout as well -->
+        <template id="global_head_frontend" inherit_id="web.frontend_layout">
+            <xpath expr="//head" position="inside">
+                <link rel="stylesheet" type="text/css" href="/static/css/odoo.css"/>
+                <script type="text/javascript" src="/static/js/odoo.js"></script>
+            </xpath>
+        </template>
+    </data>
+</odoo>
