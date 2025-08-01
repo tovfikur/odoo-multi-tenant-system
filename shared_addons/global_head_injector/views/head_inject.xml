@@ -179,6 +179,14 @@
     transition: background 0.3s ease !important;
 }
 
+.o-form-buttonbox {
+    padding: 5px;
+    border-radius: 8px;
+}
+
+.o-form-buttonbox .oe_stat_button .o_button_icon {
+    color: #174ea6 !important;
+}
 
 /* Micro-interaction Animations - Add to existing CSS */
 
