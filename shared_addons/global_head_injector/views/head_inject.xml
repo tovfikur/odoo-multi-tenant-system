@@ -229,10 +229,7 @@
                             }
                         }
 
-                        /* Hide login footer */
-                        .oe_login_form ~ .text-center.small.mt-4.pt-3.border-top {
-                            display: none !important;
-                        }
+
 
                         /* Enhanced Login Card */
                         .card:has(.oe_login_form) {
