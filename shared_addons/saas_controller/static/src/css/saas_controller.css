@@ -1,481 +1,114 @@
-/* SaaS Controller - Aggressive Brand Color Enforcement */
-/* Your Beautiful Jewel + Neutral Color Scheme */
+/* SaaS Controller - Simple Navbar Styling */
 
-/* IMPORTANT: Forceful Brand Color Variables */
+/* Brand Color Variables */
 :root {
-  /* Primary Azure Colors - Your Main Brand */
-  --saas-primary-color: #1a73e8 !important;
-  --saas-primary-dark: #174ea6 !important;
-  --saas-primary-light: #4c9eff !important;
-  
-  /* Secondary Teal Colors */
-  --saas-secondary-color: #00bfa5 !important;
-  --saas-secondary-dark: #00937a !important;
-  --saas-secondary-light: #33e1c6 !important;
-  
-  /* Accent Coral Colors */
-  --saas-accent-color: #ff6f61 !important;
-  --saas-accent-dark: #e05a4e !important;
-  --saas-accent-light: #ff8a7a !important;
-  
-  /* Support Violet Colors */
-  --saas-support-color: #9b51e0 !important;
-  --saas-support-dark: #7a3eb0 !important;
-  --saas-support-light: #b76deb !important;
-  
-  /* Neutrals & Text */
-  --saas-background-color: #ffffff !important;
-  --saas-text-color: #2e3a59 !important;
-  --saas-text-secondary: #5c6b8a !important;
-  --saas-text-muted: #8a95aa !important;
-  --saas-link-color: #1a73e8 !important;
-  
-  /* Override Odoo Variables */
-  --primary: #1a73e8 !important;
-  --secondary: #00bfa5 !important;
-  --success: #00bfa5 !important;
-  --info: #9b51e0 !important;
-  --warning: #ff6f61 !important;
-  --danger: #e05a4e !important;
+  /* Your Primary Azure Brand Color */
+  --saas-primary-color: #1a73e8;
+  --saas-primary-dark: #174ea6;
+  --saas-primary-light: #4c9eff;
   
   /* Transitions */
-  --saas-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-  --saas-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  --saas-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --saas-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* AGGRESSIVE GLOBAL OVERRIDES */
-* {
-  transition: var(--saas-transition-fast) !important;
-}
-
-/* NAVIGATION BAR - FORCE BRAND COLORS */
-.o_main_navbar,
-.navbar,
-.o_navbar,
-#oe_main_menu_navbar {
-  background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
-  background-color: #1a73e8 !important;
-  border-color: #174ea6 !important;
+/* Main Navigation - Beautiful Azure Gradient */
+.o_main_navbar {
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-dark) 100%) !important;
   box-shadow: 0 2px 8px rgba(26, 115, 232, 0.15) !important;
+  transition: var(--saas-transition-smooth) !important;
 }
 
-.o_main_navbar *,
-.navbar *,
-.o_navbar * {
-  color: white !important;
+.o_main_navbar:hover {
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2) !important;
 }
 
 .o_main_navbar .dropdown-toggle,
 .o_main_navbar .nav-link,
-.o_main_navbar .navbar-brand,
-.navbar .dropdown-toggle,
-.navbar .nav-link,
-.navbar .navbar-brand {
+.o_main_navbar .navbar-brand {
   color: white !important;
   transition: var(--saas-transition-fast) !important;
 }
 
 .o_main_navbar .dropdown-toggle:hover,
-.o_main_navbar .nav-link:hover,
-.navbar .dropdown-toggle:hover,
-.navbar .nav-link:hover {
+.o_main_navbar .nav-link:hover {
   color: rgba(255, 255, 255, 0.9) !important;
   background-color: rgba(255, 255, 255, 0.1) !important;
   transform: translateY(-1px) !important;
-}
-
-/* BUTTONS - FORCE BRAND COLORS */
-.btn-primary,
-.btn.btn-primary,
-button.btn-primary,
-input[type="submit"].btn-primary,
-.o_form_button_save,
-.o_form_button_create {
-  background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
-  background-color: #1a73e8 !important;
-  border-color: #1a73e8 !important;
-  color: white !important;
-  box-shadow: 0 2px 6px rgba(26, 115, 232, 0.2) !important;
-  font-weight: 500 !important;
-}
-
-.btn-primary:hover,
-.btn-primary:focus,
-.btn-primary:active,
-.btn.btn-primary:hover,
-.btn.btn-primary:focus,
-.btn.btn-primary:active,
-.o_form_button_save:hover,
-.o_form_button_create:hover {
-  background: linear-gradient(135deg, #174ea6 0%, #1a73e8 100%) !important;
-  background-color: #174ea6 !important;
-  border-color: #174ea6 !important;
-  color: white !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3) !important;
-}
-
-.btn-secondary,
-.btn.btn-secondary,
-button.btn-secondary {
-  background: linear-gradient(135deg, #00bfa5 0%, #00937a 100%) !important;
-  background-color: #00bfa5 !important;
-  border-color: #00bfa5 !important;
-  color: white !important;
-  box-shadow: 0 2px 6px rgba(0, 191, 165, 0.2) !important;
-}
-
-.btn-secondary:hover,
-.btn-secondary:focus,
-.btn.btn-secondary:hover,
-.btn.btn-secondary:focus {
-  background: linear-gradient(135deg, #00937a 0%, #00bfa5 100%) !important;
-  background-color: #00937a !important;
-  border-color: #00937a !important;
-  color: white !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px rgba(0, 191, 165, 0.3) !important;
-}
-
-/* LINKS - FORCE BRAND COLORS */
-a,
-.o_form_uri,
-.o_field_url {
-  color: #1a73e8 !important;
-  text-decoration: none !important;
-}
-
-a:hover,
-a:focus,
-.o_form_uri:hover,
-.o_field_url:hover {
-  color: #ff6f61 !important;
-  transform: translateX(2px) !important;
-}
-
-/* FORM CONTROLS - FORCE STYLING */
-.form-control,
-.o_input,
-.o_field_widget input,
-.o_field_widget textarea,
-.o_field_widget select,
-input[type="text"],
-input[type="email"],
-input[type="password"],
-input[type="number"],
-textarea,
-select {
-  border: 2px solid rgba(26, 115, 232, 0.2) !important;
-  border-radius: 6px !important;
-  color: #2e3a59 !important;
-  background-color: white !important;
-}
-
-.form-control:focus,
-.o_input:focus,
-.o_field_widget input:focus,
-.o_field_widget textarea:focus,
-.o_field_widget select:focus,
-input:focus,
-textarea:focus,
-select:focus {
-  border-color: #1a73e8 !important;
-  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1) !important;
-  outline: none !important;
-  transform: scale(1.01) !important;
-}
-
-/* CARDS & PANELS - FORCE STYLING */
-.card,
-.panel,
-.o_form_view,
-.o_list_view,
-.o_kanban_view {
-  background-color: white !important;
-  border: 1px solid rgba(26, 115, 232, 0.1) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.08) !important;
-}
-
-.card:hover,
-.panel:hover,
-.o_form_view:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.15) !important;
-}
-
-.card-header,
-.panel-heading,
-.o_form_sheet_bg {
-  background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
-  background-color: #1a73e8 !important;
-  color: white !important;
-  border-color: #1a73e8 !important;
-}
-
-/* TABLES - FORCE STYLING */
-.table,
-.o_list_table,
-.o_list_view table {
-  background-color: white !important;
-  border-radius: 8px !important;
-  overflow: hidden !important;
-}
-
-.table thead th,
-.o_list_table thead th,
-.table th {
-  background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
-  background-color: #1a73e8 !important;
-  color: white !important;
-  border-color: #1a73e8 !important;
-  font-weight: 600 !important;
-}
-
-.table tbody tr:hover,
-.o_list_table tbody tr:hover {
-  background-color: rgba(26, 115, 232, 0.05) !important;
-  transform: scale(1.002) !important;
-}
-
-/* BADGES & STATUS - FORCE BRAND COLORS */
-.badge,
-.label,
-.o_badge,
-.o_tag {
-  border-radius: 6px !important;
-  font-weight: 500 !important;
-}
-
-.badge-primary,
-.label-primary,
-.o_badge_primary {
-  background-color: #1a73e8 !important;
-  color: white !important;
-}
-
-.badge-secondary,
-.label-secondary,
-.o_badge_secondary {
-  background-color: #00bfa5 !important;
-  color: white !important;
-}
-
-.badge-success,
-.label-success,
-.o_badge_success {
-  background-color: #00bfa5 !important;
-  color: white !important;
-}
-
-.badge-info,
-.label-info,
-.o_badge_info {
-  background-color: #9b51e0 !important;
-  color: white !important;
-}
-
-.badge-warning,
-.label-warning,
-.o_badge_warning {
-  background-color: #ff6f61 !important;
-  color: white !important;
-}
-
-.badge-danger,
-.label-danger,
-.o_badge_danger {
-  background-color: #e05a4e !important;
-  color: white !important;
-}
-
-/* PROGRESS BARS - FORCE BRAND COLORS */
-.progress {
-  background-color: rgba(26, 115, 232, 0.1) !important;
-  border-radius: 6px !important;
-  height: 8px !important;
-}
-
-.progress-bar {
-  background: linear-gradient(135deg, #1a73e8 0%, #4c9eff 100%) !important;
-  background-color: #1a73e8 !important;
   border-radius: 6px !important;
 }
 
-/* DROPDOWNS - FORCE STYLING */
-.dropdown-menu {
-  background-color: white !important;
-  border: 1px solid rgba(26, 115, 232, 0.1) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.15) !important;
+/* SaaS Controller Specific Styles */
+.saas-controller-form {
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.dropdown-item {
-  color: #2e3a59 !important;
-  transition: var(--saas-transition-fast) !important;
+.saas-color-preview {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-left: 10px;
+  border: 1px solid #ccc;
 }
 
-.dropdown-item:hover,
-.dropdown-item:focus {
-  background-color: rgba(26, 115, 232, 0.1) !important;
-  color: #1a73e8 !important;
-  transform: translateX(4px) !important;
+.saas-limit-info {
+  padding: 15px;
+  border-radius: 8px;
+  margin: 10px 0;
 }
 
-/* KANBAN CARDS - FORCE STYLING */
-.o_kanban_record {
-  background-color: white !important;
-  border: 1px solid rgba(26, 115, 232, 0.1) !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.08) !important;
+.saas-limit-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
 }
 
-.o_kanban_record:hover {
-  transform: translateY(-4px) scale(1.02) !important;
-  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.2) !important;
+.saas-limit-danger {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
 }
 
-/* APP MENU - FORCE STYLING */
-.o_apps .o_app,
-.o_app {
-  border: 2px solid rgba(26, 115, 232, 0.2) !important;
-  border-radius: 8px !important;
-  transition: var(--saas-transition-smooth) !important;
+.saas-limit-success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
 }
 
-.o_apps .o_app:hover,
-.o_app:hover {
-  background-color: rgba(26, 115, 232, 0.1) !important;
-  border-color: #1a73e8 !important;
-  transform: scale(1.05) translateY(-2px) !important;
-  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.2) !important;
-}
-
-/* LOGIN & DATABASE LIST - FORCE STYLING */
-.o_database_list .list-group-item,
-.list-group-item {
-  border-color: rgba(26, 115, 232, 0.2) !important;
-  color: #2e3a59 !important;
-}
-
-.o_database_list .list-group-item:hover,
-.list-group-item:hover {
-  background-color: rgba(26, 115, 232, 0.1) !important;
-  border-color: #1a73e8 !important;
-  transform: translateX(4px) !important;
-}
-
-/* NOTIFICATIONS - FORCE STYLING */
-.alert,
-.o_notification {
-  border-radius: 8px !important;
-  border: none !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-}
-
-.alert-success,
-.o_notification_success {
-  background-color: rgba(0, 191, 165, 0.1) !important;
-  border-left: 4px solid #00bfa5 !important;
-  color: #00937a !important;
-}
-
-.alert-info,
-.o_notification_info {
-  background-color: rgba(155, 81, 224, 0.1) !important;
-  border-left: 4px solid #9b51e0 !important;
-  color: #7a3eb0 !important;
-}
-
-.alert-warning,
-.o_notification_warning {
-  background-color: rgba(255, 111, 97, 0.1) !important;
-  border-left: 4px solid #ff6f61 !important;
-  color: #e05a4e !important;
-}
-
-.alert-danger,
-.o_notification_danger {
-  background-color: rgba(224, 90, 78, 0.1) !important;
-  border-left: 4px solid #e05a4e !important;
-  color: #e05a4e !important;
-}
-
-/* HIDE ODOO BRANDING */
-.o_sub_menu_footer,
-.powered_by,
-[data-section="about"] .oe_instance_title,
-.oe_instance_title,
-.o_footer {
-  display: none !important;
-}
-
-/* STATUS INDICATORS - BRAND COLORS */
-.saas-status-active,
-.fa-check-circle,
-.text-success {
-  color: #00bfa5 !important;
-}
-
-.saas-status-inactive,
-.fa-times-circle,
-.text-danger {
-  color: #e05a4e !important;
-}
-
-.saas-status-syncing,
-.fa-sync-alt,
-.text-warning {
-  color: #ff6f61 !important;
-}
-
-.text-info {
-  color: #9b51e0 !important;
-}
-
-.text-primary {
-  color: #1a73e8 !important;
-}
-
-.text-secondary {
-  color: #00bfa5 !important;
-}
-
-/* RESPONSIVE DESIGN */
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .card,
-  .o_form_view {
-    margin: 0.5rem !important;
-    border-radius: 6px !important;
+  .saas-controller-form {
+    padding: 10px;
   }
-  
-  .btn {
-    padding: 0.75rem 1.5rem !important;
-    font-size: 0.875rem !important;
+
+  .saas-color-preview {
+    width: 25px;
+    height: 25px;
   }
-}
-
-/* AGGRESSIVE OVERRIDE FOR STUBBORN ELEMENTS */
-[style*="background"],
-[style*="color"] {
-  background: unset !important;
-  color: inherit !important;
-}
-
-/* Force all text to use brand colors */
-body,
-html {
-  color: #2e3a59 !important;
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 /* Animation for configuration changes */
 .saas-config-updating {
-  opacity: 0.7 !important;
-  transition: opacity 0.3s ease !important;
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
 }
 
 .saas-config-updated {
-  opacity: 1 !important;
-  transition: opacity 0.3s ease !important;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Status indicators */
+.saas-status-active {
+  color: #28a745;
+}
+
+.saas-status-inactive {
+  color: #dc3545;
+}
+
+.saas-status-syncing {
+  color: #ffc107;
 }
