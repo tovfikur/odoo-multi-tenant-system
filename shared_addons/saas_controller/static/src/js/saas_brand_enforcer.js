@@ -35,8 +35,18 @@
                 navbar.style.setProperty('box-shadow', '0 2px 8px rgba(26, 115, 232, 0.15)', 'important');
             }
             
-            // Style navbar items
-            var navItems = document.querySelectorAll('.o_main_navbar .dropdown-toggle, .o_main_navbar .nav-link, .o_main_navbar .navbar-brand');
+            // Style navbar brand, nav entries, and dropdown toggles with Google Caveat font
+            var navSpecialItems = document.querySelectorAll('.o_main_navbar .o_menu_brand, .o_main_navbar .o_nav_entry, .o_main_navbar .dropdown-toggle');
+            navSpecialItems.forEach(function(item) {
+                item.style.setProperty('color', 'white', 'important');
+                item.style.setProperty('font-family', '"Caveat", cursive', 'important');
+                item.style.setProperty('font-weight', '500', 'important');
+                item.style.setProperty('letter-spacing', '0.5px', 'important');
+                item.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', 'important');
+            });
+            
+            // Style other navbar items
+            var navItems = document.querySelectorAll('.o_main_navbar .nav-link');
             navItems.forEach(function(item) {
                 item.style.setProperty('color', 'white', 'important');
             });

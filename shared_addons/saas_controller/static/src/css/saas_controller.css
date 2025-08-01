@@ -1,5 +1,8 @@
 /* SaaS Controller - Simple Navbar Styling */
 
+/* Import Google Caveat Font */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap');
+
 /* Brand Color Variables */
 :root {
   /* Your Primary Azure Brand Color */
@@ -10,9 +13,14 @@
   /* Complementary Color (Coral/Orange) */
   --saas-complementary-color: #ff6f61;
   
+  /* Fonts */
+  --saas-font-caveat: 'Caveat', cursive;
+  --saas-font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  
   /* Transitions */
   --saas-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --saas-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --saas-transition-font: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Main Navigation - Beautiful Azure Gradient */
@@ -26,14 +34,33 @@
   box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2) !important;
 }
 
-.o_main_navbar .dropdown-toggle,
-.o_main_navbar .nav-link,
-.o_main_navbar .navbar-brand {
+/* Navbar Brand, Nav Entries, and Dropdown Toggles - Google Caveat Font */
+.o_main_navbar .o_menu_brand,
+.o_main_navbar .o_nav_entry,
+.o_main_navbar .dropdown-toggle {
+  color: white !important;
+  font-family: var(--saas-font-caveat) !important;
+  font-weight: 500 !important;
+  transition: var(--saas-transition-font) !important;
+  letter-spacing: 0.5px !important;
+}
+
+.o_main_navbar .o_menu_brand:hover,
+.o_main_navbar .o_nav_entry:hover,
+.o_main_navbar .dropdown-toggle:hover {
+  color: white !important;
+  font-family: var(--saas-font-system) !important;
+  font-weight: 500 !important;
+  transform: scale(1.02) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Other navbar items */
+.o_main_navbar .nav-link {
   color: white !important;
   transition: var(--saas-transition-fast) !important;
 }
 
-.o_main_navbar .dropdown-toggle:hover,
 .o_main_navbar .nav-link:hover {
   color: rgba(255, 255, 255, 0.9) !important;
   background-color: rgba(255, 255, 255, 0.1) !important;
