@@ -206,6 +206,10 @@
     transition: background-color 0.3s ease !important;
 }
 
+.fa {
+    color: rgba(26, 115, 232, 1) !important;
+}
+
 /* Micro-interaction Animations - Add to existing CSS */
 
 /* Button pulse on focus */
