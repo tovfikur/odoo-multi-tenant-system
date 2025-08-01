@@ -27,7 +27,7 @@
                             
                             <group name="users" string="User Management">
                                 <field name="user_limit_enabled"/>
-                                <field name="max_users" attrs="{'invisible': [('user_limit_enabled', '=', False)]}"/>
+                                <field name="max_users" invisible="user_limit_enabled == False"/>
                                 <field name="current_users" readonly="1"/>
                             </group>
                         </group>
