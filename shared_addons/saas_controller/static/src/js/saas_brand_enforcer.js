@@ -41,13 +41,22 @@
                 item.style.setProperty('color', 'white', 'important');
             });
             
+            // Style menu sections container
+            var menuSectionsContainer = document.querySelector('.o_main_navbar .o_menu_sections');
+            if (menuSectionsContainer) {
+                menuSectionsContainer.style.setProperty('gap', '8px', 'important');
+                menuSectionsContainer.style.setProperty('display', 'flex', 'important');
+            }
+            
             // Style specific menu sections
             var menuSections = document.querySelectorAll('.o_main_navbar .o_menu_sections .o_nav_entry, .o_main_navbar .o_menu_sections .dropdown-toggle');
             menuSections.forEach(function(item) {
                 item.style.setProperty('background-color', PRIMARY_COLOR, 'important');
                 item.style.setProperty('color', 'white', 'important');
                 item.style.setProperty('border-radius', '6px', 'important');
-                item.style.setProperty('margin', '0 2px', 'important');
+                item.style.setProperty('margin', '0', 'important');
+                item.style.setProperty('border', 'none', 'important');
+                item.style.setProperty('font-weight', 'normal', 'important');
             });
             
             // Style dropdown items

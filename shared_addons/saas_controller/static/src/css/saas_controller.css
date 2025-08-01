@@ -42,21 +42,29 @@
 }
 
 /* Specific Navbar Menu Sections - Brand Color Background */
+.o_main_navbar .o_menu_sections {
+  gap: 8px !important;
+  display: flex !important;
+}
+
 .o_main_navbar .o_menu_sections .o_nav_entry,
 .o_main_navbar .o_menu_sections .dropdown-toggle {
   background-color: var(--saas-primary-color) !important;
   color: white !important;
   transition: var(--saas-transition-fast) !important;
   border-radius: 6px !important;
-  margin: 0 2px !important;
+  margin: 0 !important;
+  border: none !important;
+  font-weight: normal !important;
 }
 
 .o_main_navbar .o_menu_sections .o_nav_entry:hover,
 .o_main_navbar .o_menu_sections .dropdown-toggle:hover {
-  background-color: var(--saas-primary-dark) !important;
+  background-color: var(--saas-primary-color) !important;
   color: white !important;
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.2) !important;
+  font-weight: bold !important;
+  transform: none !important;
+  box-shadow: none !important;
 }
 
 /* Dropdown Items - Toggle Colors on Hover */
