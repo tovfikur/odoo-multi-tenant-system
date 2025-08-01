@@ -207,13 +207,20 @@ class SaasController(models.Model):
     def _remove_odoo_branding(self):
         """Remove Odoo branding from the system"""
         try:
-            # Hide Odoo branding in various places
+            # Hide Odoo branding in various places and replace icons
             branding_css = """
             .o_sub_menu_footer, 
             .powered_by,
             [data-section="about"] .oe_instance_title,
             .oe_instance_title {
                 display: none !important;
+            }
+            
+            /* Replace oi oi-apps icon with Font Awesome brain icon */
+            .oi.oi-apps:before {
+                content: "\\f5dc" !important;
+                font-family: "Font Awesome 5 Free" !important;
+                font-weight: 900 !important;
             }
             """
             
