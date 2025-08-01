@@ -197,7 +197,8 @@
 }
 
 .o-dropdown--menu .dropdown-item.focus{
-    background-color: rgba(26, 115, 232, 0.2) !important;
+    color: rgba(26, 115, 232, 0.2) !important;
+    background-color: rgba(236, 241, 247, 0.9) !important;
     transition: background-color 0.3s ease !important;
 }
 
