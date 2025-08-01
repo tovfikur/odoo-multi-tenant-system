@@ -216,23 +216,6 @@ class SaasController(models.Model):
                 display: none !important;
             }
             
-            /* Replace oi oi-apps icon with Font Awesome brain icon */
-            .oi.oi-apps:before {
-                content: "\\f5dc" !important;
-                font-family: "Font Awesome 6 Free" !important;
-                font-weight: 900 !important;
-            }
-            
-            /* Alternative approach - hide original and add new icon */
-            .o_navbar_apps_menu .oi.oi-apps {
-                font-size: 0 !important;
-            }
-            .o_navbar_apps_menu .oi.oi-apps:after {
-                content: "\\f5dc" !important;
-                font-family: "Font Awesome 6 Free" !important;
-                font-weight: 900 !important;
-                font-size: 14px !important;
-            }
             """
             
             # Update the custom CSS view
