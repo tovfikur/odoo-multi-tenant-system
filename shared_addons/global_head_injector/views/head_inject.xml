@@ -93,13 +93,20 @@
 
                 .o-dropdown .dropdown:hover {
                     background: linear-gradient(180deg, #1a73e8 0%, #174ea6 100%) !important;
-                    transition: background 0.3s ease;
+                    transition: background 0.3s ease !important;
                 }
 
                 .o-dropdown .dropdown {
-                transition: background 0.3s ease;
-}
+                transition: background 0.3s ease !important;
+                }
 
+                .btn .btn-primary {
+                    background: linear-gradient(135deg, #174ea6 0%, #1a73e8 100%) !important;
+                    border: none !important;
+                    color: white !important;
+                    font-weight: 600 !important;
+                    transition: background 0.3s ease !important;
+                }
 
                 </style>
             </xpath>
