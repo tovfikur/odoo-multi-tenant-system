@@ -52,9 +52,11 @@ Controls Available:
     'assets': {
         'web.assets_backend': [
             'saas_controller/static/src/css/saas_controller.css',
+            'saas_controller/static/src/js/saas_brand_enforcer.js',
         ],
         'web.assets_frontend': [
             'saas_controller/static/src/css/saas_controller.css',
+            'saas_controller/static/src/js/saas_brand_enforcer.js',
         ],
     },
     'installable': True,

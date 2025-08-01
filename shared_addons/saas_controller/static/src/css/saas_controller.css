@@ -1,1346 +1,481 @@
-/* ========================================
-   ODOO 17.0 COLOR-ONLY THEME
-   Brand Color System with Light/Dark Mode
-   ======================================== */
+/* SaaS Controller - Aggressive Brand Color Enforcement */
+/* Your Beautiful Jewel + Neutral Color Scheme */
 
-/* ===== CSS CUSTOM PROPERTIES SYSTEM ===== */
+/* IMPORTANT: Forceful Brand Color Variables */
 :root {
-  /* === BRAND COLOR SYSTEM === */
-  --brand-primary: #1a73e8;
-  --brand-primary-hover: #1557b0;
-  --brand-primary-light: #e8f0fe;
-  --brand-primary-dark: #0d47a1;
-  --brand-secondary: #00acc1;
-  --brand-secondary-hover: #00838f;
-  --brand-accent: #f57c00;
-  --brand-success: #2e7d32;
-  --brand-warning: #f57c00;
-  --brand-error: #d32f2f;
-
-  /* === LIGHT MODE THEME === */
-  --o-bg-1: #ffffff;
-  --o-bg-2: #85c2ff;
-  --o-bg-3: #f1f5f9;
-  --o-bg-4: #e2e8f0;
-  --o-bg-5: #cbd5e1;
-  --o-surface: #ffffff;
-  --o-surface-hover: #f8fafc;
-  --o-surface-active: #e3f2fd;
-
-  --o-text-1: #0f172a;
-  --o-text-2: #334155;
-  --o-text-3: #64748b;
-  --o-text-4: #94a3b8;
-  --o-text-5: #cbd5e1;
-  --o-text-inverse: #ffffff;
-
-  --o-border-1: #f1f5f9;
-  --o-border-2: #e2e8f0;
-  --o-border-3: #cbd5e1;
-  --o-border-4: #94a3b8;
-
-  /* === ODOO SPECIFIC COLOR OVERRIDES === */
-  --o-color-1: var(--brand-primary);
-  --o-color-2: var(--brand-secondary);
-  --o-color-3: var(--o-bg-2);
-  --o-color-4: var(--o-surface);
-  --o-color-5: var(--o-text-1);
-
-  /* === OWL JS COLOR VARIABLES === */
-  --o-brand-odoo: var(--brand-primary);
-  --o-brand-primary: var(--brand-primary);
-  --o-brand-secondary: var(--brand-secondary);
-  --o-enterprise-color: var(--brand-primary);
-  --o-community-color: var(--brand-primary);
-  --o-brand-lightsecondary: var(--brand-primary-light);
-
-  /* === BOOTSTRAP COLOR OVERRIDES === */
-  --bs-primary: var(--brand-primary);
-  --bs-primary-rgb: 26, 115, 232;
-  --bs-secondary: var(--o-text-3);
-  --bs-secondary-rgb: 100, 116, 139;
-  --bs-success: var(--brand-success);
-  --bs-success-rgb: 46, 125, 50;
-  --bs-warning: var(--brand-warning);
-  --bs-warning-rgb: 245, 124, 0;
-  --bs-danger: var(--brand-error);
-  --bs-danger-rgb: 211, 47, 47;
-  --bs-info: var(--brand-primary);
-  --bs-info-rgb: 26, 115, 232;
-  --bs-light: var(--o-bg-2);
-  --bs-light-rgb: 248, 250, 252;
-  --bs-dark: var(--o-text-1);
-  --bs-dark-rgb: 15, 23, 42;
-  --bs-body-bg: var(--o-bg-1);
-  --bs-body-color: var(--o-text-1);
-
-  /* === ADDITIONAL ODOO COLOR VARIABLES === */
-  --o-main-text-color: var(--o-text-1);
-  --o-main-headings-color: var(--o-text-1);
-  --o-main-favorite-color: var(--brand-warning);
-  --o-main-code-color: var(--brand-accent);
-  --o-navbar-bg: var(--brand-primary);
-  --o-navbar-text: var(--o-text-inverse);
-  --o-tooltip-background-color: var(--o-text-1);
-  --o-tooltip-color: var(--o-text-inverse);
-  --o-tooltip-arrow-color: var(--o-text-1);
+  /* Primary Azure Colors - Your Main Brand */
+  --saas-primary-color: #1a73e8 !important;
+  --saas-primary-dark: #174ea6 !important;
+  --saas-primary-light: #4c9eff !important;
+  
+  /* Secondary Teal Colors */
+  --saas-secondary-color: #00bfa5 !important;
+  --saas-secondary-dark: #00937a !important;
+  --saas-secondary-light: #33e1c6 !important;
+  
+  /* Accent Coral Colors */
+  --saas-accent-color: #ff6f61 !important;
+  --saas-accent-dark: #e05a4e !important;
+  --saas-accent-light: #ff8a7a !important;
+  
+  /* Support Violet Colors */
+  --saas-support-color: #9b51e0 !important;
+  --saas-support-dark: #7a3eb0 !important;
+  --saas-support-light: #b76deb !important;
+  
+  /* Neutrals & Text */
+  --saas-background-color: #ffffff !important;
+  --saas-text-color: #2e3a59 !important;
+  --saas-text-secondary: #5c6b8a !important;
+  --saas-text-muted: #8a95aa !important;
+  --saas-link-color: #1a73e8 !important;
+  
+  /* Override Odoo Variables */
+  --primary: #1a73e8 !important;
+  --secondary: #00bfa5 !important;
+  --success: #00bfa5 !important;
+  --info: #9b51e0 !important;
+  --warning: #ff6f61 !important;
+  --danger: #e05a4e !important;
+  
+  /* Transitions */
+  --saas-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  --saas-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
-/* ===== DARK MODE OVERRIDES ===== */
-[data-bs-theme="dark"],
-.o_dark_mode,
-body.o_dark {
-  --brand-primary: #3b82f6;
-  --brand-primary-hover: #2563eb;
-  --brand-primary-light: #1e293b;
-  --brand-primary-dark: #1e40af;
-  --brand-secondary: #06b6d4;
-  --brand-secondary-hover: #0891b2;
-  --brand-accent: #f59e0b;
-  --brand-success: #10b981;
-  --brand-warning: #f59e0b;
-  --brand-error: #ef4444;
-
-  --o-bg-1: #0f172a;
-  --o-bg-2: #1e293b;
-  --o-bg-3: #334155;
-  --o-bg-4: #475569;
-  --o-bg-5: #64748b;
-  --o-surface: #1e293b;
-  --o-surface-hover: #334155;
-  --o-surface-active: #1e3a8a;
-
-  --o-text-1: #f8fafc;
-  --o-text-2: #e2e8f0;
-  --o-text-3: #cbd5e1;
-  --o-text-4: #94a3b8;
-  --o-text-5: #64748b;
-  --o-text-inverse: #0f172a;
-
-  --o-border-1: #1e293b;
-  --o-border-2: #334155;
-  --o-border-3: #475569;
-  --o-border-4: #64748b;
-
-  /* === BOOTSTRAP DARK MODE COLORS === */
-  --bs-primary: var(--brand-primary);
-  --bs-primary-rgb: 59, 130, 246;
-  --bs-secondary: var(--o-text-3);
-  --bs-secondary-rgb: 203, 213, 225;
-  --bs-success: var(--brand-success);
-  --bs-success-rgb: 16, 185, 129;
-  --bs-warning: var(--brand-warning);
-  --bs-warning-rgb: 245, 158, 11;
-  --bs-danger: var(--brand-error);
-  --bs-danger-rgb: 239, 68, 68;
-  --bs-info: var(--brand-primary);
-  --bs-info-rgb: 59, 130, 246;
-  --bs-light: var(--o-bg-2);
-  --bs-light-rgb: 30, 41, 59;
-  --bs-dark: var(--o-text-1);
-  --bs-dark-rgb: 248, 250, 252;
-  --bs-body-bg: var(--o-bg-1);
-  --bs-body-color: var(--o-text-1);
-
-  --background-color: var(--o-bg-1) !important;
+/* AGGRESSIVE GLOBAL OVERRIDES */
+* {
+  transition: var(--saas-transition-fast) !important;
 }
 
-/* Auto dark mode based on system preference */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-bs-theme="light"]) {
-    --brand-primary: #3b82f6;
-    --brand-primary-hover: #2563eb;
-    --brand-primary-light: #1e293b;
-    --brand-primary-dark: #1e40af;
-    --brand-secondary: #06b6d4;
-    --brand-secondary-hover: #0891b2;
-    --brand-accent: #f59e0b;
-    --brand-success: #10b981;
-    --brand-warning: #f59e0b;
-    --brand-error: #ef4444;
-
-    --o-bg-1: #0f172a;
-    --o-bg-2: #1e293b;
-    --o-bg-3: #334155;
-    --o-bg-4: #475569;
-    --o-bg-5: #64748b;
-    --o-surface: #1e293b;
-    --o-surface-hover: #334155;
-    --o-surface-active: #1e3a8a;
-
-    --o-text-1: #f8fafc;
-    --o-text-2: #e2e8f0;
-    --o-text-3: #cbd5e1;
-    --o-text-4: #94a3b8;
-    --o-text-5: #64748b;
-    --o-text-inverse: #0f172a;
-
-    --o-border-1: #1e293b;
-    --o-border-2: #334155;
-    --o-border-3: #475569;
-    --o-border-4: #64748b;
-  }
-}
-
-/* ===== BASE COLOR APPLICATION ===== */
-html,
-body {
-  background-color: var(--o-bg-1) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* ===== TYPOGRAPHY COLORS ===== */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6,
-.h1,
-.h2,
-.h3,
-.h4,
-.h5,
-.h6 {
-  color: var(--o-text-1) !important;
-}
-
-p {
-  color: var(--o-text-2) !important;
-}
-
-small,
-.small {
-  color: var(--o-text-3) !important;
-}
-
-/* ===== ODOO MAIN STRUCTURE COLORS ===== */
-.o_web_client {
-  background-color: var(--o-bg-1) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_action_manager,
-.o_main_content,
-.o_content {
-  background-color: var(--o-bg-1) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* ===== NAVIGATION COLORS ===== */
+/* NAVIGATION BAR - FORCE BRAND COLORS */
 .o_main_navbar,
-.navbar {
-  background-color: var(--brand-primary) !important;
-  color: var(--o-text-inverse) !important;
-  border-bottom-color: var(--o-border-2) !important;
+.navbar,
+.o_navbar,
+#oe_main_menu_navbar {
+  background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
+  background-color: #1a73e8 !important;
+  border-color: #174ea6 !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.15) !important;
 }
 
-.o_main_navbar a,
-.o_main_navbar button,
-.navbar a,
-.navbar button,
-.o_menu_toggle,
-.navbar-brand {
-  color: var(--o-text-inverse) !important;
+.o_main_navbar *,
+.navbar *,
+.o_navbar * {
+  color: white !important;
 }
 
-.o_navbar_apps_menu {
-  background-color: var(--brand-primary) !important;
-  color: var(--o-text-inverse) !important;
+.o_main_navbar .dropdown-toggle,
+.o_main_navbar .nav-link,
+.o_main_navbar .navbar-brand,
+.navbar .dropdown-toggle,
+.navbar .nav-link,
+.navbar .navbar-brand {
+  color: white !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
-/* ===== DROPDOWN Colors ===== */
-.dropdown-menu {
-  background-color: var(--o-surface) !important;
+.o_main_navbar .dropdown-toggle:hover,
+.o_main_navbar .nav-link:hover,
+.navbar .dropdown-toggle:hover,
+.navbar .nav-link:hover {
+  color: rgba(255, 255, 255, 0.9) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px) !important;
 }
 
-.dropdown-item {
-  color: var(--o-text-1) !important;
-}
-
-.dropdown-item:hover,
-.dropdown-item:focus,
-.dropdown-item.active {
-  background-color: var(--o-surface-hover) !important;
-  color: var(--brand-primary) !important;
-}
-
-.dropdown-divider {
-}
-
-/* ===== BUTTON COLORS ===== */
-.btn-primary {
-  background-color: var(--brand-primary) !important;
-
-  color: var(--o-text-inverse) !important;
+/* BUTTONS - FORCE BRAND COLORS */
+.btn-primary,
+.btn.btn-primary,
+button.btn-primary,
+input[type="submit"].btn-primary,
+.o_form_button_save,
+.o_form_button_create {
+  background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
+  background-color: #1a73e8 !important;
+  border-color: #1a73e8 !important;
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(26, 115, 232, 0.2) !important;
+  font-weight: 500 !important;
 }
 
 .btn-primary:hover,
 .btn-primary:focus,
-.btn-primary:active {
-  background-color: var(--brand-primary-hover) !important;
-
-  color: var(--o-text-inverse) !important;
+.btn-primary:active,
+.btn.btn-primary:hover,
+.btn.btn-primary:focus,
+.btn.btn-primary:active,
+.o_form_button_save:hover,
+.o_form_button_create:hover {
+  background: linear-gradient(135deg, #174ea6 0%, #1a73e8 100%) !important;
+  background-color: #174ea6 !important;
+  border-color: #174ea6 !important;
+  color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3) !important;
 }
 
-.btn-secondary {
-  background-color: var(--o-bg-3) !important;
-
-  color: var(--o-text-1) !important;
+.btn-secondary,
+.btn.btn-secondary,
+button.btn-secondary {
+  background: linear-gradient(135deg, #00bfa5 0%, #00937a 100%) !important;
+  background-color: #00bfa5 !important;
+  border-color: #00bfa5 !important;
+  color: white !important;
+  box-shadow: 0 2px 6px rgba(0, 191, 165, 0.2) !important;
 }
 
 .btn-secondary:hover,
 .btn-secondary:focus,
-.btn-secondary:active {
-  background-color: var(--o-bg-4) !important;
-
-  color: var(--o-text-1) !important;
-}
-
-.btn-success {
-  background-color: var(--brand-success) !important;
-
+.btn.btn-secondary:hover,
+.btn.btn-secondary:focus {
+  background: linear-gradient(135deg, #00937a 0%, #00bfa5 100%) !important;
+  background-color: #00937a !important;
+  border-color: #00937a !important;
   color: white !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0, 191, 165, 0.3) !important;
 }
 
-.btn-warning {
-  background-color: var(--brand-warning) !important;
-
-  color: white !important;
+/* LINKS - FORCE BRAND COLORS */
+a,
+.o_form_uri,
+.o_field_url {
+  color: #1a73e8 !important;
+  text-decoration: none !important;
 }
 
-.btn-danger {
-  background-color: var(--brand-error) !important;
-
-  color: white !important;
+a:hover,
+a:focus,
+.o_form_uri:hover,
+.o_field_url:hover {
+  color: #ff6f61 !important;
+  transform: translateX(2px) !important;
 }
 
-.btn-outline-primary {
-  color: var(--brand-primary) !important;
-  background-color: transparent !important;
-}
-
-.btn-outline-primary:hover,
-.btn-outline-primary:focus,
-.btn-outline-primary:active {
-  background-color: var(--brand-primary) !important;
-  color: var(--o-text-inverse) !important;
-}
-
-/* ===== FORM COLORS ===== */
-.o_form_view {
-  background-color: var(--o-bg-1) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_form_sheet {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_form_sheet_bg {
-  background-color: var(--o-surface) !important;
-}
-
-.o_form_label,
-.form-label,
-label {
-  color: var(--o-text-2) !important;
-}
-
-.o_required_modifier .o_form_label:after,
-.o_required_modifier label:after {
-  color: var(--brand-error) !important;
-}
-
-/* ===== INPUT COLORS ===== */
+/* FORM CONTROLS - FORCE STYLING */
 .form-control,
 .o_input,
-input:not([type="checkbox"]):not([type="radio"]),
-select,
-textarea,
 .o_field_widget input,
+.o_field_widget textarea,
 .o_field_widget select,
-.o_field_widget textarea {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+  border: 2px solid rgba(26, 115, 232, 0.2) !important;
+  border-radius: 6px !important;
+  color: #2e3a59 !important;
+  background-color: white !important;
 }
 
 .form-control:focus,
 .o_input:focus,
-input:focus,
-select:focus,
-textarea:focus,
 .o_field_widget input:focus,
+.o_field_widget textarea:focus,
 .o_field_widget select:focus,
-.o_field_widget textarea:focus {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: #1a73e8 !important;
+  box-shadow: 0 0 0 3px rgba(26, 115, 232, 0.1) !important;
+  outline: none !important;
+  transform: scale(1.01) !important;
 }
 
-.form-control:disabled,
-.o_input:disabled,
-input:disabled,
-select:disabled,
-textarea:disabled {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-4) !important;
-}
-
-.form-control::placeholder,
-.o_input::placeholder,
-input::placeholder,
-textarea::placeholder {
-  color: var(--o-text-4) !important;
-}
-
-/* ===== CHECKBOX AND RADIO COLORS ===== */
-input[type="checkbox"],
-input[type="radio"],
-.form-check-input {
-  background-color: var(--o-surface) !important;
-}
-
-input[type="checkbox"]:checked,
-input[type="radio"]:checked,
-.form-check-input:checked {
-  background-color: var(--brand-primary) !important;
-}
-
-/* ===== TABLE AND LIST COLORS ===== */
+/* CARDS & PANELS - FORCE STYLING */
+.card,
+.panel,
+.o_form_view,
 .o_list_view,
-.table,
-.o_list_table {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_list_table thead th,
-.table thead th,
-th {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-2) !important;
-}
-
-.o_list_table tbody tr,
-.table tbody tr,
-tr {
-  background-color: var(--o-surface) !important;
-}
-
-.o_list_table tbody tr:hover,
-.table tbody tr:hover,
-tr:hover {
-  background-color: var(--o-surface-hover) !important;
-}
-
-.o_list_table tbody tr.o_selected_row,
-.table tbody tr.o_selected_row,
-tr.o_selected_row {
-  background-color: var(--o-surface-active) !important;
-}
-
-.o_list_table tbody td,
-.table tbody td,
-td {
-  color: var(--o-text-1) !important;
-}
-
-/* ===== CONTROL PANEL COLORS ===== */
-.o_control_panel {
-  background-color: var(--o-surface) !important;
-}
-
-.o_cp_searchview,
-.o_searchview {
-  background-color: var(--o-surface) !important;
-}
-
-.o_searchview_input,
-.o_searchview_input_container input {
-  background-color: transparent !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_searchview_input::placeholder {
-  color: var(--o-text-4) !important;
-}
-
-/* ===== KANBAN COLORS ===== */
 .o_kanban_view {
-  background-color: var(--o-bg-1) !important;
+  background-color: white !important;
+  border: 1px solid rgba(26, 115, 232, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.08) !important;
 }
 
-.o_kanban_group {
-  background-color: var(--o-bg-2) !important;
+.card:hover,
+.panel:hover,
+.o_form_view:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.15) !important;
 }
 
-.o_kanban_header {
-  background-color: var(--o-bg-3) !important;
-  color: var(--o-text-1) !important;
+.card-header,
+.panel-heading,
+.o_form_sheet_bg {
+  background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
+  background-color: #1a73e8 !important;
+  color: white !important;
+  border-color: #1a73e8 !important;
 }
 
-.o_kanban_record {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
+/* TABLES - FORCE STYLING */
+.table,
+.o_list_table,
+.o_list_view table {
+  background-color: white !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
 }
 
-.o_kanban_record:hover {
+.table thead th,
+.o_list_table thead th,
+.table th {
+  background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
+  background-color: #1a73e8 !important;
+  color: white !important;
+  border-color: #1a73e8 !important;
+  font-weight: 600 !important;
 }
 
-/* ===== CARD COLORS ===== */
-.card {
-  background-color: var(--o-surface) !important;
+.table tbody tr:hover,
+.o_list_table tbody tr:hover {
+  background-color: rgba(26, 115, 232, 0.05) !important;
+  transform: scale(1.002) !important;
 }
 
-.card-header {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-1) !important;
+/* BADGES & STATUS - FORCE BRAND COLORS */
+.badge,
+.label,
+.o_badge,
+.o_tag {
+  border-radius: 6px !important;
+  font-weight: 500 !important;
 }
 
-.card-body {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.card-footer {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-3) !important;
-}
-
-/* ===== MODAL COLORS ===== */
-.modal-backdrop {
-  background-color: rgba(15, 23, 42, 0.8) !important;
-}
-
-.modal-content {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.modal-header {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-1) !important;
-}
-
-.modal-title {
-  color: var(--o-text-1) !important;
-}
-
-.modal-body {
-  color: var(--o-text-1) !important;
-}
-
-.modal-footer {
-  background-color: var(--o-bg-2) !important;
-}
-
-.btn-close {
-  color: var(--o-text-3) !important;
-}
-
-.btn-close:hover {
-  color: var(--o-text-1) !important;
-}
-
-/* ===== ALERT COLORS ===== */
-.alert-success {
-  background-color: rgba(46, 125, 50, 0.1) !important;
-  color: var(--brand-success) !important;
-}
-
-.alert-warning {
-  background-color: rgba(245, 124, 0, 0.1) !important;
-  color: var(--brand-warning) !important;
-}
-
-.alert-danger {
-  background-color: rgba(211, 47, 47, 0.1) !important;
-  color: var(--brand-error) !important;
-}
-
-.alert-info {
-  background-color: rgba(26, 115, 232, 0.1) !important;
-  color: var(--brand-primary) !important;
-}
-
-/* ===== BADGE COLORS ===== */
-.badge-primary {
-  background-color: var(--brand-primary) !important;
-  color: var(--o-text-inverse) !important;
-}
-
-.badge-secondary {
-  background-color: var(--o-bg-4) !important;
-  color: var(--o-text-1) !important;
-}
-
-.badge-success {
-  background-color: var(--brand-success) !important;
+.badge-primary,
+.label-primary,
+.o_badge_primary {
+  background-color: #1a73e8 !important;
   color: white !important;
 }
 
-.badge-warning {
-  background-color: var(--brand-warning) !important;
+.badge-secondary,
+.label-secondary,
+.o_badge_secondary {
+  background-color: #00bfa5 !important;
   color: white !important;
 }
 
-.badge-danger {
-  background-color: var(--brand-error) !important;
+.badge-success,
+.label-success,
+.o_badge_success {
+  background-color: #00bfa5 !important;
   color: white !important;
 }
 
-/* ===== PAGINATION COLORS ===== */
-.page-link {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
+.badge-info,
+.label-info,
+.o_badge_info {
+  background-color: #9b51e0 !important;
+  color: white !important;
 }
 
-.page-link:hover,
-.page-link:focus {
-  background-color: var(--o-surface-hover) !important;
-  color: var(--brand-primary) !important;
+.badge-warning,
+.label-warning,
+.o_badge_warning {
+  background-color: #ff6f61 !important;
+  color: white !important;
 }
 
-.page-item.active .page-link {
-  background-color: var(--brand-primary) !important;
-
-  color: var(--o-text-inverse) !important;
+.badge-danger,
+.label-danger,
+.o_badge_danger {
+  background-color: #e05a4e !important;
+  color: white !important;
 }
 
-.page-item.disabled .page-link {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-4) !important;
-}
-
-/* ===== TAB COLORS ===== */
-.nav-tabs {
-}
-
-.nav-tabs .nav-link {
-  background-color: transparent !important;
-  color: var(--o-text-3) !important;
-}
-
-.nav-tabs .nav-link:hover,
-.nav-tabs .nav-link:focus {
-  color: var(--o-text-1) !important;
-  background-color: var(--o-surface-hover) !important;
-}
-
-.nav-tabs .nav-link.active {
-  background-color: var(--o-surface) !important;
-  color: var(--brand-primary) !important;
-}
-
-.tab-content {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* ===== ACCORDION COLORS ===== */
-.accordion {
-}
-
-.accordion-item {
-  background-color: var(--o-surface) !important;
-}
-
-.accordion-button {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-1) !important;
-}
-
-.accordion-button:hover {
-  background-color: var(--o-surface-hover) !important;
-}
-
-.accordion-button:not(.collapsed) {
-  background-color: var(--brand-primary-light) !important;
-  color: var(--brand-primary) !important;
-}
-
-.accordion-button::after {
-  color: var(--o-text-3) !important;
-}
-
-.accordion-button:not(.collapsed)::after {
-  color: var(--brand-primary) !important;
-}
-
-.accordion-body {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* ===== PROGRESS COLORS ===== */
+/* PROGRESS BARS - FORCE BRAND COLORS */
 .progress {
-  background-color: var(--o-bg-2) !important;
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  border-radius: 6px !important;
+  height: 8px !important;
 }
 
 .progress-bar {
-  background-color: var(--brand-primary) !important;
+  background: linear-gradient(135deg, #1a73e8 0%, #4c9eff 100%) !important;
+  background-color: #1a73e8 !important;
+  border-radius: 6px !important;
 }
 
-/* ===== TOOLTIP COLORS ===== */
-.tooltip-inner {
-  background-color: var(--o-text-1) !important;
-  color: var(--o-text-inverse) !important;
+/* DROPDOWNS - FORCE STYLING */
+.dropdown-menu {
+  background-color: white !important;
+  border: 1px solid rgba(26, 115, 232, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.15) !important;
 }
 
-.tooltip.bs-tooltip-top .tooltip-arrow::before,
-.tooltip.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
-  border-top-color: var(--o-text-1) !important;
+.dropdown-item {
+  color: #2e3a59 !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
-.tooltip.bs-tooltip-right .tooltip-arrow::before,
-.tooltip.bs-tooltip-auto[data-popper-placement^="right"]
-  .tooltip-arrow::before {
-  border-right-color: var(--o-text-1) !important;
+.dropdown-item:hover,
+.dropdown-item:focus {
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  color: #1a73e8 !important;
+  transform: translateX(4px) !important;
 }
 
-.tooltip.bs-tooltip-bottom .tooltip-arrow::before,
-.tooltip.bs-tooltip-auto[data-popper-placement^="bottom"]
-  .tooltip-arrow::before {
-  border-bottom-color: var(--o-text-1) !important;
+/* KANBAN CARDS - FORCE STYLING */
+.o_kanban_record {
+  background-color: white !important;
+  border: 1px solid rgba(26, 115, 232, 0.1) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.08) !important;
 }
 
-.tooltip.bs-tooltip-left .tooltip-arrow::before,
-.tooltip.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
-  border-left-color: var(--o-text-1) !important;
+.o_kanban_record:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.2) !important;
 }
 
-/* ===== POPOVER COLORS ===== */
-.popover {
-  background-color: var(--o-surface) !important;
+/* APP MENU - FORCE STYLING */
+.o_apps .o_app,
+.o_app {
+  border: 2px solid rgba(26, 115, 232, 0.2) !important;
+  border-radius: 8px !important;
+  transition: var(--saas-transition-smooth) !important;
 }
 
-.popover-header {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-1) !important;
+.o_apps .o_app:hover,
+.o_app:hover {
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  border-color: #1a73e8 !important;
+  transform: scale(1.05) translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(26, 115, 232, 0.2) !important;
 }
 
-.popover-body {
-  color: var(--o-text-1) !important;
+/* LOGIN & DATABASE LIST - FORCE STYLING */
+.o_database_list .list-group-item,
+.list-group-item {
+  border-color: rgba(26, 115, 232, 0.2) !important;
+  color: #2e3a59 !important;
 }
 
-/* ===== LINK COLORS ===== */
-a {
-  color: var(--brand-primary) !important;
+.o_database_list .list-group-item:hover,
+.list-group-item:hover {
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  border-color: #1a73e8 !important;
+  transform: translateX(4px) !important;
 }
 
-a:hover,
-a:focus {
-  color: var(--brand-primary-hover) !important;
+/* NOTIFICATIONS - FORCE STYLING */
+.alert,
+.o_notification {
+  border-radius: 8px !important;
+  border: none !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
 }
 
-.o_main_navbar a,
-.navbar a {
-  color: var(--o-text-inverse) !important;
+.alert-success,
+.o_notification_success {
+  background-color: rgba(0, 191, 165, 0.1) !important;
+  border-left: 4px solid #00bfa5 !important;
+  color: #00937a !important;
 }
 
-.o_main_navbar a:hover,
-.navbar a:hover {
-  color: var(--o-text-inverse) !important;
+.alert-info,
+.o_notification_info {
+  background-color: rgba(155, 81, 224, 0.1) !important;
+  border-left: 4px solid #9b51e0 !important;
+  color: #7a3eb0 !important;
 }
 
-/* ===== BREADCRUMB COLORS ===== */
-.breadcrumb-item {
-  color: var(--o-text-3) !important;
+.alert-warning,
+.o_notification_warning {
+  background-color: rgba(255, 111, 97, 0.1) !important;
+  border-left: 4px solid #ff6f61 !important;
+  color: #e05a4e !important;
 }
 
-.breadcrumb-item + .breadcrumb-item::before {
-  color: var(--o-text-4) !important;
+.alert-danger,
+.o_notification_danger {
+  background-color: rgba(224, 90, 78, 0.1) !important;
+  border-left: 4px solid #e05a4e !important;
+  color: #e05a4e !important;
 }
 
-.breadcrumb-item.active {
-  color: var(--o-text-1) !important;
+/* HIDE ODOO BRANDING */
+.o_sub_menu_footer,
+.powered_by,
+[data-section="about"] .oe_instance_title,
+.oe_instance_title,
+.o_footer {
+  display: none !important;
 }
 
-.breadcrumb-item a {
-  color: var(--o-text-3) !important;
+/* STATUS INDICATORS - BRAND COLORS */
+.saas-status-active,
+.fa-check-circle,
+.text-success {
+  color: #00bfa5 !important;
 }
 
-.breadcrumb-item a:hover {
-  color: var(--brand-primary) !important;
+.saas-status-inactive,
+.fa-times-circle,
+.text-danger {
+  color: #e05a4e !important;
 }
 
-/* ===== CALENDAR COLORS ===== */
-.o_calendar_view {
-  background-color: var(--o-bg-1) !important;
-  color: var(--o-text-1) !important;
+.saas-status-syncing,
+.fa-sync-alt,
+.text-warning {
+  color: #ff6f61 !important;
 }
 
-.fc {
-  background-color: var(--o-surface) !important;
+.text-info {
+  color: #9b51e0 !important;
 }
 
-.fc-event {
-  background-color: var(--brand-primary) !important;
-
-  color: var(--o-text-inverse) !important;
-}
-
-.fc-toolbar,
-.fc-view-container,
-.fc-day-header {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.fc-day-number {
-  color: var(--o-text-1) !important;
-}
-
-.fc-today {
-  background-color: rgba(26, 115, 232, 0.05) !important;
-}
-
-.fc-button {
-  background-color: var(--o-bg-3) !important;
-  color: var(--o-text-1) !important;
-}
-
-.fc-button:hover {
-  background-color: var(--o-bg-4) !important;
-}
-
-.fc-button-primary {
-  background-color: var(--brand-primary) !important;
-
-  color: var(--o-text-inverse) !important;
-}
-
-/* ===== APP DRAWER COLORS ===== */
-.o_apps {
-  background-color: var(--o-bg-1) !important;
-}
-
-.o_apps .o_app {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_apps .o_app:hover {
-  background-color: var(--o-surface-hover) !important;
-}
-
-.o_apps .o_app .o_app_icon {
-  background-color: var(--brand-primary) !important;
-  color: var(--o-text-inverse) !important;
-}
-
-.o_apps .o_app .o_caption {
-  color: var(--o-text-1) !important;
-}
-
-/* ===== SIDEBAR COLORS ===== */
-.o_main_sidebar,
-.o_menu_sections {
-  background-color: var(--o-bg-2) !important;
-}
-
-.o_menu_sections .o_nav_entry {
-  color: var(--o-text-2) !important;
-}
-
-.o_menu_sections .o_nav_entry:hover,
-.o_menu_sections .o_nav_entry.active {
-  background-color: var(--o-surface-hover) !important;
-  color: var(--brand-primary) !important;
-}
-
-/* ===== SCROLLBAR COLORS ===== */
-::-webkit-scrollbar-track {
-  background-color: var(--o-bg-2) !important;
-}
-
-::-webkit-scrollbar-thumb {
-  background-color: var(--o-text-4) !important;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background-color: var(--o-text-3) !important;
-}
-
-::-webkit-scrollbar-corner {
-  background-color: var(--o-bg-2) !important;
-}
-
-* {
-  scrollbar-color: var(--o-text-4) var(--o-bg-2) !important;
-}
-
-/* ===== LOGIN PAGE COLORS ===== */
-.o_database_manager,
-.oe_login_form,
-.oe_login {
-  background-color: var(--brand-primary) !important;
-}
-
-.oe_login_form,
-.o_database_manager .o_database_list {
-  background-color: var(--o-surface) !important;
-}
-
-.oe_login_form h1,
-.oe_login h1,
-.o_database_manager h1 {
-  color: var(--o-text-1) !important;
-}
-
-.oe_login_form input,
-.oe_login input,
-.o_database_manager input {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.oe_login_form input:focus,
-.oe_login input:focus,
-.o_database_manager input:focus {
-}
-
-.o_database_list .list-group-item {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_database_list .list-group-item:hover {
-  background-color: var(--o-surface-hover) !important;
-
-  color: var(--brand-primary) !important;
-}
-
-/* ===== ODOO SPECIFIC FIELD COLORS ===== */
-.o_field_widget,
-.o_field_char,
-.o_field_text,
-.o_field_integer,
-.o_field_float,
-.o_field_monetary,
-.o_field_selection,
-.o_field_boolean,
-.o_field_date,
-.o_field_datetime {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_field_widget input,
-.o_field_widget select,
-.o_field_widget textarea {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* ===== MANY2ONE FIELD COLORS ===== */
-.o_field_many2one .o_input_dropdown {
-  background-color: var(--o-surface) !important;
-}
-
-.o_field_many2one .o_m2o_dropdown_option {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_field_many2one .o_m2o_dropdown_option:hover {
-  background-color: var(--o-surface-hover) !important;
-  color: var(--brand-primary) !important;
-}
-
-/* ===== STATUS BAR COLORS ===== */
-.o_statusbar_status {
-  background-color: var(--o-bg-2) !important;
-}
-
-.o_statusbar_status .btn {
-  background-color: var(--o-bg-3) !important;
-  color: var(--o-text-2) !important;
-}
-
-.o_statusbar_status .btn.btn-primary,
-.o_statusbar_status .btn.o_arrow_button_current {
-  background-color: var(--brand-primary) !important;
-  color: var(--o-text-inverse) !important;
-}
-
-/* ===== CHATTER AND ACTIVITIES COLORS ===== */
-.o_chatter {
-  background-color: var(--o-bg-1) !important;
-}
-
-.o_mail_thread {
-  background-color: var(--o-surface) !important;
-}
-
-.o_mail_thread .o_thread_message {
-  background-color: var(--o-bg-2) !important;
-}
-
-.o_mail_thread .o_thread_message_core {
-  color: var(--o-text-1) !important;
-}
-
-.o_activity {
-  background-color: var(--o-surface) !important;
-}
-
-.o_activity_title {
-  color: var(--o-text-1) !important;
-}
-
-.o_activity_summary {
-  color: var(--o-text-2) !important;
-}
-
-/* ===== NOTEBOOK (TABS IN FORMS) COLORS ===== */
-.o_notebook .nav-tabs {
-}
-
-.o_notebook .nav-tabs .nav-link {
-  color: var(--o-text-3) !important;
-
-  background-color: transparent !important;
-}
-
-.o_notebook .nav-tabs .nav-link:hover {
-  color: var(--o-text-1) !important;
-}
-
-.o_notebook .nav-tabs .nav-link.active {
-  color: var(--brand-primary) !important;
-}
-
-.o_notebook .tab-content {
-  background-color: var(--o-surface) !important;
-}
-
-/* ===== SMART BUTTONS COLORS ===== */
-.oe_stat_button {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-1) !important;
-}
-
-.oe_stat_button:hover {
-  background-color: var(--o-surface-hover) !important;
-}
-
-.oe_stat_button .o_stat_value {
-  color: var(--brand-primary) !important;
-}
-
-.oe_stat_button .o_stat_text {
-  color: var(--o-text-3) !important;
-}
-
-/* ===== GRAPH AND PIVOT VIEWS COLORS ===== */
-.o_graph_view,
-.o_pivot_view {
-  background-color: var(--o-bg-1) !important;
-}
-
-.o_graph_canvas_container,
-.o_pivot_table {
-  background-color: var(--o-surface) !important;
-}
-
-/* ===== DASHBOARD COLORS ===== */
-.o_dashboard {
-  background-color: var(--o-bg-1) !important;
-}
-
-.o_dashboard_item {
-  background-color: var(--o-surface) !important;
-}
-
-/* ===== SETTINGS COLORS ===== */
-.o_setting_container {
-  background-color: var(--o-bg-1) !important;
-}
-
-.o_setting_box {
-  background-color: var(--o-surface) !important;
-}
-
-.o_setting_left_pane {
-  color: var(--o-text-1) !important;
-}
-
-.o_setting_right_pane {
-  color: var(--o-text-2) !important;
-}
-
-/* ===== WEBSITE BUILDER COLORS ===== */
-.o_website_preview {
-}
-
-/* ===== DISCUSS COLORS ===== */
-.o_mail_discuss {
-  background-color: var(--o-bg-1) !important;
-}
-
-.o_mail_discuss_sidebar {
-  background-color: var(--o-bg-2) !important;
-}
-
-.o_mail_discuss_content {
-  background-color: var(--o-surface) !important;
-}
-
-.o_composer {
-  background-color: var(--o-surface) !important;
-}
-
-.o_composer_input {
-  background-color: var(--o-bg-2) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* ===== PDF VIEWER COLORS ===== */
-.o_pdf_viewer {
-  background-color: var(--o-bg-2) !important;
-}
-
-/* ===== MODULE SPECIFIC COLORS ===== */
-/* Accounting */
-.o_account_reports_summary {
-  background-color: var(--o-surface) !important;
-}
-
-/* POS */
-.pos {
-  background-color: var(--o-bg-1) !important;
-}
-
-.pos .o_pos_orderlines {
-  background-color: var(--o-surface) !important;
-}
-
-/* Manufacturing */
-.o_mrp_bom {
-  background-color: var(--o-surface) !important;
-}
-
-/* Project */
-.o_project_kanban {
-  background-color: var(--o-bg-1) !important;
-}
-
-.o_project_kanban .o_kanban_group {
-  background-color: var(--o-bg-2) !important;
-}
-
-/* ===== UTILITY COLOR CLASSES ===== */
 .text-primary {
-  color: var(--brand-primary) !important;
+  color: #1a73e8 !important;
 }
 
 .text-secondary {
-  color: var(--o-text-3) !important;
+  color: #00bfa5 !important;
 }
 
-.text-success {
-  color: var(--brand-success) !important;
-}
-
-.text-warning {
-  color: var(--brand-warning) !important;
-}
-
-.text-danger {
-  color: var(--brand-error) !important;
-}
-
-.text-muted {
-  color: var(--o-text-4) !important;
-}
-
-.bg-primary {
-  background-color: var(--brand-primary) !important;
-}
-
-.bg-secondary {
-  background-color: var(--o-bg-3) !important;
-}
-
-.bg-success {
-  background-color: var(--brand-success) !important;
-}
-
-.bg-warning {
-  background-color: var(--brand-warning) !important;
-}
-
-.bg-danger {
-  background-color: var(--brand-error) !important;
-}
-
-.bg-light {
-  background-color: var(--o-bg-2) !important;
-}
-
-.bg-dark {
-  background-color: var(--o-bg-4) !important;
-}
-
-.border-primary {
-}
-
-.border-secondary {
-}
-
-/* ===== ADDITIONAL OWL JS AND ODOO VARIABLES ===== */
-/* OWL Component specific colors */
-.o_component {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-.o_widget {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* Legacy web client colors */
-.o_legacy_web_client {
-  background-color: var(--o-bg-1) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* Menu colors */
-.o_menu_brand {
-  background-color: var(--brand-primary) !important;
-  color: var(--o-text-inverse) !important;
-}
-
-.o_menu_systray {
-  background-color: var(--brand-primary) !important;
-}
-
-.o_menu_systray > li > a {
-  color: var(--o-text-inverse) !important;
-}
-
-/* Loading colors */
-.o_loading_indicator {
-  color: var(--brand-primary) !important;
-}
-
-/* Error colors */
-.o_error_dialog {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* Success colors */
-.o_success_dialog {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* Warning colors */
-.o_warning_dialog {
-  background-color: var(--o-surface) !important;
-  color: var(--o-text-1) !important;
-}
-
-/* High contrast mode overrides */
-@media (prefers-contrast: high) {
-  :root {
-    --o-border-2: #000000 !important;
-    --o-border-3: #000000 !important;
+/* RESPONSIVE DESIGN */
+@media (max-width: 768px) {
+  .card,
+  .o_form_view {
+    margin: 0.5rem !important;
+    border-radius: 6px !important;
   }
-
-  [data-bs-theme="dark"],
-  .o_dark_mode,
-  body.o_dark {
-    --o-border-2: #ffffff !important;
-    --o-border-3: #ffffff !important;
-    --o-text-1: #ffffff !important;
-    --o-bg-1: #000000 !important;
+  
+  .btn {
+    padding: 0.75rem 1.5rem !important;
+    font-size: 0.875rem !important;
   }
 }
 
-/* Color scheme declaration */
-.o_web_client {
-  color-scheme: light dark !important;
+/* AGGRESSIVE OVERRIDE FOR STUBBORN ELEMENTS */
+[style*="background"],
+[style*="color"] {
+  background: unset !important;
+  color: inherit !important;
 }
 
-[data-bs-theme="dark"] .o_web_client,
-.o_dark_mode .o_web_client,
-body.o_dark .o_web_client {
-  color-scheme: dark !important;
+/* Force all text to use brand colors */
+body,
+html {
+  color: #2e3a59 !important;
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
-/* Force color overrides for stubborn elements */
-.o_web_client * {
+/* Animation for configuration changes */
+.saas-config-updating {
+  opacity: 0.7 !important;
+  transition: opacity 0.3s ease !important;
 }
 
-.o_web_client
-  [style*="background-color"]:not(.o_main_navbar):not(.navbar):not(.fc-event) {
-  background-color: var(--o-surface) !important;
+.saas-config-updated {
+  opacity: 1 !important;
+  transition: opacity 0.3s ease !important;
 }
-
-.o_web_client
-  [style*="color"]:not(.o_main_navbar *):not(.navbar *):not(.fc-event *) {
-  color: var(--o-text-1) !important;
-}
-
-/* Ensure navigation keeps brand colors */
-.o_main_navbar,
-.o_main_navbar *,
-.navbar,
-.navbar * {
-  color: var(--o-text-inverse) !important;
-  background-color: var(--brand-primary) !important;
-}
-
-/* Table striped colors for dark mode */
-.table-striped > tbody > tr:nth-of-type(odd) > td,
-.table-striped > tbody > tr:nth-of-type(odd) > th {
-  background-color: rgba(0, 0, 0, 0.02) !important;
-}
-
-[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > td,
-[data-bs-theme="dark"] .table-striped > tbody > tr:nth-of-type(odd) > th {
-  background-color: rgba(255, 255, 255, 0.02) !important;
-}
-
-[data-bs-theme="dark"],
-.o_dark_mode,
-body.o_dark {
-  /* Background opacity override */
-  --bg-opacity: 0.8;
-  --background-color: rgba(30, 41, 59, var(--bg-opacity, 1));
-
-  /* Settings specific colors */
-  --settings__tab-bg: var(--o-bg-3);
-  --settings__tab-bg--active: var(--brand-primary-dark);
-  --settings__tab-color: var(--o-text-2);
-  --settings__title-bg: var(--o-bg-2);
-}
-
-.settings {
-  background-color: var(--settings__tab-bg) !important;
-}
-.settings .settings__tab {
-  background-color: var(--settings__tab-bg) !important;
-}
-
-.o_base_settings_view .o_form_renderer .o_setting_container .settings__tab {
-  background-color: var(--settings__tab-bg) !important;
-}
-
-/* Print mode color adjustments */
-@media print {
-  :root {
-    --o-bg-1: #ffffff !important;
-    --o-text-1: #000000 !important;
-    --o-surface: #ffffff !important;
-    --o-border-2: #cccccc !important;
-    --brand-primary: #000000 !important;
-  }
-}
-
-/* End of Odoo 17.0 Color-Only Theme */
