@@ -1,0 +1,201 @@
+/* SaaS Controller - Simple Navbar Styling */
+
+/* Import Google Caveat Font */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap');
+
+/* Brand Color Variables */
+:root {
+  /* Your Primary Azure Brand Color */
+  --saas-primary-color: #1a73e8;
+  --saas-primary-dark: #174ea6;
+  --saas-primary-light: #4c9eff;
+  
+  /* Complementary Color (Coral/Orange) */
+  --saas-complementary-color: #ff6f61;
+  
+  /* Fonts */
+  --saas-font-caveat: 'Caveat', cursive;
+  --saas-font-system: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  
+  /* Transitions */
+  --saas-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  --saas-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --saas-transition-font: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Main Navigation - Beautiful Azure Gradient */
+.o_main_navbar {
+  background: linear-gradient(135deg, var(--saas-primary-color) 0%, var(--saas-primary-dark) 100%) !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.15) !important;
+  transition: var(--saas-transition-smooth) !important;
+}
+
+.o_main_navbar:hover {
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.2) !important;
+}
+
+/* Navbar Brand, Nav Entries, and Dropdown Toggles - Google Caveat Font - AGGRESSIVE OVERRIDE */
+.o_main_navbar .o_menu_brand,
+.o_main_navbar .o_nav_entry,
+.o_main_navbar .dropdown-toggle,
+.o_main_navbar .o_menu_brand *,
+.o_main_navbar .o_nav_entry *,
+.o_main_navbar .dropdown-toggle *,
+body .o_main_navbar .o_menu_brand,
+body .o_main_navbar .o_nav_entry,
+body .o_main_navbar .dropdown-toggle {
+  color: white !important;
+  font-family: 'Caveat', cursive !important;
+  font-weight: 500 !important;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  letter-spacing: 0.5px !important;
+  font-style: normal !important;
+  text-decoration: none !important;
+  font-size: inherit !important;
+}
+
+.o_main_navbar .o_menu_brand:hover,
+.o_main_navbar .o_nav_entry:hover,
+.o_main_navbar .dropdown-toggle:hover,
+.o_main_navbar .o_menu_brand:hover *,
+.o_main_navbar .o_nav_entry:hover *,
+.o_main_navbar .dropdown-toggle:hover *,
+body .o_main_navbar .o_menu_brand:hover,
+body .o_main_navbar .o_nav_entry:hover,
+body .o_main_navbar .dropdown-toggle:hover {
+  color: white !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  font-weight: 500 !important;
+  transform: scale(1.02) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  font-style: normal !important;
+  text-decoration: none !important;
+}
+
+/* Other navbar items */
+.o_main_navbar .nav-link {
+  color: white !important;
+  transition: var(--saas-transition-fast) !important;
+}
+
+.o_main_navbar .nav-link:hover {
+  color: rgba(255, 255, 255, 0.9) !important;
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  transform: translateY(-1px) !important;
+  border-radius: 6px !important;
+}
+
+/* Specific Navbar Menu Sections - Brand Color Background */
+.o_main_navbar .o_menu_sections {
+  gap: 8px !important;
+  display: flex !important;
+}
+
+.o_main_navbar .o_menu_sections .o_nav_entry,
+.o_main_navbar .o_menu_sections .dropdown-toggle {
+  background-color: var(--saas-primary-color) !important;
+  color: white !important;
+  transition: var(--saas-transition-fast) !important;
+  border-radius: 6px !important;
+  margin: 0 !important;
+  border: none !important;
+  font-weight: normal !important;
+}
+
+.o_main_navbar .o_menu_sections .o_nav_entry:hover,
+.o_main_navbar .o_menu_sections .dropdown-toggle:hover {
+  background-color: var(--saas-primary-color) !important;
+  color: white !important;
+  font-weight: bold !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* Dropdown Items - Toggle Colors on Hover */
+.dropdown-item {
+  color: var(--saas-primary-color) !important;
+  transition: var(--saas-transition-fast) !important;
+  border-radius: 4px !important;
+  margin: 2px 4px !important;
+}
+
+.dropdown-item:hover {
+  color: var(--saas-complementary-color) !important;
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  transform: translateX(4px) !important;
+}
+
+/* SaaS Controller Specific Styles */
+.saas-controller-form {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.saas-color-preview {
+  width: 30px;
+  height: 30px;
+  border-radius: 4px;
+  display: inline-block;
+  margin-left: 10px;
+  border: 1px solid #ccc;
+}
+
+.saas-limit-info {
+  padding: 15px;
+  border-radius: 8px;
+  margin: 10px 0;
+}
+
+.saas-limit-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  color: #856404;
+}
+
+.saas-limit-danger {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.saas-limit-success {
+  background-color: #d4edda;
+  border: 1px solid #c3e6cb;
+  color: #155724;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .saas-controller-form {
+    padding: 10px;
+  }
+
+  .saas-color-preview {
+    width: 25px;
+    height: 25px;
+  }
+}
+
+/* Animation for configuration changes */
+.saas-config-updating {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.saas-config-updated {
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+/* Status indicators */
+.saas-status-active {
+  color: #28a745;
+}
+
+.saas-status-inactive {
+  color: #dc3545;
+}
+
+.saas-status-syncing {
+  color: #ffc107;
+}

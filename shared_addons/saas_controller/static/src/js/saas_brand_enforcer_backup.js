@@ -1,0 +1,167 @@
+/**
+ * SaaS Navbar Styler
+ * Simple navbar color enforcement
+ */
+
+(function() {
+    'use strict';
+
+    // Your Brand Colors
+    var PRIMARY_COLOR = '#1a73e8';
+    var PRIMARY_DARK = '#174ea6';
+    var COMPLEMENTARY_COLOR = '#ff6f61';
+
+    var NavbarStyler = {
+        
+        /**
+         * Initialize the navbar styler
+         */
+        init: function() {
+            console.log('🎨 SaaS Navbar Styler: Initializing...');
+            
+            this.styleNavbar();
+            this.setupMutationObserver();
+            
+            // Periodic font enforcement
+            setInterval(this.enforceFonts.bind(this), 1000);
+            
+            console.log('✅ SaaS Navbar Styler: Ready!');
+        },
+        
+        /**
+         * Apply navbar styling
+         */
+        styleNavbar: function() {
+            var navbar = document.querySelector('.o_main_navbar');
+            if (navbar) {
+                navbar.style.setProperty('background', 'linear-gradient(135deg, ' + PRIMARY_COLOR + ' 0%, ' + PRIMARY_DARK + ' 100%)', 'important');
+                navbar.style.setProperty('box-shadow', '0 2px 8px rgba(26, 115, 232, 0.15)', 'important');
+            }
+            
+            // Style navbar brand, nav entries, and dropdown toggles with Google Caveat font - AGGRESSIVE
+            var navSpecialItems = document.querySelectorAll('.o_main_navbar .o_menu_brand, .o_main_navbar .o_nav_entry, .o_main_navbar .dropdown-toggle');
+            navSpecialItems.forEach(function(item) {
+                item.style.setProperty('color', 'white', 'important');
+                item.style.setProperty('font-family', '"Caveat", cursive', 'important');
+                item.style.setProperty('font-weight', '500', 'important');
+                item.style.setProperty('letter-spacing', '0.5px', 'important');
+                item.style.setProperty('transition', 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)', 'important');
+                item.style.setProperty('font-style', 'normal', 'important');
+                item.style.setProperty('text-decoration', 'none', 'important');
+                
+                // Also style child elements
+                var children = item.querySelectorAll('*');
+                children.forEach(function(child) {
+                    child.style.setProperty('font-family', '"Caveat", cursive', 'important');
+                    child.style.setProperty('font-weight', '500', 'important');
+                    child.style.setProperty('color', 'white', 'important');
+                });
+            });
+            
+            // Style other navbar items
+            var navItems = document.querySelectorAll('.o_main_navbar .nav-link');
+            navItems.forEach(function(item) {
+                item.style.setProperty('color', 'white', 'important');
+            });
+            
+            // Style menu sections container
+            var menuSectionsContainer = document.querySelector('.o_main_navbar .o_menu_sections');
+            if (menuSectionsContainer) {
+                menuSectionsContainer.style.setProperty('gap', '8px', 'important');
+                menuSectionsContainer.style.setProperty('display', 'flex', 'important');
+            }
+            
+            // Style specific menu sections
+            var menuSections = document.querySelectorAll('.o_main_navbar .o_menu_sections .o_nav_entry, .o_main_navbar .o_menu_sections .dropdown-toggle');
+            menuSections.forEach(function(item) {
+                item.style.setProperty('background-color', PRIMARY_COLOR, 'important');
+                item.style.setProperty('color', 'white', 'important');
+                item.style.setProperty('border-radius', '6px', 'important');
+                item.style.setProperty('margin', '0', 'important');
+                item.style.setProperty('border', 'none', 'important');
+                item.style.setProperty('font-weight', 'normal', 'important');
+            });
+            
+            // Style dropdown items
+            var dropdownItems = document.querySelectorAll('.dropdown-item');
+            dropdownItems.forEach(function(item) {
+                item.style.setProperty('color', PRIMARY_COLOR, 'important');
+                item.style.setProperty('border-radius', '4px', 'important');
+                item.style.setProperty('margin', '2px 4px', 'important');
+            });
+        },
+        
+        /**
+         * Aggressively enforce font styles
+         */
+        enforceFonts: function() {
+            // Force Caveat font on navbar elements
+            var navSpecialItems = document.querySelectorAll('.o_main_navbar .o_menu_brand, .o_main_navbar .o_nav_entry, .o_main_navbar .dropdown-toggle');
+            navSpecialItems.forEach(function(item) {
+                if (!item.style.fontFamily || !item.style.fontFamily.includes('Caveat')) {
+                    item.style.setProperty('font-family', '"Caveat", cursive', 'important');
+                    item.style.setProperty('font-weight', '500', 'important');
+                    item.style.setProperty('color', 'white', 'important');
+                    item.style.setProperty('letter-spacing', '0.5px', 'important');
+                }
+                
+                // Also enforce on children
+                var children = item.querySelectorAll('*');
+                children.forEach(function(child) {
+                    child.style.setProperty('font-family', '"Caveat", cursive', 'important');
+                    child.style.setProperty('font-weight', '500', 'important');
+                    child.style.setProperty('color', 'white', 'important');
+                });
+            });
+        },
+        
+        /**
+         * Set up mutation observer for dynamic navbar changes
+         */
+        setupMutationObserver: function() {
+            var self = this;
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach(function(node) {
+                            if (node.nodeType === Node.ELEMENT_NODE) {
+                                if (node.classList && node.classList.contains('o_main_navbar')) {
+                                    setTimeout(function() {
+                                        self.styleNavbar();
+                                    }, 100);
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+            
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+    };
+
+    // Initialize when DOM is ready
+    function initializeNavbarStyler() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    NavbarStyler.init();
+                }, 500);
+            });
+        } else {
+            setTimeout(function() {
+                NavbarStyler.init();
+            }, 500);
+        }
+    }
+
+    // Initialize immediately
+    initializeNavbarStyler();
+
+    // Global access
+    window.SaaSNavbarStyler = NavbarStyler;
+
+})();

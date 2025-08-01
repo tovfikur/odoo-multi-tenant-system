@@ -41,12 +41,19 @@ odoo.define('saas_controller.minimal', function (require) {
         checkDebrandingConfig: function() {
             var self = this;
             
-            // Simple check without RPC to avoid errors
-            try {
-                // Apply debranding by default since icon replacement is minimal
-                self.applyDebranding();
-            } catch (error) {
-                console.log('SaaS Controller: Minimal debranding failed');
+            // Only apply if user has access
+            if (session.is_admin || session.is_system) {
+                this._rpc({
+                    model: 'saas.controller',
+                    method: 'get_or_create_config',
+                    args: []
+                }).then(function(config) {
+                    if (config && config.remove_odoo_branding) {
+                        self.applyDebranding();
+                    }
+                }).catch(function(error) {
+                    console.log('SaaS Controller: Config not available');
+                });
             }
         },
 
