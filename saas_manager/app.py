@@ -399,6 +399,12 @@ def admin_required(f):
 async def create_database(db_name, username='admin', password='admin',  modules=None, app=None):
     """Create Odoo database ONLY after successful payment"""
     
+    # Import BillingService for status updates
+    try:
+        from billing_service import BillingService
+    except ImportError:
+        pass  # Use global BillingService if available
+    
     default_modules = ['base', 'web', 'auth_signup', 'saas_controller', 'saas_user_limit']
     if modules is None:
         modules = default_modules
@@ -615,7 +621,6 @@ async def create_database(db_name, username='admin', password='admin',  modules=
                     
                     # Create billing cycle immediately for newly activated tenant
                     try:
-                        from billing_service import BillingService
                         billing_service = BillingService()
                         billing_cycle = billing_service.create_billing_cycle(tenant.id)
                         logger.info(f"Created initial billing cycle for tenant {tenant.id}: {billing_cycle.id}")
