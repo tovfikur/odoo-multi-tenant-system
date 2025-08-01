@@ -70,6 +70,14 @@
                     transition: all 0.3s ease !important;
                 }
 
+                .o_main_navbar .o_menu_sections .o_nav_entry, .o_main_navbar .o_menu_sections .dropdown-toggle {
+                    background-color: transparent !important;
+                }
+
+                .dropdown-menu {
+                    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+                }
+
                 /* Mobile responsiveness */
                 @media (max-width: 768px) {
                     .o_main_navbar .o_menu_brand,
