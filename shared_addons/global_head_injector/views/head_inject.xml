@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Inject global navbar styling -->
-        <template id="global_navbar_styling" name="Global Navbar Styling">
+        <!-- Inject global navbar styling into web layout -->
+        <template id="global_navbar_styling" name="Global Navbar Styling" inherit_id="web.layout">
             <style>
                 /* Global Odoo Custom Styling */
                 /* Import Google Caveat Font */
