@@ -1399,7 +1399,7 @@ body.o_dark {
 
   /* Settings specific colors */
   --settings__tab-bg: var(--o-bg-3);
-  --settings__tab-bg--active: var(--brand-primary-light);
+  --settings__tab-bg--active: var(--brand-primary-dark);
   --settings__tab-color: var(--o-text-2);
   --settings__title-bg: var(--o-bg-2);
 }
