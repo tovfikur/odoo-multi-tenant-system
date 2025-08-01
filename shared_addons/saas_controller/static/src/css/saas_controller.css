@@ -73,8 +73,6 @@
   --bs-dark-rgb: 15, 23, 42;
   --bs-body-bg: var(--o-bg-1);
   --bs-body-color: var(--o-text-1);
-  --bs-border-color: var(--o-border-2);
-  --bs-border-color-translucent: rgba(226, 232, 240, 0.175);
 
   /* === ADDITIONAL ODOO COLOR VARIABLES === */
   --o-main-text-color: var(--o-text-1);
@@ -143,8 +141,6 @@ body.o_dark {
   --bs-dark-rgb: 248, 250, 252;
   --bs-body-bg: var(--o-bg-1);
   --bs-body-color: var(--o-text-1);
-  --bs-border-color: var(--o-border-2);
-  --bs-border-color-translucent: rgba(51, 65, 85, 0.175);
 }
 
 /* Auto dark mode based on system preference */
@@ -254,7 +250,6 @@ small,
 /* ===== DROPDOWN Colors ===== */
 .dropdown-menu {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .dropdown-item {
@@ -269,13 +264,12 @@ small,
 }
 
 .dropdown-divider {
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== BUTTON COLORS ===== */
 .btn-primary {
   background-color: var(--brand-primary) !important;
-  border-color: var(--brand-primary) !important;
+
   color: var(--o-text-inverse) !important;
 }
 
@@ -283,13 +277,13 @@ small,
 .btn-primary:focus,
 .btn-primary:active {
   background-color: var(--brand-primary-hover) !important;
-  border-color: var(--brand-primary-hover) !important;
+
   color: var(--o-text-inverse) !important;
 }
 
 .btn-secondary {
   background-color: var(--o-bg-3) !important;
-  border-color: var(--o-border-2) !important;
+
   color: var(--o-text-1) !important;
 }
 
@@ -297,30 +291,29 @@ small,
 .btn-secondary:focus,
 .btn-secondary:active {
   background-color: var(--o-bg-4) !important;
-  border-color: var(--o-border-3) !important;
+
   color: var(--o-text-1) !important;
 }
 
 .btn-success {
   background-color: var(--brand-success) !important;
-  border-color: var(--brand-success) !important;
+
   color: white !important;
 }
 
 .btn-warning {
   background-color: var(--brand-warning) !important;
-  border-color: var(--brand-warning) !important;
+
   color: white !important;
 }
 
 .btn-danger {
   background-color: var(--brand-error) !important;
-  border-color: var(--brand-error) !important;
+
   color: white !important;
 }
 
 .btn-outline-primary {
-  border-color: var(--brand-primary) !important;
   color: var(--brand-primary) !important;
   background-color: transparent !important;
 }
@@ -330,7 +323,6 @@ small,
 .btn-outline-primary:active {
   background-color: var(--brand-primary) !important;
   color: var(--o-text-inverse) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 /* ===== FORM COLORS ===== */
@@ -342,7 +334,6 @@ small,
 .o_form_sheet {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_form_sheet_bg {
@@ -371,7 +362,6 @@ textarea,
 .o_field_widget textarea {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .form-control:focus,
@@ -384,7 +374,6 @@ textarea:focus,
 .o_field_widget textarea:focus {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 .form-control:disabled,
@@ -394,7 +383,6 @@ select:disabled,
 textarea:disabled {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-4) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .form-control::placeholder,
@@ -408,7 +396,6 @@ textarea::placeholder {
 input[type="checkbox"],
 input[type="radio"],
 .form-check-input {
-  border-color: var(--o-border-3) !important;
   background-color: var(--o-surface) !important;
 }
 
@@ -416,7 +403,6 @@ input[type="checkbox"]:checked,
 input[type="radio"]:checked,
 .form-check-input:checked {
   background-color: var(--brand-primary) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 /* ===== TABLE AND LIST COLORS ===== */
@@ -425,7 +411,6 @@ input[type="radio"]:checked,
 .o_list_table {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_list_table thead th,
@@ -433,14 +418,12 @@ input[type="radio"]:checked,
 th {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_list_table tbody tr,
 .table tbody tr,
 tr {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-1) !important;
 }
 
 .o_list_table tbody tr:hover,
@@ -459,19 +442,16 @@ tr.o_selected_row {
 .table tbody td,
 td {
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-1) !important;
 }
 
 /* ===== CONTROL PANEL COLORS ===== */
 .o_control_panel {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_cp_searchview,
 .o_searchview {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_searchview_input,
@@ -501,23 +481,19 @@ td {
 .o_kanban_record {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_kanban_record:hover {
-  border-color: var(--brand-primary) !important;
 }
 
 /* ===== CARD COLORS ===== */
 .card {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .card-header {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .card-body {
@@ -528,7 +504,6 @@ td {
 .card-footer {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-3) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== MODAL COLORS ===== */
@@ -544,7 +519,6 @@ td {
 .modal-header {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .modal-title {
@@ -557,7 +531,6 @@ td {
 
 .modal-footer {
   background-color: var(--o-bg-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .btn-close {
@@ -572,25 +545,21 @@ td {
 .alert-success {
   background-color: rgba(46, 125, 50, 0.1) !important;
   color: var(--brand-success) !important;
-  border-color: var(--brand-success) !important;
 }
 
 .alert-warning {
   background-color: rgba(245, 124, 0, 0.1) !important;
   color: var(--brand-warning) !important;
-  border-color: var(--brand-warning) !important;
 }
 
 .alert-danger {
   background-color: rgba(211, 47, 47, 0.1) !important;
   color: var(--brand-error) !important;
-  border-color: var(--brand-error) !important;
 }
 
 .alert-info {
   background-color: rgba(26, 115, 232, 0.1) !important;
   color: var(--brand-primary) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 /* ===== BADGE COLORS ===== */
@@ -623,66 +592,56 @@ td {
 .page-link {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .page-link:hover,
 .page-link:focus {
   background-color: var(--o-surface-hover) !important;
   color: var(--brand-primary) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 .page-item.active .page-link {
   background-color: var(--brand-primary) !important;
-  border-color: var(--brand-primary) !important;
+
   color: var(--o-text-inverse) !important;
 }
 
 .page-item.disabled .page-link {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-4) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== TAB COLORS ===== */
 .nav-tabs {
-  border-color: var(--o-border-2) !important;
 }
 
 .nav-tabs .nav-link {
   background-color: transparent !important;
   color: var(--o-text-3) !important;
-  border-color: transparent !important;
 }
 
 .nav-tabs .nav-link:hover,
 .nav-tabs .nav-link:focus {
   color: var(--o-text-1) !important;
   background-color: var(--o-surface-hover) !important;
-  border-color: var(--o-border-3) !important;
 }
 
 .nav-tabs .nav-link.active {
   background-color: var(--o-surface) !important;
   color: var(--brand-primary) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 .tab-content {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== ACCORDION COLORS ===== */
 .accordion {
-  border-color: var(--o-border-2) !important;
 }
 
 .accordion-item {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .accordion-button {
@@ -710,7 +669,6 @@ td {
 .accordion-body {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== PROGRESS COLORS ===== */
@@ -753,13 +711,11 @@ td {
 /* ===== POPOVER COLORS ===== */
 .popover {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .popover-header {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .popover-body {
@@ -819,7 +775,7 @@ a:focus {
 
 .fc-event {
   background-color: var(--brand-primary) !important;
-  border-color: var(--brand-primary-hover) !important;
+
   color: var(--o-text-inverse) !important;
 }
 
@@ -828,7 +784,6 @@ a:focus {
 .fc-day-header {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .fc-day-number {
@@ -842,7 +797,6 @@ a:focus {
 .fc-button {
   background-color: var(--o-bg-3) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .fc-button:hover {
@@ -851,7 +805,7 @@ a:focus {
 
 .fc-button-primary {
   background-color: var(--brand-primary) !important;
-  border-color: var(--brand-primary) !important;
+
   color: var(--o-text-inverse) !important;
 }
 
@@ -863,12 +817,10 @@ a:focus {
 .o_apps .o_app {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_apps .o_app:hover {
   background-color: var(--o-surface-hover) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 .o_apps .o_app .o_app_icon {
@@ -884,7 +836,6 @@ a:focus {
 .o_main_sidebar,
 .o_menu_sections {
   background-color: var(--o-bg-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_menu_sections .o_nav_entry {
@@ -928,7 +879,6 @@ a:focus {
 .oe_login_form,
 .o_database_manager .o_database_list {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .oe_login_form h1,
@@ -942,24 +892,21 @@ a:focus {
 .o_database_manager input {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .oe_login_form input:focus,
 .oe_login input:focus,
 .o_database_manager input:focus {
-  border-color: var(--brand-primary) !important;
 }
 
 .o_database_list .list-group-item {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_database_list .list-group-item:hover {
   background-color: var(--o-surface-hover) !important;
-  border-color: var(--brand-primary) !important;
+
   color: var(--brand-primary) !important;
 }
 
@@ -983,13 +930,11 @@ a:focus {
 .o_field_widget textarea {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== MANY2ONE FIELD COLORS ===== */
 .o_field_many2one .o_input_dropdown {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_field_many2one .o_m2o_dropdown_option {
@@ -1005,26 +950,22 @@ a:focus {
 /* ===== STATUS BAR COLORS ===== */
 .o_statusbar_status {
   background-color: var(--o-bg-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_statusbar_status .btn {
   background-color: var(--o-bg-3) !important;
   color: var(--o-text-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_statusbar_status .btn.btn-primary,
 .o_statusbar_status .btn.o_arrow_button_current {
   background-color: var(--brand-primary) !important;
   color: var(--o-text-inverse) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 /* ===== CHATTER AND ACTIVITIES COLORS ===== */
 .o_chatter {
   background-color: var(--o-bg-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_mail_thread {
@@ -1033,7 +974,6 @@ a:focus {
 
 .o_mail_thread .o_thread_message {
   background-color: var(--o-bg-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_mail_thread .o_thread_message_core {
@@ -1042,7 +982,6 @@ a:focus {
 
 .o_activity {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_activity_title {
@@ -1055,40 +994,34 @@ a:focus {
 
 /* ===== NOTEBOOK (TABS IN FORMS) COLORS ===== */
 .o_notebook .nav-tabs {
-  border-color: var(--o-border-2) !important;
 }
 
 .o_notebook .nav-tabs .nav-link {
   color: var(--o-text-3) !important;
-  border-color: transparent !important;
+
   background-color: transparent !important;
 }
 
 .o_notebook .nav-tabs .nav-link:hover {
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-3) !important;
 }
 
 .o_notebook .nav-tabs .nav-link.active {
   color: var(--brand-primary) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 .o_notebook .tab-content {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== SMART BUTTONS COLORS ===== */
 .oe_stat_button {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .oe_stat_button:hover {
   background-color: var(--o-surface-hover) !important;
-  border-color: var(--brand-primary) !important;
 }
 
 .oe_stat_button .o_stat_value {
@@ -1108,7 +1041,6 @@ a:focus {
 .o_graph_canvas_container,
 .o_pivot_table {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== DASHBOARD COLORS ===== */
@@ -1118,7 +1050,6 @@ a:focus {
 
 .o_dashboard_item {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== SETTINGS COLORS ===== */
@@ -1128,7 +1059,6 @@ a:focus {
 
 .o_setting_box {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_setting_left_pane {
@@ -1141,7 +1071,6 @@ a:focus {
 
 /* ===== WEBSITE BUILDER COLORS ===== */
 .o_website_preview {
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== DISCUSS COLORS ===== */
@@ -1151,7 +1080,6 @@ a:focus {
 
 .o_mail_discuss_sidebar {
   background-color: var(--o-bg-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_mail_discuss_content {
@@ -1160,26 +1088,22 @@ a:focus {
 
 .o_composer {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 .o_composer_input {
   background-color: var(--o-bg-2) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== PDF VIEWER COLORS ===== */
 .o_pdf_viewer {
   background-color: var(--o-bg-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== MODULE SPECIFIC COLORS ===== */
 /* Accounting */
 .o_account_reports_summary {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* POS */
@@ -1189,13 +1113,11 @@ a:focus {
 
 .pos .o_pos_orderlines {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* Manufacturing */
 .o_mrp_bom {
   background-color: var(--o-surface) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* Project */
@@ -1205,7 +1127,6 @@ a:focus {
 
 .o_project_kanban .o_kanban_group {
   background-color: var(--o-bg-2) !important;
-  border-color: var(--o-border-2) !important;
 }
 
 /* ===== UTILITY COLOR CLASSES ===== */
@@ -1262,11 +1183,9 @@ a:focus {
 }
 
 .border-primary {
-  border-color: var(--brand-primary) !important;
 }
 
 .border-secondary {
-  border-color: var(--o-border-3) !important;
 }
 
 /* ===== ADDITIONAL OWL JS AND ODOO VARIABLES ===== */
@@ -1310,21 +1229,18 @@ a:focus {
 .o_error_dialog {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--brand-error) !important;
 }
 
 /* Success colors */
 .o_success_dialog {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--brand-success) !important;
 }
 
 /* Warning colors */
 .o_warning_dialog {
   background-color: var(--o-surface) !important;
   color: var(--o-text-1) !important;
-  border-color: var(--brand-warning) !important;
 }
 
 /* High contrast mode overrides */
@@ -1357,7 +1273,6 @@ body.o_dark .o_web_client {
 
 /* Force color overrides for stubborn elements */
 .o_web_client * {
-  border-color: var(--o-border-2) !important;
 }
 
 .o_web_client
