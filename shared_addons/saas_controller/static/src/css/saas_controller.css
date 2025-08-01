@@ -141,6 +141,8 @@ body.o_dark {
   --bs-dark-rgb: 248, 250, 252;
   --bs-body-bg: var(--o-bg-1);
   --bs-body-color: var(--o-text-1);
+
+  --background-color: var(--o-bg-1) !important;
 }
 
 /* Auto dark mode based on system preference */
