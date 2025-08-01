@@ -210,6 +210,18 @@
     color: rgba(26, 115, 232, 1) !important;
 }
 
+.btn-outline-secondary {
+  color: #343a40 !important;
+  background-color: #e9ecef !important;
+  border-color: #dee2e6 !important;
+}
+
+.btn-outline-secondary:hover {
+  color: #fff;
+  background-color: rgba(26, 115, 232, 1);
+  border-color: rgba(26, 115, 232, 1);
+}
+
 /* Micro-interaction Animations - Add to existing CSS */
 
 /* Button pulse on focus */
