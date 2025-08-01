@@ -100,7 +100,8 @@ class CacheManager:
         """Fetch user tenants from database"""
         from db import db
         tenants = db.session.query(Tenant).join(TenantUser).filter(
-            TenantUser.user_id == user_id
+            TenantUser.user_id == user_id,
+            Tenant.status != 'deleted'
         ).all()
         
         return [

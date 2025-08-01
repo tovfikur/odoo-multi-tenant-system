@@ -1241,8 +1241,12 @@ def manage_tenant(tenant_id):
 @admin_required
 @track_errors('admin_tenants_route')
 def admin_tenants():
+    show_deleted = request.args.get('show_deleted', 'false').lower() == 'true'
     try:
-        tenants = Tenant.query.all()
+        if show_deleted:
+            tenants = Tenant.query.all()  # Show all including deleted
+        else:
+            tenants = Tenant.query.filter(Tenant.status != 'deleted').all()  # Show only active
         
         # Update database active status for all tenants
         updated_tenants = []
@@ -1953,7 +1957,7 @@ def restore_tenant(tenant_id):
 def delete_tenant(tenant_id):
     tenant = Tenant.query.get_or_404(tenant_id)
     try:
-        logger.info(f"Deleting tenant: {tenant.name} (ID: {tenant.id})")
+        logger.info(f"Soft deleting tenant: {tenant.name} (ID: {tenant.id})")
         
         try:
             # Get affected users before deletion
@@ -1972,13 +1976,29 @@ def delete_tenant(tenant_id):
         except Exception as e:
             logger.warning(f"Failed to update cache before tenant deletion: {e}")
         
-        TenantUser.query.filter_by(tenant_id=tenant.id).delete()
-        CredentialAccess.query.filter_by(tenant_id=tenant.id).delete()
-        db.session.delete(tenant)
+        # Soft delete: Mark tenant as deleted instead of hard delete
+        tenant.status = 'deleted'
+        tenant.is_active = False
+        tenant.updated_at = datetime.utcnow()
+        
+        # Keep TenantUser and CredentialAccess records for audit purposes
+        # Just mark them as inactive if needed in the future
+        
         db.session.commit()
-        odoo.delete(tenant.database_name)                  
-        flash('Tenant deleted successfully.', 'success')
+        
+        # Delete the Odoo database (this is still safe as data is backed up)
+        try:
+            odoo.delete(tenant.database_name)
+            logger.info(f"Odoo database {tenant.database_name} deleted successfully")
+        except Exception as e:
+            logger.warning(f"Failed to delete Odoo database {tenant.database_name}: {e}")
+        
+        flash('Tenant archived successfully. All billing records preserved.', 'success')
+        logger.info(f"Tenant {tenant.name} soft deleted successfully")
+        
     except Exception as e:
+        db.session.rollback()
+        logger.error(f"Tenant deletion failed: {e}")
         flash(f'Deletion failed: {e}', 'danger')
     return redirect(url_for('dashboard'))
 
