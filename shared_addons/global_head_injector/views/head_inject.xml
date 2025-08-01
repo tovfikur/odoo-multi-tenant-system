@@ -110,7 +110,70 @@
 
                 .o_control_panel_breadcrumbs {
                     color: white !important;
-                }                
+                }
+
+                .oe_login_form ~ .text-center.small.mt-4.pt-3.border-top {
+                    display: none !important;
+                }             
+
+
+.card:has(.oe_login_form) {
+   position: relative;
+   overflow: hidden;
+   background: linear-gradient(-45deg, #174ea6, #1a73e8, #2e7ce8, #1565c0, #1976d2, #174ea6);
+   background-size: 400% 400%;
+   animation: gradientShift 8s ease infinite;
+   border: none;
+   box-shadow: 0 15px 35px rgba(23, 78, 166, 0.3);
+}
+
+.card:has(.oe_login_form)::before {
+   content: '';
+   position: absolute;
+   top: 0;
+   left: 0;
+   right: 0;
+   bottom: 0;
+   background: linear-gradient(45deg, 
+       rgba(26, 115, 232, 0.2) 0%, 
+       rgba(23, 78, 166, 0.1) 50%, 
+       rgba(26, 115, 232, 0.2) 100%);
+   animation: shimmer 3s ease-in-out infinite alternate;
+   pointer-events: none;
+}
+
+.card:has(.oe_login_form) .card-body {
+   position: relative;
+   z-index: 2;
+   background: rgba(255, 255, 255, 0.95);
+   backdrop-filter: blur(10px);
+   border-radius: inherit;
+   margin: 2px;
+}
+
+@keyframes gradientShift {
+   0% {
+       background-position: 0% 50%;
+   }
+   50% {
+       background-position: 100% 50%;
+   }
+   100% {
+       background-position: 0% 50%;
+   }
+}
+
+@keyframes shimmer {
+   0% {
+       opacity: 0.3;
+       transform: translateX(-100%) skewX(-15deg);
+   }
+   100% {
+       opacity: 0.8;
+       transform: translateX(100%) skewX(-15deg);
+   }
+}
+
 
                 </style>
             </xpath>
