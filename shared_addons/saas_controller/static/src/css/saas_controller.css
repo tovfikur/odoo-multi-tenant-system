@@ -1390,6 +1390,20 @@ body.o_dark .o_web_client {
   background-color: rgba(255, 255, 255, 0.02) !important;
 }
 
+[data-bs-theme="dark"],
+.o_dark_mode,
+body.o_dark {
+  /* Background opacity override */
+  --bg-opacity: 0.8;
+  --background-color: rgba(30, 41, 59, var(--bg-opacity, 1));
+
+  /* Settings specific colors */
+  --settings__tab-bg: var(--o-bg-3);
+  --settings__tab-bg--active: var(--brand-primary-light);
+  --settings__tab-color: var(--o-text-2);
+  --settings__title-bg: var(--o-bg-2);
+}
+
 /* Print mode color adjustments */
 @media print {
   :root {
