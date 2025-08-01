@@ -1,0 +1,16 @@
+/* Simple Navbar Styling */
+
+/* Import Google Caveat Font */
+@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap');
+
+/* Change navbar background color */
+.o_main_navbar {
+    background: #017e84 !important;
+    background-color: #017e84 !important;
+}
+
+/* Change navbar brand font to Google Caveat */
+.o_main_navbar .o_menu_brand {
+    font-family: 'Caveat', cursive !important;
+    font-weight: 500 !important;
+}
