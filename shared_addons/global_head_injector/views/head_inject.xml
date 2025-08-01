@@ -100,13 +100,17 @@
                 transition: background 0.3s ease !important;
                 }
 
-                .btn .btn-primary {
+                .btn .btn-primary, .btn-primary {
                     background: linear-gradient(135deg, #174ea6 0%, #1a73e8 100%) !important;
                     border: none !important;
                     color: white !important;
                     font-weight: 600 !important;
                     transition: background 0.3s ease !important;
                 }
+
+                .o_control_panel_breadcrumbs {
+                    color: white !important;
+                }                
 
                 </style>
             </xpath>
