@@ -4,8 +4,7 @@
         <!-- Inject global navbar styling into web layout -->
         <template id="global_navbar_styling" name="Global Navbar Styling" inherit_id="web.layout">
             <xpath expr="//head" position="inside">
-                <style>
-
+                <style><![CDATA[
         /* Global Odoo Custom Styling with Micro-Interactions */
         /* Import Google Caveat Font */
         @import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap');
@@ -429,10 +428,7 @@
         .active-pulse {
             animation: pulse 2s infinite;
         }
-
-
-
-                </style>
+                ]]></style>
             </xpath>
         </template>
     </data>
