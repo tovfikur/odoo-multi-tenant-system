@@ -108,6 +108,10 @@
                     transition: background 0.3s ease !important;
                 }
 
+                .btn .btn-primary, .btn-primary:hover, .btn .btn-primary:focus, .btn-primary:hover, .btn-primary:focus {
+                    background: linear-gradient(135deg,  #1a73e8 0%, #174ea6 100%) !important;
+                }
+
                 .o_control_panel_breadcrumbs {
                     color: white !important;
                 }
@@ -197,7 +201,7 @@
 }
 
 .o-dropdown--menu .dropdown-item.focus{
-    color: rgba(26, 115, 232, 0.2) !important;
+    color: rgba(26, 115, 232, 1) !important;
     background-color: rgba(236, 241, 247, 0.9) !important;
     transition: background-color 0.3s ease !important;
 }
