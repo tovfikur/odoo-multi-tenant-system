@@ -4,11 +4,8 @@
  * Overrides inline styles and stubborn CSS
  */
 
-odoo.define('saas_controller.brand_enforcer', function (require) {
+(function() {
     'use strict';
-
-    var core = require('web.core');
-    var session = require('web.session');
 
     // Your Beautiful Brand Colors
     var BRAND_COLORS = {
@@ -39,57 +36,6 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
         background: '#ffffff'
     };
 
-    // Color mapping for different element types
-    var COLOR_MAPPINGS = {
-        // Navigation elements
-        '.o_main_navbar, .navbar, .o_navbar': {
-            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryDark} 100%)`,
-            color: 'white'
-        },
-        
-        // Primary buttons
-        '.btn-primary, .o_form_button_save, .o_form_button_create': {
-            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryDark} 100%)`,
-            borderColor: BRAND_COLORS.primary,
-            color: 'white'
-        },
-        
-        // Secondary buttons
-        '.btn-secondary': {
-            background: `linear-gradient(135deg, ${BRAND_COLORS.secondary} 0%, ${BRAND_COLORS.secondaryDark} 100%)`,
-            borderColor: BRAND_COLORS.secondary,
-            color: 'white'
-        },
-        
-        // Links
-        'a, .o_form_uri, .o_field_url': {
-            color: BRAND_COLORS.primary
-        },
-        
-        // Table headers
-        '.table thead th, .o_list_table thead th': {
-            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryDark} 100%)`,
-            color: 'white'
-        },
-        
-        // Card headers
-        '.card-header, .panel-heading': {
-            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryDark} 100%)`,
-            color: 'white'
-        },
-        
-        // Progress bars
-        '.progress-bar': {
-            background: `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryLight} 100%)`
-        },
-        
-        // Form controls
-        '.form-control:focus, .o_input:focus': {
-            borderColor: BRAND_COLORS.primary,
-            boxShadow: `0 0 0 3px rgba(26, 115, 232, 0.1)`
-        }
-    };
-
     // Inline style color overrides that we need to force
     var INLINE_OVERRIDES = [
         'background-color',
@@ -108,7 +54,7 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
             
             // Apply initial styling
             this.applyCSSVariables();
-            this.applyColorMappings();
+            this.enforceColors();
             this.enforceInlineStyles();
             this.removeOdooBranding();
             
@@ -117,7 +63,7 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
             this.setupEventListeners();
             
             // Periodic enforcement for stubborn elements
-            setInterval(this.enforceColors.bind(this), 2000);
+            setInterval(this.enforceColors.bind(this), 3000);
             
             console.log('✅ SaaS Brand Enforcer: Ready!');
         },
@@ -150,45 +96,28 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
         },
         
         /**
-         * Apply color mappings to elements
-         */
-        applyColorMappings: function() {
-            Object.keys(COLOR_MAPPINGS).forEach(selector => {
-                var elements = document.querySelectorAll(selector);
-                var styles = COLOR_MAPPINGS[selector];
-                
-                elements.forEach(element => {
-                    Object.keys(styles).forEach(property => {
-                        var value = styles[property];
-                        element.style.setProperty(this.camelToKebab(property), value, 'important');
-                    });
-                });
-            });
-        },
-        
-        /**
          * Aggressively enforce colors on all elements
          */
         enforceColors: function() {
             // Force primary buttons
-            this.forceElementColors('.btn-primary, .o_form_button_save, .o_form_button_create', {
-                'background': `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryDark} 100%)`,
+            this.forceElementColors('.btn-primary, .o_form_button_save, .o_form_button_create, button.btn-primary', {
+                'background': 'linear-gradient(135deg, ' + BRAND_COLORS.primary + ' 0%, ' + BRAND_COLORS.primaryDark + ' 100%)',
                 'background-color': BRAND_COLORS.primary,
                 'border-color': BRAND_COLORS.primary,
                 'color': 'white'
             });
             
             // Force secondary buttons
-            this.forceElementColors('.btn-secondary', {
-                'background': `linear-gradient(135deg, ${BRAND_COLORS.secondary} 0%, ${BRAND_COLORS.secondaryDark} 100%)`,
+            this.forceElementColors('.btn-secondary, button.btn-secondary', {
+                'background': 'linear-gradient(135deg, ' + BRAND_COLORS.secondary + ' 0%, ' + BRAND_COLORS.secondaryDark + ' 100%)',
                 'background-color': BRAND_COLORS.secondary,
                 'border-color': BRAND_COLORS.secondary,
                 'color': 'white'
             });
             
             // Force navigation
-            this.forceElementColors('.o_main_navbar, .navbar, .o_navbar', {
-                'background': `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryDark} 100%)`,
+            this.forceElementColors('.o_main_navbar, .navbar, .o_navbar, #oe_main_menu_navbar', {
+                'background': 'linear-gradient(135deg, ' + BRAND_COLORS.primary + ' 0%, ' + BRAND_COLORS.primaryDark + ' 100%)',
                 'background-color': BRAND_COLORS.primary,
                 'color': 'white'
             });
@@ -199,26 +128,33 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
             });
             
             // Force table headers
-            this.forceElementColors('.table thead th, .o_list_table thead th', {
-                'background': `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryDark} 100%)`,
+            this.forceElementColors('.table thead th, .o_list_table thead th, .table th', {
+                'background': 'linear-gradient(135deg, ' + BRAND_COLORS.primary + ' 0%, ' + BRAND_COLORS.primaryDark + ' 100%)',
                 'background-color': BRAND_COLORS.primary,
                 'color': 'white'
             });
             
             // Force progress bars
             this.forceElementColors('.progress-bar', {
-                'background': `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryLight} 100%)`,
+                'background': 'linear-gradient(135deg, ' + BRAND_COLORS.primary + ' 0%, ' + BRAND_COLORS.primaryLight + ' 100%)',
                 'background-color': BRAND_COLORS.primary
             });
             
             // Force badges
-            this.forceElementColors('.badge-primary, .label-primary', {
+            this.forceElementColors('.badge-primary, .label-primary, .o_badge_primary', {
                 'background-color': BRAND_COLORS.primary,
                 'color': 'white'
             });
             
-            this.forceElementColors('.badge-secondary, .label-secondary', {
+            this.forceElementColors('.badge-secondary, .label-secondary, .o_badge_secondary', {
                 'background-color': BRAND_COLORS.secondary,
+                'color': 'white'
+            });
+            
+            // Force card headers
+            this.forceElementColors('.card-header, .panel-heading, .o_form_sheet_bg', {
+                'background': 'linear-gradient(135deg, ' + BRAND_COLORS.primary + ' 0%, ' + BRAND_COLORS.primaryDark + ' 100%)',
+                'background-color': BRAND_COLORS.primary,
                 'color': 'white'
             });
         },
@@ -228,8 +164,8 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
          */
         forceElementColors: function(selector, styles) {
             var elements = document.querySelectorAll(selector);
-            elements.forEach(element => {
-                Object.keys(styles).forEach(property => {
+            elements.forEach(function(element) {
+                Object.keys(styles).forEach(function(property) {
                     element.style.setProperty(property, styles[property], 'important');
                 });
             });
@@ -241,13 +177,13 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
         enforceInlineStyles: function() {
             var elementsWithInlineStyles = document.querySelectorAll('[style]');
             
-            elementsWithInlineStyles.forEach(element => {
+            elementsWithInlineStyles.forEach(function(element) {
                 var style = element.getAttribute('style');
                 if (!style) return;
                 
                 // Remove problematic inline color styles
-                INLINE_OVERRIDES.forEach(property => {
-                    var regex = new RegExp(`${property}\\s*:[^;]+;?`, 'gi');
+                INLINE_OVERRIDES.forEach(function(property) {
+                    var regex = new RegExp(property + '\\s*:[^;]+;?', 'gi');
                     style = style.replace(regex, '');
                 });
                 
@@ -267,9 +203,9 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
                 '.o_footer'
             ];
             
-            brandingSelectors.forEach(selector => {
+            brandingSelectors.forEach(function(selector) {
                 var elements = document.querySelectorAll(selector);
-                elements.forEach(element => {
+                elements.forEach(function(element) {
                     element.style.display = 'none';
                 });
             });
@@ -279,16 +215,17 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
          * Set up mutation observer for dynamic content
          */
         setupMutationObserver: function() {
-            var observer = new MutationObserver(mutations => {
-                mutations.forEach(mutation => {
+            var self = this;
+            var observer = new MutationObserver(function(mutations) {
+                mutations.forEach(function(mutation) {
                     if (mutation.type === 'childList') {
-                        mutation.addedNodes.forEach(node => {
+                        mutation.addedNodes.forEach(function(node) {
                             if (node.nodeType === Node.ELEMENT_NODE) {
-                                this.processNewElement(node);
+                                self.processNewElement(node);
                             }
                         });
                     } else if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
-                        this.processStyleChange(mutation.target);
+                        self.processStyleChange(mutation.target);
                     }
                 });
             });
@@ -306,9 +243,11 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
          */
         processNewElement: function(element) {
             // Apply brand colors to new elements
-            this.applyColorMappings();
-            this.enforceInlineStyles();
-            this.removeOdooBranding();
+            setTimeout(function() {
+                this.enforceColors();
+                this.enforceInlineStyles();
+                this.removeOdooBranding();
+            }.bind(this), 100);
         },
         
         /**
@@ -316,60 +255,76 @@ odoo.define('saas_controller.brand_enforcer', function (require) {
          */
         processStyleChange: function(element) {
             // Re-enforce colors when inline styles change
-            setTimeout(() => {
+            setTimeout(function() {
                 this.enforceColors();
-            }, 100);
+            }.bind(this), 200);
         },
         
         /**
          * Set up event listeners for form interactions
          */
         setupEventListeners: function() {
+            var self = this;
+            
             // Listen for focus events to apply brand colors
-            document.addEventListener('focus', (e) => {
+            document.addEventListener('focus', function(e) {
                 if (e.target.matches('input, textarea, select, .form-control, .o_input')) {
                     e.target.style.setProperty('border-color', BRAND_COLORS.primary, 'important');
-                    e.target.style.setProperty('box-shadow', `0 0 0 3px rgba(26, 115, 232, 0.1)`, 'important');
+                    e.target.style.setProperty('box-shadow', '0 0 0 3px rgba(26, 115, 232, 0.1)', 'important');
                 }
             }, true);
             
             // Listen for click events on buttons
-            document.addEventListener('click', (e) => {
+            document.addEventListener('click', function(e) {
                 if (e.target.matches('.btn-primary, .o_form_button_save, .o_form_button_create')) {
-                    setTimeout(() => {
-                        this.forceElementColors('.btn-primary, .o_form_button_save, .o_form_button_create', {
-                            'background': `linear-gradient(135deg, ${BRAND_COLORS.primary} 0%, ${BRAND_COLORS.primaryDark} 100%)`,
+                    setTimeout(function() {
+                        self.forceElementColors('.btn-primary, .o_form_button_save, .o_form_button_create', {
+                            'background': 'linear-gradient(135deg, ' + BRAND_COLORS.primary + ' 0%, ' + BRAND_COLORS.primaryDark + ' 100%)',
                             'background-color': BRAND_COLORS.primary,
                             'color': 'white'
                         });
                     }, 50);
                 }
             });
-        },
-        
-        /**
-         * Convert camelCase to kebab-case
-         */
-        camelToKebab: function(str) {
-            return str.replace(/([a-z0-9]|(?=[A-Z]))([A-Z])/g, '$1-$2').toLowerCase();
+            
+            // Listen for page load events
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    self.enforceColors();
+                }, 500);
+            });
         }
     };
 
     // Initialize when DOM is ready
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', function() {
-            BrandEnforcer.init();
-        });
-    } else {
-        BrandEnforcer.init();
+    function initializeBrandEnforcer() {
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                setTimeout(function() {
+                    BrandEnforcer.init();
+                }, 500);
+            });
+        } else {
+            setTimeout(function() {
+                BrandEnforcer.init();
+            }, 500);
+        }
     }
 
-    // Also initialize on web client ready
-    core.bus.on('web_client_ready', null, function() {
-        setTimeout(function() {
-            BrandEnforcer.init();
-        }, 1000);
-    });
+    // Initialize immediately
+    initializeBrandEnforcer();
 
-    return BrandEnforcer;
-});
+    // Also try to initialize when Odoo is ready (if available)
+    if (typeof odoo !== 'undefined' && odoo.define) {
+        odoo.define('saas_controller.brand_enforcer', [], function() {
+            setTimeout(function() {
+                BrandEnforcer.init();
+            }, 1000);
+            return BrandEnforcer;
+        });
+    }
+
+    // Global fallback
+    window.SaaSBrandEnforcer = BrandEnforcer;
+
+})();
