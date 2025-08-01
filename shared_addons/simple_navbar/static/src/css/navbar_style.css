@@ -1,12 +1,33 @@
-/* Import Google Caveat Font */
-@import url('https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap');
+/* Import Google Caveat font */
+@import url("https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600;700&display=swap");
 
-/* Force navbar background color */
-.o_main_navbar {
-    background-color: #017e84 !important;
+/* Customize navbar brand font */
+.o_main_navbar .o_menu_brand {
+  font-family: "Caveat", cursive !important;
+  font-weight: 600 !important;
+  font-size: 24px !important;
+  letter-spacing: 0.5px !important;
 }
 
-/* Force navbar brand font */
-.o_main_navbar .o_menu_brand {
-    font-family: 'Caveat', cursive !important;
+/* Customize navbar background */
+.o_main_navbar {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Optional: Add a subtle shadow for better visual appeal */
+.o_main_navbar {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Ensure navbar items remain readable with new background */
+.o_main_navbar .o_menu_brand,
+.o_main_navbar .navbar-nav .nav-link {
+  color: white !important;
+}
+
+/* Hover effects for better UX */
+.o_main_navbar .navbar-nav .nav-link:hover {
+  color: rgba(255, 255, 255, 0.8) !important;
+  transition: color 0.3s ease !important;
 }

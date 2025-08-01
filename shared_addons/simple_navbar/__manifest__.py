@@ -1,28 +1,27 @@
-# -*- coding: utf-8 -*-
 {
-    'name': 'Simple Navbar Styling',
+    'name': 'Navbar Style Customization',
     'version': '17.0.1.0.0',
     'category': 'Web',
-    'summary': 'Simple navbar background and font styling',
+    'summary': 'Customize navbar brand font and background color',
     'description': """
-Simple Navbar Styling
-=====================
-
-A minimal module that changes:
-* Navbar background color
-* Navbar brand font to Google Caveat
+        This module customizes the Odoo navbar styling:
+        - Changes the navbar brand font to Google Caveat
+        - Updates the navbar background color
+        
+        Simple CSS-only customization that doesn't interfere with Odoo's functionality.
     """,
     'author': 'Your Company',
-    'depends': [
-        'web',
+    'website': 'https://www.yourcompany.com',
+    'depends': ['web'],
+    'data': [
+        'views/assets.xml',
     ],
     'assets': {
         'web.assets_backend': [
-            'simple_navbar/static/src/css/navbar_style.css',
+            'navbar_style/static/src/css/navbar_style.css',
         ],
     },
     'installable': True,
-    'application': False,
     'auto_install': False,
-    'license': 'LGPL-3',
+    'application': False,
 }

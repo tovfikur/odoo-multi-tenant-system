@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Include CSS assets for backend -->
+        <template id="assets_backend" inherit_id="web.assets_backend">
+            <xpath expr="." position="inside">
+                <link rel="stylesheet" type="text/css" href="/navbar_style/static/src/css/navbar_style.css"/>
+            </xpath>
+        </template>
+    </data>
+</odoo>
