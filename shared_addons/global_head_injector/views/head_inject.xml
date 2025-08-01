@@ -187,6 +187,19 @@
 .o-form-buttonbox .oe_stat_button .o_button_icon {
     color: #174ea6 !important;
 }
+.btn-outline-primary {
+    color: #fff;
+    border-color: #fff;
+}
+
+.o-dropdown--menu .dropdown-item{
+    color: white !important;
+}
+
+.o-dropdown--menu .dropdown-item.focus{
+    background-color: rgba(26, 115, 232, 0.2) !important;
+    transition: background-color 0.3s ease !important;
+}
 
 /* Micro-interaction Animations - Add to existing CSS */
 
