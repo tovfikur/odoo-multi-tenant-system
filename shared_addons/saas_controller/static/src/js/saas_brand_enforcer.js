@@ -6,9 +6,10 @@
 (function() {
     'use strict';
 
-    // Your Primary Brand Color
+    // Your Brand Colors
     var PRIMARY_COLOR = '#1a73e8';
     var PRIMARY_DARK = '#174ea6';
+    var COMPLEMENTARY_COLOR = '#ff6f61';
 
     var NavbarStyler = {
         
@@ -38,6 +39,23 @@
             var navItems = document.querySelectorAll('.o_main_navbar .dropdown-toggle, .o_main_navbar .nav-link, .o_main_navbar .navbar-brand');
             navItems.forEach(function(item) {
                 item.style.setProperty('color', 'white', 'important');
+            });
+            
+            // Style specific menu sections
+            var menuSections = document.querySelectorAll('.o_main_navbar .o_menu_sections .o_nav_entry, .o_main_navbar .o_menu_sections .dropdown-toggle');
+            menuSections.forEach(function(item) {
+                item.style.setProperty('background-color', PRIMARY_COLOR, 'important');
+                item.style.setProperty('color', 'white', 'important');
+                item.style.setProperty('border-radius', '6px', 'important');
+                item.style.setProperty('margin', '0 2px', 'important');
+            });
+            
+            // Style dropdown items
+            var dropdownItems = document.querySelectorAll('.dropdown-item');
+            dropdownItems.forEach(function(item) {
+                item.style.setProperty('color', PRIMARY_COLOR, 'important');
+                item.style.setProperty('border-radius', '4px', 'important');
+                item.style.setProperty('margin', '2px 4px', 'important');
             });
         },
         

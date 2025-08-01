@@ -7,6 +7,9 @@
   --saas-primary-dark: #174ea6;
   --saas-primary-light: #4c9eff;
   
+  /* Complementary Color (Coral/Orange) */
+  --saas-complementary-color: #ff6f61;
+  
   /* Transitions */
   --saas-transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --saas-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -36,6 +39,38 @@
   background-color: rgba(255, 255, 255, 0.1) !important;
   transform: translateY(-1px) !important;
   border-radius: 6px !important;
+}
+
+/* Specific Navbar Menu Sections - Brand Color Background */
+.o_main_navbar .o_menu_sections .o_nav_entry,
+.o_main_navbar .o_menu_sections .dropdown-toggle {
+  background-color: var(--saas-primary-color) !important;
+  color: white !important;
+  transition: var(--saas-transition-fast) !important;
+  border-radius: 6px !important;
+  margin: 0 2px !important;
+}
+
+.o_main_navbar .o_menu_sections .o_nav_entry:hover,
+.o_main_navbar .o_menu_sections .dropdown-toggle:hover {
+  background-color: var(--saas-primary-dark) !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.2) !important;
+}
+
+/* Dropdown Items - Toggle Colors on Hover */
+.dropdown-item {
+  color: var(--saas-primary-color) !important;
+  transition: var(--saas-transition-fast) !important;
+  border-radius: 4px !important;
+  margin: 2px 4px !important;
+}
+
+.dropdown-item:hover {
+  color: var(--saas-complementary-color) !important;
+  background-color: rgba(26, 115, 232, 0.1) !important;
+  transform: translateX(4px) !important;
 }
 
 /* SaaS Controller Specific Styles */
