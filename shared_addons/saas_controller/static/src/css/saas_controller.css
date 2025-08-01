@@ -1404,6 +1404,13 @@ body.o_dark {
   --settings__title-bg: var(--o-bg-2);
 }
 
+.settings {
+  background-color: var(--settings__tab-bg) !important;
+}
+.settings .settings__tab {
+  background-color: var(--settings__tab-bg) !important;
+}
+
 /* Print mode color adjustments */
 @media print {
   :root {
