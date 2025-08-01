@@ -6,13 +6,8 @@
         <field name="max_users">10</field>
         <field name="user_limit_enabled">True</field>
         <field name="remove_odoo_branding">False</field>
-        <field name="custom_app_name">Business Manager</field>
-        <field name="primary_color">#1a73e8</field>
-        <field name="secondary_color">#00bfa5</field>
-        <field name="accent_color">#ff6f61</field>
-        <field name="background_color">#ffffff</field>
-        <field name="text_color">#2e3a59</field>
-        <field name="link_color">#1a73e8</field>
+        <field name="replace_apps_icon">True</field>
+        <field name="primary_color">#017e84</field>
         <field name="is_active">True</field>
     </record>
 

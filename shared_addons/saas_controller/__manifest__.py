@@ -34,12 +34,15 @@ Key Benefits:
     ],
     'data': [
         'security/ir.model.access.csv',
-        'views/saas_controller_minimal_views.xml',
+        'views/saas_controller_views.xml',
+        'views/res_users_views.xml',
+        'views/branding_views.xml',
+        'data/default_config.xml',
     ],
     'assets': {
         'web.assets_backend': [
-            'saas_controller/static/src/css/saas_controller_minimal.css',
-            'saas_controller/static/src/js/saas_minimal.js',
+            'saas_controller/static/src/css/saas_controller.css',
+            'saas_controller/static/src/js/saas_brand_enforcer.js',
         ],
     },
     'installable': True,
