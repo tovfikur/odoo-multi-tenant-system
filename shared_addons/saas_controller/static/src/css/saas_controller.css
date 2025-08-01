@@ -1,254 +1,218 @@
-/* SaaS Controller - Complete Variable Override System for Odoo 17.0 */
-/* This CSS overrides ALL Odoo variables for perfect dark/light mode control */
+/* SaaS Controller - Improved Contrast & Clean UI for Odoo 17.0 */
+/* Enhanced color system with better accessibility and brand dominance */
 
 /* ===== LIGHT MODE VARIABLES (DEFAULT) ===== */
 :root {
-  /* ===== SaaS Brand Colors - Light Mode ===== */
+  /* ===== Enhanced SaaS Brand Colors - Light Mode ===== */
   --saas-primary: #1a73e8;
-  --saas-primary-dark: #174ea6;
-  --saas-primary-light: #4c9eff;
-  --saas-secondary: #00bfa5;
-  --saas-secondary-dark: #00937a;
-  --saas-secondary-light: #33e1c6;
-  --saas-accent: #ff6f61;
-  --saas-accent-dark: #e05a4e;
-  --saas-support: #9b51e0;
+  --saas-primary-hover: #1557b0;
+  --saas-primary-light: #e8f0fe;
+  --saas-primary-dark: #0d47a1;
+  --saas-secondary: #00acc1;
+  --saas-secondary-hover: #00838f;
+  --saas-secondary-light: #e0f7fa;
+  --saas-accent: #f57c00;
+  --saas-accent-hover: #e65100;
+  --saas-accent-light: #fff3e0;
+  --saas-success: #2e7d32;
+  --saas-success-light: #e8f5e8;
+  --saas-warning: #f57c00;
+  --saas-warning-light: #fff3e0;
+  --saas-error: #d32f2f;
+  --saas-error-light: #ffebee;
 
-  /* ===== Complete Light Theme System ===== */
+  /* ===== Enhanced Light Theme System - Better Contrast ===== */
   --saas-bg-primary: #ffffff;
-  --saas-bg-secondary: #f8f9fa;
-  --saas-bg-tertiary: #e9ecef;
+  --saas-bg-secondary: #f5f7fa;
+  --saas-bg-tertiary: #e1e5e9;
+  --saas-bg-elevated: #ffffff;
   --saas-surface: #ffffff;
-  --saas-surface-hover: #f8f9fa;
-  --saas-text-primary: #212529;
-  --saas-text-secondary: #6c757d;
-  --saas-text-muted: #adb5bd;
+  --saas-surface-hover: #f8fafc;
+  --saas-surface-selected: #e3f2fd;
+  --saas-text-primary: #1e293b;
+  --saas-text-secondary: #475569;
+  --saas-text-tertiary: #64748b;
+  --saas-text-muted: #94a3b8;
   --saas-text-inverse: #ffffff;
-  --saas-border: #dee2e6;
-  --saas-border-light: #e9ecef;
-  --saas-shadow: rgba(0, 0, 0, 0.1);
-  --saas-shadow-hover: rgba(0, 0, 0, 0.15);
-  --saas-overlay: rgba(0, 0, 0, 0.5);
+  --saas-text-on-primary: #ffffff;
+  --saas-border-light: #f1f5f9;
+  --saas-border: #e2e8f0;
+  --saas-border-strong: #cbd5e1;
+  --saas-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --saas-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px -1px rgba(0, 0, 0, 0.1);
+  --saas-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --saas-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --saas-overlay: rgba(15, 23, 42, 0.6);
 
-  /* ===== OVERRIDE ALL ODOO CORE VARIABLES - LIGHT MODE ===== */
-
-  /* Override Odoo Core Colors */
+  /* ===== ENHANCED ODOO CORE OVERRIDES - LIGHT MODE ===== */
   --o-color-1: var(--saas-primary) !important;
   --o-color-2: var(--saas-secondary) !important;
   --o-color-3: var(--saas-bg-secondary) !important;
   --o-color-4: var(--saas-surface) !important;
   --o-color-5: var(--saas-text-primary) !important;
 
-  /* Override Bootstrap Core Variables */
-  --primary: var(--saas-primary) !important;
-  --secondary: var(--saas-secondary) !important;
-  --body-bg: var(--saas-bg-primary) !important;
-  --body-color: var(--saas-text-primary) !important;
-  --white: var(--saas-surface) !important;
-  --black: var(--saas-text-primary) !important;
+  /* Enhanced Bootstrap Variables */
+  --bs-primary: var(--saas-primary) !important;
+  --bs-secondary: var(--saas-text-tertiary) !important;
+  --bs-success: var(--saas-success) !important;
+  --bs-warning: var(--saas-warning) !important;
+  --bs-danger: var(--saas-error) !important;
+  --bs-body-bg: var(--saas-bg-primary) !important;
+  --bs-body-color: var(--saas-text-primary) !important;
+  --bs-border-color: var(--saas-border) !important;
 
-  /* Override Gray Scale */
-  --gray-100: var(--saas-bg-secondary) !important;
-  --gray-200: var(--saas-bg-tertiary) !important;
-  --gray-300: var(--saas-border) !important;
-  --gray-400: var(--saas-border-light) !important;
-  --gray-500: var(--saas-text-muted) !important;
-  --gray-600: var(--saas-text-secondary) !important;
-  --gray-700: var(--saas-text-primary) !important;
-  --gray-800: var(--saas-text-primary) !important;
-  --gray-900: var(--saas-text-primary) !important;
+  /* Enhanced Gray Scale */
+  --bs-gray-100: var(--saas-bg-secondary) !important;
+  --bs-gray-200: var(--saas-bg-tertiary) !important;
+  --bs-gray-300: var(--saas-border) !important;
+  --bs-gray-400: var(--saas-border-strong) !important;
+  --bs-gray-500: var(--saas-text-muted) !important;
+  --bs-gray-600: var(--saas-text-tertiary) !important;
+  --bs-gray-700: var(--saas-text-secondary) !important;
+  --bs-gray-800: var(--saas-text-primary) !important;
+  --bs-gray-900: var(--saas-text-primary) !important;
 
-  /* Override Base Colors */
-  --base-white: var(--saas-surface) !important;
-  --base-100: var(--saas-bg-secondary) !important;
-  --base-200: var(--saas-bg-tertiary) !important;
-  --base-300: var(--saas-border) !important;
-  --base-400: var(--saas-border-light) !important;
-  --base-500: var(--saas-text-muted) !important;
-  --base-600: var(--saas-text-secondary) !important;
-  --base-700: var(--saas-text-primary) !important;
-  --base-800: var(--saas-text-primary) !important;
-  --base-900: var(--saas-text-primary) !important;
-  --base-black: var(--saas-text-primary) !important;
-
-  /* Override Color Combinations */
+  /* Enhanced Color Combinations */
   --o-cc1-bg: var(--saas-surface) !important;
   --o-cc1-text: var(--saas-text-primary) !important;
   --o-cc1-headings: var(--saas-text-primary) !important;
   --o-cc1-link: var(--saas-primary) !important;
   --o-cc1-btn-primary: var(--saas-primary) !important;
-  --o-cc1-btn-primary-text: var(--saas-text-inverse) !important;
-  --o-cc1-btn-secondary: var(--saas-secondary) !important;
-  --o-cc1-btn-secondary-text: var(--saas-text-inverse) !important;
+  --o-cc1-btn-primary-text: var(--saas-text-on-primary) !important;
 
   --o-cc2-bg: var(--saas-bg-secondary) !important;
   --o-cc2-text: var(--saas-text-primary) !important;
   --o-cc2-headings: var(--saas-text-primary) !important;
   --o-cc2-link: var(--saas-primary) !important;
-  --o-cc2-btn-primary: var(--saas-primary) !important;
-  --o-cc2-btn-secondary: var(--saas-secondary) !important;
 
   --o-cc3-bg: var(--saas-bg-tertiary) !important;
   --o-cc3-text: var(--saas-text-primary) !important;
   --o-cc3-headings: var(--saas-text-primary) !important;
-  --o-cc3-link: var(--saas-primary) !important;
-  --o-cc3-btn-primary: var(--saas-primary) !important;
-  --o-cc3-btn-secondary: var(--saas-secondary) !important;
 
   --o-cc4-bg: var(--saas-primary) !important;
-  --o-cc4-text: var(--saas-text-inverse) !important;
-  --o-cc4-headings: var(--saas-text-inverse) !important;
-  --o-cc4-link: var(--saas-text-inverse) !important;
-  --o-cc4-btn-primary: var(--saas-surface) !important;
-  --o-cc4-btn-primary-text: var(--saas-primary) !important;
-  --o-cc4-btn-secondary: var(--saas-secondary) !important;
+  --o-cc4-text: var(--saas-text-on-primary) !important;
+  --o-cc4-headings: var(--saas-text-on-primary) !important;
+  --o-cc4-link: var(--saas-text-on-primary) !important;
 
   --o-cc5-bg: var(--saas-text-primary) !important;
   --o-cc5-text: var(--saas-text-inverse) !important;
   --o-cc5-headings: var(--saas-text-inverse) !important;
-  --o-cc5-link: var(--saas-primary-light) !important;
-  --o-cc5-btn-primary: var(--saas-primary) !important;
-  --o-cc5-btn-secondary: var(--saas-secondary) !important;
 
-  /* Override Menu and Footer */
-  --menu: var(--saas-surface) !important;
-  --menu-bg: var(--saas-surface) !important;
-  --footer: var(--saas-text-primary) !important;
-  --footer-bg: var(--saas-text-primary) !important;
-  --menu-border-color: var(--saas-border) !important;
-
-  /* Override Input Colors */
+  /* Menu and Input Overrides */
+  --o-navbar-height: 56px;
   --o-input-border-color: var(--saas-border) !important;
   --o-caret-color: var(--saas-text-primary) !important;
-
-  /* Override Webclient */
-  --o-webclient-color-scheme: bright !important;
+  --o-webclient-color-scheme: light !important;
 
   /* Transitions */
+  --saas-transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   --saas-transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   --saas-transition-slow: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* ===== DARK MODE VARIABLES - OS PREFERENCE DETECTION ===== */
+/* ===== DARK MODE VARIABLES - Enhanced Contrast ===== */
 @media (prefers-color-scheme: dark) {
   :root {
-    /* ===== SaaS Brand Colors - Dark Mode Adjusted ===== */
-    --saas-primary: #4c9eff;
-    --saas-primary-dark: #1a73e8;
-    --saas-primary-light: #7db6ff;
-    --saas-secondary: #33e1c6;
-    --saas-secondary-dark: #00bfa5;
-    --saas-secondary-light: #66e8d3;
-    --saas-accent: #ff8a7a;
-    --saas-accent-dark: #ff6f61;
-    --saas-support: #b76deb;
+    /* ===== Enhanced SaaS Brand Colors - Dark Mode ===== */
+    --saas-primary: #3b82f6;
+    --saas-primary-hover: #2563eb;
+    --saas-primary-light: #1e293b;
+    --saas-primary-dark: #1d4ed8;
+    --saas-secondary: #06b6d4;
+    --saas-secondary-hover: #0891b2;
+    --saas-secondary-light: #0f172a;
+    --saas-accent: #f59e0b;
+    --saas-accent-hover: #d97706;
+    --saas-accent-light: #1c1917;
+    --saas-success: #10b981;
+    --saas-success-light: #064e3b;
+    --saas-warning: #f59e0b;
+    --saas-warning-light: #1c1917;
+    --saas-error: #ef4444;
+    --saas-error-light: #1f1012;
 
-    /* ===== Complete Dark Theme System ===== */
-    --saas-bg-primary: #0d1117;
-    --saas-bg-secondary: #161b22;
-    --saas-bg-tertiary: #21262d;
-    --saas-surface: #161b22;
-    --saas-surface-hover: #21262d;
-    --saas-text-primary: #f0f6fc;
-    --saas-text-secondary: #8b949e;
-    --saas-text-muted: #6e7681;
-    --saas-text-inverse: #0d1117;
-    --saas-border: #30363d;
-    --saas-border-light: #21262d;
-    --saas-shadow: rgba(0, 0, 0, 0.3);
-    --saas-shadow-hover: rgba(0, 0, 0, 0.5);
+    /* ===== Enhanced Dark Theme System - Better Contrast ===== */
+    --saas-bg-primary: #0f172a;
+    --saas-bg-secondary: #1e293b;
+    --saas-bg-tertiary: #334155;
+    --saas-bg-elevated: #1e293b;
+    --saas-surface: #1e293b;
+    --saas-surface-hover: #334155;
+    --saas-surface-selected: #1e3a8a;
+    --saas-text-primary: #f8fafc;
+    --saas-text-secondary: #cbd5e1;
+    --saas-text-tertiary: #94a3b8;
+    --saas-text-muted: #64748b;
+    --saas-text-inverse: #0f172a;
+    --saas-text-on-primary: #ffffff;
+    --saas-border-light: #1e293b;
+    --saas-border: #334155;
+    --saas-border-strong: #475569;
+    --saas-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+    --saas-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4),
+      0 1px 2px -1px rgba(0, 0, 0, 0.4);
+    --saas-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4),
+      0 2px 4px -2px rgba(0, 0, 0, 0.4);
+    --saas-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4),
+      0 4px 6px -4px rgba(0, 0, 0, 0.4);
     --saas-overlay: rgba(0, 0, 0, 0.8);
 
-    /* ===== OVERRIDE ALL ODOO CORE VARIABLES - DARK MODE ===== */
-
-    /* Override Odoo Core Colors */
+    /* ===== ENHANCED ODOO CORE OVERRIDES - DARK MODE ===== */
     --o-color-1: var(--saas-primary) !important;
     --o-color-2: var(--saas-secondary) !important;
     --o-color-3: var(--saas-bg-secondary) !important;
     --o-color-4: var(--saas-surface) !important;
     --o-color-5: var(--saas-text-primary) !important;
 
-    /* Override Bootstrap Core Variables */
-    --primary: var(--saas-primary) !important;
-    --secondary: var(--saas-secondary) !important;
-    --body-bg: var(--saas-bg-primary) !important;
-    --body-color: var(--saas-text-primary) !important;
-    --white: var(--saas-surface) !important;
-    --black: var(--saas-bg-primary) !important;
+    /* Enhanced Bootstrap Variables - Dark */
+    --bs-primary: var(--saas-primary) !important;
+    --bs-secondary: var(--saas-text-tertiary) !important;
+    --bs-success: var(--saas-success) !important;
+    --bs-warning: var(--saas-warning) !important;
+    --bs-danger: var(--saas-error) !important;
+    --bs-body-bg: var(--saas-bg-primary) !important;
+    --bs-body-color: var(--saas-text-primary) !important;
+    --bs-border-color: var(--saas-border) !important;
 
-    /* Override Gray Scale - Dark Mode */
-    --gray-100: var(--saas-bg-secondary) !important;
-    --gray-200: var(--saas-bg-tertiary) !important;
-    --gray-300: var(--saas-border) !important;
-    --gray-400: var(--saas-border-light) !important;
-    --gray-500: var(--saas-text-muted) !important;
-    --gray-600: var(--saas-text-secondary) !important;
-    --gray-700: var(--saas-text-primary) !important;
-    --gray-800: var(--saas-text-primary) !important;
-    --gray-900: var(--saas-text-primary) !important;
+    /* Enhanced Gray Scale - Dark */
+    --bs-gray-100: var(--saas-bg-secondary) !important;
+    --bs-gray-200: var(--saas-bg-tertiary) !important;
+    --bs-gray-300: var(--saas-border) !important;
+    --bs-gray-400: var(--saas-border-strong) !important;
+    --bs-gray-500: var(--saas-text-muted) !important;
+    --bs-gray-600: var(--saas-text-tertiary) !important;
+    --bs-gray-700: var(--saas-text-secondary) !important;
+    --bs-gray-800: var(--saas-text-primary) !important;
+    --bs-gray-900: var(--saas-text-primary) !important;
 
-    /* Override Base Colors - Dark Mode */
-    --base-white: var(--saas-surface) !important;
-    --base-100: var(--saas-bg-secondary) !important;
-    --base-200: var(--saas-bg-tertiary) !important;
-    --base-300: var(--saas-border) !important;
-    --base-400: var(--saas-border-light) !important;
-    --base-500: var(--saas-text-muted) !important;
-    --base-600: var(--saas-text-secondary) !important;
-    --base-700: var(--saas-text-primary) !important;
-    --base-800: var(--saas-text-primary) !important;
-    --base-900: var(--saas-text-primary) !important;
-    --base-black: var(--saas-bg-primary) !important;
-
-    /* Override Color Combinations - Dark Mode */
+    /* Enhanced Color Combinations - Dark */
     --o-cc1-bg: var(--saas-surface) !important;
     --o-cc1-text: var(--saas-text-primary) !important;
     --o-cc1-headings: var(--saas-text-primary) !important;
     --o-cc1-link: var(--saas-primary) !important;
     --o-cc1-btn-primary: var(--saas-primary) !important;
-    --o-cc1-btn-primary-text: var(--saas-text-inverse) !important;
-    --o-cc1-btn-secondary: var(--saas-secondary) !important;
-    --o-cc1-btn-secondary-text: var(--saas-text-inverse) !important;
+    --o-cc1-btn-primary-text: var(--saas-text-on-primary) !important;
 
     --o-cc2-bg: var(--saas-bg-secondary) !important;
     --o-cc2-text: var(--saas-text-primary) !important;
     --o-cc2-headings: var(--saas-text-primary) !important;
     --o-cc2-link: var(--saas-primary) !important;
-    --o-cc2-btn-primary: var(--saas-primary) !important;
-    --o-cc2-btn-secondary: var(--saas-secondary) !important;
 
     --o-cc3-bg: var(--saas-bg-tertiary) !important;
     --o-cc3-text: var(--saas-text-primary) !important;
     --o-cc3-headings: var(--saas-text-primary) !important;
-    --o-cc3-link: var(--saas-primary) !important;
-    --o-cc3-btn-primary: var(--saas-primary) !important;
-    --o-cc3-btn-secondary: var(--saas-secondary) !important;
 
     --o-cc4-bg: var(--saas-primary) !important;
-    --o-cc4-text: var(--saas-text-inverse) !important;
-    --o-cc4-headings: var(--saas-text-inverse) !important;
-    --o-cc4-link: var(--saas-text-inverse) !important;
-    --o-cc4-btn-primary: var(--saas-surface) !important;
-    --o-cc4-btn-primary-text: var(--saas-primary) !important;
-    --o-cc4-btn-secondary: var(--saas-secondary) !important;
+    --o-cc4-text: var(--saas-text-on-primary) !important;
+    --o-cc4-headings: var(--saas-text-on-primary) !important;
+    --o-cc4-link: var(--saas-text-on-primary) !important;
 
     --o-cc5-bg: var(--saas-text-primary) !important;
     --o-cc5-text: var(--saas-text-inverse) !important;
     --o-cc5-headings: var(--saas-text-inverse) !important;
-    --o-cc5-link: var(--saas-primary-light) !important;
-    --o-cc5-btn-primary: var(--saas-primary) !important;
-    --o-cc5-btn-secondary: var(--saas-secondary) !important;
-
-    /* Override Menu and Footer - Dark Mode */
-    --menu: var(--saas-surface) !important;
-    --menu-bg: var(--saas-surface) !important;
-    --footer: var(--saas-text-primary) !important;
-    --footer-bg: var(--saas-text-primary) !important;
-    --menu-border-color: var(--saas-border) !important;
-
-    /* Override Input Colors - Dark Mode */
-    --o-input-border-color: var(--saas-border) !important;
-    --o-caret-color: var(--saas-text-primary) !important;
 
     /* Override Webclient - Dark Mode */
     --o-webclient-color-scheme: dark !important;
@@ -257,33 +221,30 @@
 
 /* ===== UNIVERSAL BASE STYLING ===== */
 * {
-  transition: var(--saas-transition) !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
 html,
 body {
   background-color: var(--saas-bg-primary) !important;
   color: var(--saas-text-primary) !important;
-  font-family: var(--font-sans-serif) !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif !important;
+  line-height: 1.5 !important;
 }
 
-/* ===== COMPLETE NAVIGATION OVERRIDE ===== */
+/* ===== ENHANCED NAVIGATION SYSTEM ===== */
 .o_main_navbar,
 .navbar,
-.o_navbar_apps_menu,
-.navbar-brand,
-.navbar-nav,
-.navbar-toggler {
-  background: linear-gradient(
-    135deg,
-    var(--saas-primary) 0%,
-    var(--saas-primary-dark) 100%
-  ) !important;
-  border-bottom: 1px solid var(--saas-border) !important;
-  box-shadow: 0 2px 8px var(--saas-shadow) !important;
+.o_navbar_apps_menu {
+  background: var(--saas-primary) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
+  backdrop-filter: blur(8px) !important;
+  height: var(--o-navbar-height) !important;
 }
 
-/* ALL Navigation Text - Force Override */
+/* Navigation Text - Clean Override */
 .o_main_navbar,
 .o_main_navbar *,
 .navbar,
@@ -292,118 +253,81 @@ body {
 .o_navbar_apps_menu *,
 .navbar-brand,
 .navbar-brand *,
-.navbar-nav,
-.navbar-nav *,
-.nav-link,
-.nav-link *,
-.dropdown-toggle,
-.dropdown-toggle *,
-.navbar-text,
-.navbar-text *,
+.navbar-nav .nav-link,
+.navbar-nav .nav-link *,
 .o_menu_toggle,
-.o_menu_toggle *,
-.o_menu_sections,
-.o_menu_sections *,
-.o_menu_brand,
-.o_menu_brand * {
-  color: var(--saas-text-inverse) !important;
-  background-color: transparent !important;
+.o_menu_toggle * {
+  color: var(--saas-text-on-primary) !important;
+  font-weight: 500 !important;
 }
 
-.o_main_navbar *:hover,
-.navbar *:hover,
-.nav-link:hover,
-.dropdown-toggle:hover {
-  color: rgba(255, 255, 255, 0.9) !important;
-  transform: translateY(-1px) !important;
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link:focus,
+.o_menu_toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1) !important;
+  border-radius: 6px !important;
+  transform: none !important;
 }
 
-/* Dropdown Menus - Complete Override */
-.dropdown-menu,
-.o_main_navbar .dropdown-menu,
-.navbar .dropdown-menu {
-  background-color: var(--saas-surface) !important;
+/* Enhanced Dropdown Menus */
+.dropdown-menu {
+  background-color: var(--saas-bg-elevated) !important;
   border: 1px solid var(--saas-border) !important;
-  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
-  color: var(--saas-text-primary) !important;
+  box-shadow: var(--saas-shadow-lg) !important;
+  border-radius: 8px !important;
+  padding: 4px !important;
 }
 
-.dropdown-item,
-.o_main_navbar .dropdown-item,
-.navbar .dropdown-item {
+.dropdown-item {
   color: var(--saas-text-primary) !important;
-  background-color: transparent !important;
+  border-radius: 4px !important;
+  margin: 2px 0 !important;
+  font-weight: 400 !important;
 }
 
 .dropdown-item:hover,
-.dropdown-item:focus,
-.o_main_navbar .dropdown-item:hover,
-.navbar .dropdown-item:hover {
+.dropdown-item:focus {
   background-color: var(--saas-surface-hover) !important;
   color: var(--saas-primary) !important;
 }
 
-/* ===== COMPLETE BUTTON OVERRIDE ===== */
+/* ===== ENHANCED BUTTON SYSTEM ===== */
 .btn {
   border: none !important;
   font-weight: 500 !important;
+  border-radius: 6px !important;
   transition: var(--saas-transition) !important;
-  color: var(--saas-text-inverse) !important;
+  position: relative !important;
+  overflow: hidden !important;
 }
 
-.btn-primary,
-.btn.btn-primary {
-  background: linear-gradient(
-    135deg,
-    var(--saas-primary) 0%,
-    var(--saas-primary-dark) 100%
-  ) !important;
-  color: var(--saas-text-inverse) !important;
-  box-shadow: 0 2px 6px var(--saas-shadow) !important;
+.btn-primary {
+  background-color: var(--saas-primary) !important;
+  color: var(--saas-text-on-primary) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
 }
 
 .btn-primary:hover,
 .btn-primary:focus,
-.btn-primary:active,
-.btn-primary.active,
-.btn.btn-primary:hover,
-.btn.btn-primary:focus,
-.btn.btn-primary:active {
-  background: linear-gradient(
-    135deg,
-    var(--saas-primary-dark) 0%,
-    var(--saas-primary) 100%
-  ) !important;
-  color: var(--saas-text-inverse) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
+.btn-primary:active {
+  background-color: var(--saas-primary-hover) !important;
+  color: var(--saas-text-on-primary) !important;
+  box-shadow: var(--saas-shadow-md) !important;
+  transform: translateY(-1px) !important;
 }
 
-.btn-secondary,
-.btn.btn-secondary {
-  background: linear-gradient(
-    135deg,
-    var(--saas-secondary) 0%,
-    var(--saas-secondary-dark) 100%
-  ) !important;
-  color: var(--saas-text-inverse) !important;
-  box-shadow: 0 2px 6px var(--saas-shadow) !important;
+.btn-secondary {
+  background-color: var(--saas-bg-tertiary) !important;
+  color: var(--saas-text-primary) !important;
+  box-shadow: var(--saas-shadow-xs) !important;
 }
 
 .btn-secondary:hover,
 .btn-secondary:focus,
-.btn-secondary:active,
-.btn.btn-secondary:hover,
-.btn.btn-secondary:focus,
-.btn.btn-secondary:active {
-  background: linear-gradient(
-    135deg,
-    var(--saas-secondary-dark) 0%,
-    var(--saas-secondary) 100%
-  ) !important;
-  color: var(--saas-text-inverse) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
+.btn-secondary:active {
+  background-color: var(--saas-border-strong) !important;
+  color: var(--saas-text-primary) !important;
+  box-shadow: var(--saas-shadow-sm) !important;
 }
 
 .btn-outline-primary {
@@ -416,302 +340,527 @@ body {
 .btn-outline-primary:focus,
 .btn-outline-primary:active {
   background-color: var(--saas-primary) !important;
-  color: var(--saas-text-inverse) !important;
+  color: var(--saas-text-on-primary) !important;
 }
 
-/* ===== COMPLETE FORM OVERRIDE ===== */
+.btn-sm {
+  padding: 0.375rem 0.75rem !important;
+  font-size: 0.875rem !important;
+}
+
+.btn-lg {
+  padding: 0.75rem 1.5rem !important;
+  font-size: 1.125rem !important;
+}
+
+/* ===== ENHANCED FORM SYSTEM ===== */
 .o_form_view,
 .o_action_manager,
 .o_main_content,
-.o_content,
-.o_view_controller {
+.o_content {
   background-color: var(--saas-bg-primary) !important;
   color: var(--saas-text-primary) !important;
 }
 
-.o_form_sheet,
-.o_form_view .o_form_sheet {
+.o_form_sheet {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
   border: 1px solid var(--saas-border) !important;
-  box-shadow: 0 2px 8px var(--saas-shadow) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--saas-shadow-sm) !important;
+  padding: 24px !important;
 }
 
 .o_form_label,
-.o_field_widget,
-.form-label,
-.form-text,
-.o_form_view .o_form_label,
-.o_form_view .o_field_widget {
-  color: var(--saas-text-primary) !important;
-  background-color: transparent !important;
+.form-label {
+  color: var(--saas-text-secondary) !important;
+  font-weight: 500 !important;
+  margin-bottom: 0.5rem !important;
 }
 
-/* ===== COMPLETE INPUT OVERRIDE ===== */
+/* ===== ENHANCED INPUT SYSTEM ===== */
+.form-control,
+.o_input,
 input,
 select,
 textarea,
-.o_input,
-.form-control,
 .o_field_widget input,
 .o_field_widget select,
-.o_field_widget textarea,
-.o_searchview_input,
-.o_searchview .o_searchview_input,
-.form-select,
-.form-check-input {
+.o_field_widget textarea {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
   border: 1px solid var(--saas-border) !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 0.75rem !important;
+  transition: var(--saas-transition) !important;
 }
 
+.form-control:focus,
+.o_input:focus,
 input:focus,
 select:focus,
 textarea:focus,
-.o_input:focus,
-.form-control:focus,
 .o_field_widget input:focus,
 .o_field_widget select:focus,
-.o_field_widget textarea:focus,
-.form-select:focus,
-.form-check-input:focus {
+.o_field_widget textarea:focus {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
   border-color: var(--saas-primary) !important;
-  box-shadow: 0 0 0 3px rgba(76, 158, 255, 0.2) !important;
-  transform: scale(1.01) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important;
+  outline: none !important;
 }
 
-/* ===== COMPLETE TABLE OVERRIDE ===== */
+/* ===== ENHANCED TABLE SYSTEM ===== */
 .o_list_view,
 .table,
-.o_list_table,
-.table-responsive {
+.o_list_table {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: var(--saas-shadow-sm) !important;
 }
 
 .o_list_table thead th,
 .table thead th,
 th {
   background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
-  border-bottom: 2px solid var(--saas-primary) !important;
-  border-color: var(--saas-border) !important;
+  color: var(--saas-text-secondary) !important;
+  font-weight: 600 !important;
+  border-bottom: 2px solid var(--saas-border) !important;
+  padding: 0.75rem !important;
 }
 
 .o_list_table tbody tr,
 .table tbody tr,
 tr {
   background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
 .o_list_table tbody tr:hover,
 .table tbody tr:hover,
 tr:hover {
   background-color: var(--saas-surface-hover) !important;
-  transform: scale(1.002) !important;
 }
 
 .o_list_table tbody td,
 .table tbody td,
 td {
-  border-color: var(--saas-border) !important;
   color: var(--saas-text-primary) !important;
-  background-color: transparent !important;
+  border-color: var(--saas-border-light) !important;
+  padding: 0.75rem !important;
 }
 
-/* ===== COMPLETE CONTROL PANEL OVERRIDE ===== */
-.o_control_panel,
-.o_cp_top,
-.o_cp_bottom {
-  background-color: var(--saas-surface) !important;
+/* ===== ENHANCED CONTROL PANEL ===== */
+.o_control_panel {
+  background-color: var(--saas-bg-elevated) !important;
   border-bottom: 1px solid var(--saas-border) !important;
-  color: var(--saas-text-primary) !important;
+  border-radius: 8px 8px 0 0 !important;
+  padding: 1rem !important;
 }
 
-.o_control_panel *,
 .o_cp_searchview,
-.o_cp_searchview *,
-.o_searchview,
-.o_searchview * {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
-  border-color: var(--saas-border) !important;
+.o_searchview {
+  background-color: var(--saas-surface) !important;
+  border: 1px solid var(--saas-border) !important;
+  border-radius: 6px !important;
 }
 
-/* ===== COMPLETE KANBAN OVERRIDE ===== */
+.o_searchview_input {
+  background-color: transparent !important;
+  color: var(--saas-text-primary) !important;
+  border: none !important;
+}
+
+/* ===== ENHANCED KANBAN SYSTEM ===== */
 .o_kanban_view {
   background-color: var(--saas-bg-primary) !important;
+  padding: 1rem !important;
 }
 
 .o_kanban_record {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
   border: 1px solid var(--saas-border) !important;
-  box-shadow: 0 2px 6px var(--saas-shadow) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--saas-shadow-xs) !important;
+  transition: var(--saas-transition) !important;
+  margin-bottom: 0.75rem !important;
 }
 
 .o_kanban_record:hover {
-  background-color: var(--saas-surface-hover) !important;
-  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
+  box-shadow: var(--saas-shadow-md) !important;
   transform: translateY(-2px) !important;
+  border-color: var(--saas-primary) !important;
 }
 
-.o_kanban_record * {
-  color: var(--saas-text-primary) !important;
-}
-
-/* ===== COMPLETE CARD OVERRIDE ===== */
-.card,
-.card-body,
-.card-footer {
+/* ===== ENHANCED CARD SYSTEM ===== */
+.card {
   background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
   border: 1px solid var(--saas-border) !important;
-  box-shadow: 0 2px 8px var(--saas-shadow) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--saas-shadow-sm) !important;
+  transition: var(--saas-transition) !important;
 }
 
 .card:hover {
-  transform: translateY(-2px) !important;
-  box-shadow: 0 8px 20px var(--saas-shadow-hover) !important;
+  box-shadow: var(--saas-shadow-md) !important;
+  transform: translateY(-1px) !important;
 }
 
 .card-header {
-  background: linear-gradient(
-    135deg,
-    var(--saas-primary) 0%,
-    var(--saas-primary-dark) 100%
-  ) !important;
-  color: var(--saas-text-inverse) !important;
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
   border-bottom: 1px solid var(--saas-border) !important;
+  font-weight: 600 !important;
+  padding: 1rem !important;
 }
 
-.card-header * {
-  color: var(--saas-text-inverse) !important;
+.card-body {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  padding: 1rem !important;
 }
 
-/* ===== COMPLETE MODAL OVERRIDE ===== */
+.card-footer {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-secondary) !important;
+  border-top: 1px solid var(--saas-border) !important;
+  padding: 0.75rem 1rem !important;
+}
+
+/* ===== ENHANCED MODAL SYSTEM ===== */
 .modal-content {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  box-shadow: var(--saas-shadow-lg) !important;
 }
 
-.modal-header,
-.modal-footer {
+.modal-header {
   background-color: var(--saas-bg-secondary) !important;
   color: var(--saas-text-primary) !important;
-  border-color: var(--saas-border) !important;
+  border-bottom: 1px solid var(--saas-border) !important;
+  border-radius: 12px 12px 0 0 !important;
+  padding: 1.25rem !important;
 }
 
-.modal-header *,
-.modal-footer *,
-.modal-body * {
-  color: var(--saas-text-primary) !important;
+.modal-body {
+  padding: 1.25rem !important;
+}
+
+.modal-footer {
+  background-color: var(--saas-bg-secondary) !important;
+  border-top: 1px solid var(--saas-border) !important;
+  border-radius: 0 0 12px 12px !important;
+  padding: 1rem 1.25rem !important;
 }
 
 .modal-backdrop {
   background-color: var(--saas-overlay) !important;
 }
 
-/* ===== COMPLETE APP DRAWER OVERRIDE ===== */
-.o_apps {
-  background-color: var(--saas-bg-primary) !important;
-}
-
-.o_app {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
-}
-
-.o_app:hover {
-  background-color: var(--saas-surface-hover) !important;
-  transform: scale(1.05) translateY(-2px) !important;
-  box-shadow: 0 8px 20px var(--saas-shadow-hover) !important;
-}
-
-.o_app .o_caption,
-.o_app * {
-  color: var(--saas-text-primary) !important;
-}
-
-/* ===== COMPLETE SIDEBAR OVERRIDE ===== */
-.o_menu_sections,
-.o_menu_brand {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-}
-
-.o_menu_sections .dropdown-item,
-.o_menu_sections * {
-  color: var(--saas-text-primary) !important;
-}
-
-.o_menu_sections .dropdown-item:hover {
-  background-color: var(--saas-surface-hover) !important;
+/* ===== ENHANCED LINK SYSTEM ===== */
+a {
   color: var(--saas-primary) !important;
-}
-
-/* ===== COMPLETE LINK OVERRIDE ===== */
-a,
-a:link,
-a:visited {
-  color: var(--saas-primary) !important;
+  text-decoration: none !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
 a:hover,
-a:focus,
-a:active {
-  color: var(--saas-accent) !important;
-  transform: translateX(2px) !important;
+a:focus {
+  color: var(--saas-primary-hover) !important;
+  text-decoration: underline !important;
+}
+
+/* ===== ENHANCED BADGE SYSTEM ===== */
+.badge {
+  font-weight: 500 !important;
+  border-radius: 4px !important;
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.75rem !important;
+}
+
+.badge-primary {
+  background-color: var(--saas-primary) !important;
+  color: var(--saas-text-on-primary) !important;
+}
+
+.badge-secondary {
+  background-color: var(--saas-bg-tertiary) !important;
+  color: var(--saas-text-primary) !important;
+}
+
+.badge-success {
+  background-color: var(--saas-success) !important;
+  color: white !important;
+}
+
+.badge-warning {
+  background-color: var(--saas-warning) !important;
+  color: white !important;
+}
+
+.badge-danger {
+  background-color: var(--saas-error) !important;
+  color: white !important;
+}
+
+/* ===== ENHANCED ALERT SYSTEM ===== */
+.alert {
+  border: none !important;
+  border-radius: 8px !important;
+  padding: 1rem !important;
+  margin-bottom: 1rem !important;
+  border-left: 4px solid !important;
+}
+
+.alert-success {
+  background-color: var(--saas-success-light) !important;
+  color: var(--saas-success) !important;
+  border-left-color: var(--saas-success) !important;
+}
+
+.alert-warning {
+  background-color: var(--saas-warning-light) !important;
+  color: var(--saas-warning) !important;
+  border-left-color: var(--saas-warning) !important;
+}
+
+.alert-danger {
+  background-color: var(--saas-error-light) !important;
+  color: var(--saas-error) !important;
+  border-left-color: var(--saas-error) !important;
+}
+
+.alert-info {
+  background-color: var(--saas-primary-light) !important;
+  color: var(--saas-primary) !important;
+  border-left-color: var(--saas-primary) !important;
+}
+
+/* ===== ENHANCED PAGINATION ===== */
+.pagination {
+  margin: 0 !important;
+}
+
+.page-link {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  border: 1px solid var(--saas-border) !important;
+  padding: 0.75rem 1rem !important;
+  transition: var(--saas-transition-fast) !important;
+}
+
+.page-link:hover,
+.page-link:focus {
+  background-color: var(--saas-surface-hover) !important;
+  color: var(--saas-primary) !important;
+  border-color: var(--saas-primary) !important;
   text-decoration: none !important;
 }
 
-/* ===== COMPLETE BADGE OVERRIDE ===== */
-.badge,
-.badge-primary,
-.badge.badge-primary {
+.page-item.active .page-link {
   background-color: var(--saas-primary) !important;
-  color: var(--saas-text-inverse) !important;
+  border-color: var(--saas-primary) !important;
+  color: var(--saas-text-on-primary) !important;
 }
 
-.badge-secondary,
-.badge.badge-secondary {
-  background-color: var(--saas-secondary) !important;
-  color: var(--saas-text-inverse) !important;
+.page-item.disabled .page-link {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-muted) !important;
+  border-color: var(--saas-border) !important;
 }
 
-.badge-success,
-.badge.badge-success {
-  background-color: var(--saas-secondary) !important;
-  color: var(--saas-text-inverse) !important;
+/* ===== ENHANCED TOOLTIP SYSTEM ===== */
+.tooltip {
+  font-size: 0.875rem !important;
 }
 
-.badge-warning,
-.badge.badge-warning {
-  background-color: var(--saas-accent) !important;
+.tooltip-inner {
+  background-color: var(--saas-text-primary) !important;
   color: var(--saas-text-inverse) !important;
+  border-radius: 6px !important;
+  padding: 0.5rem 0.75rem !important;
+  max-width: 200px !important;
 }
 
-.badge-danger,
-.badge.badge-danger {
-  background-color: var(--saas-accent-dark) !important;
-  color: var(--saas-text-inverse) !important;
+.bs-tooltip-top .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
+  border-top-color: var(--saas-text-primary) !important;
 }
 
-/* ===== COMPLETE PROGRESS BAR OVERRIDE ===== */
+.bs-tooltip-right .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before {
+  border-right-color: var(--saas-text-primary) !important;
+}
+
+.bs-tooltip-bottom .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
+  border-bottom-color: var(--saas-text-primary) !important;
+}
+
+.bs-tooltip-left .tooltip-arrow::before,
+.bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
+  border-left-color: var(--saas-text-primary) !important;
+}
+
+/* ===== ENHANCED POPOVER SYSTEM ===== */
+.popover {
+  background-color: var(--saas-surface) !important;
+  border: 1px solid var(--saas-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--saas-shadow-lg) !important;
+  max-width: 300px !important;
+}
+
+.popover-header {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border-bottom: 1px solid var(--saas-border) !important;
+  border-radius: 8px 8px 0 0 !important;
+  padding: 0.75rem 1rem !important;
+  font-weight: 600 !important;
+}
+
+.popover-body {
+  color: var(--saas-text-primary) !important;
+  padding: 1rem !important;
+}
+
+/* ===== ENHANCED TAB SYSTEM ===== */
+.nav-tabs {
+  border-bottom: 2px solid var(--saas-border) !important;
+  margin-bottom: 1rem !important;
+}
+
+.nav-tabs .nav-link {
+  background-color: transparent !important;
+  color: var(--saas-text-secondary) !important;
+  border: none !important;
+  padding: 0.75rem 1rem !important;
+  font-weight: 500 !important;
+  border-radius: 6px 6px 0 0 !important;
+  margin-right: 0.25rem !important;
+  transition: var(--saas-transition-fast) !important;
+}
+
+.nav-tabs .nav-link:hover,
+.nav-tabs .nav-link:focus {
+  color: var(--saas-text-primary) !important;
+  background-color: var(--saas-surface-hover) !important;
+}
+
+.nav-tabs .nav-link.active {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-primary) !important;
+  border-bottom: 2px solid var(--saas-primary) !important;
+  font-weight: 600 !important;
+}
+
+.tab-content {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  padding: 1.5rem !important;
+  border-radius: 0 8px 8px 8px !important;
+  box-shadow: var(--saas-shadow-sm) !important;
+}
+
+/* ===== ENHANCED ACCORDION SYSTEM ===== */
+.accordion {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+}
+
+.accordion-item {
+  background-color: var(--saas-surface) !important;
+  border: 1px solid var(--saas-border) !important;
+  border-bottom: none !important;
+}
+
+.accordion-item:last-child {
+  border-bottom: 1px solid var(--saas-border) !important;
+  border-radius: 0 0 8px 8px !important;
+}
+
+.accordion-item:first-child {
+  border-radius: 8px 8px 0 0 !important;
+}
+
+.accordion-button {
+  background-color: var(--saas-bg-secondary) !important;
+  color: var(--saas-text-primary) !important;
+  border: none !important;
+  padding: 1rem 1.25rem !important;
+  font-weight: 500 !important;
+  transition: var(--saas-transition-fast) !important;
+}
+
+.accordion-button:hover {
+  background-color: var(--saas-surface-hover) !important;
+}
+
+.accordion-button:not(.collapsed) {
+  background-color: var(--saas-primary-light) !important;
+  color: var(--saas-primary) !important;
+  font-weight: 600 !important;
+  box-shadow: none !important;
+}
+
+.accordion-button::after {
+  background-image: none !important;
+  content: "▼" !important;
+  color: var(--saas-text-secondary) !important;
+  transition: transform 0.2s ease-in-out !important;
+}
+
+.accordion-button:not(.collapsed)::after {
+  transform: rotate(180deg) !important;
+  color: var(--saas-primary) !important;
+}
+
+.accordion-body {
+  background-color: var(--saas-surface) !important;
+  color: var(--saas-text-primary) !important;
+  padding: 1.25rem !important;
+}
+
+/* ===== ENHANCED PROGRESS SYSTEM ===== */
 .progress {
   background-color: var(--saas-bg-secondary) !important;
+  border-radius: 6px !important;
+  height: 8px !important;
+  overflow: hidden !important;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1) !important;
 }
 
 .progress-bar {
-  background-color: var(--saas-primary) !important;
+  background: linear-gradient(
+    90deg,
+    var(--saas-primary),
+    var(--saas-primary-hover)
+  ) !important;
+  border-radius: 6px !important;
+  transition: width 0.6s ease !important;
 }
 
-/* ===== COMPLETE CALENDAR OVERRIDE ===== */
+.progress-bar-striped {
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  ) !important;
+  background-size: 1rem 1rem !important;
+}
+
+/* ===== ENHANCED CALENDAR SYSTEM ===== */
 .o_calendar_view {
   background-color: var(--saas-bg-primary) !important;
   color: var(--saas-text-primary) !important;
@@ -719,8 +868,10 @@ a:active {
 
 .fc-event {
   background-color: var(--saas-primary) !important;
-  border-color: var(--saas-primary-dark) !important;
-  color: var(--saas-text-inverse) !important;
+  border-color: var(--saas-primary-hover) !important;
+  color: var(--saas-text-on-primary) !important;
+  border-radius: 4px !important;
+  font-weight: 500 !important;
 }
 
 .fc-toolbar,
@@ -732,25 +883,130 @@ a:active {
   border-color: var(--saas-border) !important;
 }
 
-/* ===== COMPLETE DATABASE LIST OVERRIDE ===== */
-.o_database_list .list-group-item {
+.fc-today {
+  background-color: var(--saas-primary-light) !important;
+}
+
+/* ===== ENHANCED APP DRAWER ===== */
+.o_apps {
+  background-color: var(--saas-bg-primary) !important;
+  padding: 2rem !important;
+}
+
+.o_app {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
-  border-color: var(--saas-border) !important;
+  border: 1px solid var(--saas-border) !important;
+  border-radius: 12px !important;
+  padding: 1.5rem !important;
+  text-align: center !important;
+  transition: var(--saas-transition) !important;
+  box-shadow: var(--saas-shadow-xs) !important;
 }
 
-.o_database_list .list-group-item:hover {
+.o_app:hover {
   background-color: var(--saas-surface-hover) !important;
+  transform: translateY(-4px) !important;
+  box-shadow: var(--saas-shadow-lg) !important;
   border-color: var(--saas-primary) !important;
-  transform: translateX(4px) !important;
 }
 
-/* ===== COMPLETE LOGIN PAGE OVERRIDE ===== */
+.o_app .o_caption {
+  color: var(--saas-text-primary) !important;
+  font-weight: 600 !important;
+  margin-top: 0.75rem !important;
+}
+
+/* ===== ENHANCED SCROLLBAR ===== */
+::-webkit-scrollbar {
+  width: 8px !important;
+  height: 8px !important;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--saas-bg-secondary) !important;
+  border-radius: 4px !important;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--saas-text-muted) !important;
+  border-radius: 4px !important;
+  transition: var(--saas-transition-fast) !important;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--saas-text-tertiary) !important;
+}
+
+/* Firefox Scrollbar */
+* {
+  scrollbar-width: thin !important;
+  scrollbar-color: var(--saas-text-muted) var(--saas-bg-secondary) !important;
+}
+
+/* ===== ENHANCED BREADCRUMB SYSTEM ===== */
+.breadcrumb {
+  background-color: transparent !important;
+  padding: 0.75rem 0 !important;
+  margin-bottom: 1rem !important;
+  font-size: 0.875rem !important;
+}
+
+.breadcrumb-item {
+  color: var(--saas-text-tertiary) !important;
+}
+
+.breadcrumb-item + .breadcrumb-item::before {
+  content: "/" !important;
+  color: var(--saas-text-muted) !important;
+  margin: 0 0.5rem !important;
+}
+
+.breadcrumb-item.active {
+  color: var(--saas-text-primary) !important;
+  font-weight: 500 !important;
+}
+
+.breadcrumb-item a {
+  color: var(--saas-text-tertiary) !important;
+  text-decoration: none !important;
+}
+
+.breadcrumb-item a:hover {
+  color: var(--saas-primary) !important;
+}
+
+/* ===== ENHANCED LOGIN PAGE ===== */
 .o_database_manager,
 .oe_login_form,
 .oe_login {
-  background-color: var(--saas-bg-primary) !important;
+  background: linear-gradient(
+    135deg,
+    var(--saas-primary) 0%,
+    var(--saas-primary-dark) 100%
+  ) !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.oe_login_form {
+  background-color: var(--saas-surface) !important;
+  border-radius: 12px !important;
+  padding: 2rem !important;
+  box-shadow: var(--saas-shadow-lg) !important;
+  max-width: 400px !important;
+  width: 100% !important;
+  margin: 1rem !important;
+}
+
+.oe_login_form h1,
+.oe_login h1 {
   color: var(--saas-text-primary) !important;
+  text-align: center !important;
+  margin-bottom: 1.5rem !important;
+  font-weight: 700 !important;
 }
 
 .oe_login_form input,
@@ -758,335 +1014,234 @@ a:active {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
   border: 1px solid var(--saas-border) !important;
+  border-radius: 6px !important;
+  padding: 0.75rem !important;
+  width: 100% !important;
+  margin-bottom: 1rem !important;
 }
 
-/* ===== COMPLETE BREADCRUMB OVERRIDE ===== */
-.breadcrumb,
-.o_control_panel .breadcrumb {
-  background-color: transparent !important;
-  color: var(--saas-text-primary) !important;
+/* ===== ENHANCED DATABASE LIST ===== */
+.o_database_list {
+  background-color: var(--saas-surface) !important;
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: var(--saas-shadow-sm) !important;
 }
 
-.breadcrumb-item,
-.breadcrumb-item a {
-  color: var(--saas-text-secondary) !important;
-}
-
-.breadcrumb-item.active {
-  color: var(--saas-text-primary) !important;
-}
-
-/* ===== COMPLETE ALERT OVERRIDE ===== */
-.alert {
+.o_database_list .list-group-item {
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
-}
-
-.alert-success {
-  background-color: rgba(0, 191, 165, 0.1) !important;
-  border-color: var(--saas-secondary) !important;
-  color: var(--saas-text-primary) !important;
-}
-
-.alert-warning {
-  background-color: rgba(255, 111, 97, 0.1) !important;
-  border-color: var(--saas-accent) !important;
-  color: var(--saas-text-primary) !important;
-}
-
-.alert-danger {
-  background-color: rgba(255, 111, 97, 0.2) !important;
-  border-color: var(--saas-accent-dark) !important;
-  color: var(--saas-text-primary) !important;
-}
-
-.alert-info {
-  background-color: rgba(76, 158, 255, 0.1) !important;
-  border-color: var(--saas-primary) !important;
-  color: var(--saas-text-primary) !important;
-}
-
-/* ===== COMPLETE PAGINATION OVERRIDE ===== */
-.pagination {
-  background-color: transparent !important;
-}
-
-.page-link {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-  border: 1px solid var(--saas-border) !important;
-}
-
-.page-link:hover {
-  background-color: var(--saas-surface-hover) !important;
-  color: var(--saas-primary) !important;
-  border-color: var(--saas-primary) !important;
-}
-
-.page-item.active .page-link {
-  background-color: var(--saas-primary) !important;
-  border-color: var(--saas-primary) !important;
-  color: var(--saas-text-inverse) !important;
-}
-
-/* ===== COMPLETE TOOLTIP OVERRIDE ===== */
-.tooltip,
-.tooltip-inner {
-  background-color: var(--saas-text-primary) !important;
-  color: var(--saas-text-inverse) !important;
-}
-
-.bs-tooltip-top .arrow::before,
-.bs-tooltip-auto[x-placement^="top"] .arrow::before {
-  border-top-color: var(--saas-text-primary) !important;
-}
-
-.bs-tooltip-right .arrow::before,
-.bs-tooltip-auto[x-placement^="right"] .arrow::before {
-  border-right-color: var(--saas-text-primary) !important;
-}
-
-.bs-tooltip-bottom .arrow::before,
-.bs-tooltip-auto[x-placement^="bottom"] .arrow::before {
-  border-bottom-color: var(--saas-text-primary) !important;
-}
-
-.bs-tooltip-left .arrow::before,
-.bs-tooltip-auto[x-placement^="left"] .arrow::before {
-  border-left-color: var(--saas-text-primary) !important;
-}
-
-/* ===== COMPLETE POPOVER OVERRIDE ===== */
-.popover {
-  background-color: var(--saas-surface) !important;
-  border: 1px solid var(--saas-border) !important;
-  box-shadow: 0 4px 12px var(--saas-shadow-hover) !important;
-}
-
-.popover-header {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
-  border-bottom: 1px solid var(--saas-border) !important;
-}
-
-.popover-body {
-  color: var(--saas-text-primary) !important;
-}
-
-/* ===== COMPLETE TAB OVERRIDE ===== */
-.nav-tabs {
-  border-bottom: 1px solid var(--saas-border) !important;
-}
-
-.nav-tabs .nav-link {
-  background-color: transparent !important;
-  color: var(--saas-text-secondary) !important;
-  border: 1px solid transparent !important;
-}
-
-.nav-tabs .nav-link:hover {
   border-color: var(--saas-border) !important;
-  color: var(--saas-text-primary) !important;
+  padding: 1rem 1.25rem !important;
+  transition: var(--saas-transition-fast) !important;
 }
 
-.nav-tabs .nav-link.active {
-  background-color: var(--saas-surface) !important;
+.o_database_list .list-group-item:hover {
+  background-color: var(--saas-surface-hover) !important;
+  border-color: var(--saas-primary) !important;
+  transform: translateX(4px) !important;
   color: var(--saas-primary) !important;
-  border-color: var(--saas-border) var(--saas-border) var(--saas-surface) !important;
-}
-
-.tab-content {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
-}
-
-/* ===== COMPLETE ACCORDION OVERRIDE ===== */
-.accordion-item {
-  background-color: var(--saas-surface) !important;
-  border: 1px solid var(--saas-border) !important;
-}
-
-.accordion-button {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
-  border: none !important;
-}
-
-.accordion-button:not(.collapsed) {
-  background-color: var(--saas-primary) !important;
-  color: var(--saas-text-inverse) !important;
-}
-
-.accordion-body {
-  background-color: var(--saas-surface) !important;
-  color: var(--saas-text-primary) !important;
 }
 
 /* ===== SAAS CONTROLLER SPECIFIC STYLES ===== */
+.saas-controller-wrapper {
+  max-width: 1200px !important;
+  margin: 0 auto !important;
+  padding: 2rem !important;
+}
+
 .saas-controller-form {
-  max-width: 1200px;
-  margin: 0 auto;
   background-color: var(--saas-surface) !important;
   color: var(--saas-text-primary) !important;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px var(--saas-shadow) !important;
+  border-radius: 12px !important;
+  box-shadow: var(--saas-shadow-md) !important;
+  overflow: hidden !important;
+}
+
+.saas-controller-header {
+  background: linear-gradient(
+    135deg,
+    var(--saas-primary) 0%,
+    var(--saas-primary-hover) 100%
+  ) !important;
+  color: var(--saas-text-on-primary) !important;
+  padding: 1.5rem 2rem !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.saas-controller-header h2 {
+  margin: 0 !important;
+  font-weight: 700 !important;
+  font-size: 1.5rem !important;
+}
+
+.saas-controller-body {
+  padding: 2rem !important;
 }
 
 .saas-color-preview {
-  width: 30px;
-  height: 30px;
-  border-radius: 4px;
-  display: inline-block;
-  margin-left: 10px;
-  border: 1px solid var(--saas-border) !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 6px !important;
+  display: inline-block !important;
+  margin-left: 0.75rem !important;
+  border: 2px solid var(--saas-border) !important;
+  box-shadow: var(--saas-shadow-xs) !important;
+}
+
+.saas-section {
+  margin-bottom: 2rem !important;
+  padding: 1.5rem !important;
+  background-color: var(--saas-bg-secondary) !important;
+  border-radius: 8px !important;
+}
+
+.saas-section-title {
+  color: var(--saas-text-primary) !important;
+  font-weight: 600 !important;
+  font-size: 1.125rem !important;
+  margin-bottom: 1rem !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+.saas-section-title::before {
+  content: "" !important;
+  width: 4px !important;
+  height: 20px !important;
+  background-color: var(--saas-primary) !important;
+  margin-right: 0.75rem !important;
+  border-radius: 2px !important;
 }
 
 .saas-limit-info {
-  padding: 15px;
-  border-radius: 8px;
-  margin: 10px 0;
-  color: var(--saas-text-primary) !important;
-}
-
-.saas-limit-warning {
-  background-color: rgba(255, 111, 97, 0.1) !important;
-  border: 1px solid var(--saas-accent) !important;
-}
-
-.saas-limit-danger {
-  background-color: rgba(255, 111, 97, 0.2) !important;
-  border: 1px solid var(--saas-accent-dark) !important;
+  padding: 1rem !important;
+  border-radius: 8px !important;
+  margin: 1rem 0 !important;
+  border-left: 4px solid !important;
+  font-weight: 500 !important;
 }
 
 .saas-limit-success {
-  background-color: rgba(0, 191, 165, 0.1) !important;
-  border: 1px solid var(--saas-secondary) !important;
+  background-color: var(--saas-success-light) !important;
+  color: var(--saas-success) !important;
+  border-left-color: var(--saas-success) !important;
+}
+
+.saas-limit-warning {
+  background-color: var(--saas-warning-light) !important;
+  color: var(--saas-warning) !important;
+  border-left-color: var(--saas-warning) !important;
+}
+
+.saas-limit-danger {
+  background-color: var(--saas-error-light) !important;
+  color: var(--saas-error) !important;
+  border-left-color: var(--saas-error) !important;
+}
+
+.saas-status-badge {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0.25rem 0.75rem !important;
+  border-radius: 12px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.025em !important;
 }
 
 .saas-status-active {
-  color: var(--saas-secondary) !important;
-  font-weight: 500;
+  background-color: var(--saas-success-light) !important;
+  color: var(--saas-success) !important;
 }
 
 .saas-status-inactive {
-  color: var(--saas-accent) !important;
-  font-weight: 500;
+  background-color: var(--saas-error-light) !important;
+  color: var(--saas-error) !important;
 }
 
 .saas-status-syncing {
-  color: var(--saas-support) !important;
-  font-weight: 500;
+  background-color: var(--saas-warning-light) !important;
+  color: var(--saas-warning) !important;
 }
 
-/* ===== HIDE BRANDING ===== */
-.saas-hide-branding .o_sub_menu_footer,
-.saas-hide-branding .powered_by,
-.saas-hide-branding [data-section="about"] .oe_instance_title,
-.saas-hide-branding .oe_instance_title {
-  display: none !important;
+.saas-config-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
+  gap: 1.5rem !important;
+  margin-top: 1.5rem !important;
 }
 
-/* ===== ANIMATIONS ===== */
-.saas-config-updating {
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
-}
-
-.saas-config-updated {
-  opacity: 1;
-  transition: opacity 0.3s ease;
-}
-
-/* ===== COMPLETE SCROLLBAR OVERRIDE ===== */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: var(--saas-bg-secondary) !important;
-}
-
-::-webkit-scrollbar-thumb {
-  background: var(--saas-text-muted) !important;
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: var(--saas-text-secondary) !important;
-}
-
-/* ===== COMPLETE CODE BLOCK OVERRIDE ===== */
-code,
-pre,
-.code {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
+.saas-config-card {
+  background-color: var(--saas-surface) !important;
   border: 1px solid var(--saas-border) !important;
+  border-radius: 8px !important;
+  padding: 1.5rem !important;
+  transition: var(--saas-transition) !important;
 }
 
-/* ===== COMPLETE BLOCKQUOTE OVERRIDE ===== */
-blockquote {
-  background-color: var(--saas-bg-secondary) !important;
-  color: var(--saas-text-primary) !important;
-  border-left: 4px solid var(--saas-primary) !important;
-}
-
-/* ===== COMPLETE HR OVERRIDE ===== */
-hr {
-  border-color: var(--saas-border) !important;
-}
-
-/* ===== COMPLETE SPINNER OVERRIDE ===== */
-.spinner-border {
+.saas-config-card:hover {
   border-color: var(--saas-primary) !important;
-  border-right-color: transparent !important;
-}
-
-.spinner-grow {
-  background-color: var(--saas-primary) !important;
+  box-shadow: var(--saas-shadow-md) !important;
 }
 
 /* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 1024px) {
+  .saas-controller-wrapper {
+    padding: 1rem !important;
+  }
+
+  .saas-config-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
 @media (max-width: 768px) {
-  .saas-controller-form {
-    padding: 10px;
-    margin: 10px;
+  .saas-controller-header {
+    padding: 1rem !important;
   }
 
-  .saas-color-preview {
-    width: 25px;
-    height: 25px;
+  .saas-controller-body {
+    padding: 1rem !important;
   }
 
-  .o_main_navbar .navbar-nav .nav-link {
-    padding: 0.5rem !important;
+  .saas-section {
+    padding: 1rem !important;
   }
 
-  .card {
-    margin-bottom: 1rem;
+  .navbar-nav .nav-link {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .btn {
+    padding: 0.5rem 1rem !important;
   }
 }
 
 @media (max-width: 576px) {
-  .saas-controller-form {
-    padding: 5px;
-    margin: 5px;
+  .saas-controller-wrapper {
+    padding: 0.5rem !important;
+  }
+
+  .saas-controller-header h2 {
+    font-size: 1.25rem !important;
+  }
+
+  .saas-color-preview {
+    width: 24px !important;
+    height: 24px !important;
   }
 
   .btn {
-    font-size: 0.8rem !important;
-    padding: 0.4rem 0.8rem !important;
+    font-size: 0.875rem !important;
+    padding: 0.5rem 0.75rem !important;
   }
 }
 
 /* ===== ACCESSIBILITY IMPROVEMENTS ===== */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
@@ -1096,31 +1251,34 @@ hr {
 @media (prefers-contrast: high) {
   :root {
     --saas-border: #000000 !important;
-    --saas-shadow: rgba(0, 0, 0, 0.5) !important;
+    --saas-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.3) !important;
+    --saas-shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4) !important;
   }
 
   @media (prefers-color-scheme: dark) {
     :root {
       --saas-border: #ffffff !important;
-      --saas-shadow: rgba(255, 255, 255, 0.3) !important;
+      --saas-text-primary: #ffffff !important;
+      --saas-bg-primary: #000000 !important;
     }
   }
 }
 
-/* ===== FOCUS INDICATORS ===== */
-*:focus {
+/* ===== FOCUS MANAGEMENT ===== */
+:focus-visible {
   outline: 2px solid var(--saas-primary) !important;
   outline-offset: 2px !important;
+  border-radius: 4px !important;
 }
 
-button:focus,
-.btn:focus,
-input:focus,
-select:focus,
-textarea:focus {
+.btn:focus-visible,
+.form-control:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
   outline: 2px solid var(--saas-primary) !important;
   outline-offset: 2px !important;
-  box-shadow: 0 0 0 3px rgba(76, 158, 255, 0.2) !important;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1) !important;
 }
 
 /* ===== PRINT STYLES ===== */
@@ -1129,51 +1287,91 @@ textarea:focus {
     --saas-bg-primary: #ffffff !important;
     --saas-text-primary: #000000 !important;
     --saas-surface: #ffffff !important;
-    --saas-border: #000000 !important;
-  }
-
-  body,
-  * {
-    background-color: white !important;
-    color: black !important;
+    --saas-border: #cccccc !important;
   }
 
   .saas-controller-form {
     box-shadow: none !important;
+    border: 1px solid #cccccc !important;
+  }
+
+  .navbar,
+  .o_main_navbar {
+    display: none !important;
   }
 }
 
-/* ===== FORCE OVERRIDE FOR STUBBORN ELEMENTS ===== */
-[style*="background-color"] {
+/* ===== ANIMATION KEYFRAMES ===== */
+@keyframes saas-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes saas-slide-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.saas-animate-in {
+  animation: saas-fade-in 0.3s ease-out !important;
+}
+
+.saas-slide-in {
+  animation: saas-slide-in 0.3s ease-out !important;
+}
+
+/* ===== UTILITY CLASSES ===== */
+.saas-text-primary {
+  color: var(--saas-text-primary) !important;
+}
+.saas-text-secondary {
+  color: var(--saas-text-secondary) !important;
+}
+.saas-text-muted {
+  color: var(--saas-text-muted) !important;
+}
+.saas-bg-primary {
+  background-color: var(--saas-bg-primary) !important;
+}
+.saas-bg-surface {
+  background-color: var(--saas-surface) !important;
+}
+.saas-border {
+  border: 1px solid var(--saas-border) !important;
+}
+.saas-rounded {
+  border-radius: 6px !important;
+}
+.saas-shadow {
+  box-shadow: var(--saas-shadow-sm) !important;
+}
+
+/* ===== FORCE OVERRIDES FOR STUBBORN ELEMENTS ===== */
+[style*="background-color"]:not(.o_main_navbar):not(.navbar) {
   background-color: var(--saas-surface) !important;
 }
 
-[style*="color"] {
+[style*="color"]:not(.o_main_navbar *):not(.navbar *) {
   color: var(--saas-text-primary) !important;
 }
 
-/* Force override any inline styles that might interfere */
+/* Navigation specific overrides */
 .o_main_navbar [style*="color"],
 .navbar [style*="color"] {
-  color: var(--saas-text-inverse) !important;
+  color: var(--saas-text-on-primary) !important;
 }
 
-/* Final catch-all for any missed elements */
-.o_web_client,
-.o_web_client * {
-  border-color: var(--saas-border) !important;
-}
-
-.o_web_client .o_main_navbar,
-.o_web_client .o_main_navbar * {
-  color: var(--saas-text-inverse) !important;
-}
-
-/* Ensure all text elements have proper contrast */
-p,
-span,
-div,
-label,
+/* Ensure text elements have proper hierarchy */
 h1,
 h2,
 h3,
@@ -1181,28 +1379,73 @@ h4,
 h5,
 h6 {
   color: var(--saas-text-primary) !important;
+  font-weight: 600 !important;
+  line-height: 1.2 !important;
 }
 
-/* Exception for navigation elements */
-.o_main_navbar p,
-.o_main_navbar span,
-.o_main_navbar div,
-.o_main_navbar label,
+h1 {
+  font-size: 2rem !important;
+}
+h2 {
+  font-size: 1.75rem !important;
+}
+h3 {
+  font-size: 1.5rem !important;
+}
+h4 {
+  font-size: 1.25rem !important;
+}
+h5 {
+  font-size: 1.125rem !important;
+}
+h6 {
+  font-size: 1rem !important;
+}
+
+/* Exception for navigation headers */
 .o_main_navbar h1,
 .o_main_navbar h2,
 .o_main_navbar h3,
 .o_main_navbar h4,
 .o_main_navbar h5,
 .o_main_navbar h6,
-.navbar p,
-.navbar span,
-.navbar div,
-.navbar label,
 .navbar h1,
 .navbar h2,
 .navbar h3,
 .navbar h4,
 .navbar h5,
 .navbar h6 {
-  color: var(--saas-text-inverse) !important;
+  color: var(--saas-text-on-primary) !important;
+}
+
+/* Final cleanup for any missed elements */
+.o_web_client * {
+  border-color: var(--saas-border) !important;
+}
+
+/* Loading states */
+.saas-loading {
+  opacity: 0.6 !important;
+  pointer-events: none !important;
+  position: relative !important;
+}
+
+.saas-loading::after {
+  content: "" !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin: -10px 0 0 -10px !important;
+  border: 2px solid var(--saas-primary) !important;
+  border-radius: 50% !important;
+  border-top-color: transparent !important;
+  animation: spin 1s linear infinite !important;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
