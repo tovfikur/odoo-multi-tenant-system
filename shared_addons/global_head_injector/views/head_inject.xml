@@ -27,8 +27,8 @@
                 .navbar.o_main_navbar,
                 header.o_main_navbar,
                 nav.o_main_navbar {
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-                    background-color: #667eea !important;
+                    background: linear-gradient(135deg, #1a73e8 0%, #174ea6 100%) !important;
+                    background-color: #1a73e8 !important;
                     border: none !important;
                     border-bottom: 2px solid rgba(255, 255, 255, 0.1) !important;
                     box-shadow: 0 3px 10px rgba(0,0,0,0.2) !important;
@@ -75,7 +75,7 @@
                 }
 
                 .dropdown-menu {
-                    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+                    background: linear-gradient(180deg, #1a73e8 0%, #174ea6 100%) !important;
                 }
 
                 /* Mobile responsiveness */
@@ -86,6 +86,21 @@
                         letter-spacing: 1px !important;
                     }
                 }
+                .o_control_panel {
+                    background: linear-gradient(135deg, #174ea6 0%, #1a73e8 100%) !important;
+                }
+
+
+                .o-dropdown .dropdown:hover {
+                    background: linear-gradient(180deg, #1a73e8 0%, #174ea6 100%) !important;
+                    transition: background 0.3s ease;
+                }
+
+                .o-dropdown .dropdown {
+                transition: background 0.3s ease;
+}
+
+
                 </style>
             </xpath>
         </template>
