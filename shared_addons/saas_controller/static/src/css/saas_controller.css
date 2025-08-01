@@ -1411,6 +1411,10 @@ body.o_dark {
   background-color: var(--settings__tab-bg) !important;
 }
 
+.o_base_settings_view .o_form_renderer .o_setting_container .settings__tab {
+  background-color: var(--settings__tab-bg) !important;
+}
+
 /* Print mode color adjustments */
 @media print {
   :root {
