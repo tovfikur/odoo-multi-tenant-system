@@ -142,6 +142,34 @@
         </div>
     </div>
 
+    <!-- Live Backup Logs -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-terminal"></i> Live Backup Logs
+                    </h5>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshLogs()">
+                            <i class="fas fa-sync"></i> Refresh
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-info" onclick="toggleAutoRefresh()">
+                            <i class="fas fa-play" id="autoRefreshIcon"></i> <span id="autoRefreshText">Auto Refresh</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div id="liveLogs" class="backup-log p-3" style="height: 300px; overflow-y: auto;">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-spinner fa-spin"></i> Loading logs...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <!-- Recent Backups -->
         <div class="col-md-8">
@@ -305,6 +333,9 @@
 
 {% block extra_scripts %}
 <script>
+    let autoRefreshInterval = null;
+    let isAutoRefreshing = false;
+    
     function validateLastBackup() {
         {% if sessions %}
             const latestSession = '{{ sessions[0].session_id }}';
@@ -336,6 +367,76 @@
             showAlert('No backups available to validate', 'warning');
         {% endif %}
     }
+    
+    function refreshLogs() {
+        fetch('/api/logs/live')
+            .then(response => response.json())
+            .then(data => {
+                const logsContainer = document.getElementById('liveLogs');
+                
+                if (data.success && data.logs.length > 0) {
+                    logsContainer.innerHTML = '';
+                    data.logs.forEach(log => {
+                        const logLine = document.createElement('div');
+                        logLine.textContent = log;
+                        
+                        // Highlight different types of logs
+                        if (log.includes('BACKUP>')) {
+                            logLine.className = 'text-info';
+                        } else if (log.includes('PROGRESS>')) {
+                            logLine.className = 'text-warning';
+                        } else if (log.includes('Session ID')) {
+                            logLine.className = 'text-success';
+                        } else if (log.includes('ERROR') || log.includes('failed')) {
+                            logLine.className = 'text-danger';
+                        }
+                        
+                        logsContainer.appendChild(logLine);
+                    });
+                    
+                    // Auto-scroll to bottom
+                    logsContainer.scrollTop = logsContainer.scrollHeight;
+                } else if (data.logs.length === 0) {
+                    logsContainer.innerHTML = '<div class="text-center text-muted">No recent backup logs found</div>';
+                } else {
+                    logsContainer.innerHTML = '<div class="text-center text-danger">Error loading logs: ' + (data.error || 'Unknown error') + '</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching logs:', error);
+                document.getElementById('liveLogs').innerHTML = '<div class="text-center text-danger">Error fetching logs</div>';
+            });
+    }
+    
+    function toggleAutoRefresh() {
+        const icon = document.getElementById('autoRefreshIcon');
+        const text = document.getElementById('autoRefreshText');
+        
+        if (isAutoRefreshing) {
+            // Stop auto refresh
+            clearInterval(autoRefreshInterval);
+            isAutoRefreshing = false;
+            icon.className = 'fas fa-play';
+            text.textContent = 'Auto Refresh';
+        } else {
+            // Start auto refresh
+            autoRefreshInterval = setInterval(refreshLogs, 2000); // Every 2 seconds
+            isAutoRefreshing = true;
+            icon.className = 'fas fa-pause';
+            text.textContent = 'Stop Auto';
+            
+            // Initial refresh
+            refreshLogs();
+        }
+    }
+    
+    // Load logs on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        refreshLogs();
+        
+        // Start auto refresh by default
+        toggleAutoRefresh();
+    });
 
     // Auto-refresh storage usage every 5 minutes
     setInterval(function() {

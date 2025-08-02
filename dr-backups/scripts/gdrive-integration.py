@@ -46,7 +46,11 @@ class GoogleDriveBackup:
         self.client_id = config_dict.get('GDRIVE_CLIENT_ID')
         self.client_secret = config_dict.get('GDRIVE_CLIENT_SECRET')
         self.folder_name = config_dict.get('GDRIVE_FOLDER_NAME', 'DR-Backups')
-        self.chunk_size = int(config_dict.get('GDRIVE_UPLOAD_CHUNK_SIZE', '262144'))
+        # Parse chunk size, removing any comments
+        chunk_size_str = config_dict.get('GDRIVE_UPLOAD_CHUNK_SIZE', '262144')
+        # Remove comments and quotes
+        chunk_size_str = chunk_size_str.split('#')[0].strip().strip('"').strip("'")
+        self.chunk_size = int(chunk_size_str)
         
         self.service = None
         self.folder_id = None

@@ -33,12 +33,34 @@ except ImportError:
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dr-backup-panel-secret-key-change-me')
 
-# Configure logging
+# Add custom Jinja2 filters
+@app.template_filter('as_datetime')
+def as_datetime_filter(value):
+    """Convert ISO string to datetime object"""
+    try:
+        if isinstance(value, str):
+            return datetime.fromisoformat(value.replace('Z', '+00:00'))
+        return value
+    except (ValueError, AttributeError):
+        return None
+
+# Configure detailed logging
+log_format = '[%(asctime)s] [%(levelname)s] %(message)s'
+
+# Create log handlers
+handlers = [logging.StreamHandler(sys.stdout)]  # Console output
+
+# Note: We'll configure the file handler after DATA_DIR is set up
+
 logging.basicConfig(
     level=logging.INFO,
-    format='[%(asctime)s] [%(levelname)s] %(message)s'
+    format=log_format,
+    handlers=handlers
 )
 logger = logging.getLogger(__name__)
+
+# Also set Flask's logger to be more verbose
+logging.getLogger('werkzeug').setLevel(logging.INFO)
 
 # Flask-Login setup
 login_manager = LoginManager()
@@ -46,15 +68,67 @@ login_manager.init_app(app)
 login_manager.login_view = 'login'
 
 # Configuration
+# Initial path definitions (will be updated after path detection)
 BASE_DIR = Path(__file__).parent.parent
 CONFIG_FILE = BASE_DIR / 'config' / 'dr-config.env'
-DB_FILE = BASE_DIR / 'backup_panel' / 'backup_panel.db'
 SCRIPTS_DIR = BASE_DIR / 'scripts'
 
-# Windows path handling
-if os.name == 'nt':  # Windows
-    SCRIPTS_DIR = Path("K:/Odoo Multi-Tenant System/dr-backups/scripts")
-    BASE_DIR = Path("K:/Odoo Multi-Tenant System/dr-backups")
+# Fix paths for Windows/Docker environment
+# Try to detect the correct base directory
+possible_base_dirs = [
+    Path("K:/Odoo Multi-Tenant System/dr-backups"),  # Windows absolute path
+    Path(__file__).parent.parent,  # Relative to this script
+    Path.cwd(),  # Current working directory
+    Path.cwd().parent,  # Parent of current working directory
+    Path("/app/dr-backups"),  # Docker path
+    Path("/opt/dr-backups"),  # Alternative Docker path
+]
+
+# Find the correct base directory
+BASE_DIR_FOUND = False
+for potential_base in possible_base_dirs:
+    if potential_base.exists() and (potential_base / 'scripts').exists():
+        BASE_DIR = potential_base
+        BASE_DIR_FOUND = True
+        break
+
+if not BASE_DIR_FOUND:
+    # Fallback to default
+    BASE_DIR = Path(__file__).parent.parent
+
+# Update other paths based on the found base directory
+CONFIG_FILE = BASE_DIR / 'config' / 'dr-config.env'
+SCRIPTS_DIR = BASE_DIR / 'scripts'
+
+# Use writable data directory in Docker for persistent data
+DATA_DIR = Path('/app/data')
+DB_FILE = DATA_DIR / 'backup_panel.db'
+LOGS_DIR = DATA_DIR / 'logs'
+SESSIONS_DIR = DATA_DIR / 'sessions'
+
+# Create necessary directories in the writable data volume
+for directory in [DATA_DIR, LOGS_DIR, SESSIONS_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
+
+# Now configure file logging with the writable logs directory
+try:
+    log_file = LOGS_DIR / 'backup-panel.log'
+    file_handler = logging.FileHandler(log_file, mode='a')
+    file_handler.setFormatter(logging.Formatter(log_format))
+    logging.getLogger().addHandler(file_handler)
+except Exception as e:
+    print(f"Warning: Could not create log file: {e}")
+
+# Configure Flask session storage to use the writable sessions directory
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_FILE_DIR'] = str(SESSIONS_DIR)
+
+# Log the final paths for debugging
+print(f"DEBUG: BASE_DIR = {BASE_DIR}")
+print(f"DEBUG: SCRIPTS_DIR = {SCRIPTS_DIR}")
+print(f"DEBUG: SCRIPTS_DIR exists = {SCRIPTS_DIR.exists()}")
+print(f"DEBUG: Enhanced backup script path = {SCRIPTS_DIR / 'enhanced-backup.sh'}")
+print(f"DEBUG: Enhanced backup script exists = {(SCRIPTS_DIR / 'enhanced-backup.sh').exists()}")
 
 class Config:
     """Configuration manager for the backup panel"""
@@ -251,17 +325,36 @@ class BackupManager:
             if destinations:
                 env['DR_BACKUP_DESTINATIONS'] = ','.join(destinations)
             
+            # Set Docker environment indicator
+            env['DOCKER_CONTAINER'] = '1'
+            
+            # Set database connection info for Docker
+            env['POSTGRES_HOST'] = 'postgres'
+            env['POSTGRES_PORT'] = '5432'
+            env['POSTGRES_USER'] = 'odoo_master'
+            env['POSTGRES_PASSWORD'] = 'secure_password_123'
+            
+            # Ensure logs directory exists
+            LOGS_DIR.mkdir(exist_ok=True)
+            logger.info(f"Logs directory ensured: {LOGS_DIR}")
+            
             # Run enhanced backup script
             script_path = SCRIPTS_DIR / 'enhanced-backup.sh'
             
             logger.info(f"Starting backup with destinations: {destinations}")
+            logger.info(f"Script path: {script_path}")
+            logger.info(f"Working directory: {BASE_DIR}")
             
             # Check if script exists
             if not script_path.exists():
                 logger.error(f"Backup script not found: {script_path}")
+                logger.error(f"BASE_DIR: {BASE_DIR}")
+                logger.error(f"SCRIPTS_DIR: {SCRIPTS_DIR}")
+                logger.error(f"Current working directory: {os.getcwd()}")
+                logger.error(f"Directory contents: {list(SCRIPTS_DIR.iterdir()) if SCRIPTS_DIR.exists() else 'SCRIPTS_DIR does not exist'}")
                 return {
                     'success': False,
-                    'error': f'Backup script not found: {script_path}',
+                    'error': f'Backup script not found: {script_path}. Check logs for details.',
                     'session_id': None
                 }
             
@@ -271,27 +364,41 @@ class BackupManager:
             else:  # Unix-like
                 cmd = [str(script_path)]
             
-            # Start backup process
+            logger.info(f"Executing command: {' '.join(cmd)}")
+            
+            # Start backup process with detailed output capture
             process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 text=True,
                 env=env,
-                cwd=str(BASE_DIR)
+                cwd=str(BASE_DIR),
+                bufsize=1,  # Line buffered
+                universal_newlines=True
             )
             
-            # Stream output
+            # Stream output in real-time
             output_lines = []
             session_id = None
             
-            for line in iter(process.stdout.readline, ''):
-                output_lines.append(line.strip())
-                logger.info(f"Backup: {line.strip()}")
+            logger.info("=== BACKUP SCRIPT OUTPUT START ===")
+            
+            while True:
+                line = process.stdout.readline()
+                if not line:
+                    break
+                
+                line = line.rstrip('\n\r')
+                output_lines.append(line)
+                
+                # Log every single line from the backup script
+                logger.info(f"BACKUP> {line}")
                 
                 # Extract session ID
                 if 'Session ID:' in line:
                     session_id = line.split('Session ID:')[1].strip()
+                    logger.info(f"Detected Session ID: {session_id}")
                     # Add to database
                     session_data = {
                         'session_id': session_id,
@@ -299,9 +406,18 @@ class BackupManager:
                         'destinations': ','.join(destinations) if destinations else ''
                     }
                     self.db.add_backup_session(session_data)
+                
+                # Log progress indicators
+                if any(indicator in line.lower() for indicator in [
+                    'backing up', 'uploading', 'encrypting', 'compressing', 
+                    'validating', 'starting', 'completed', 'success', 'failed', 'error'
+                ]):
+                    logger.info(f"PROGRESS> {line}")
             
             # Wait for completion
             return_code = process.wait()
+            logger.info("=== BACKUP SCRIPT OUTPUT END ===")
+            logger.info(f"Backup script exit code: {return_code}")
             
             result = {
                 'success': return_code == 0,
@@ -317,6 +433,7 @@ class BackupManager:
                     'status': 'success' if return_code == 0 else 'failed'
                 }
                 self.db.update_backup_session(session_id, updates)
+                logger.info(f"Updated session {session_id} with status: {'success' if return_code == 0 else 'failed'}")
             
             return result
             
@@ -335,7 +452,7 @@ class BackupManager:
             
             cmd = [str(script_path)]
             if session_id:
-                session_path = BASE_DIR / 'sessions' / session_id
+                session_path = SESSIONS_DIR / session_id
                 cmd.append(str(session_path))
             
             result = subprocess.run(
@@ -524,6 +641,42 @@ def api_system_status():
     """API endpoint to get system status"""
     status = get_system_status()
     return jsonify(status)
+
+@app.route('/api/logs/live')
+@login_required
+def api_live_logs():
+    """API endpoint to get live backup logs"""
+    try:
+        log_file = LOGS_DIR / 'backup-panel.log'
+        if log_file.exists():
+            # Read last 100 lines
+            with open(log_file, 'r') as f:
+                lines = f.readlines()
+                recent_lines = lines[-100:] if len(lines) > 100 else lines
+                
+            # Filter for backup-related logs
+            backup_logs = []
+            for line in recent_lines:
+                if any(keyword in line for keyword in ['BACKUP>', 'PROGRESS>', 'Starting backup', 'Session ID']):
+                    backup_logs.append(line.strip())
+            
+            return jsonify({
+                'success': True,
+                'logs': backup_logs[-50:],  # Last 50 backup-related lines
+                'timestamp': datetime.now().isoformat()
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Log file not found',
+                'logs': []
+            })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'logs': []
+        })
 
 @app.route('/settings')
 @login_required
