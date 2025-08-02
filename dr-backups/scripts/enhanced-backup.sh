@@ -28,6 +28,10 @@ if [ -f "/.dockerenv" ] || [ -n "${DOCKER_CONTAINER:-}" ]; then
     export POSTGRES_USER="odoo_master"
     export POSTGRES_PASSWORD="secure_password_123"
     export PROJECT_ROOT="/opt/odoo"
+    export ODOO_FILESTORE_PATH="/opt/odoo/odoo_filestore"
+    export DOCKER_COMPOSE_FILE="/opt/odoo/docker-compose.yml"
+    export NGINX_CONFIG_PATH="/opt/odoo/nginx"
+    export SSL_CERTS_PATH="/opt/odoo/ssl"
     echo "Docker environment variables set"
     echo "DR_BACKUP_DIR: $DR_BACKUP_DIR"
     echo "DR_ENCRYPTION_KEY: $DR_ENCRYPTION_KEY"
@@ -409,7 +413,7 @@ upload_to_aws() {
     # Upload session directory
     if aws s3 sync "$SESSION_DIR" "s3://$bucket_name/$cloud_path" \
         --exclude "*" --include "*.enc" --include "*.json" \
-        --storage-class STANDARD --server-side-encryption AES256; then
+        --storage-class STANDARD --sse AES256; then
         
         log "Successfully uploaded backup to AWS S3: s3://$bucket_name/$cloud_path"
         

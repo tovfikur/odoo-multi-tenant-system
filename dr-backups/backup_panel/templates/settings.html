@@ -5,8 +5,222 @@
 
 {% block content %}
 <div class="container-fluid">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
     <div class="row">
         <div class="col-md-8">
+            <!-- Cloud Connections -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cloud"></i> Cloud Connections
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Social Media Style Cloud Connection Cards -->
+                    <div class="row g-3" id="cloudConnections">
+                        <!-- Google Drive Connection -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm social-connect-card" id="googleDriveCard">
+                                <div class="card-body text-center p-4">
+                                    <!-- Provider Icon & Branding -->
+                                    <div class="social-provider-header mb-4">
+                                        <div class="social-icon-wrapper google-bg mb-3">
+                                            <i class="fab fa-google-drive fa-2x text-white"></i>
+                                        </div>
+                                        <h5 class="card-title mb-1">Google Drive</h5>
+                                        <p class="text-muted small mb-0">Secure cloud backup storage</p>
+                                    </div>
+                                    
+                                    <!-- Connection Status -->
+                                    <div class="connection-status mb-4">
+                                        <div id="googleDriveStatus" class="status-indicator">
+                                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            Checking connection...
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Credential Setup Form -->
+                                    <div id="googleDriveForm" class="credential-form" style="display: none;">
+                                        <div class="mb-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                                <input type="text" class="form-control" id="googleClientId" 
+                                                       placeholder="Google Client ID" required>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                                <input type="password" class="form-control" id="googleClientSecret" 
+                                                       placeholder="Google Client Secret" required>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="alert alert-info alert-sm p-2">
+                                                <small>
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    <a href="https://console.cloud.google.com/apis/credentials" target="_blank" class="text-decoration-none">
+                                                        Get OAuth credentials from Google Cloud Console
+                                                    </a>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="social-connect-actions">
+                                        <!-- Connect Button (Social Media Style) -->
+                                        <button class="btn btn-google btn-lg w-100 mb-2" id="googleDriveConnect" onclick="connectGoogleDrive()">
+                                            <i class="fab fa-google me-2"></i>
+                                            <span class="connect-text">Connect with Google</span>
+                                        </button>
+                                        
+                                        <!-- Management Buttons -->
+                                        <div class="btn-group w-100" id="googleDriveActions" style="display: none;">
+                                            <button class="btn btn-outline-success btn-sm" id="googleDriveTest" 
+                                                    onclick="testConnection('google_drive')" title="Test Connection">
+                                                <i class="fas fa-check-circle"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info btn-sm" onclick="refreshGoogleConnection()" 
+                                                    title="Refresh Token">
+                                                <i class="fas fa-sync"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" id="googleDriveDisconnect" 
+                                                    onclick="disconnectProvider('google_drive')" title="Disconnect">
+                                                <i class="fas fa-unlink"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AWS S3 Connection -->
+                        <div class="col-md-6">
+                            <div class="card h-100 border-0 shadow-sm social-connect-card" id="awsS3Card">
+                                <div class="card-body text-center p-4">
+                                    <!-- Provider Icon & Branding -->
+                                    <div class="social-provider-header mb-4">
+                                        <div class="social-icon-wrapper aws-bg mb-3">
+                                            <i class="fab fa-aws fa-2x text-white"></i>
+                                        </div>
+                                        <h5 class="card-title mb-1">Amazon S3</h5>
+                                        <p class="text-muted small mb-0">Enterprise cloud storage</p>
+                                    </div>
+                                    
+                                    <!-- Connection Status -->
+                                    <div class="connection-status mb-4">
+                                        <div id="awsS3Status" class="status-indicator">
+                                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                            Checking connection...
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Credential Setup Form -->
+                                    <div id="awsS3Form" class="credential-form" style="display: none;">
+                                        <div class="mb-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                                <input type="text" class="form-control" id="awsAccessKeyId" 
+                                                       placeholder="AWS Access Key ID" required>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text"><i class="fas fa-lock"></i></span>
+                                                <input type="password" class="form-control" id="awsSecretAccessKey" 
+                                                       placeholder="AWS Secret Access Key" required>
+                                            </div>
+                                        </div>
+                                        <div class="row mb-3">
+                                            <div class="col-6">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text"><i class="fas fa-globe"></i></span>
+                                                    <select class="form-select" id="awsRegion" required>
+                                                        <option value="">Select Region</option>
+                                                        <option value="us-east-1">US East (N. Virginia)</option>
+                                                        <option value="us-west-1">US West (N. California)</option>
+                                                        <option value="us-west-2">US West (Oregon)</option>
+                                                        <option value="eu-west-1">Europe (Ireland)</option>
+                                                        <option value="eu-central-1">Europe (Frankfurt)</option>
+                                                        <option value="ap-southeast-1">Asia Pacific (Singapore)</option>
+                                                        <option value="ap-northeast-1">Asia Pacific (Tokyo)</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text"><i class="fas fa-hdd"></i></span>
+                                                    <input type="text" class="form-control" id="awsBucketName" 
+                                                           placeholder="S3 Bucket Name" required>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="alert alert-warning alert-sm p-2">
+                                                <small>
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                                    <a href="https://console.aws.amazon.com/iam/home#/security_credentials" target="_blank" class="text-decoration-none">
+                                                        Create IAM user with S3 permissions
+                                                    </a>
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Action Buttons -->
+                                    <div class="social-connect-actions">
+                                        <!-- Setup Button -->
+                                        <button class="btn btn-aws btn-lg w-100 mb-2" id="awsS3Connect" onclick="showAwsForm()">
+                                            <i class="fab fa-aws me-2"></i>
+                                            <span class="connect-text">Connect AWS S3</span>
+                                        </button>
+                                        
+                                        <!-- Save Button (shown during setup) -->
+                                        <button class="btn btn-success btn-lg w-100 mb-2" id="awsS3Save" 
+                                                onclick="connectAwsS3()" style="display: none;">
+                                            <i class="fas fa-save me-2"></i>
+                                            <span class="connect-text">Save & Connect</span>
+                                        </button>
+                                        
+                                        <!-- Management Buttons -->
+                                        <div class="btn-group w-100" id="awsS3Actions" style="display: none;">
+                                            <button class="btn btn-outline-success btn-sm" id="awsS3Test" 
+                                                    onclick="testConnection('aws_s3')" title="Test Connection">
+                                                <i class="fas fa-check-circle"></i>
+                                            </button>
+                                            <button class="btn btn-outline-info btn-sm" onclick="editAwsConnection()" 
+                                                    title="Edit Credentials">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-outline-danger btn-sm" id="awsS3Disconnect" 
+                                                    onclick="disconnectProvider('aws_s3')" title="Disconnect">
+                                                <i class="fas fa-unlink"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Backup Configuration -->
             <div class="card mb-4">
                 <div class="card-header">
@@ -325,8 +539,696 @@
 </div>
 {% endblock %}
 
+{% block extra_styles %}
+<style>
+    /* Social Media Style Connection Cards */
+    .social-connect-card {
+        transition: all 0.3s ease;
+        border-radius: 16px !important;
+        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+    }
+    
+    .social-connect-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15) !important;
+    }
+    
+    .social-provider-header {
+        position: relative;
+    }
+    
+    .social-icon-wrapper {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .social-icon-wrapper::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(45deg, rgba(255,255,255,0.1), rgba(255,255,255,0.3));
+        border-radius: 50%;
+    }
+    
+    .google-bg {
+        background: linear-gradient(45deg, #4285f4, #34a853, #ea4335, #fbbc05);
+        background-size: 400% 400%;
+        animation: googleGradient 3s ease infinite;
+    }
+    
+    .aws-bg {
+        background: linear-gradient(45deg, #ff9900, #232f3e);
+        background-size: 200% 200%;
+        animation: awsGradient 3s ease infinite;
+    }
+    
+    @keyframes googleGradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    @keyframes awsGradient {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    /* Social Media Login Buttons */
+    .btn-google {
+        background: linear-gradient(45deg, #4285f4, #34a853);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(66, 133, 244, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-google:hover {
+        background: linear-gradient(45deg, #3367d6, #2e7d32);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
+        color: white;
+    }
+    
+    .btn-google:active {
+        transform: translateY(0);
+    }
+    
+    .btn-aws {
+        background: linear-gradient(45deg, #ff9900, #232f3e);
+        border: none;
+        color: white;
+        font-weight: 600;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .btn-aws:hover {
+        background: linear-gradient(45deg, #e88700, #1a252f);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255, 153, 0, 0.4);
+        color: white;
+    }
+    
+    .btn-aws:active {
+        transform: translateY(0);
+    }
+    
+    /* Button Loading Animation */
+    .btn-google::before,
+    .btn-aws::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.6s;
+    }
+    
+    .btn-google:hover::before,
+    .btn-aws:hover::before {
+        left: 100%;
+    }
+    
+    /* Status Indicators */
+    .status-indicator {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 36px;
+    }
+    
+    .status-connected {
+        background: linear-gradient(45deg, #d4edda, #c3e6cb);
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    
+    .status-disconnected {
+        background: linear-gradient(45deg, #f8d7da, #f5c6cb);
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    
+    .status-pending {
+        background: linear-gradient(45deg, #fff3cd, #ffeaa7);
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+    
+    /* Credential Form Styling */
+    .credential-form {
+        background: rgba(248, 249, 250, 0.8);
+        border-radius: 12px;
+        padding: 20px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .credential-form .input-group-text {
+        background: linear-gradient(45deg, #6c757d, #495057);
+        color: white;
+        border: none;
+        width: 40px;
+        justify-content: center;
+    }
+    
+    .credential-form .form-control,
+    .credential-form .form-select {
+        border-left: none;
+        border-radius: 0 6px 6px 0;
+    }
+    
+    .credential-form .input-group .input-group-text {
+        border-radius: 6px 0 0 6px;
+    }
+    
+    /* Action Button Groups */
+    .social-connect-actions .btn-group button {
+        flex: 1;
+        border-radius: 8px !important;
+        margin: 0 2px;
+    }
+    
+    .social-connect-actions .btn-group button:first-child {
+        margin-left: 0;
+    }
+    
+    .social-connect-actions .btn-group button:last-child {
+        margin-right: 0;
+    }
+    
+    /* Alert Enhancements */
+    .alert-sm {
+        border-radius: 8px;
+        font-size: 0.75rem;
+    }
+    
+    .alert-sm a {
+        color: inherit;
+        font-weight: 600;
+    }
+    
+    .alert-sm a:hover {
+        text-decoration: underline !important;
+    }
+    
+    /* Pulse Animation for Loading States */
+    @keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    .status-loading {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    /* Success/Error Status Icons */
+    .status-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 8px;
+        font-size: 0.75rem;
+    }
+    
+    .status-icon.success {
+        background: #28a745;
+        color: white;
+    }
+    
+    .status-icon.error {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .status-icon.warning {
+        background: #ffc107;
+        color: #212529;
+    }
+    
+    /* Connection Info Display */
+    .connection-info {
+        background: rgba(0, 123, 255, 0.1);
+        border: 1px solid rgba(0, 123, 255, 0.2);
+        border-radius: 8px;
+        padding: 10px;
+        margin-top: 10px;
+        font-size: 0.8rem;
+    }
+    
+    .connection-info .info-item {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+    
+    .connection-info .info-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .social-icon-wrapper {
+            width: 56px;
+            height: 56px;
+        }
+        
+        .social-icon-wrapper i {
+            font-size: 1.5rem !important;
+        }
+        
+        .btn-google,
+        .btn-aws {
+            font-size: 0.9rem;
+            padding: 10px 20px;
+        }
+        
+        .credential-form {
+            padding: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block extra_scripts %}
 <script>
+    // Cloud Connection Functions
+    let connections = {};
+
+    // Load connection status on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        loadConnectionStatus();
+    });
+
+    function loadConnectionStatus() {
+        fetch('/api/connections')
+            .then(response => response.json())
+            .then(data => {
+                if (data.connections) {
+                    connections = {};
+                    data.connections.forEach(conn => {
+                        connections[conn.provider] = conn;
+                    });
+                    updateConnectionUI();
+                }
+            })
+            .catch(error => console.error('Error loading connections:', error));
+    }
+
+    function updateConnectionUI() {
+        // Update Google Drive UI
+        const googleConn = connections['google_drive'];
+        if (googleConn) {
+            updateProviderUI('google_drive', googleConn);
+        } else {
+            showDisconnectedState('google_drive');
+        }
+
+        // Update AWS S3 UI
+        const awsConn = connections['aws_s3'];
+        if (awsConn) {
+            updateProviderUI('aws_s3', awsConn);
+        } else {
+            showDisconnectedState('aws_s3');
+        }
+    }
+
+    function updateProviderUI(provider, connection) {
+        const isConnected = connection.status === 'connected';
+        const lastTest = connection.last_test_status;
+        const lastTestDate = connection.last_test ? new Date(connection.last_test).toLocaleString() : 'Never';
+
+        if (provider === 'google_drive') {
+            const statusEl = document.getElementById('googleDriveStatus');
+            const connectBtn = document.getElementById('googleDriveConnect');
+            const actionsGroup = document.getElementById('googleDriveActions');
+            const form = document.getElementById('googleDriveForm');
+            
+            if (isConnected) {
+                statusEl.innerHTML = `
+                    <div class="status-indicator status-connected">
+                        <span class="status-icon success"><i class="fas fa-check"></i></span>
+                        Connected & Ready
+                    </div>
+                    <div class="connection-info mt-2">
+                        <div class="info-item">
+                            <span>Last Test:</span>
+                            <span class="fw-bold ${lastTest === 'success' ? 'text-success' : 'text-danger'}">${lastTestDate}</span>
+                        </div>
+                        <div class="info-item">
+                            <span>Status:</span>
+                            <span class="fw-bold text-success">Active</span>
+                        </div>
+                    </div>
+                `;
+                connectBtn.style.display = 'none';
+                actionsGroup.style.display = 'flex';
+                form.style.display = 'none';
+            } else {
+                statusEl.innerHTML = `
+                    <div class="status-indicator status-disconnected">
+                        <span class="status-icon error"><i class="fas fa-times"></i></span>
+                        Not Connected
+                    </div>
+                `;
+                connectBtn.style.display = 'block';
+                actionsGroup.style.display = 'none';
+            }
+        } else if (provider === 'aws_s3') {
+            const statusEl = document.getElementById('awsS3Status');
+            const connectBtn = document.getElementById('awsS3Connect');
+            const saveBtn = document.getElementById('awsS3Save');
+            const actionsGroup = document.getElementById('awsS3Actions');
+            const form = document.getElementById('awsS3Form');
+            
+            if (isConnected) {
+                const bucketName = connection.metadata?.bucket_name || 'Unknown';
+                const region = connection.metadata?.region || 'Unknown';
+                
+                statusEl.innerHTML = `
+                    <div class="status-indicator status-connected">
+                        <span class="status-icon success"><i class="fas fa-check"></i></span>
+                        Connected to ${bucketName}
+                    </div>
+                    <div class="connection-info mt-2">
+                        <div class="info-item">
+                            <span>Bucket:</span>
+                            <span class="fw-bold">${bucketName}</span>
+                        </div>
+                        <div class="info-item">
+                            <span>Region:</span>
+                            <span class="fw-bold">${region}</span>
+                        </div>
+                        <div class="info-item">
+                            <span>Last Test:</span>
+                            <span class="fw-bold ${lastTest === 'success' ? 'text-success' : 'text-danger'}">${lastTestDate}</span>
+                        </div>
+                    </div>
+                `;
+                connectBtn.style.display = 'none';
+                saveBtn.style.display = 'none';
+                actionsGroup.style.display = 'flex';
+                form.style.display = 'none';
+            } else {
+                statusEl.innerHTML = `
+                    <div class="status-indicator status-disconnected">
+                        <span class="status-icon error"><i class="fas fa-times"></i></span>
+                        Not Connected
+                    </div>
+                `;
+                connectBtn.style.display = 'block';
+                saveBtn.style.display = 'none';
+                actionsGroup.style.display = 'none';
+            }
+        }
+    }
+
+    function showDisconnectedState(provider) {
+        if (provider === 'google_drive') {
+            document.getElementById('googleDriveStatus').innerHTML = `
+                <div class="status-indicator status-disconnected">
+                    <span class="status-icon error"><i class="fas fa-times"></i></span>
+                    Not Connected
+                </div>
+            `;
+            document.getElementById('googleDriveConnect').style.display = 'block';
+            document.getElementById('googleDriveActions').style.display = 'none';
+            document.getElementById('googleDriveForm').style.display = 'none';
+        } else if (provider === 'aws_s3') {
+            document.getElementById('awsS3Status').innerHTML = `
+                <div class="status-indicator status-disconnected">
+                    <span class="status-icon error"><i class="fas fa-times"></i></span>
+                    Not Connected
+                </div>
+            `;
+            document.getElementById('awsS3Connect').style.display = 'block';
+            document.getElementById('awsS3Save').style.display = 'none';
+            document.getElementById('awsS3Actions').style.display = 'none';
+            document.getElementById('awsS3Form').style.display = 'none';
+        }
+    }
+
+    function connectGoogleDrive() {
+        // Show form if not already configured
+        const googleConn = connections['google_drive'];
+        if (!googleConn || !googleConn.credentials?.client_id) {
+            document.getElementById('googleDriveForm').style.display = 'block';
+            document.getElementById('googleDriveConnect').innerHTML = '<i class="fas fa-save"></i> Save & Connect';
+            document.getElementById('googleDriveConnect').onclick = saveGoogleCredentials;
+            return;
+        }
+
+        // Start OAuth flow
+        fetch('/api/connect/google-drive/start')
+            .then(response => response.json())
+            .then(data => {
+                if (data.auth_url) {
+                    window.location.href = data.auth_url;
+                } else {
+                    showAlert('error', data.error || 'Failed to start Google Drive connection');
+                }
+            })
+            .catch(error => {
+                showAlert('error', 'Error connecting to Google Drive: ' + error.message);
+            });
+    }
+
+    function saveGoogleCredentials() {
+        const clientId = document.getElementById('googleClientId').value;
+        const clientSecret = document.getElementById('googleClientSecret').value;
+
+        if (!clientId || !clientSecret) {
+            showAlert('error', 'Please enter both Client ID and Client Secret');
+            return;
+        }
+
+        fetch('/api/connect/google-drive', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                client_id: clientId,
+                client_secret: clientSecret
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                showAlert('success', data.message);
+                // Start OAuth flow
+                setTimeout(() => {
+                    fetch('/api/connect/google-drive/start')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.auth_url) {
+                                window.location.href = data.auth_url;
+                            }
+                        });
+                }, 1000);
+            } else {
+                showAlert('error', data.error || 'Failed to save credentials');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error saving credentials: ' + error.message);
+        });
+    }
+
+    function showAwsForm() {
+        document.getElementById('awsS3Form').style.display = 'block';
+        document.getElementById('awsS3Connect').style.display = 'none';
+        document.getElementById('awsS3Save').style.display = 'block';
+    }
+
+    function connectAwsS3() {
+        const accessKeyId = document.getElementById('awsAccessKeyId').value;
+        const secretAccessKey = document.getElementById('awsSecretAccessKey').value;
+        const region = document.getElementById('awsRegion').value;
+        const bucketName = document.getElementById('awsBucketName').value;
+
+        if (!accessKeyId || !secretAccessKey || !region || !bucketName) {
+            showAlert('error', 'Please fill in all AWS S3 fields');
+            return;
+        }
+
+        // Show loading state
+        setLoadingState('aws_s3', true);
+        document.getElementById('awsS3Save').innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connecting...';
+        document.getElementById('awsS3Save').disabled = true;
+
+        fetch('/api/connect/aws-s3', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                access_key_id: accessKeyId,
+                secret_access_key: secretAccessKey,
+                region: region,
+                bucket_name: bucketName
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                showAlert('success', data.message);
+                loadConnectionStatus(); // Refresh UI
+            } else {
+                showAlert('error', data.error || 'Failed to connect to AWS S3');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error connecting to AWS S3: ' + error.message);
+        })
+        .finally(() => {
+            document.getElementById('awsS3Save').innerHTML = '<i class="fas fa-save me-2"></i>Save & Connect';
+            document.getElementById('awsS3Save').disabled = false;
+        });
+    }
+
+    function testConnection(provider) {
+        const button = document.getElementById(provider === 'google_drive' ? 'googleDriveTest' : 'awsS3Test');
+        const originalText = button.innerHTML;
+        
+        button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testing...';
+        button.disabled = true;
+
+        fetch(`/api/connections/${provider}/test`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showAlert('success', data.message);
+                } else {
+                    showAlert('error', data.error || 'Connection test failed');
+                }
+            })
+            .catch(error => {
+                showAlert('error', 'Error testing connection: ' + error.message);
+            })
+            .finally(() => {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+    }
+
+    function disconnectProvider(provider) {
+        if (!confirm(`Are you sure you want to disconnect ${provider.replace('_', ' ').toUpperCase()}?`)) {
+            return;
+        }
+
+        fetch(`/api/connections/${provider}/disconnect`, {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message) {
+                showAlert('success', data.message);
+                loadConnectionStatus(); // Refresh UI
+            } else {
+                showAlert('error', data.error || 'Failed to disconnect');
+            }
+        })
+        .catch(error => {
+            showAlert('error', 'Error disconnecting: ' + error.message);
+        });
+    }
+
+    // Additional Functions for Enhanced UI
+    function refreshGoogleConnection() {
+        showAlert('info', 'Refreshing Google Drive connection...');
+        
+        // Start OAuth flow again to refresh tokens
+        fetch('/api/connect/google-drive/start')
+            .then(response => response.json())
+            .then(data => {
+                if (data.auth_url) {
+                    window.location.href = data.auth_url;
+                } else {
+                    showAlert('error', data.error || 'Failed to refresh connection');
+                }
+            })
+            .catch(error => {
+                showAlert('error', 'Error refreshing connection: ' + error.message);
+            });
+    }
+
+    function editAwsConnection() {
+        // Show the form with current values if available
+        const connection = connections['aws_s3'];
+        if (connection && connection.metadata) {
+            document.getElementById('awsRegion').value = connection.metadata.region || '';
+            document.getElementById('awsBucketName').value = connection.metadata.bucket_name || '';
+        }
+        
+        document.getElementById('awsS3Form').style.display = 'block';
+        document.getElementById('awsS3Connect').style.display = 'none';
+        document.getElementById('awsS3Save').style.display = 'block';
+        document.getElementById('awsS3Actions').style.display = 'none';
+    }
+
+    function setLoadingState(provider, loading = true) {
+        const statusEl = document.getElementById(provider === 'google_drive' ? 'googleDriveStatus' : 'awsS3Status');
+        
+        if (loading) {
+            statusEl.innerHTML = `
+                <div class="status-indicator status-loading">
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    ${provider === 'google_drive' ? 'Connecting to Google Drive...' : 'Connecting to AWS S3...'}
+                </div>
+            `;
+        }
+    }
+
+    function showAlert(type, message) {
+        const alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+        const alertHTML = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // Insert at the top of the container
+        const container = document.querySelector('.container-fluid');
+        container.insertAdjacentHTML('afterbegin', alertHTML);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            const alerts = document.querySelectorAll('.alert');
+            if (alerts.length > 0) {
+                alerts[0].querySelector('.btn-close')?.click();
+            }
+        }, 5000);
+    }
+
+    // Original saveAllSettings function
     function saveAllSettings() {
         // Collect all form data
         const settings = {

@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Social Media Style Cloud Connections - Demo</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .demo-container {
+            padding: 40px 0;
+        }
+        
+        .demo-header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        
+        .demo-header h1 {
+            font-weight: 300;
+            margin-bottom: 10px;
+        }
+        
+        .demo-header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+        
+        /* Social Media Style Connection Cards */
+        .social-connect-card {
+            transition: all 0.3s ease;
+            border-radius: 16px !important;
+            background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+        }
+        
+        .social-connect-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.2) !important;
+        }
+        
+        .social-provider-header {
+            position: relative;
+        }
+        
+        .social-icon-wrapper {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .social-icon-wrapper::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.4));
+            border-radius: 50%;
+        }
+        
+        .google-bg {
+            background: linear-gradient(45deg, #4285f4, #34a853, #ea4335, #fbbc05);
+            background-size: 400% 400%;
+            animation: googleGradient 4s ease infinite;
+        }
+        
+        .aws-bg {
+            background: linear-gradient(45deg, #ff9900, #232f3e);
+            background-size: 200% 200%;
+            animation: awsGradient 4s ease infinite;
+        }
+        
+        .dropbox-bg {
+            background: linear-gradient(45deg, #0061ff, #4491db);
+            background-size: 200% 200%;
+            animation: dropboxGradient 4s ease infinite;
+        }
+        
+        .onedrive-bg {
+            background: linear-gradient(45deg, #0078d4, #005a9e);
+            background-size: 200% 200%;
+            animation: onedriveGradient 4s ease infinite;
+        }
+        
+        @keyframes googleGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes awsGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes dropboxGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes onedriveGradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Social Media Login Buttons */
+        .btn-google {
+            background: linear-gradient(45deg, #4285f4, #34a853);
+            border: none;
+            color: white;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(66, 133, 244, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-google:hover {
+            background: linear-gradient(45deg, #3367d6, #2e7d32);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(66, 133, 244, 0.5);
+            color: white;
+        }
+        
+        .btn-aws {
+            background: linear-gradient(45deg, #ff9900, #232f3e);
+            border: none;
+            color: white;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(255, 153, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-aws:hover {
+            background: linear-gradient(45deg, #e88700, #1a252f);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(255, 153, 0, 0.5);
+            color: white;
+        }
+        
+        .btn-dropbox {
+            background: linear-gradient(45deg, #0061ff, #4491db);
+            border: none;
+            color: white;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(0, 97, 255, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-dropbox:hover {
+            background: linear-gradient(45deg, #0052cc, #3578b8);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 97, 255, 0.5);
+            color: white;
+        }
+        
+        .btn-onedrive {
+            background: linear-gradient(45deg, #0078d4, #005a9e);
+            border: none;
+            color: white;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(0, 120, 212, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn-onedrive:hover {
+            background: linear-gradient(45deg, #0065b3, #004578);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 120, 212, 0.5);
+            color: white;
+        }
+        
+        /* Button shine effect */
+        .btn-google::before,
+        .btn-aws::before,
+        .btn-dropbox::before,
+        .btn-onedrive::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: left 0.7s;
+        }
+        
+        .btn-google:hover::before,
+        .btn-aws:hover::before,
+        .btn-dropbox:hover::before,
+        .btn-onedrive:hover::before {
+            left: 100%;
+        }
+        
+        /* Status Indicators */
+        .status-indicator {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 45px;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        
+        .status-connected {
+            background: linear-gradient(45deg, #d4edda, #c3e6cb);
+            color: #155724;
+            border: 2px solid #c3e6cb;
+            box-shadow: 0 3px 10px rgba(21, 87, 36, 0.2);
+        }
+        
+        .status-disconnected {
+            background: linear-gradient(45deg, #f8d7da, #f5c6cb);
+            color: #721c24;
+            border: 2px solid #f5c6cb;
+            box-shadow: 0 3px 10px rgba(114, 28, 36, 0.2);
+        }
+        
+        .status-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .status-icon.success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-icon.error {
+            background: #dc3545;
+            color: white;
+        }
+        
+        /* Feature highlights */
+        .feature-highlight {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .feature-list li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .feature-list li i {
+            margin-right: 12px;
+            color: #4CAF50;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container demo-container">
+        <div class="demo-header">
+            <h1>Social Media Style Cloud Connections</h1>
+            <p>Modern, user-friendly connection buttons for DR Backup Panel</p>
+        </div>
+        
+        <div class="feature-highlight">
+            <h4><i class="fas fa-star me-2"></i>Key Features</h4>
+            <ul class="feature-list">
+                <li><i class="fas fa-check"></i>One-click OAuth authentication for Google Drive</li>
+                <li><i class="fas fa-check"></i>Secure AWS S3 credential management</li>
+                <li><i class="fas fa-check"></i>Real-time connection status monitoring</li>
+                <li><i class="fas fa-check"></i>Beautiful, responsive UI with hover effects</li>
+                <li><i class="fas fa-check"></i>Easy connection testing and management</li>
+            </ul>
+        </div>
+        
+        <div class="row g-4">
+            <!-- Google Drive Connection -->
+            <div class="col-lg-6">
+                <div class="card h-100 border-0 shadow social-connect-card">
+                    <div class="card-body text-center p-5">
+                        <div class="social-provider-header mb-4">
+                            <div class="social-icon-wrapper google-bg mb-3">
+                                <i class="fab fa-google-drive fa-3x text-white"></i>
+                            </div>
+                            <h3 class="card-title mb-2">Google Drive</h3>
+                            <p class="text-muted mb-0">Secure cloud backup storage with OAuth 2.0</p>
+                        </div>
+                        
+                        <div class="connection-status mb-4">
+                            <div class="status-indicator status-connected">
+                                <span class="status-icon success"><i class="fas fa-check"></i></span>
+                                Connected & Ready
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-google btn-lg w-100 mb-3" onclick="demoAlert('Google Drive')">
+                            <i class="fab fa-google me-2"></i>
+                            Connect with Google
+                        </button>
+                        
+                        <div class="btn-group w-100">
+                            <button class="btn btn-outline-success btn-sm" title="Test Connection">
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" title="Refresh Token">
+                                <i class="fas fa-sync"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" title="Disconnect">
+                                <i class="fas fa-unlink"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AWS S3 Connection -->
+            <div class="col-lg-6">
+                <div class="card h-100 border-0 shadow social-connect-card">
+                    <div class="card-body text-center p-5">
+                        <div class="social-provider-header mb-4">
+                            <div class="social-icon-wrapper aws-bg mb-3">
+                                <i class="fab fa-aws fa-3x text-white"></i>
+                            </div>
+                            <h3 class="card-title mb-2">Amazon S3</h3>
+                            <p class="text-muted mb-0">Enterprise cloud storage with IAM security</p>
+                        </div>
+                        
+                        <div class="connection-status mb-4">
+                            <div class="status-indicator status-disconnected">
+                                <span class="status-icon error"><i class="fas fa-times"></i></span>
+                                Not Connected
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-aws btn-lg w-100 mb-3" onclick="demoAlert('AWS S3')">
+                            <i class="fab fa-aws me-2"></i>
+                            Connect AWS S3
+                        </button>
+                        
+                        <div class="btn-group w-100">
+                            <button class="btn btn-outline-success btn-sm" title="Test Connection">
+                                <i class="fas fa-check-circle"></i>
+                            </button>
+                            <button class="btn btn-outline-info btn-sm" title="Edit Credentials">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" title="Disconnect">
+                                <i class="fas fa-unlink"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Providers (for demonstration) -->
+            <div class="col-lg-6">
+                <div class="card h-100 border-0 shadow social-connect-card">
+                    <div class="card-body text-center p-5">
+                        <div class="social-provider-header mb-4">
+                            <div class="social-icon-wrapper dropbox-bg mb-3">
+                                <i class="fab fa-dropbox fa-3x text-white"></i>
+                            </div>
+                            <h3 class="card-title mb-2">Dropbox</h3>
+                            <p class="text-muted mb-0">Personal cloud storage solution</p>
+                        </div>
+                        
+                        <div class="connection-status mb-4">
+                            <div class="status-indicator status-disconnected">
+                                <span class="status-icon error"><i class="fas fa-times"></i></span>
+                                Not Connected
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-dropbox btn-lg w-100 mb-3" onclick="demoAlert('Dropbox')">
+                            <i class="fab fa-dropbox me-2"></i>
+                            Connect Dropbox
+                        </button>
+                        
+                        <small class="text-muted">Coming Soon</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-6">
+                <div class="card h-100 border-0 shadow social-connect-card">
+                    <div class="card-body text-center p-5">
+                        <div class="social-provider-header mb-4">
+                            <div class="social-icon-wrapper onedrive-bg mb-3">
+                                <i class="fab fa-microsoft fa-3x text-white"></i>
+                            </div>
+                            <h3 class="card-title mb-2">OneDrive</h3>
+                            <p class="text-muted mb-0">Microsoft cloud storage platform</p>
+                        </div>
+                        
+                        <div class="connection-status mb-4">
+                            <div class="status-indicator status-disconnected">
+                                <span class="status-icon error"><i class="fas fa-times"></i></span>
+                                Not Connected
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-onedrive btn-lg w-100 mb-3" onclick="demoAlert('OneDrive')">
+                            <i class="fab fa-microsoft me-2"></i>
+                            Connect OneDrive
+                        </button>
+                        
+                        <small class="text-muted">Coming Soon</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <div class="feature-highlight">
+                <h5><i class="fas fa-info-circle me-2"></i>Implementation Ready</h5>
+                <p class="mb-0">These social media style connection buttons are now fully implemented in your DR Backup Panel settings page. Navigate to the settings to start connecting your cloud storage providers!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        function demoAlert(provider) {
+            alert(`Demo: Would connect to ${provider} in the actual DR panel!`);
+        }
+        
+        // Add some interactive effects
+        document.addEventListener('DOMContentLoaded', function() {
+            // Animate cards on load
+            const cards = document.querySelectorAll('.social-connect-card');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(30px)';
+                    card.style.transition = 'all 0.6s ease';
+                    
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100);
+                }, index * 150);
+            });
+        });
+    </script>
+</body>
+</html>
