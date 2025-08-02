@@ -1,0 +1,560 @@
+{% extends "base.html" %}
+
+{% block title %}Backup Details - DR Backup Panel{% endblock %}
+{% block page_title %}Backup Session Details{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Session Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h4 class="mb-2">
+                                <i class="fas fa-database"></i> {{ session.session_id }}
+                            </h4>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <strong>Status:</strong>
+                                    {% if session.status == 'success' %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="fas fa-check"></i> Success
+                                        </span>
+                                    {% elif session.status == 'failed' %}
+                                        <span class="badge bg-danger ms-2">
+                                            <i class="fas fa-times"></i> Failed
+                                        </span>
+                                    {% elif session.status == 'running' %}
+                                        <span class="badge bg-primary ms-2">
+                                            <i class="fas fa-spinner fa-spin"></i> Running
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary ms-2">{{ session.status or 'Unknown' }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Start Time:</strong>
+                                    <br><small>{{ session.start_time if session.start_time else 'N/A' }}</small>
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Duration:</strong>
+                                    <br><small>
+                                        {% if session.start_time and session.end_time %}
+                                            {% set duration = (session.end_time|as_datetime - session.start_time|as_datetime).total_seconds() %}
+                                            {% if duration < 60 %}
+                                                {{ "%.0f"|format(duration) }} seconds
+                                            {% elif duration < 3600 %}
+                                                {{ "%.1f"|format(duration/60) }} minutes
+                                            {% else %}
+                                                {{ "%.1f"|format(duration/3600) }} hours
+                                            {% endif %}
+                                        {% elif session.status == 'running' %}
+                                            Still running...
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Destinations:</strong>
+                                    <br>
+                                    {% if session.destinations %}
+                                        {% for dest in session.destinations.split(',') %}
+                                            <span class="badge bg-info me-1">{{ dest.strip() }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <small class="text-muted">N/A</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-outline-primary" onclick="copySessionId()">
+                                    <i class="fas fa-copy"></i> Copy ID
+                                </button>
+                                {% if session.status == 'success' %}
+                                    <button type="button" class="btn btn-outline-success" onclick="validateBackup()">
+                                        <i class="fas fa-check"></i> Validate
+                                    </button>
+                                {% endif %}
+                                <button type="button" class="btn btn-outline-info" onclick="refreshDetails()">
+                                    <i class="fas fa-sync"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card status-card status-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-database fa-2x text-primary mb-2"></i>
+                    <h4 class="mb-0">{{ session.database_count or 'N/A' }}</h4>
+                    <small class="text-muted">Databases Backed Up</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card status-card status-info">
+                <div class="card-body text-center">
+                    <i class="fas fa-hdd fa-2x text-info mb-2"></i>
+                    <h4 class="mb-0">
+                        {% if session.total_size %}
+                            {% set size_mb = session.total_size / 1024 / 1024 %}
+                            {% if size_mb < 1024 %}
+                                {{ "%.1f"|format(size_mb) }} MB
+                            {% else %}
+                                {{ "%.1f"|format(size_mb/1024) }} GB
+                            {% endif %}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </h4>
+                    <small class="text-muted">Total Backup Size</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card status-card {% if session.errors and session.errors > 0 %}status-danger{% else %}status-success{% endif %}">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation-triangle fa-2x {% if session.errors and session.errors > 0 %}text-danger{% else %}text-success{% endif %} mb-2"></i>
+                    <h4 class="mb-0">{{ session.errors or '0' }}</h4>
+                    <small class="text-muted">Errors</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card status-card {% if session.warnings and session.warnings > 0 %}status-warning{% else %}status-success{% endif %}">
+                <div class="card-body text-center">
+                    <i class="fas fa-exclamation fa-2x {% if session.warnings and session.warnings > 0 %}text-warning{% else %}text-success{% endif %} mb-2"></i>
+                    <h4 class="mb-0">{{ session.warnings or '0' }}</h4>
+                    <small class="text-muted">Warnings</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Backup Components -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Backup Components
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-database"></i> Databases</h6>
+                            <div class="list-group list-group-flush">
+                                <!-- TODO: List individual databases from manifest -->
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>PostgreSQL Databases</strong>
+                                        <br><small class="text-muted">All tenant databases (kdoo_*)</small>
+                                    </div>
+                                    <span class="badge bg-primary rounded-pill">{{ session.database_count or 'N/A' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-folder"></i> File Storage</h6>
+                            <div class="list-group list-group-flush">
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Odoo Filestore</strong>
+                                        <br><small class="text-muted">User uploads and attachments</small>
+                                    </div>
+                                    <span class="badge bg-info rounded-pill">
+                                        {% if session.filestore_size %}
+                                            {% set size_mb = session.filestore_size / 1024 / 1024 %}
+                                            {% if size_mb < 1024 %}
+                                                {{ "%.1f"|format(size_mb) }} MB
+                                            {% else %}
+                                                {{ "%.1f"|format(size_mb/1024) }} GB
+                                            {% endif %}
+                                        {% else %}
+                                            N/A
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <strong>Configurations</strong>
+                                        <br><small class="text-muted">Docker, Nginx, SSL certificates</small>
+                                    </div>
+                                    <span class="badge bg-secondary rounded-pill">Included</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backup Timeline -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock"></i> Backup Timeline
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- TODO: Parse logs to create timeline -->
+                    <div class="timeline">
+                        {% if session.start_time %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Backup Started</h6>
+                                    <p class="timeline-description">
+                                        Session {{ session.session_id }} initiated
+                                    </p>
+                                    <small class="text-muted">{{ session.start_time }}</small>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if session.database_count and session.database_count > 0 %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-info"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Database Backup</h6>
+                                    <p class="timeline-description">
+                                        {{ session.database_count }} databases backed up and encrypted
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if session.filestore_size %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-warning"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">File Storage Backup</h6>
+                                    <p class="timeline-description">
+                                        Filestore compressed and encrypted
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if session.destinations %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-secondary"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Cloud Upload</h6>
+                                    <p class="timeline-description">
+                                        Uploaded to: {{ session.destinations }}
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        {% if session.end_time %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker {% if session.status == 'success' %}bg-success{% else %}bg-danger{% endif %}"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">Backup {{ 'Completed' if session.status == 'success' else 'Failed' }}</h6>
+                                    <p class="timeline-description">
+                                        {% if session.status == 'success' %}
+                                            Backup completed successfully
+                                        {% else %}
+                                            Backup failed with {{ session.errors or 0 }} errors
+                                        {% endif %}
+                                    </p>
+                                    <small class="text-muted">{{ session.end_time }}</small>
+                                </div>
+                            </div>
+                        {% elif session.status == 'running' %}
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-primary timeline-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">In Progress</h6>
+                                    <p class="timeline-description">
+                                        Backup is currently running...
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Information -->
+        <div class="col-md-4">
+            <!-- Technical Details -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Technical Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>Session ID:</th>
+                            <td><code>{{ session.session_id }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Status:</th>
+                            <td>{{ session.status or 'Unknown' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Start Time:</th>
+                            <td>{{ session.start_time or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>End Time:</th>
+                            <td>{{ session.end_time or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Destinations:</th>
+                            <td>{{ session.destinations or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Database Count:</th>
+                            <td>{{ session.database_count or 'N/A' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Total Size:</th>
+                            <td>
+                                {% if session.total_size %}
+                                    {{ "%.2f"|format(session.total_size / 1024 / 1024) }} MB
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Errors:</th>
+                            <td>{{ session.errors or '0' }}</td>
+                        </tr>
+                        <tr>
+                            <th>Warnings:</th>
+                            <td>{{ session.warnings or '0' }}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools"></i> Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if session.status == 'success' %}
+                            <button type="button" class="btn btn-success" onclick="validateBackup()">
+                                <i class="fas fa-check"></i> Validate Backup
+                            </button>
+                            
+                            <button type="button" class="btn btn-warning" onclick="restoreFromBackup()">
+                                <i class="fas fa-undo"></i> Restore from Backup
+                            </button>
+                        {% endif %}
+                        
+                        {% if session.log_file %}
+                            <button type="button" class="btn btn-info" onclick="viewLogs()">
+                                <i class="fas fa-file-alt"></i> View Logs
+                            </button>
+                        {% endif %}
+                        
+                        <button type="button" class="btn btn-secondary" onclick="downloadManifest()">
+                            <i class="fas fa-download"></i> Download Manifest
+                        </button>
+                        
+                        <hr>
+                        
+                        <a href="{{ url_for('backups') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left"></i> Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i> Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="activity-feed">
+                        <div class="activity-item">
+                            <i class="fas fa-database text-primary"></i>
+                            <span>Backup session created</span>
+                            <small class="text-muted d-block">{{ session.created_at or session.start_time }}</small>
+                        </div>
+                        
+                        {% if session.status == 'success' %}
+                            <div class="activity-item">
+                                <i class="fas fa-check text-success"></i>
+                                <span>Backup completed successfully</span>
+                                <small class="text-muted d-block">{{ session.end_time }}</small>
+                            </div>
+                        {% elif session.status == 'failed' %}
+                            <div class="activity-item">
+                                <i class="fas fa-times text-danger"></i>
+                                <span>Backup failed</span>
+                                <small class="text-muted d-block">{{ session.end_time or 'N/A' }}</small>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    background: #6c757d;
+}
+
+.timeline-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    left: -24px;
+}
+
+.timeline-content {
+    padding-left: 20px;
+}
+
+.timeline-title {
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.timeline-description {
+    margin-bottom: 5px;
+    font-size: 0.8rem;
+    color: #6c757d;
+}
+
+.activity-feed .activity-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-size: 0.9rem;
+}
+
+.activity-feed .activity-item i {
+    margin-right: 10px;
+    width: 16px;
+}
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const sessionId = '{{ session.session_id }}';
+    
+    function copySessionId() {
+        navigator.clipboard.writeText(sessionId).then(() => {
+            showAlert('Session ID copied to clipboard', 'success');
+        }).catch(err => {
+            showAlert('Failed to copy to clipboard', 'danger');
+        });
+    }
+    
+    function validateBackup() {
+        if (confirm('Validate this backup session?')) {
+            fetch('/api/backup/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: sessionId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Backup validation completed successfully!', 'success');
+                } else {
+                    showAlert('Backup validation failed: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error validating backup', 'danger');
+            });
+        }
+    }
+    
+    function restoreFromBackup() {
+        if (confirm('WARNING: This will restore the system from this backup!\nThis action cannot be undone. Continue?')) {
+            showAlert('Restore functionality not yet implemented', 'warning');
+            // TODO: Implement restore functionality
+        }
+    }
+    
+    function viewLogs() {
+        // TODO: Implement log viewer
+        showAlert('Log viewer not yet implemented', 'info');
+    }
+    
+    function downloadManifest() {
+        // TODO: Implement manifest download
+        showAlert('Manifest download not yet implemented', 'info');
+    }
+    
+    function refreshDetails() {
+        location.reload();
+    }
+    
+    // Auto-refresh if backup is running
+    {% if session.status == 'running' %}
+        setInterval(() => {
+            location.reload();
+        }, 30000); // Refresh every 30 seconds
+    {% endif %}
+</script>
+{% endblock %}

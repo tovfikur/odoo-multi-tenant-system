@@ -1,0 +1,17 @@
+# Flask and web framework dependencies
+Flask==2.3.3
+Flask-Login==0.6.3
+Werkzeug==2.3.7
+
+# Google Drive API dependencies
+google-auth==2.23.3
+google-auth-oauthlib==1.1.0
+google-auth-httplib2==0.1.1
+google-api-python-client==2.103.0
+
+# Utility dependencies
+tenacity==8.2.3
+schedule==1.2.0
+
+# Development dependencies (optional)
+python-dotenv==1.0.0

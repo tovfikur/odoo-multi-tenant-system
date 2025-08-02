@@ -1,0 +1,353 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - DR Backup Panel{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Status Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card status-card {% if system_status.backup_status == 'recent' %}status-success{% elif system_status.backup_status == 'warning' %}status-warning{% else %}status-danger{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted">Backup Status</h6>
+                            <h4 class="mb-0">
+                                {% if system_status.backup_status == 'recent' %}
+                                    <span class="text-success">Recent</span>
+                                {% elif system_status.backup_status == 'warning' %}
+                                    <span class="text-warning">Warning</span>
+                                {% elif system_status.backup_status == 'old' %}
+                                    <span class="text-danger">Old</span>
+                                {% else %}
+                                    <span class="text-muted">Unknown</span>
+                                {% endif %}
+                            </h4>
+                            {% if system_status.latest_backup %}
+                                <small class="text-muted">
+                                    Last: {{ system_status.latest_backup.start_time[:16] }}
+                                </small>
+                            {% endif %}
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-database fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card status-card {% if system_status.services_running %}status-success{% else %}status-danger{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted">System Status</h6>
+                            <h4 class="mb-0">
+                                {% if system_status.services_running %}
+                                    <span class="text-success">Online</span>
+                                {% else %}
+                                    <span class="text-danger">Issues</span>
+                                {% endif %}
+                            </h4>
+                            <small class="text-muted">
+                                Docker Services
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-server fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card status-card status-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted">Total Backups</h6>
+                            <h4 class="mb-0 text-primary">{{ sessions|length }}</h4>
+                            <small class="text-muted">
+                                Sessions Tracked
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-archive fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card status-card status-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted">Cloud Storage</h6>
+                            <h4 class="mb-0 text-info">
+                                {% set destinations = [] %}
+                                {% if storage_usage.aws and not storage_usage.aws.error %}{% set _ = destinations.append('AWS') %}{% endif %}
+                                {% if storage_usage.gdrive and not storage_usage.gdrive.error %}{% set _ = destinations.append('GDrive') %}{% endif %}
+                                {{ destinations|join(', ') or 'Not Available' }}
+                            </h4>
+                            <small class="text-muted">
+                                Active Destinations
+                            </small>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-cloud fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Actions Row -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="fas fa-bolt"></i> Quick Actions
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-primary w-100" onclick="startManualBackup()">
+                                <i class="fas fa-play"></i> Start Backup
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" class="btn btn-success w-100" onclick="validateLastBackup()">
+                                <i class="fas fa-check"></i> Validate Backup
+                            </button>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('backups') }}" class="btn btn-info w-100">
+                                <i class="fas fa-history"></i> View History
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{{ url_for('settings') }}" class="btn btn-secondary w-100">
+                                <i class="fas fa-cog"></i> Settings
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Recent Backups -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clock"></i> Recent Backup Sessions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if sessions %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Session ID</th>
+                                        <th>Start Time</th>
+                                        <th>Status</th>
+                                        <th>Destinations</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for session in sessions[:5] %}
+                                    <tr>
+                                        <td>
+                                            <code class="text-primary">{{ session.session_id[:20] }}...</code>
+                                        </td>
+                                        <td>
+                                            <small>{{ session.start_time[:16] if session.start_time else 'N/A' }}</small>
+                                        </td>
+                                        <td>
+                                            {% if session.status == 'success' %}
+                                                <span class="badge bg-success">Success</span>
+                                            {% elif session.status == 'failed' %}
+                                                <span class="badge bg-danger">Failed</span>
+                                            {% elif session.status == 'running' %}
+                                                <span class="badge bg-primary">Running</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">{{ session.status or 'Unknown' }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small>{{ session.destinations or 'N/A' }}</small>
+                                        </td>
+                                        <td>
+                                            <a href="{{ url_for('backup_detail', session_id=session.session_id) }}" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('backups') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-list"></i> View All Backups
+                            </a>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-database fa-3x text-muted mb-3"></i>
+                            <h6 class="text-muted">No backup sessions found</h6>
+                            <p class="text-muted">Start your first backup to see session history</p>
+                            <button type="button" class="btn btn-primary" onclick="startManualBackup()">
+                                <i class="fas fa-play"></i> Start First Backup
+                            </button>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Storage Usage -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-pie"></i> Storage Usage
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if storage_usage %}
+                        {% for provider, usage in storage_usage.items() %}
+                            <div class="mb-4">
+                                <h6 class="text-muted">
+                                    {% if provider == 'aws' %}
+                                        <i class="fab fa-aws"></i> AWS S3
+                                    {% elif provider == 'gdrive' %}
+                                        <i class="fab fa-google-drive"></i> Google Drive
+                                    {% else %}
+                                        {{ provider|title }}
+                                    {% endif %}
+                                </h6>
+                                
+                                {% if usage.error %}
+                                    <div class="alert alert-warning p-2">
+                                        <small><i class="fas fa-exclamation-triangle"></i> {{ usage.error }}</small>
+                                    </div>
+                                {% else %}
+                                    {% if provider == 'aws' %}
+                                        <p class="mb-1">
+                                            <strong>Used:</strong> {{ usage.used_gb }} GB
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Bucket:</strong> <code>{{ usage.bucket }}</code>
+                                        </p>
+                                    {% elif provider == 'gdrive' %}
+                                        {% set total_gb = usage.total / 1024**3 %}
+                                        {% set used_gb = usage.used / 1024**3 %}
+                                        {% set available_gb = usage.available / 1024**3 %}
+                                        {% set usage_percent = (used_gb / total_gb * 100) if total_gb > 0 else 0 %}
+                                        
+                                        <div class="progress mb-2" style="height: 8px;">
+                                            <div class="progress-bar" 
+                                                 role="progressbar" 
+                                                 style="width: {{ usage_percent }}%"
+                                                 aria-valuenow="{{ usage_percent }}" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <small class="text-muted">Used</small><br>
+                                                <strong>{{ "%.1f"|format(used_gb) }} GB</strong>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Total</small><br>
+                                                <strong>{{ "%.1f"|format(total_gb) }} GB</strong>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">Free</small><br>
+                                                <strong>{{ "%.1f"|format(available_gb) }} GB</strong>
+                                            </div>
+                                        </div>
+                                        
+                                        <p class="mt-2 mb-0">
+                                            <small class="text-muted">{{ usage.user_email }}</small>
+                                        </p>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-cloud-slash fa-2x text-muted mb-2"></i>
+                            <p class="text-muted mb-0">No storage information available</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function validateLastBackup() {
+        {% if sessions %}
+            const latestSession = '{{ sessions[0].session_id }}';
+            
+            if (confirm('Validate the latest backup?')) {
+                fetch('/api/backup/validate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: latestSession
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('Backup validation completed successfully!', 'success');
+                    } else {
+                        showAlert('Backup validation failed: ' + (data.error || 'Unknown error'), 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('Error validating backup', 'danger');
+                });
+            }
+        {% else %}
+            showAlert('No backups available to validate', 'warning');
+        {% endif %}
+    }
+
+    // Auto-refresh storage usage every 5 minutes
+    setInterval(function() {
+        fetch('/api/storage/usage')
+            .then(response => response.json())
+            .then(data => {
+                // Update storage usage display
+                console.log('Storage usage updated:', data);
+            })
+            .catch(error => {
+                console.error('Error updating storage usage:', error);
+            });
+    }, 300000); // 5 minutes
+</script>
+{% endblock %}

@@ -1,0 +1,413 @@
+{% extends "base.html" %}
+
+{% block title %}Backup History - DR Backup Panel{% endblock %}
+{% block page_title %}Backup History{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Summary Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card status-card status-info">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted">Total Sessions</h6>
+                            <h4 class="mb-0 text-primary">{{ sessions|length }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-database fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card status-card status-success">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted">Successful</h6>
+                            <h4 class="mb-0 text-success">
+                                {{ sessions|selectattr('status', 'equalto', 'success')|list|length }}
+                            </h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-check-circle fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card status-card status-danger">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted">Failed</h6>
+                            <h4 class="mb-0 text-danger">
+                                {{ sessions|selectattr('status', 'equalto', 'failed')|list|length }}
+                            </h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-times-circle fa-2x text-danger"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card status-card status-warning">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title text-muted">Running</h6>
+                            <h4 class="mb-0 text-warning">
+                                {{ sessions|selectattr('status', 'equalto', 'running')|list|length }}
+                            </h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="fas fa-spinner fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Actions -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="input-group">
+                <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                </span>
+                <input type="text" 
+                       class="form-control" 
+                       id="searchInput" 
+                       placeholder="Search backup sessions..."
+                       onkeyup="filterTable()">
+            </div>
+        </div>
+        <div class="col-md-6 text-end">
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary" onclick="filterByStatus('all')">
+                    All
+                </button>
+                <button type="button" class="btn btn-outline-success" onclick="filterByStatus('success')">
+                    Success
+                </button>
+                <button type="button" class="btn btn-outline-danger" onclick="filterByStatus('failed')">
+                    Failed
+                </button>
+                <button type="button" class="btn btn-outline-warning" onclick="filterByStatus('running')">
+                    Running
+                </button>
+            </div>
+            <button type="button" class="btn btn-primary ms-2" onclick="startManualBackup()">
+                <i class="fas fa-plus"></i> New Backup
+            </button>
+        </div>
+    </div>
+
+    <!-- Backup Sessions Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list"></i> Backup Sessions
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if sessions %}
+                <div class="table-responsive">
+                    <table class="table table-hover" id="backupTable">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Start Time</th>
+                                <th>Duration</th>
+                                <th>Status</th>
+                                <th>Destinations</th>
+                                <th>Databases</th>
+                                <th>Size</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in sessions %}
+                            <tr data-status="{{ session.status or 'unknown' }}">
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <code class="text-primary">{{ session.session_id[:25] }}...</code>
+                                        <button class="btn btn-sm btn-outline-secondary ms-2" 
+                                                onclick="copyToClipboard('{{ session.session_id }}')"
+                                                title="Copy full session ID">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if session.start_time %}
+                                        <div>{{ session.start_time[:10] }}</div>
+                                        <small class="text-muted">{{ session.start_time[11:16] }}</small>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.start_time and session.end_time %}
+                                        {% set duration = (session.end_time|as_datetime - session.start_time|as_datetime).total_seconds() %}
+                                        {% if duration < 60 %}
+                                            {{ "%.0f"|format(duration) }}s
+                                        {% elif duration < 3600 %}
+                                            {{ "%.1f"|format(duration/60) }}m
+                                        {% else %}
+                                            {{ "%.1f"|format(duration/3600) }}h
+                                        {% endif %}
+                                    {% elif session.status == 'running' %}
+                                        <span class="text-warning">
+                                            <i class="fas fa-spinner fa-spin"></i> Running
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.status == 'success' %}
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check"></i> Success
+                                        </span>
+                                    {% elif session.status == 'failed' %}
+                                        <span class="badge bg-danger">
+                                            <i class="fas fa-times"></i> Failed
+                                        </span>
+                                        {% if session.errors %}
+                                            <br><small class="text-danger">{{ session.errors }} errors</small>
+                                        {% endif %}
+                                    {% elif session.status == 'running' %}
+                                        <span class="badge bg-primary">
+                                            <i class="fas fa-spinner fa-spin"></i> Running
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ session.status or 'Unknown' }}</span>
+                                    {% endif %}
+                                    
+                                    {% if session.warnings and session.warnings > 0 %}
+                                        <br><small class="text-warning">{{ session.warnings }} warnings</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.destinations %}
+                                        {% for dest in session.destinations.split(',') %}
+                                            <span class="badge bg-info me-1">{{ dest.strip() }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.database_count %}
+                                        <span class="badge bg-secondary">{{ session.database_count }} DBs</span>
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if session.total_size %}
+                                        {% set size_mb = session.total_size / 1024 / 1024 %}
+                                        {% if size_mb < 1024 %}
+                                            {{ "%.1f"|format(size_mb) }} MB
+                                        {% else %}
+                                            {{ "%.1f"|format(size_mb/1024) }} GB
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">N/A</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('backup_detail', session_id=session.session_id) }}" 
+                                           class="btn btn-outline-primary"
+                                           title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        
+                                        {% if session.status == 'success' %}
+                                            <button type="button" 
+                                                    class="btn btn-outline-success"
+                                                    onclick="validateBackup('{{ session.session_id }}')"
+                                                    title="Validate Backup">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        {% endif %}
+                                        
+                                        {% if session.log_file %}
+                                            <button type="button" 
+                                                    class="btn btn-outline-info"
+                                                    onclick="showLogs('{{ session.session_id }}')"
+                                                    title="View Logs">
+                                                <i class="fas fa-file-alt"></i>
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div>
+                        <small class="text-muted">
+                            Showing {{ sessions|length }} backup sessions
+                        </small>
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportBackupHistory()">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                    </div>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-database fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">No backup sessions found</h5>
+                    <p class="text-muted">Start your first backup to see session history</p>
+                    <button type="button" class="btn btn-primary btn-lg" onclick="startManualBackup()">
+                        <i class="fas fa-play"></i> Start First Backup
+                    </button>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Log Viewer Modal -->
+<div class="modal fade" id="logModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-file-alt"></i> Backup Logs
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <pre id="logContent" class="backup-log p-3">Loading logs...</pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function filterTable() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase();
+        const table = document.getElementById('backupTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const text = row.textContent.toLowerCase();
+            
+            if (text.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+    
+    function filterByStatus(status) {
+        const table = document.getElementById('backupTable');
+        const rows = table.getElementsByTagName('tr');
+        
+        // Update active button
+        document.querySelectorAll('.btn-group .btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            const rowStatus = row.getAttribute('data-status');
+            
+            if (status === 'all' || rowStatus === status) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        }
+    }
+    
+    function validateBackup(sessionId) {
+        if (confirm('Validate backup for session: ' + sessionId + '?')) {
+            fetch('/api/backup/validate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    session_id: sessionId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('Backup validation completed successfully!', 'success');
+                } else {
+                    showAlert('Backup validation failed: ' + (data.error || 'Unknown error'), 'danger');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('Error validating backup', 'danger');
+            });
+        }
+    }
+    
+    function showLogs(sessionId) {
+        const modal = new bootstrap.Modal(document.getElementById('logModal'));
+        const logContent = document.getElementById('logContent');
+        
+        logContent.textContent = 'Loading logs...';
+        modal.show();
+        
+        // TODO: Implement log fetching endpoint
+        setTimeout(() => {
+            logContent.textContent = 'Log endpoint not yet implemented.\nSession ID: ' + sessionId;
+        }, 1000);
+    }
+    
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showAlert('Session ID copied to clipboard', 'success');
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            showAlert('Failed to copy to clipboard', 'danger');
+        });
+    }
+    
+    function exportBackupHistory() {
+        // TODO: Implement CSV export
+        showAlert('CSV export not yet implemented', 'info');
+    }
+    
+    // Auto-refresh every 30 seconds for running backups
+    setInterval(() => {
+        const runningRows = document.querySelectorAll('tr[data-status="running"]');
+        if (runningRows.length > 0) {
+            location.reload();
+        }
+    }, 30000);
+</script>
+{% endblock %}

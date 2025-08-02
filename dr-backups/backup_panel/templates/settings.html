@@ -1,0 +1,455 @@
+{% extends "base.html" %}
+
+{% block title %}Settings - DR Backup Panel{% endblock %}
+{% block page_title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-8">
+            <!-- Backup Configuration -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-cog"></i> Backup Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="backupConfigForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="backupDestinations" class="form-label">Backup Destinations</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="destAws" name="destinations" value="aws"
+                                           {% if 'aws' in config.get('DR_BACKUP_DESTINATIONS', '') %}checked{% endif %}>
+                                    <label class="form-check-label" for="destAws">
+                                        <i class="fab fa-aws"></i> AWS S3
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="destGdrive" name="destinations" value="gdrive"
+                                           {% if 'gdrive' in config.get('DR_BACKUP_DESTINATIONS', '') %}checked{% endif %}>
+                                    <label class="form-check-label" for="destGdrive">
+                                        <i class="fab fa-google-drive"></i> Google Drive
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="retentionDays" class="form-label">Retention (Days)</label>
+                                <input type="number" class="form-control" id="retentionDays" 
+                                       value="{{ config.get('DR_RETENTION_DAYS', '90') }}" min="1" max="365">
+                                <div class="form-text">How long to keep backups in cloud storage</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="localRetention" class="form-label">Local Retention (Days)</label>
+                                <input type="number" class="form-control" id="localRetention" 
+                                       value="{{ config.get('DR_LOCAL_RETENTION_DAYS', '7') }}" min="1" max="30">
+                                <div class="form-text">How long to keep local backup copies</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="compressionLevel" class="form-label">Compression Level</label>
+                                <select class="form-control" id="compressionLevel">
+                                    {% for level in range(1, 10) %}
+                                        <option value="{{ level }}" 
+                                                {% if config.get('DR_COMPRESSION_LEVEL', '9') == level|string %}selected{% endif %}>
+                                            {{ level }} {% if level == 1 %}(Fastest){% elif level == 9 %}(Best){% endif %}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- AWS S3 Configuration -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fab fa-aws"></i> AWS S3 Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="awsConfigForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="awsBucket" class="form-label">S3 Bucket</label>
+                                <input type="text" class="form-control" id="awsBucket" 
+                                       value="{{ config.get('DR_CLOUD_BUCKET', '') }}" 
+                                       placeholder="s3://your-backup-bucket">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="awsRegion" class="form-label">AWS Region</label>
+                                <select class="form-control" id="awsRegion">
+                                    {% set regions = [
+                                        ('us-east-1', 'US East (N. Virginia)'),
+                                        ('us-west-1', 'US West (N. California)'),
+                                        ('us-west-2', 'US West (Oregon)'),
+                                        ('eu-west-1', 'Europe (Ireland)'),
+                                        ('eu-central-1', 'Europe (Frankfurt)'),
+                                        ('ap-southeast-1', 'Asia Pacific (Singapore)'),
+                                        ('ap-northeast-1', 'Asia Pacific (Tokyo)')
+                                    ] %}
+                                    {% for region_code, region_name in regions %}
+                                        <option value="{{ region_code }}" 
+                                                {% if config.get('DR_CLOUD_REGION', 'us-east-1') == region_code %}selected{% endif %}>
+                                            {{ region_name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="awsAccessKey" class="form-label">Access Key ID</label>
+                                <input type="text" class="form-control" id="awsAccessKey" 
+                                       value="{{ config.get('AWS_ACCESS_KEY_ID', '') }}" 
+                                       placeholder="Your AWS Access Key ID">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="awsSecretKey" class="form-label">Secret Access Key</label>
+                                <input type="password" class="form-control" id="awsSecretKey" 
+                                       value="{{ config.get('AWS_SECRET_ACCESS_KEY', '') }}" 
+                                       placeholder="Your AWS Secret Access Key">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-primary" onclick="testAwsConnection()">
+                                <i class="fas fa-flask"></i> Test Connection
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Google Drive Configuration -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fab fa-google-drive"></i> Google Drive Configuration
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="gdriveConfigForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="gdriveClientId" class="form-label">Client ID</label>
+                                <input type="text" class="form-control" id="gdriveClientId" 
+                                       value="{{ config.get('GDRIVE_CLIENT_ID', '') }}" 
+                                       placeholder="Your Google Drive Client ID">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="gdriveClientSecret" class="form-label">Client Secret</label>
+                                <input type="password" class="form-control" id="gdriveClientSecret" 
+                                       value="{{ config.get('GDRIVE_CLIENT_SECRET', '') }}" 
+                                       placeholder="Your Google Drive Client Secret">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="gdriveFolderName" class="form-label">Backup Folder Name</label>
+                                <input type="text" class="form-control" id="gdriveFolderName" 
+                                       value="{{ config.get('GDRIVE_FOLDER_NAME', 'DR-Backups') }}" 
+                                       placeholder="DR-Backups">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="gdriveChunkSize" class="form-label">Upload Chunk Size (KB)</label>
+                                <select class="form-control" id="gdriveChunkSize">
+                                    {% for size in [128, 256, 512, 1024, 2048] %}
+                                        <option value="{{ size * 1024 }}" 
+                                                {% if config.get('GDRIVE_UPLOAD_CHUNK_SIZE', '262144') == (size * 1024)|string %}selected{% endif %}>
+                                            {{ size }} KB
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-primary" onclick="testGdriveConnection()">
+                                <i class="fas fa-flask"></i> Test Connection
+                            </button>
+                            <button type="button" class="btn btn-outline-info ms-2" onclick="authenticateGdrive()">
+                                <i class="fas fa-key"></i> Authenticate
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Notification Configuration -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bell"></i> Notification Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="notificationConfigForm">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="notificationEmail" class="form-label">Notification Email</label>
+                                <input type="email" class="form-control" id="notificationEmail" 
+                                       value="{{ config.get('DR_NOTIFICATION_EMAIL', '') }}" 
+                                       placeholder="admin@company.com">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="webhookUrl" class="form-label">Slack Webhook URL</label>
+                                <input type="url" class="form-control" id="webhookUrl" 
+                                       value="{{ config.get('DR_WEBHOOK_URL', '') }}" 
+                                       placeholder="https://hooks.slack.com/services/...">
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="alertBackupAge" class="form-label">Alert if Backup Older Than (Hours)</label>
+                                <input type="number" class="form-control" id="alertBackupAge" 
+                                       value="{{ (config.get('DR_ALERT_ON_BACKUP_AGE', '86400')|int / 3600)|int }}" 
+                                       min="1" max="168">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="alertDiskUsage" class="form-label">Alert on Disk Usage (%)</label>
+                                <input type="number" class="form-control" id="alertDiskUsage" 
+                                       value="{{ config.get('DR_ALERT_ON_DISK_USAGE', '90') }}" 
+                                       min="50" max="95">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Quick Actions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-tools"></i> Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn btn-primary" onclick="saveAllSettings()">
+                            <i class="fas fa-save"></i> Save All Settings
+                        </button>
+                        
+                        <button type="button" class="btn btn-info" onclick="testAllConnections()">
+                            <i class="fas fa-check"></i> Test All Connections
+                        </button>
+                        
+                        <button type="button" class="btn btn-warning" onclick="resetToDefaults()">
+                            <i class="fas fa-undo"></i> Reset to Defaults
+                        </button>
+                        
+                        <hr>
+                        
+                        <button type="button" class="btn btn-success" onclick="exportConfig()">
+                            <i class="fas fa-download"></i> Export Configuration
+                        </button>
+                        
+                        <button type="button" class="btn btn-secondary" onclick="document.getElementById('importFile').click()">
+                            <i class="fas fa-upload"></i> Import Configuration
+                        </button>
+                        <input type="file" id="importFile" style="display: none" accept=".json,.env" onchange="importConfig(this)">
+                    </div>
+                </div>
+            </div>
+
+            <!-- System Information -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i> System Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tr>
+                            <th>DR System Version:</th>
+                            <td>1.0.0</td>
+                        </tr>
+                        <tr>
+                            <th>Python Version:</th>
+                            <td id="pythonVersion">Loading...</td>
+                        </tr>
+                        <tr>
+                            <th>Backup Directory:</th>
+                            <td><code>{{ config.get('DR_BACKUP_DIR', 'N/A') }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Configuration File:</th>
+                            <td><code>dr-config.env</code></td>
+                        </tr>
+                        <tr>
+                            <th>Encryption Key:</th>
+                            <td>
+                                {% if config.get('DR_ENCRYPTION_KEY') %}
+                                    <span class="text-success"><i class="fas fa-check"></i> Present</span>
+                                {% else %}
+                                    <span class="text-danger"><i class="fas fa-times"></i> Missing</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Security Notice -->
+            <div class="card border-warning">
+                <div class="card-header bg-warning">
+                    <h6 class="mb-0 text-dark">
+                        <i class="fas fa-shield-alt"></i> Security Notice
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <small>
+                        <ul class="mb-0">
+                            <li>Always use strong passwords and API keys</li>
+                            <li>Enable 2FA on cloud storage accounts</li>
+                            <li>Regularly rotate access credentials</li>
+                            <li>Monitor backup logs for unauthorized access</li>
+                            <li>Test recovery procedures monthly</li>
+                        </ul>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    function saveAllSettings() {
+        // Collect all form data
+        const settings = {
+            // Backup Configuration
+            DR_BACKUP_DESTINATIONS: Array.from(document.querySelectorAll('input[name="destinations"]:checked')).map(cb => cb.value).join(','),
+            DR_RETENTION_DAYS: document.getElementById('retentionDays').value,
+            DR_LOCAL_RETENTION_DAYS: document.getElementById('localRetention').value,
+            DR_COMPRESSION_LEVEL: document.getElementById('compressionLevel').value,
+            
+            // AWS Configuration
+            DR_CLOUD_BUCKET: document.getElementById('awsBucket').value,
+            DR_CLOUD_REGION: document.getElementById('awsRegion').value,
+            AWS_ACCESS_KEY_ID: document.getElementById('awsAccessKey').value,
+            AWS_SECRET_ACCESS_KEY: document.getElementById('awsSecretKey').value,
+            
+            // Google Drive Configuration
+            GDRIVE_CLIENT_ID: document.getElementById('gdriveClientId').value,
+            GDRIVE_CLIENT_SECRET: document.getElementById('gdriveClientSecret').value,
+            GDRIVE_FOLDER_NAME: document.getElementById('gdriveFolderName').value,
+            GDRIVE_UPLOAD_CHUNK_SIZE: document.getElementById('gdriveChunkSize').value,
+            
+            // Notification Configuration
+            DR_NOTIFICATION_EMAIL: document.getElementById('notificationEmail').value,
+            DR_WEBHOOK_URL: document.getElementById('webhookUrl').value,
+            DR_ALERT_ON_BACKUP_AGE: (parseInt(document.getElementById('alertBackupAge').value) * 3600).toString(),
+            DR_ALERT_ON_DISK_USAGE: document.getElementById('alertDiskUsage').value
+        };
+        
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(settings)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Settings saved successfully!', 'success');
+            } else {
+                showAlert('Failed to save settings: ' + (data.error || 'Unknown error'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error saving settings', 'danger');
+        });
+    }
+    
+    function testAwsConnection() {
+        showAlert('Testing AWS connection...', 'info');
+        // TODO: Implement AWS connection test
+        setTimeout(() => {
+            showAlert('AWS connection test not yet implemented', 'warning');
+        }, 1000);
+    }
+    
+    function testGdriveConnection() {
+        showAlert('Testing Google Drive connection...', 'info');
+        // TODO: Implement Google Drive connection test
+        setTimeout(() => {
+            showAlert('Google Drive connection test not yet implemented', 'warning');
+        }, 1000);
+    }
+    
+    function authenticateGdrive() {
+        showAlert('Google Drive authentication not yet implemented', 'info');
+        // TODO: Implement Google Drive OAuth flow
+    }
+    
+    function testAllConnections() {
+        testAwsConnection();
+        setTimeout(() => testGdriveConnection(), 2000);
+    }
+    
+    function resetToDefaults() {
+        if (confirm('Reset all settings to defaults? This cannot be undone.')) {
+            // Reset form values to defaults
+            document.getElementById('retentionDays').value = '90';
+            document.getElementById('localRetention').value = '7';
+            document.getElementById('compressionLevel').value = '9';
+            document.getElementById('alertBackupAge').value = '24';
+            document.getElementById('alertDiskUsage').value = '90';
+            
+            showAlert('Settings reset to defaults. Remember to save changes.', 'warning');
+        }
+    }
+    
+    function exportConfig() {
+        // TODO: Implement configuration export
+        showAlert('Configuration export not yet implemented', 'info');
+    }
+    
+    function importConfig(input) {
+        const file = input.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const config = JSON.parse(e.target.result);
+                // TODO: Implement configuration import
+                showAlert('Configuration import not yet implemented', 'info');
+            } catch (error) {
+                showAlert('Invalid configuration file', 'danger');
+            }
+        };
+        reader.readAsText(file);
+    }
+    
+    // Load system information
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update Python version
+        fetch('/api/system/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.python_version) {
+                    document.getElementById('pythonVersion').textContent = data.python_version;
+                }
+            })
+            .catch(error => {
+                document.getElementById('pythonVersion').textContent = 'Unknown';
+            });
+    });
+</script>
+{% endblock %}

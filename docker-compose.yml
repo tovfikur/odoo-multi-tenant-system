@@ -196,6 +196,34 @@ services:
       timeout: 10s
       retries: 3
 
+  # DR Backup Panel
+  backup_panel:
+    build:
+      context: ./dr-backups/backup_panel
+      dockerfile: Dockerfile
+    environment:
+      - SECRET_KEY=${BACKUP_PANEL_SECRET_KEY:-backup-panel-secret-key-change-me}
+      - DR_CONFIG_PATH=/app/config/dr-config.env
+    ports:
+      - "5000:5000"
+    networks:
+      - odoo_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./dr-backups:/app/dr-backups:ro
+      - ./dr-backups/backup_panel:/app
+      - ./dr-backups/config:/app/config:ro
+      - backup_panel_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/system/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
 networks:
   odoo_network:
     driver: bridge
@@ -212,4 +240,6 @@ volumes:
   odoo_worker_logs:
     driver: local
   odoo_filestore:
+    driver: local
+  backup_panel_data:
     driver: local
