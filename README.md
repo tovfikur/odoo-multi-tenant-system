@@ -362,8 +362,8 @@ SCALE_DOWN_THRESHOLD=30 # CPU threshold for scaling down
 
 | Plan | Price/Month | Users | Storage | Features |
 |------|------------|-------|---------|----------|
-| **Starter** | $49 | 5 | 5GB | Basic modules, Email support |
-| **Professional** | $149 | 25 | 50GB | Advanced modules, Phone support |
+| **Starter** | $5 | 5 | 5GB | Basic modules, Email support |
+| **Professional** | $20 | 25 | 50GB | Advanced modules, Phone support |
 | **Enterprise** | $399 | 100 | 200GB | All modules, Dedicated support |
 | **White-Label** | $999 | Unlimited | 1TB | Custom branding, API access |
 
