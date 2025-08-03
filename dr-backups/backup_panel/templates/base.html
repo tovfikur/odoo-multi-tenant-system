@@ -1,313 +1,366 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{% block title %}Disaster Recovery Backup Panel{% endblock %}</title>
-    
+
     <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
     <!-- Font Awesome -->
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      rel="stylesheet"
+    />
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Custom CSS -->
     <style>
-        :root {
-            --dr-primary: #2c3e50;
-            --dr-secondary: #3498db;
-            --dr-success: #27ae60;
-            --dr-warning: #f39c12;
-            --dr-danger: #e74c3c;
-            --dr-info: #17a2b8;
-        }
-        
-        .sidebar {
-            min-height: 100vh;
-            background: var(--dr-primary);
-            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
-        }
-        
-        .sidebar .nav-link {
-            color: #bdc3c7;
-            border-radius: 5px;
-            margin: 2px 0;
-            transition: all 0.3s;
-        }
-        
-        .sidebar .nav-link:hover,
-        .sidebar .nav-link.active {
-            color: white;
-            background: var(--dr-secondary);
-        }
-        
-        .main-content {
-            background: #f8f9fa;
-            min-height: 100vh;
-        }
-        
-        .status-card {
-            border-left: 4px solid var(--dr-info);
-            transition: transform 0.2s;
-        }
-        
-        .status-card:hover {
-            transform: translateY(-2px);
-        }
-        
-        .status-success { border-left-color: var(--dr-success); }
-        .status-warning { border-left-color: var(--dr-warning); }
-        .status-danger { border-left-color: var(--dr-danger); }
-        
-        .backup-log {
-            background: #2c3e50;
-            color: #ecf0f1;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .progress-circle {
-            width: 60px;
-            height: 60px;
-        }
-        
-        .navbar-brand {
-            font-weight: 600;
-        }
-        
-        .table-hover tbody tr:hover {
-            background-color: rgba(52, 152, 219, 0.1);
-        }
-        
-        .btn-dr-primary {
-            background: var(--dr-primary);
-            border-color: var(--dr-primary);
-            color: white;
-        }
-        
-        .btn-dr-primary:hover {
-            background: #34495e;
-            border-color: #34495e;
-            color: white;
-        }
-        
-        .alert-dr {
-            border-left: 4px solid var(--dr-info);
-        }
-        
-        .footer {
-            background: var(--dr-primary);
-            color: #bdc3c7;
-            padding: 1rem 0;
-            margin-top: auto;
-        }
+      :root {
+        --dr-primary: #2c3e50;
+        --dr-secondary: #3498db;
+        --dr-success: #27ae60;
+        --dr-warning: #f39c12;
+        --dr-danger: #e74c3c;
+        --dr-info: #17a2b8;
+      }
+
+      .sidebar {
+        min-height: 100vh;
+        background: var(--dr-primary);
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .sidebar .nav-link {
+        color: #bdc3c7;
+        border-radius: 5px;
+        margin: 2px 0;
+        transition: all 0.3s;
+      }
+
+      .sidebar .nav-link:hover,
+      .sidebar .nav-link.active {
+        color: white;
+        background: var(--dr-secondary);
+      }
+
+      .main-content {
+        background: #f8f9fa;
+        min-height: 100vh;
+      }
+
+      .status-card {
+        border-left: 4px solid var(--dr-info);
+        transition: transform 0.2s;
+      }
+
+      .status-card:hover {
+        transform: translateY(-2px);
+      }
+
+      .status-success {
+        border-left-color: var(--dr-success);
+      }
+      .status-warning {
+        border-left-color: var(--dr-warning);
+      }
+      .status-danger {
+        border-left-color: var(--dr-danger);
+      }
+
+      .backup-log {
+        background: #2c3e50;
+        color: #ecf0f1;
+        font-family: "Courier New", monospace;
+        font-size: 0.9em;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .progress-circle {
+        width: 60px;
+        height: 60px;
+      }
+
+      .navbar-brand {
+        font-weight: 600;
+      }
+
+      .table-hover tbody tr:hover {
+        background-color: rgba(52, 152, 219, 0.1);
+      }
+
+      .btn-dr-primary {
+        background: var(--dr-primary);
+        border-color: var(--dr-primary);
+        color: white;
+      }
+
+      .btn-dr-primary:hover {
+        background: #34495e;
+        border-color: #34495e;
+        color: white;
+      }
+
+      .alert-dr {
+        border-left: 4px solid var(--dr-info);
+      }
+
+      .footer {
+        background: var(--dr-primary);
+        color: #bdc3c7;
+        padding: 1rem 0;
+        margin-top: auto;
+      }
     </style>
-    
+
     {% block extra_head %}{% endblock %}
-</head>
-<body>
+  </head>
+  <body>
     <div class="container-fluid">
-        <div class="row">
-            <!-- Sidebar -->
-            <nav class="col-md-2 col-lg-2 d-md-block sidebar collapse">
-                <div class="position-sticky pt-3">
-                    <div class="text-center mb-4">
-                        <h5 class="text-white"><i class="fas fa-shield-alt"></i> DR Panel</h5>
-                        <small class="text-muted">v1.0</small>
-                    </div>
-                    
-                    <ul class="nav flex-column">
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}">
-                                <i class="fas fa-tachometer-alt"></i> Dashboard
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'backups' %}active{% endif %}" href="{{ url_for('backups') }}">
-                                <i class="fas fa-database"></i> Backups
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" onclick="startManualBackup()">
-                                <i class="fas fa-play"></i> Start Backup
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}" href="{{ url_for('settings') }}">
-                                <i class="fas fa-cog"></i> Settings
-                            </a>
-                        </li>
-                        <li class="nav-item mt-3">
-                            <a class="nav-link text-muted" href="{{ url_for('logout') }}">
-                                <i class="fas fa-sign-out-alt"></i> Logout
-                            </a>
-                        </li>
-                    </ul>
-                    
-                    <div class="mt-4 p-3">
-                        <div class="alert alert-dr alert-info p-2">
-                            <small>
-                                <i class="fas fa-info-circle"></i>
-                                <strong>System Status</strong><br>
-                                <span id="system-status">Loading...</span>
-                            </small>
-                        </div>
-                    </div>
+      <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 col-lg-2 d-md-block sidebar collapse">
+          <div class="position-sticky pt-3">
+            <div class="text-center mb-4">
+              <h5 class="text-white">
+                <i class="fas fa-shield-alt"></i> DR Panel
+              </h5>
+              <small class="text-muted">v1.0</small>
+            </div>
+
+            <ul class="nav flex-column">
+              <li class="nav-item">
+                <a
+                  class="nav-link {% if request.endpoint == 'dashboard' %}active{% endif %}"
+                  href="{{ url_for('dashboard') }}"
+                >
+                  <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link {% if request.endpoint == 'backups' %}active{% endif %}"
+                  href="{{ url_for('backups') }}"
+                >
+                  <i class="fas fa-database"></i> Backups
+                </a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="#" onclick="startManualBackup()">
+                  <i class="fas fa-play"></i> Start Backup
+                </a>
+              </li>
+              <li class="nav-item">
+                <a
+                  class="nav-link {% if request.endpoint == 'settings' %}active{% endif %}"
+                  href="{{ url_for('settings') }}"
+                >
+                  <i class="fas fa-cog"></i> Settings
+                </a>
+              </li>
+              <li class="nav-item mt-3">
+                <a class="nav-link text-muted" href="{{ url_for('logout') }}">
+                  <i class="fas fa-sign-out-alt"></i> Logout
+                </a>
+              </li>
+            </ul>
+
+            <div class="mt-4 p-3">
+              <div class="alert alert-dr alert-info p-2">
+                <small>
+                  <i class="fas fa-info-circle"></i>
+                  <strong>System Status</strong><br />
+                  <span id="system-status">Loading...</span>
+                </small>
+              </div>
+            </div>
+          </div>
+        </nav>
+
+        <!-- Main content -->
+        <main class="col-md-10 ms-sm-auto col-lg-10 px-md-4 main-content">
+          <!-- Top navigation -->
+          <div
+            class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
+          >
+            <h1 class="h2">{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="btn-toolbar mb-2 mb-md-0">
+              <div class="btn-group me-2">
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-secondary"
+                  onclick="refreshPage()"
+                >
+                  <i class="fas fa-sync"></i> Refresh
+                </button>
+              </div>
+              <div class="dropdown">
+                <button
+                  class="btn btn-sm btn-dr-primary dropdown-toggle"
+                  type="button"
+                  data-bs-toggle="dropdown"
+                >
+                  <i class="fas fa-user"></i> {{ current_user.username }}
+                </button>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('settings') }}"
+                      ><i class="fas fa-cog"></i> Settings</a
+                    >
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <a class="dropdown-item" href="{{ url_for('logout') }}"
+                      ><i class="fas fa-sign-out-alt"></i> Logout</a
+                    >
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- Flash messages -->
+          {% with messages = get_flashed_messages() %} {% if messages %}
+          <div class="alert-container">
+            {% for message in messages %}
+            <div
+              class="alert alert-info alert-dismissible fade show"
+              role="alert"
+            >
+              <i class="fas fa-info-circle"></i> {{ message }}
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"
+              ></button>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %} {% endwith %}
+
+          <!-- Page content -->
+          {% block content %}{% endblock %}
+
+          <!-- Footer -->
+          <footer class="footer mt-5">
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-md-6">
+                  <small
+                    >&copy; 2024 Disaster Recovery System. All rights
+                    reserved.</small
+                  >
                 </div>
-            </nav>
-
-            <!-- Main content -->
-            <main class="col-md-10 ms-sm-auto col-lg-10 px-md-4 main-content">
-                <!-- Top navigation -->
-                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-                    <h1 class="h2">{% block page_title %}Dashboard{% endblock %}</h1>
-                    <div class="btn-toolbar mb-2 mb-md-0">
-                        <div class="btn-group me-2">
-                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshPage()">
-                                <i class="fas fa-sync"></i> Refresh
-                            </button>
-                        </div>
-                        <div class="dropdown">
-                            <button class="btn btn-sm btn-dr-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class="fas fa-user"></i> {{ current_user.username }}
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{{ url_for('settings') }}"><i class="fas fa-cog"></i> Settings</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('logout') }}"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-                            </ul>
-                        </div>
-                    </div>
+                <div class="col-md-6 text-end">
+                  <small>
+                    <i class="fas fa-code"></i> Built with Flask & Bootstrap
+                  </small>
                 </div>
-
-                <!-- Flash messages -->
-                {% with messages = get_flashed_messages() %}
-                    {% if messages %}
-                        <div class="alert-container">
-                            {% for message in messages %}
-                                <div class="alert alert-info alert-dismissible fade show" role="alert">
-                                    <i class="fas fa-info-circle"></i> {{ message }}
-                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                                </div>
-                            {% endfor %}
-                        </div>
-                    {% endif %}
-                {% endwith %}
-
-                <!-- Page content -->
-                {% block content %}{% endblock %}
-                
-                <!-- Footer -->
-                <footer class="footer mt-5">
-                    <div class="container-fluid">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <small>&copy; 2024 Disaster Recovery System. All rights reserved.</small>
-                            </div>
-                            <div class="col-md-6 text-end">
-                                <small>
-                                    <i class="fas fa-code"></i> Built with Flask & Bootstrap
-                                </small>
-                            </div>
-                        </div>
-                    </div>
-                </footer>
-            </main>
-        </div>
+              </div>
+            </div>
+          </footer>
+        </main>
+      </div>
     </div>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Custom JavaScript -->
     <script>
-        // Global functions
-        function refreshPage() {
-            location.reload();
+      // Global functions
+      function refreshPage() {
+        location.reload();
+      }
+
+      function startManualBackup() {
+        if (confirm("Start a manual backup now?")) {
+          fetch("/api/backup/start", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              destinations: ["aws", "gdrive"],
+            }),
+          })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.success) {
+                showAlert("Backup started successfully!", "success");
+                setTimeout(() => location.reload(), 2000);
+              } else {
+                showAlert("Failed to start backup", "danger");
+              }
+            })
+            .catch((error) => {
+              console.error("Error:", error);
+              showAlert("Error starting backup", "danger");
+            });
         }
-        
-        function startManualBackup() {
-            if (confirm('Start a manual backup now?')) {
-                fetch('/api/backup/start', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        destinations: ['aws', 'gdrive']
-                    })
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        showAlert('Backup started successfully!', 'success');
-                        setTimeout(() => location.reload(), 2000);
-                    } else {
-                        showAlert('Failed to start backup', 'danger');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    showAlert('Error starting backup', 'danger');
-                });
-            }
-        }
-        
-        function showAlert(message, type = 'info') {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
-            alertDiv.innerHTML = `
+      }
+
+      function showAlert(message, type = "info") {
+        const alertDiv = document.createElement("div");
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.innerHTML = `
                 <i class="fas fa-info-circle"></i> ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             `;
-            
-            const container = document.querySelector('.alert-container') || document.querySelector('main');
-            container.insertBefore(alertDiv, container.firstChild);
-            
-            // Auto-dismiss after 5 seconds
-            setTimeout(() => {
-                if (alertDiv.parentNode) {
-                    alertDiv.remove();
-                }
-            }, 5000);
-        }
-        
-        // Update system status
-        function updateSystemStatus() {
-            fetch('/api/system/status')
-                .then(response => response.json())
-                .then(data => {
-                    const statusElement = document.getElementById('system-status');
-                    if (statusElement) {
-                        if (data.services_running) {
-                            statusElement.innerHTML = '<span class="text-success">Online</span>';
-                        } else {
-                            statusElement.innerHTML = '<span class="text-warning">Issues Detected</span>';
-                        }
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating system status:', error);
-                });
-        }
-        
-        // Update system status every 30 seconds
-        setInterval(updateSystemStatus, 30000);
-        updateSystemStatus();
-        
-        // Auto-refresh data every 60 seconds for dashboard
-        if (window.location.pathname === '/') {
-            setInterval(() => {
-                location.reload();
-            }, 60000);
-        }
+
+        const container =
+          document.querySelector(".alert-container") ||
+          document.querySelector("main");
+        container.insertBefore(alertDiv, container.firstChild);
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+          if (alertDiv.parentNode) {
+            alertDiv.remove();
+          }
+        }, 5000);
+      }
+
+      // Update system status
+      function updateSystemStatus() {
+        fetch("/api/system/status")
+          .then((response) => response.json())
+          .then((data) => {
+            const statusElement = document.getElementById("system-status");
+            if (statusElement) {
+              if (data.services_running) {
+                statusElement.innerHTML =
+                  '<span class="text-success">Online</span>';
+              } else {
+                statusElement.innerHTML =
+                  '<span class="text-warning">Issues Detected</span>';
+              }
+            }
+          })
+          .catch((error) => {
+            console.error("Error updating system status:", error);
+          });
+      }
+
+      // Update system status every 30 seconds
+      setInterval(updateSystemStatus, 30000);
+      updateSystemStatus();
+
+      // Auto-refresh data every 60 seconds for dashboard
+      if (window.location.pathname === "/") {
+        setInterval(() => {
+          location.reload();
+        }, 60000);
+      }
     </script>
-    
+
     {% block extra_scripts %}{% endblock %}
-</body>
+  </body>
 </html>

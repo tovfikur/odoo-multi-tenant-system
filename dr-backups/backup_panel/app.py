@@ -157,7 +157,7 @@ class Config:
                 break
         
         # Set defaults
-        self.config.setdefault('DR_BACKUP_DESTINATIONS', 'aws')
+        self.config.setdefault('DR_BACKUP_DESTINATIONS', 'gdrive')
         self.config.setdefault('DR_NOTIFICATION_EMAIL', '')
         self.config.setdefault('ADMIN_USERNAME', 'admin')
         self.config.setdefault('ADMIN_PASSWORD_HASH', generate_password_hash('admin'))
@@ -181,8 +181,65 @@ class Config:
                     f.write(f'{key}="{value}"\n')
                 else:
                     f.write(f'{key}={value}\n')
+    
+    def sync_cloud_credentials(self):
+        """Sync cloud credentials from database to config file"""
+        try:
+            # Get Google Drive credentials from database
+            gdrive_conn = db.get_cloud_connection('google_drive')
+            logger.info(f"DEBUG: Retrieved Google Drive connection: {bool(gdrive_conn)}")
+            if gdrive_conn and gdrive_conn.get('credentials'):
+                creds = gdrive_conn['credentials']
+                logger.info(f"DEBUG: Credentials keys: {list(creds.keys())}")
+                
+                # Update config with credentials
+                if creds.get('client_id'):
+                    self.set('GDRIVE_CLIENT_ID', creds['client_id'])
+                    logger.info("DEBUG: Set GDRIVE_CLIENT_ID")
+                if creds.get('client_secret'):
+                    self.set('GDRIVE_CLIENT_SECRET', creds['client_secret'])
+                    logger.info("DEBUG: Set GDRIVE_CLIENT_SECRET")
+                if creds.get('access_token'):
+                    self.set('GDRIVE_ACCESS_TOKEN', creds['access_token'])
+                    logger.info("DEBUG: Set GDRIVE_ACCESS_TOKEN")
+                if creds.get('refresh_token'):
+                    self.set('GDRIVE_REFRESH_TOKEN', creds['refresh_token'])
+                    logger.info("DEBUG: Set GDRIVE_REFRESH_TOKEN")
+                
+                # Save updated config
+                self.save_config()
+                logger.info("Synced Google Drive credentials from database to config file")
+                return True
+            else:
+                logger.warning("No Google Drive credentials found in database")
+        except Exception as e:
+            logger.error(f"Failed to sync cloud credentials: {e}")
+        return False
 
+def ensure_encryption_key():
+    """Ensure encryption key exists and is properly secured"""
+    key_file = Path(config.get('DR_ENCRYPTION_KEY', '/app/data/encryption.key'))
+    
+    if not key_file.exists():
+        logger.info(f"Creating encryption key: {key_file}")
+        key_file.parent.mkdir(parents=True, exist_ok=True)
+        
+        # Generate a secure 256-bit key
+        import secrets
+        key = secrets.token_hex(32)
+        
+        with open(key_file, 'w') as f:
+            f.write(key)
+        
+        # Set restrictive permissions
+        os.chmod(key_file, 0o600)
+        logger.info("Encryption key created successfully")
+    
+    return str(key_file)
+
+# Call this function after config initialization
 config = Config()
+ensure_encryption_key()
 
 class User(UserMixin):
     """Simple user model for authentication"""
@@ -396,12 +453,20 @@ class DatabaseManager:
 
 db = DatabaseManager()
 
+# Sync cloud credentials from database to config file on startup
+try:
+    config.sync_cloud_credentials()
+    logger.info("Synced cloud credentials on startup")
+except Exception as e:
+    logger.warning(f"Failed to sync cloud credentials on startup: {e}")
+
 class BackupManager:
     """Manager for backup operations"""
     
     def __init__(self):
         self.config = config
         self.db = db
+        self.restore_sessions = {}  # Track ongoing restore operations
     
     def run_backup(self, destinations: Optional[List[str]] = None) -> Dict[str, Any]:
         """Run a backup operation"""
@@ -413,6 +478,44 @@ class BackupManager:
             
             # Set Docker environment indicator
             env['DOCKER_CONTAINER'] = '1'
+            
+            # Get Google Drive credentials for command line arguments
+            logger.info("DETAILED_DEBUG: === Starting Google Drive credential retrieval ===")
+            gdrive_creds = {}
+            try:
+                logger.info("DETAILED_DEBUG: Calling db.get_cloud_connection('google_drive')")
+                gdrive_conn = db.get_cloud_connection('google_drive')
+                logger.info(f"DETAILED_DEBUG: db.get_cloud_connection result: {gdrive_conn}")
+                
+                if gdrive_conn and gdrive_conn.get('credentials'):
+                    creds = gdrive_conn['credentials']
+                    logger.info(f"DETAILED_DEBUG: Raw credentials from database: {creds}")
+                    logger.info(f"DETAILED_DEBUG: Backup runtime credentials keys: {list(creds.keys())}")
+                    
+                    # Extract each credential with detailed logging
+                    client_id = creds.get('client_id', '')
+                    client_secret = creds.get('client_secret', '')
+                    access_token = creds.get('access_token', '')
+                    refresh_token = creds.get('refresh_token', '')
+                    
+                    logger.info(f"DETAILED_DEBUG: Extracted client_id: '{client_id}' (type: {type(client_id)}, len: {len(client_id)})")
+                    logger.info(f"DETAILED_DEBUG: Extracted client_secret: '{client_secret}' (type: {type(client_secret)}, len: {len(client_secret)})")
+                    logger.info(f"DETAILED_DEBUG: Extracted access_token: '{access_token[:50]}...' (type: {type(access_token)}, len: {len(access_token)})")
+                    logger.info(f"DETAILED_DEBUG: Extracted refresh_token: '{refresh_token[:50]}...' (type: {type(refresh_token)}, len: {len(refresh_token)})")
+                    
+                    gdrive_creds = {
+                        'client_id': client_id,
+                        'client_secret': client_secret,
+                        'access_token': access_token,
+                        'refresh_token': refresh_token
+                    }
+                    
+                    logger.info(f"DETAILED_DEBUG: Final gdrive_creds dictionary: {gdrive_creds}")
+                    logger.info(f"DETAILED_DEBUG: Google Drive credentials prepared for script arguments")
+                else:
+                    logger.warning("DETAILED_DEBUG: No Google Drive connection found in database during backup")
+            except Exception as e:
+                logger.warning(f"Failed to add Google Drive credentials to environment: {e}")
             
             # Set database connection info for Docker
             env['POSTGRES_HOST'] = 'postgres'
@@ -444,13 +547,42 @@ class BackupManager:
                     'session_id': None
                 }
             
-            # Determine shell command based on OS
+            # Determine shell command based on OS and add Google Drive credentials as arguments
             if os.name == 'nt':  # Windows
                 cmd = ['bash', str(script_path)]
             else:  # Unix-like
                 cmd = [str(script_path)]
             
-            logger.info(f"Executing command: {' '.join(cmd)}")
+            # Add Google Drive credentials as command line arguments if available
+            logger.info("DETAILED_DEBUG: === Preparing command line arguments ===")
+            logger.info(f"DETAILED_DEBUG: gdrive_creds exists: {bool(gdrive_creds)}")
+            logger.info(f"DETAILED_DEBUG: any(gdrive_creds.values()): {any(gdrive_creds.values()) if gdrive_creds else False}")
+            
+            if gdrive_creds and any(gdrive_creds.values()):
+                client_id_arg = gdrive_creds.get('client_id', '')
+                client_secret_arg = gdrive_creds.get('client_secret', '')
+                access_token_arg = gdrive_creds.get('access_token', '')
+                refresh_token_arg = gdrive_creds.get('refresh_token', '')
+                
+                logger.info(f"DETAILED_DEBUG: Command arg values before adding to cmd:")
+                logger.info(f"DETAILED_DEBUG:   client_id_arg: '{client_id_arg}' (len={len(client_id_arg)})")
+                logger.info(f"DETAILED_DEBUG:   client_secret_arg: '{client_secret_arg}' (len={len(client_secret_arg)})")
+                logger.info(f"DETAILED_DEBUG:   access_token_arg: '{access_token_arg[:50]}...' (len={len(access_token_arg)})")
+                logger.info(f"DETAILED_DEBUG:   refresh_token_arg: '{refresh_token_arg[:50]}...' (len={len(refresh_token_arg)})")
+                
+                cmd.extend([
+                    '--gdrive-client-id', client_id_arg,
+                    '--gdrive-client-secret', client_secret_arg,
+                    '--gdrive-access-token', access_token_arg,
+                    '--gdrive-refresh-token', refresh_token_arg
+                ])
+                
+                logger.info(f"DETAILED_DEBUG: Added Google Drive credentials as command line arguments")
+                logger.info(f"DETAILED_DEBUG: Full command (sanitized): {cmd[0]} {cmd[1] if len(cmd) > 1 and not cmd[1].startswith('--') else ''} --gdrive-client-id [REDACTED] --gdrive-client-secret [REDACTED] --gdrive-access-token [REDACTED] --gdrive-refresh-token [REDACTED]")
+            else:
+                logger.warning("DETAILED_DEBUG: No Google Drive credentials to add to command line arguments")
+            
+            logger.info(f"Executing command: {cmd[0]} {cmd[1] if len(cmd) > 1 and not cmd[1].startswith('--') else ''} [with credential args]")
             
             # Start backup process with detailed output capture
             process = subprocess.Popen(
@@ -620,6 +752,239 @@ class BackupManager:
                 
         except Exception as e:
             return {'error': str(e)}
+    
+    def restore_backup(self, session_id: str, restore_type: str = 'full', 
+                      target_location: str = 'local', restore_path: str = '/tmp/odoo-restore') -> Dict[str, Any]:
+        """Restore from backup"""
+        try:
+            import uuid
+            restore_id = str(uuid.uuid4())
+            
+            # Get backup session details
+            session = self.db.get_backup_session(session_id)
+            if not session:
+                return {'success': False, 'error': 'Backup session not found'}
+            
+            # Track restore session
+            self.restore_sessions[restore_id] = {
+                'id': restore_id,
+                'session_id': session_id,
+                'restore_type': restore_type,
+                'target_location': target_location,
+                'restore_path': restore_path,
+                'status': 'starting',
+                'start_time': datetime.now().isoformat(),
+                'progress': 0
+            }
+            
+            # Start restore in background thread
+            def run_restore():
+                try:
+                    self.restore_sessions[restore_id]['status'] = 'running'
+                    
+                    if target_location == 'gdrive':
+                        result = self._restore_from_gdrive(session_id, restore_type, restore_path)
+                    else:
+                        result = self._restore_from_local(session_id, restore_type, restore_path)
+                    
+                    self.restore_sessions[restore_id].update({
+                        'status': 'completed' if result['success'] else 'failed',
+                        'end_time': datetime.now().isoformat(),
+                        'progress': 100,
+                        'result': result
+                    })
+                    
+                except Exception as e:
+                    logger.error(f"Restore thread error: {e}")
+                    self.restore_sessions[restore_id].update({
+                        'status': 'failed',
+                        'end_time': datetime.now().isoformat(),
+                        'error': str(e),
+                        'progress': 0
+                    })
+            
+            thread = threading.Thread(target=run_restore)
+            thread.daemon = True
+            thread.start()
+            
+            return {
+                'success': True,
+                'restore_id': restore_id,
+                'message': 'Restore started successfully'
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to start restore: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def _restore_from_local(self, session_id: str, restore_type: str, restore_path: str) -> Dict[str, Any]:
+        """Restore from local backup"""
+        try:
+            # Find the backup directory for this session
+            backup_dirs = [
+                Path('/app/backups'),
+                Path('/opt/backups'),
+                BASE_DIR / 'backups',
+                Path('/tmp/backups')
+            ]
+            
+            backup_dir = None
+            for bd in backup_dirs:
+                if bd.exists():
+                    session_dir = bd / session_id
+                    if session_dir.exists():
+                        backup_dir = session_dir
+                        break
+            
+            if not backup_dir:
+                return {'success': False, 'error': f'Backup directory for session {session_id} not found'}
+            
+            # Run restore script
+            script_path = SCRIPTS_DIR / 'disaster-recovery.sh'
+            if not script_path.exists():
+                return {'success': False, 'error': 'Restore script not found'}
+            
+            env = os.environ.copy()
+            env.update({
+                'DR_RESTORE_PATH': restore_path,
+                'DR_RESTORE_TYPE': restore_type,
+                'DR_BACKUP_DIR': str(backup_dir)
+            })
+            
+            logger.info(f"Starting local restore from {backup_dir} to {restore_path}")
+            
+            cmd = [str(script_path), 'restore', str(backup_dir), restore_path]
+            
+            result = subprocess.run(
+                cmd,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=3600  # 1 hour timeout
+            )
+            
+            return {
+                'success': result.returncode == 0,
+                'output': result.stdout,
+                'error': result.stderr,
+                'return_code': result.returncode
+            }
+            
+        except subprocess.TimeoutExpired:
+            return {'success': False, 'error': 'Restore operation timed out'}
+        except Exception as e:
+            logger.error(f"Local restore failed: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def _restore_from_gdrive(self, session_id: str, restore_type: str, restore_path: str) -> Dict[str, Any]:
+        """Restore from Google Drive backup"""
+        try:
+            if not GoogleDriveBackup:
+                return {'success': False, 'error': 'Google Drive integration not available'}
+            
+            gdrive = GoogleDriveBackup(self.config.config)
+            if not gdrive.authenticate():
+                return {'success': False, 'error': 'Failed to authenticate with Google Drive'}
+            
+            # Download backup from Google Drive
+            download_path = f'/tmp/{session_id}_download'
+            os.makedirs(download_path, exist_ok=True)
+            
+            logger.info(f"Downloading backup {session_id} from Google Drive")
+            
+            # Find and download backup files
+            backup_files = gdrive.list_backups(session_id)
+            if not backup_files:
+                return {'success': False, 'error': f'No backup files found for session {session_id}'}
+            
+            for file_info in backup_files:
+                local_path = os.path.join(download_path, file_info['name'])
+                success = gdrive.download_file(file_info['id'], local_path)
+                if not success:
+                    return {'success': False, 'error': f'Failed to download {file_info["name"]}'}
+            
+            # Run local restore on downloaded files
+            return self._restore_from_local(session_id, restore_type, restore_path)
+            
+        except Exception as e:
+            logger.error(f"Google Drive restore failed: {e}")
+            return {'success': False, 'error': str(e)}
+    
+    def list_local_backups(self) -> List[Dict[str, Any]]:
+        """List available local backups"""
+        try:
+            backup_dirs = [
+                Path('/app/backups'),
+                Path('/opt/backups'),
+                BASE_DIR / 'backups',
+                Path('/tmp/backups')
+            ]
+            
+            backups = []
+            for backup_dir in backup_dirs:
+                if backup_dir.exists():
+                    for session_dir in backup_dir.iterdir():
+                        if session_dir.is_dir():
+                            manifest_file = session_dir / 'manifest.json'
+                            if manifest_file.exists():
+                                try:
+                                    with open(manifest_file, 'r') as f:
+                                        manifest = json.loads(f.read())
+                                    
+                                    backup_info = {
+                                        'session_id': session_dir.name,
+                                        'location': 'local',
+                                        'path': str(session_dir),
+                                        'size': self._get_directory_size(session_dir),
+                                        'created': manifest.get('start_time'),
+                                        'databases': manifest.get('databases', []),
+                                        'manifest': manifest
+                                    }
+                                    backups.append(backup_info)
+                                    
+                                except (json.JSONDecodeError, IOError) as e:
+                                    logger.warning(f"Failed to read manifest for {session_dir}: {e}")
+            
+            # Sort by creation time, newest first
+            backups.sort(key=lambda x: x.get('created', ''), reverse=True)
+            return backups
+            
+        except Exception as e:
+            logger.error(f"Failed to list local backups: {e}")
+            return []
+    
+    def list_gdrive_backups(self) -> List[Dict[str, Any]]:
+        """List available Google Drive backups"""
+        try:
+            if not GoogleDriveBackup:
+                return []
+            
+            gdrive = GoogleDriveBackup(self.config.config)
+            if not gdrive.authenticate():
+                return []
+            
+            return gdrive.list_backups()
+            
+        except Exception as e:
+            logger.error(f"Failed to list Google Drive backups: {e}")
+            return []
+    
+    def get_restore_status(self, restore_id: str) -> Dict[str, Any]:
+        """Get restore operation status"""
+        return self.restore_sessions.get(restore_id, {'error': 'Restore session not found'})
+    
+    def _get_directory_size(self, path: Path) -> int:
+        """Get total size of directory"""
+        try:
+            total_size = 0
+            for dirpath, dirnames, filenames in os.walk(path):
+                for filename in filenames:
+                    filepath = os.path.join(dirpath, filename)
+                    if os.path.exists(filepath):
+                        total_size += os.path.getsize(filepath)
+            return total_size
+        except Exception:
+            return 0
 
 backup_manager = BackupManager()
 
@@ -905,6 +1270,11 @@ def google_drive_oauth_callback():
             return redirect(url_for('settings'))
         
         # Exchange code for access token
+        logger.info("DETAILED_DEBUG: === OAuth callback processing ===")
+        logger.info(f"DETAILED_DEBUG: Received code: {code}")
+        logger.info(f"DETAILED_DEBUG: State verification passed")
+        logger.info(f"DETAILED_DEBUG: Connection credentials keys: {list(connection['credentials'].keys())}")
+        
         token_url = "https://oauth2.googleapis.com/token"
         token_data = {
             'client_id': connection['credentials']['client_id'],
@@ -914,12 +1284,23 @@ def google_drive_oauth_callback():
             'redirect_uri': url_for('google_drive_oauth_callback', _external=True)
         }
         
+        logger.info(f"DETAILED_DEBUG: Token exchange request data: {dict(token_data)}")
+        logger.info(f"DETAILED_DEBUG: Making POST request to: {token_url}")
+        
         token_response = requests.post(token_url, data=token_data)
+        logger.info(f"DETAILED_DEBUG: Token response status: {token_response.status_code}")
+        logger.info(f"DETAILED_DEBUG: Token response headers: {dict(token_response.headers)}")
+        
         token_response.raise_for_status()
         token_info = token_response.json()
+        logger.info(f"DETAILED_DEBUG: Token info received: {list(token_info.keys())}")
+        logger.info(f"DETAILED_DEBUG: Access token length: {len(token_info.get('access_token', ''))}")
+        logger.info(f"DETAILED_DEBUG: Refresh token length: {len(token_info.get('refresh_token', ''))}")
         
         # Update credentials with tokens
         credentials = connection['credentials'].copy()
+        logger.info(f"DETAILED_DEBUG: Original credentials before update: {list(credentials.keys())}")
+        
         credentials.update({
             'access_token': token_info['access_token'],
             'refresh_token': token_info.get('refresh_token'),
@@ -927,8 +1308,18 @@ def google_drive_oauth_callback():
             'expires_in': token_info.get('expires_in')
         })
         
+        logger.info(f"DETAILED_DEBUG: Updated credentials after merge: {list(credentials.keys())}")
+        logger.info(f"DETAILED_DEBUG: Final credential lengths:")
+        logger.info(f"DETAILED_DEBUG:   client_id: {len(credentials.get('client_id', ''))}")
+        logger.info(f"DETAILED_DEBUG:   client_secret: {len(credentials.get('client_secret', ''))}")
+        logger.info(f"DETAILED_DEBUG:   access_token: {len(credentials.get('access_token', ''))}")
+        logger.info(f"DETAILED_DEBUG:   refresh_token: {len(credentials.get('refresh_token', ''))}")
+        
         # Save updated credentials
         db.save_cloud_connection('google_drive', credentials, {'status': 'connected'})
+        
+        # Sync credentials to config file for backup script
+        config.sync_cloud_credentials()
         db.update_connection_test('google_drive', 'success')
         
         flash('Google Drive connected successfully!', 'success')
@@ -1021,9 +1412,118 @@ def connect_google_drive_manual():
         
         db.save_cloud_connection('google_drive', credentials, {'status': 'pending_oauth'})
         
+        # Sync partial credentials to config file
+        config.sync_cloud_credentials()
+        
         return jsonify({'message': 'Credentials saved. Use "Connect" button to complete OAuth flow.'})
         
     except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/debug-credentials')
+@login_required
+def debug_credentials():
+    """Debug endpoint to check credentials"""
+    try:
+        gdrive_conn = db.get_cloud_connection('google_drive')
+        if gdrive_conn:
+            # Remove sensitive data for debug output
+            debug_info = {
+                'connection_exists': True,
+                'credentials_keys': list(gdrive_conn.get('credentials', {}).keys()) if gdrive_conn.get('credentials') else [],
+                'has_client_id': bool(gdrive_conn.get('credentials', {}).get('client_id')),
+                'has_client_secret': bool(gdrive_conn.get('credentials', {}).get('client_secret')),
+                'has_access_token': bool(gdrive_conn.get('credentials', {}).get('access_token')),
+                'has_refresh_token': bool(gdrive_conn.get('credentials', {}).get('refresh_token')),
+                'config_values': {
+                    'GDRIVE_CLIENT_ID': bool(config.get('GDRIVE_CLIENT_ID')),
+                    'GDRIVE_CLIENT_SECRET': bool(config.get('GDRIVE_CLIENT_SECRET')),
+                    'GDRIVE_ACCESS_TOKEN': bool(config.get('GDRIVE_ACCESS_TOKEN')),
+                    'GDRIVE_REFRESH_TOKEN': bool(config.get('GDRIVE_REFRESH_TOKEN'))
+                }
+            }
+            return jsonify(debug_info)
+        else:
+            return jsonify({'connection_exists': False})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/sync-credentials', methods=['POST'])
+@login_required
+def sync_credentials():
+    """Sync cloud credentials from database to config file"""
+    try:
+        success = config.sync_cloud_credentials()
+        if success:
+            return jsonify({'message': 'Credentials synced successfully'})
+        else:
+            return jsonify({'error': 'Failed to sync credentials'}), 500
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/restore', methods=['POST'])
+@login_required
+def api_restore_backup():
+    """API endpoint to restore from backup"""
+    try:
+        data = request.get_json() or {}
+        session_id = data.get('session_id')
+        restore_type = data.get('restore_type', 'full')  # full, selective, database_only
+        target_location = data.get('target_location', 'local')  # local, gdrive
+        restore_path = data.get('restore_path', '/tmp/odoo-restore')
+        
+        if not session_id:
+            return jsonify({'error': 'Session ID is required'}), 400
+        
+        # Get backup session details
+        session = db.get_backup_session(session_id)
+        if not session:
+            return jsonify({'error': 'Backup session not found'}), 404
+        
+        # Start restore process
+        restore_result = backup_manager.restore_backup(
+            session_id=session_id,
+            restore_type=restore_type,
+            target_location=target_location,
+            restore_path=restore_path
+        )
+        
+        return jsonify(restore_result)
+        
+    except Exception as e:
+        logger.error(f"Restore API error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/restore/list-backups')
+@login_required
+def api_list_restore_backups():
+    """API endpoint to list available backups for restore"""
+    try:
+        source = request.args.get('source', 'local')  # local, gdrive
+        
+        if source == 'local':
+            backups = backup_manager.list_local_backups()
+        elif source == 'gdrive':
+            backups = backup_manager.list_gdrive_backups()
+        else:
+            return jsonify({'error': 'Invalid source specified'}), 400
+        
+        return jsonify({'backups': backups})
+        
+    except Exception as e:
+        logger.error(f"List backups API error: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/restore/status/<restore_id>')
+@login_required
+def api_restore_status(restore_id):
+    """API endpoint to get restore status"""
+    try:
+        status = backup_manager.get_restore_status(restore_id)
+        return jsonify(status)
+        
+    except Exception as e:
+        logger.error(f"Restore status API error: {e}")
         return jsonify({'error': str(e)}), 500
 
 @app.route('/api/connections')

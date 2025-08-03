@@ -530,10 +530,165 @@
     }
     
     function restoreFromBackup() {
-        if (confirm('WARNING: This will restore the system from this backup!\nThis action cannot be undone. Continue?')) {
-            showAlert('Restore functionality not yet implemented', 'warning');
-            // TODO: Implement restore functionality
+        // Show restore options modal
+        const modalHtml = `
+            <div class="modal fade" id="restoreModal" tabindex="-1">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">
+                                <i class="fas fa-undo"></i> Restore from Backup
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Warning:</strong> This will restore the system from backup. This action cannot be undone.
+                            </div>
+                            
+                            <form id="restoreForm">
+                                <div class="mb-3">
+                                    <label for="restoreType" class="form-label">Restore Type</label>
+                                    <select class="form-select" id="restoreType" name="restore_type" required>
+                                        <option value="full">Full System Restore</option>
+                                        <option value="database_only">Database Only</option>
+                                        <option value="files_only">Files Only</option>
+                                        <option value="selective">Selective Restore</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="targetLocation" class="form-label">Source Location</label>
+                                    <select class="form-select" id="targetLocation" name="target_location" required>
+                                        <option value="local">Local Backup</option>
+                                        <option value="gdrive">Google Drive</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="restorePath" class="form-label">Restore Path</label>
+                                    <input type="text" class="form-control" id="restorePath" name="restore_path" 
+                                           value="/tmp/odoo-restore" placeholder="/tmp/odoo-restore">
+                                    <div class="form-text">Directory where restored files will be placed</div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="confirmRestore" required>
+                                        <label class="form-check-label" for="confirmRestore">
+                                            I understand this will restore the system and cannot be undone
+                                        </label>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-danger" onclick="startRestore()">
+                                <i class="fas fa-undo"></i> Start Restore
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Add modal to DOM and show it
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        const modal = new bootstrap.Modal(document.getElementById('restoreModal'));
+        modal.show();
+        
+        // Remove modal from DOM when closed
+        document.getElementById('restoreModal').addEventListener('hidden.bs.modal', function () {
+            this.remove();
+        });
+    }
+    
+    function startRestore() {
+        const form = document.getElementById('restoreForm');
+        const formData = new FormData(form);
+        const confirmRestore = document.getElementById('confirmRestore').checked;
+        
+        if (!confirmRestore) {
+            showAlert('Please confirm that you understand the risks', 'warning');
+            return;
         }
+        
+        if (!form.checkValidity()) {
+            form.reportValidity();
+            return;
+        }
+        
+        const restoreData = {
+            session_id: sessionId,
+            restore_type: formData.get('restore_type'),
+            target_location: formData.get('target_location'),
+            restore_path: formData.get('restore_path')
+        };
+        
+        // Hide modal
+        bootstrap.Modal.getInstance(document.getElementById('restoreModal')).hide();
+        
+        // Show progress
+        showAlert('Starting restore operation...', 'info');
+        
+        fetch('/api/restore', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(restoreData)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Restore operation started successfully!', 'success');
+                // Start monitoring restore progress
+                monitorRestoreProgress(data.restore_id);
+            } else {
+                showAlert('Failed to start restore: ' + (data.error || 'Unknown error'), 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('Error starting restore operation', 'danger');
+        });
+    }
+    
+    function monitorRestoreProgress(restoreId) {
+        const checkProgress = () => {
+            fetch(`/api/restore/status/${restoreId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        showAlert('Restore session not found', 'danger');
+                        return;
+                    }
+                    
+                    const status = data.status;
+                    const progress = data.progress || 0;
+                    
+                    if (status === 'running') {
+                        showAlert(`Restore in progress... ${progress}%`, 'info');
+                        setTimeout(checkProgress, 5000); // Check again in 5 seconds
+                    } else if (status === 'completed') {
+                        showAlert('Restore completed successfully!', 'success');
+                        if (data.result && data.result.output) {
+                            console.log('Restore output:', data.result.output);
+                        }
+                    } else if (status === 'failed') {
+                        const errorMsg = data.error || (data.result && data.result.error) || 'Unknown error';
+                        showAlert('Restore failed: ' + errorMsg, 'danger');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking restore progress:', error);
+                    showAlert('Error monitoring restore progress', 'warning');
+                });
+        };
+        
+        checkProgress();
     }
     
     function viewLogs() {

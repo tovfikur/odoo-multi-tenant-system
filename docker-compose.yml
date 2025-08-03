@@ -217,6 +217,10 @@ services:
       - ./dr-backups/config:/app/config:ro
       - backup_panel_data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - odoo_filestore:/opt/odoo/filestore
+      - .:/app/project:ro
+      - ./nginx:/app/nginx:ro
+      - ./ssl:/app/ssl:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/system/status"]

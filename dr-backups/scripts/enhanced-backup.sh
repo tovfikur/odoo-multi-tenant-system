@@ -3,6 +3,52 @@
 # Enhanced Disaster Recovery Backup Script
 # Comprehensive backup system with encryption, cloud sync, and validation
 
+# Parse command line arguments for Google Drive credentials
+echo "DETAILED_DEBUG: === Starting command line argument parsing ==="
+echo "DETAILED_DEBUG: Total arguments received: $#"
+echo "DETAILED_DEBUG: All arguments: $@"
+
+GDRIVE_CLIENT_ID="967583927626-1kclefad7u5o40g1dhni7hme4ambemu9.apps.googleusercontent.com"
+GDRIVE_CLIENT_SECRET="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"
+GDRIVE_ACCESS_TOKEN=""
+GDRIVE_REFRESH_TOKEN=""
+
+while [[ $# -gt 0 ]]; do
+    echo "DETAILED_DEBUG: Processing argument: '$1'"
+    case $1 in
+        --gdrive-client-id)
+            GDRIVE_CLIENT_ID="$2"
+            echo "DETAILED_DEBUG: Set GDRIVE_CLIENT_ID='$GDRIVE_CLIENT_ID' (len=${#GDRIVE_CLIENT_ID})"
+            shift 2
+            ;;
+        --gdrive-client-secret)
+            GDRIVE_CLIENT_SECRET="$2"
+            echo "DETAILED_DEBUG: Set GDRIVE_CLIENT_SECRET='$GDRIVE_CLIENT_SECRET' (len=${#GDRIVE_CLIENT_SECRET})"
+            shift 2
+            ;;
+        --gdrive-access-token)
+            GDRIVE_ACCESS_TOKEN="$2"
+            echo "DETAILED_DEBUG: Set GDRIVE_ACCESS_TOKEN='${GDRIVE_ACCESS_TOKEN:0:50}...' (len=${#GDRIVE_ACCESS_TOKEN})"
+            shift 2
+            ;;
+        --gdrive-refresh-token)
+            GDRIVE_REFRESH_TOKEN="$2"
+            echo "DETAILED_DEBUG: Set GDRIVE_REFRESH_TOKEN='${GDRIVE_REFRESH_TOKEN:0:50}...' (len=${#GDRIVE_REFRESH_TOKEN})"
+            shift 2
+            ;;
+        *)
+            echo "DETAILED_DEBUG: Unknown argument '$1', skipping"
+            shift
+            ;;
+    esac
+done
+
+echo "DETAILED_DEBUG: === Final parsed credentials ==="
+echo "DETAILED_DEBUG: GDRIVE_CLIENT_ID='$GDRIVE_CLIENT_ID' (len=${#GDRIVE_CLIENT_ID})"
+echo "DETAILED_DEBUG: GDRIVE_CLIENT_SECRET='$GDRIVE_CLIENT_SECRET' (len=${#GDRIVE_CLIENT_SECRET})"
+echo "DETAILED_DEBUG: GDRIVE_ACCESS_TOKEN='${GDRIVE_ACCESS_TOKEN:0:50}...' (len=${#GDRIVE_ACCESS_TOKEN})"
+echo "DETAILED_DEBUG: GDRIVE_REFRESH_TOKEN='${GDRIVE_REFRESH_TOKEN:0:50}...' (len=${#GDRIVE_REFRESH_TOKEN})"
+
 # Temporarily disable strict error handling for debugging
 # set -euo pipefail
 set -uo pipefail
@@ -13,6 +59,7 @@ CONFIG_DIR="$(dirname "$SCRIPT_DIR")/config"
 source "$CONFIG_DIR/dr-config.env"
 
 # Detect Docker environment and override paths if needed
+# Around line 20-40 in enhanced-backup.sh
 if [ -f "/.dockerenv" ] || [ -n "${DOCKER_CONTAINER:-}" ]; then
     echo "[Docker Environment Detected] Overriding paths for container..."
     export DR_BACKUP_DIR="/app/data"
@@ -21,20 +68,21 @@ if [ -f "/.dockerenv" ] || [ -n "${DOCKER_CONTAINER:-}" ]; then
     export DR_ENCRYPTION_KEY="/app/data/encryption.key"
     export DR_RETENTION_DAYS="30"
     export DR_DEBUG_MODE="true"
-    export DR_BACKUP_DESTINATIONS="aws,gdrive"
+    export DR_BACKUP_DESTINATIONS="gdrive"
     export DR_ENCRYPTION_CIPHER="aes-256-cbc"
     export POSTGRES_HOST="postgres"
     export POSTGRES_PORT="5432"
     export POSTGRES_USER="odoo_master"
     export POSTGRES_PASSWORD="secure_password_123"
-    export PROJECT_ROOT="/opt/odoo"
-    export ODOO_FILESTORE_PATH="/opt/odoo/odoo_filestore"
-    export DOCKER_COMPOSE_FILE="/opt/odoo/docker-compose.yml"
-    export NGINX_CONFIG_PATH="/opt/odoo/nginx"
-    export SSL_CERTS_PATH="/opt/odoo/ssl"
+    
+    # Fix these paths for Docker environment
+    export PROJECT_ROOT="/app/project"
+    export ODOO_FILESTORE_PATH="/opt/odoo/filestore"
+    export DOCKER_COMPOSE_FILE="/app/project/docker-compose.yml"
+    export NGINX_CONFIG_PATH="/app/nginx"
+    export SSL_CERTS_PATH="/app/ssl"
+    
     echo "Docker environment variables set"
-    echo "DR_BACKUP_DIR: $DR_BACKUP_DIR"
-    echo "DR_ENCRYPTION_KEY: $DR_ENCRYPTION_KEY"
 fi
 
 # Ensure required directories exist
@@ -50,7 +98,7 @@ BACKUP_WARNINGS=0
 
 # Logging functions
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $1" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [INFO] $1" | tee -a "$LOG_FILE" >&2
 }
 
 log_error() {
@@ -59,13 +107,13 @@ log_error() {
 }
 
 log_warning() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARNING] $1" | tee -a "$LOG_FILE"
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] [WARNING] $1" | tee -a "$LOG_FILE" >&2
     ((BACKUP_WARNINGS++))
 }
 
 log_debug() {
     if [ "$DR_DEBUG_MODE" = "true" ]; then
-        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEBUG] $1" | tee -a "$LOG_FILE"
+        echo "[$(date '+%Y-%m-%d %H:%M:%S')] [DEBUG] $1" | tee -a "$LOG_FILE" >&2
     fi
 }
 
@@ -152,6 +200,25 @@ update_manifest_database() {
     fi
 }
 
+# Add this function after the logging functions
+wait_for_postgres() {
+    log "Waiting for PostgreSQL to be ready..."
+    local timeout=60
+    export PGPASSWORD="$POSTGRES_PASSWORD"
+    
+    while [ $timeout -gt 0 ]; do
+        if pg_isready -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" 2>/dev/null; then
+            log "PostgreSQL is ready"
+            return 0
+        fi
+        sleep 2
+        ((timeout-=2))
+    done
+    
+    log_error "PostgreSQL is not ready after 60 seconds"
+    return 1
+}
+
 # Get list of tenant databases
 get_tenant_databases() {
     log "Discovering tenant databases..."
@@ -159,16 +226,18 @@ get_tenant_databases() {
     export PGPASSWORD="$POSTGRES_PASSWORD"
     
     local databases
-    databases=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_MASTER_DB" -t -c \
-        "SELECT datname FROM pg_database WHERE datistemplate = false AND datname != 'postgres' AND datname LIKE 'kdoo_%';" | \
-        grep -v "^$" | sed 's/^ *//' | sed 's/ *$//')
+    # Remove the 'kdoo_' filter and get all non-system databases
+    databases=$(psql -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_MASTER_DB" -t -A -q -c \
+        "SELECT datname FROM pg_database WHERE datistemplate = false AND datname NOT IN ('postgres', 'template0', 'template1');" 2>/dev/null | \
+        grep -v "^$" | sed 's/^ *//' | sed 's/ *$//' | grep -E '^[a-zA-Z_][a-zA-Z0-9_-]*$' | grep -v '\[' | grep -v '[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]' | head -20)
     
     if [ -z "$databases" ]; then
-        log_warning "No tenant databases found"
-        return 1
+        log_warning "No tenant databases found, trying alternative discovery..."
+        # Try connecting to master database itself
+        databases="$POSTGRES_MASTER_DB"
     fi
     
-    log "Found tenant databases: $(echo "$databases" | tr '\n' ' ')"
+    log "Found databases: $(echo "$databases" | tr '\n' ' ')"
     echo "$databases"
 }
 
@@ -184,7 +253,7 @@ backup_database() {
     
     # Create database dump
     if ! pg_dump -h "$POSTGRES_HOST" -p "$POSTGRES_PORT" -U "$POSTGRES_USER" -d "$db_name" \
-        --verbose --clean --no-owner --no-privileges --format=custom > "$temp_file"; then
+        --verbose --clean --no-owner --no-privileges > "$temp_file" 2>/dev/null; then
         log_error "Failed to create dump for database: $db_name"
         return 1
     fi
@@ -467,6 +536,29 @@ upload_to_gdrive() {
             file_name=$(basename "$file_path")
             local remote_name="$SESSION_ID/$file_name"
             
+            # Debug: Check Google Drive credentials from command line arguments
+            log "DETAILED_DEBUG: === Function upload_to_gdrive called for file: $file_path ==="
+            log "DETAILED_DEBUG: GDRIVE credentials from args - CLIENT_ID length: ${#GDRIVE_CLIENT_ID}, CLIENT_SECRET length: ${#GDRIVE_CLIENT_SECRET}, ACCESS_TOKEN length: ${#GDRIVE_ACCESS_TOKEN}"
+            log "DETAILED_DEBUG: CLIENT_ID set: $([ -n \"$GDRIVE_CLIENT_ID\" ] && echo YES || echo NO), CLIENT_SECRET set: $([ -n \"$GDRIVE_CLIENT_SECRET\" ] && echo YES || echo NO)"
+            log "DETAILED_DEBUG: CLIENT_ID value: '${GDRIVE_CLIENT_ID}', CLIENT_SECRET value: '${GDRIVE_CLIENT_SECRET}'"
+            log "DETAILED_DEBUG: ACCESS_TOKEN value: '${GDRIVE_ACCESS_TOKEN:0:50}...', REFRESH_TOKEN value: '${GDRIVE_REFRESH_TOKEN:0:50}...'"
+            
+            # Export variables for the subprocess
+            log "DETAILED_DEBUG: Exporting environment variables for Python subprocess"
+            export GDRIVE_CLIENT_ID="$GDRIVE_CLIENT_ID"
+            export GDRIVE_CLIENT_SECRET="$GDRIVE_CLIENT_SECRET"
+            export GDRIVE_ACCESS_TOKEN="$GDRIVE_ACCESS_TOKEN"
+            export GDRIVE_REFRESH_TOKEN="$GDRIVE_REFRESH_TOKEN"
+            
+            log "DETAILED_DEBUG: Environment variables exported:"
+            log "DETAILED_DEBUG:   GDRIVE_CLIENT_ID='$GDRIVE_CLIENT_ID' (len=${#GDRIVE_CLIENT_ID})"
+            log "DETAILED_DEBUG:   GDRIVE_CLIENT_SECRET='$GDRIVE_CLIENT_SECRET' (len=${#GDRIVE_CLIENT_SECRET})"
+            log "DETAILED_DEBUG:   GDRIVE_ACCESS_TOKEN='${GDRIVE_ACCESS_TOKEN:0:50}...' (len=${#GDRIVE_ACCESS_TOKEN})"
+            log "DETAILED_DEBUG:   GDRIVE_REFRESH_TOKEN='${GDRIVE_REFRESH_TOKEN:0:50}...' (len=${#GDRIVE_REFRESH_TOKEN})"
+            
+            log "DETAILED_DEBUG: About to call Python script: $gdrive_script"
+            log "DETAILED_DEBUG: Python script command: python3 '$gdrive_script' --config '$CONFIG_DIR/dr-config.env' --upload '$file_path' --remote-name '$remote_name'"
+            
             if python3 "$gdrive_script" --config "$CONFIG_DIR/dr-config.env" --upload "$file_path" --remote-name "$remote_name"; then
                 log "Uploaded to Google Drive: $file_name"
                 ((upload_count++))
@@ -614,7 +706,7 @@ main() {
         chmod 600 "$DR_ENCRYPTION_KEY"
         log "Created temporary encryption key: $DR_ENCRYPTION_KEY"
     fi
-    
+    wait_for_postgres || exit 1
     # Backup databases
     log "Starting database backups..."
     local databases

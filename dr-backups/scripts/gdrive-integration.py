@@ -43,8 +43,52 @@ class GoogleDriveBackup:
         self.config = config_dict
         self.credentials_file = config_dict.get('GDRIVE_CREDENTIALS_FILE')
         self.token_file = config_dict.get('GDRIVE_TOKEN_FILE')
-        self.client_id = config_dict.get('GDRIVE_CLIENT_ID')
-        self.client_secret = config_dict.get('GDRIVE_CLIENT_SECRET')
+        # Try config first, then fall back to environment variables
+        self.client_id = config_dict.get('GDRIVE_CLIENT_ID') or os.environ.get('GDRIVE_CLIENT_ID')
+        self.client_secret = config_dict.get('GDRIVE_CLIENT_SECRET') or os.environ.get('GDRIVE_CLIENT_SECRET')
+        self.access_token = config_dict.get('GDRIVE_ACCESS_TOKEN') or os.environ.get('GDRIVE_ACCESS_TOKEN')
+        self.refresh_token = config_dict.get('GDRIVE_REFRESH_TOKEN') or os.environ.get('GDRIVE_REFRESH_TOKEN')
+        
+        # Debug: log environment variable reception with detailed logging
+        logging.basicConfig(level=logging.INFO, format='[%(asctime)s] [%(levelname)s] %(message)s')
+        logger = logging.getLogger(__name__)
+        
+        logger.info("DETAILED_DEBUG: === GoogleDriveUploader.__init__ called ===")
+        logger.info(f"DETAILED_DEBUG: config_dict received: {config_dict}")
+        
+        # Check environment variables in detail
+        env_client_id = os.environ.get('GDRIVE_CLIENT_ID', '')
+        env_client_secret = os.environ.get('GDRIVE_CLIENT_SECRET', '')
+        env_access_token = os.environ.get('GDRIVE_ACCESS_TOKEN', '')
+        env_refresh_token = os.environ.get('GDRIVE_REFRESH_TOKEN', '')
+        
+        logger.info(f"DETAILED_DEBUG: Environment variables received:")
+        logger.info(f"DETAILED_DEBUG:   GDRIVE_CLIENT_ID: '{env_client_id}' (type={type(env_client_id)}, len={len(env_client_id)})")
+        logger.info(f"DETAILED_DEBUG:   GDRIVE_CLIENT_SECRET: '{env_client_secret}' (type={type(env_client_secret)}, len={len(env_client_secret)})")
+        logger.info(f"DETAILED_DEBUG:   GDRIVE_ACCESS_TOKEN: '{env_access_token[:50]}...' (type={type(env_access_token)}, len={len(env_access_token)})")
+        logger.info(f"DETAILED_DEBUG:   GDRIVE_REFRESH_TOKEN: '{env_refresh_token[:50]}...' (type={type(env_refresh_token)}, len={len(env_refresh_token)})")
+        
+        # Check config variables in detail
+        config_client_id = config_dict.get('GDRIVE_CLIENT_ID')
+        config_client_secret = config_dict.get('GDRIVE_CLIENT_SECRET')
+        config_access_token = config_dict.get('GDRIVE_ACCESS_TOKEN')
+        config_refresh_token = config_dict.get('GDRIVE_REFRESH_TOKEN')
+        
+        logger.info(f"DETAILED_DEBUG: Config variables received:")
+        logger.info(f"DETAILED_DEBUG:   GDRIVE_CLIENT_ID: '{config_client_id}' (type={type(config_client_id)}, len={len(config_client_id) if config_client_id else 0})")
+        logger.info(f"DETAILED_DEBUG:   GDRIVE_CLIENT_SECRET: '{config_client_secret}' (type={type(config_client_secret)}, len={len(config_client_secret) if config_client_secret else 0})")
+        logger.info(f"DETAILED_DEBUG:   GDRIVE_ACCESS_TOKEN: '{str(config_access_token)[:50]}...' (type={type(config_access_token)}, len={len(config_access_token) if config_access_token else 0})")
+        logger.info(f"DETAILED_DEBUG:   GDRIVE_REFRESH_TOKEN: '{str(config_refresh_token)[:50]}...' (type={type(config_refresh_token)}, len={len(config_refresh_token) if config_refresh_token else 0})")
+        
+        logger.info(f"DETAILED_DEBUG: Final values after config/env precedence:")
+        logger.info(f"DETAILED_DEBUG:   self.client_id: '{self.client_id}' (type={type(self.client_id)}, len={len(self.client_id) if self.client_id else 0})")
+        logger.info(f"DETAILED_DEBUG:   self.client_secret: '{self.client_secret}' (type={type(self.client_secret)}, len={len(self.client_secret) if self.client_secret else 0})")
+        logger.info(f"DETAILED_DEBUG:   self.access_token: '{str(self.access_token)[:50] if self.access_token else 'None'}...' (type={type(self.access_token)}, len={len(self.access_token) if self.access_token else 0})")
+        logger.info(f"DETAILED_DEBUG:   self.refresh_token: '{str(self.refresh_token)[:50] if self.refresh_token else 'None'}...' (type={type(self.refresh_token)}, len={len(self.refresh_token) if self.refresh_token else 0})")
+        if env_client_id:
+            logger.info(f"DEBUG: CLIENT_ID starts with: {env_client_id[:20]}...")
+        if env_client_secret:
+            logger.info(f"DEBUG: CLIENT_SECRET starts with: {env_client_secret[:10]}...")
         self.folder_name = config_dict.get('GDRIVE_FOLDER_NAME', 'DR-Backups')
         # Parse chunk size, removing any comments
         chunk_size_str = config_dict.get('GDRIVE_UPLOAD_CHUNK_SIZE', '262144')
@@ -70,12 +114,38 @@ class GoogleDriveBackup:
         """
         creds = None
         
-        # Load existing token
-        if os.path.exists(self.token_file):
+        # First try to use tokens from config (from database sync)
+        self.logger.info("DETAILED_DEBUG: === authenticate() method called ===")
+        self.logger.info("DETAILED_DEBUG: Checking config credentials:")
+        self.logger.info(f"DETAILED_DEBUG:   client_id: '{self.client_id}' (bool={bool(self.client_id)}, len={len(self.client_id) if self.client_id else 0})")
+        self.logger.info(f"DETAILED_DEBUG:   client_secret: '{self.client_secret}' (bool={bool(self.client_secret)}, len={len(self.client_secret) if self.client_secret else 0})")
+        self.logger.info(f"DETAILED_DEBUG:   access_token: '{str(self.access_token)[:50] if self.access_token else 'None'}...' (bool={bool(self.access_token)}, len={len(self.access_token) if self.access_token else 0})")
+        self.logger.info(f"DETAILED_DEBUG:   refresh_token: '{str(self.refresh_token)[:50] if self.refresh_token else 'None'}...' (bool={bool(self.refresh_token)}, len={len(self.refresh_token) if self.refresh_token else 0})")
+        
+        if self.access_token and self.client_id and self.client_secret:
+            self.logger.info("DETAILED_DEBUG: All required credentials available, attempting OAuth token creation")
+            try:
+                creds = Credentials(
+                    token=self.access_token,
+                    refresh_token=self.refresh_token,
+                    client_id=self.client_id,
+                    client_secret=self.client_secret,
+                    token_uri='https://oauth2.googleapis.com/token',
+                    scopes=SCOPES
+                )
+                self.logger.info("Using Google Drive credentials from config")
+            except Exception as e:
+                self.logger.warning(f"Could not load credentials from config: {e}")
+        else:
+            self.logger.error("No Google Drive credentials available")
+        
+        # Fallback: Load existing token from file
+        if not creds and os.path.exists(self.token_file):
             try:
                 creds = Credentials.from_authorized_user_file(self.token_file, SCOPES)
+                self.logger.info("Using Google Drive credentials from token file")
             except Exception as e:
-                self.logger.warning(f"Could not load existing token: {e}")
+                self.logger.warning(f"Could not load existing token file: {e}")
         
         # If no valid credentials, get new ones
         if not creds or not creds.valid:
@@ -289,6 +359,68 @@ class GoogleDriveBackup:
             
         except HttpError as e:
             self.logger.error(f"Failed to list files: {e}")
+            return []
+    
+    def list_backups(self, session_id: Optional[str] = None) -> List[Dict[str, Any]]:
+        """List backup files, optionally filtered by session ID
+        
+        Args:
+            session_id: Optional session ID to filter by
+            
+        Returns:
+            List of backup file information dictionaries
+        """
+        if not self.service:
+            self.logger.error("Google Drive service not initialized")
+            return []
+        
+        folder_id = self.get_or_create_folder()
+        if not folder_id:
+            return []
+        
+        try:
+            # Build query
+            query = f"'{folder_id}' in parents and trashed=false"
+            if session_id:
+                query += f" and name contains '{session_id}'"
+            
+            results = self.service.files().list(
+                q=query,
+                orderBy="createdTime desc",
+                pageSize=1000,
+                fields="files(id,name,size,createdTime,modifiedTime,description)"
+            ).execute()
+            
+            files = results.get('files', [])
+            
+            # Group files by backup session
+            backups = {}
+            for file in files:
+                # Extract session ID from filename (assuming format: session_id_filename)
+                parts = file['name'].split('_', 2)
+                if len(parts) >= 2:
+                    file_session_id = f"{parts[0]}_{parts[1]}"
+                    
+                    if file_session_id not in backups:
+                        backups[file_session_id] = {
+                            'session_id': file_session_id,
+                            'location': 'gdrive',
+                            'files': [],
+                            'total_size': 0,
+                            'created': file['createdTime']
+                        }
+                    
+                    backups[file_session_id]['files'].append(file)
+                    backups[file_session_id]['total_size'] += int(file.get('size', 0))
+                    
+                    # Use earliest creation time
+                    if file['createdTime'] < backups[file_session_id]['created']:
+                        backups[file_session_id]['created'] = file['createdTime']
+            
+            return list(backups.values())
+            
+        except HttpError as e:
+            self.logger.error(f"Failed to list backups: {e}")
             return []
     
     def delete_file(self, file_id: str) -> bool:
