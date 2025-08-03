@@ -756,7 +756,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 **🚀 Ready to Transform Your Business?**
 
-[**Start Free Trial**](https://khudroo.com) | [**Schedule Demo**](https://khudroo.com) | [**Contact Sales**](https://khudroo.com)
+[**Start Free Trial**](http://khudroo.com) | [**Schedule Demo**](http://khudroo.com) | [**Contact Sales**](http://khudroo.com)
 
 ---
 
