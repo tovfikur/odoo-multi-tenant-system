@@ -405,7 +405,7 @@ Attach relevant screenshots and log files
 2. **Level 2:** Development Team Lead (for technical blockers)
 3. **Level 3:** Project Manager (for timeline impacts)
 4. **Level 4:** Business Development team (for requirement clarifications)
-NB: Now only report to Tovfikur Rahman
+5.  (Now only report to Tovfikur Rahman)
 
 ### **Communication Channels:**
 - **Bug Reports:** GitHub Issues / ERP
