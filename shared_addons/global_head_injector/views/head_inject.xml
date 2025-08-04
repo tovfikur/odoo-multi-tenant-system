@@ -262,33 +262,32 @@
     transition: transform 0.25s ease;
 }
 
-.dropdown-menu[role="menu"] {
-    background: linear-gradient(-45deg, #174ea6, #1a73e8, #2e7ce8, #1565c0, #1976d2, #174ea6) !important;
-    background-size: 600% 600% !important;
-    animation: gradientShift 4s ease-in-out infinite !important;
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: center;
-    align-content: center;
-}
+        .dropdown-menu[role="menu"] {
+            background: linear-gradient(-45deg, #174ea6, #1a73e8, #2e7ce8, #1565c0, #1976d2, #174ea6) !important;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: center;
+            align-content: center;
 
-@keyframes gradientShift {
-    0% {
-        background-position: 0% 0% !important;
-    }
-    25% {
-        background-position: 100% 0% !important;
-    }
-    50% {
-        background-position: 100% 100% !important;
-    }
-    75% {
-        background-position: 0% 100% !important;
-    }
-    100% {
-        background-position: 0% 0% !important;
-    }
-}
+        }
+
+        .dropdown-menu[role="menu"]::before {
+            content: '' !important;
+            position: absolute !important;
+            width: 150px !important;
+            height: 150px !important;
+            background: radial-gradient(circle, rgba(255,255,255,0.4) 0%, rgba(255,255,255,0.2) 40%, transparent 70%) !important;
+            border-radius: 50% !important;
+            pointer-events: none !important;
+            z-index: 1 !important;
+            opacity: 0 !important;
+            transition: opacity 0.3s ease !important;
+            transform: translate(-50%, -50%) !important;
+        }
+
+        .dropdown-menu[role="menu"].active::before {
+            opacity: 1 !important;
+        }
 
 .mk_apps_sidebar_panel .mk_apps_sidebar_panel_item:hover {
     background: linear-gradient(-45deg, #174ea6, #1a73e8, #2e7ce8, #1565c0, #1976d2, #174ea6) !important;
@@ -323,6 +322,40 @@
 
 
                 </style>
+
+
+                    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const dropdown = document.querySelector('.dropdown-menu[role="menu"]');
+            const light = dropdown.querySelector('::before') || dropdown;
+
+            dropdown.addEventListener('mouseenter', function() {
+                this.classList.add('active');
+            });
+
+            dropdown.addEventListener('mouseleave', function() {
+                this.classList.remove('active');
+            });
+
+            dropdown.addEventListener('mousemove', function(e) {
+                if (this.classList.contains('active')) {
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    this.style.setProperty('--mouse-x', x + 'px');
+                    this.style.setProperty('--mouse-y', y + 'px');
+                    
+                    // Update the position of the light effect
+                    const beforeElement = window.getComputedStyle(this, '::before');
+                    this.style.setProperty('--light-x', x + 'px');
+                    this.style.setProperty('--light-y', y + 'px');
+                }
+            });
+        });
+    </script>
+
+
             </xpath>
         </template>
     </data>
