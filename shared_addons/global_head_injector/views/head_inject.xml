@@ -86,9 +86,6 @@
                         letter-spacing: 1px !important;
                     }
                 }
-                .o_control_panel {
-                    background: linear-gradient(135deg, #174ea6 0%, #1a73e8 100%) !important;
-                }
 
 
                 .o-dropdown .dropdown:hover {
@@ -112,9 +109,6 @@
                     background: linear-gradient(135deg,  #1a73e8 0%, #174ea6 100%) !important;
                 }
 
-                .o_control_panel_breadcrumbs {
-                    color: white !important;
-                }
 
                 .oe_login_form ~ .text-center.small.mt-4.pt-3.border-top {
                     display: none !important;
