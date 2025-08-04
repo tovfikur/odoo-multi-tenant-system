@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="multi_approval_type_action" model="ir.actions.act_window">
+        <field name="name">Approval Types</field>
+        <field name="res_model">multi.approval.type</field>
+        <field name="view_mode">kanban,tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{'search_default_to_review': 1}</field>
+        <field name="view_id" eval="False" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a new approval type
+            </p>
+        </field>
+    </record>
+    <record id="multi_approval_action" model="ir.actions.act_window">
+        <field name="name">Approvals</field>
+        <field name="res_model">multi.approval</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{}</field>
+        <field name="view_id" eval="False" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a new approval request
+            </p>
+        </field>
+    </record>
+    <record id="multi_approval_approval_action" model="ir.actions.act_window">
+        <field name="name">My Approvals</field>
+        <field name="res_model">multi.approval</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{'search_default_to_review': 1}</field>
+        <field name="view_id" eval="False" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a new approval request
+            </p>
+        </field>
+    </record>
+    <record id="multi_approval_request_action" model="ir.actions.act_window">
+        <field name="name">My Requests</field>
+        <field name="res_model">multi.approval</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[]</field>
+        <field name="context">{'search_default_my_request': 1}</field>
+        <field name="view_id" eval="False" />
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Add a new approval request
+            </p>
+        </field>
+    </record>    
+</odoo>

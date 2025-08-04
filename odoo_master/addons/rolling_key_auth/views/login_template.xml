@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="rolling_key_login_form" name="Rolling Key Login Form">
+        <t t-call="web.login_layout">
+            <form class="oe_login_form" role="form" method="post" action="/auth/rolling_key">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                
+                <div class="form-group field-login">
+                    <label for="special_key">Special Key</label>
+                    <input type="text" placeholder="Enter Special Key" name="special_key" id="special_key" required="required" autofocus="autofocus" autocomplete="off"/>
+                </div>
+                
+                <div class="form-group field-login">
+                    <label for="username">Username (Optional)</label>
+                    <input type="text" placeholder="Username" name="username" id="username" autocomplete="username"/>
+                </div>
+                
+                <div class="clearfix oe_login_buttons text-center">
+                    <button type="submit" class="btn btn-primary">Log in</button>
+                </div>
+            </form>
+        </t>
+    </template>
+</odoo>

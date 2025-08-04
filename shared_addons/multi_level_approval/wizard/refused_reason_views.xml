@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<odoo>
+        <record id="refused_reason_view_form" model="ir.ui.view">
+            <field name="name">refused_reason_view_form</field>
+            <field name="model">refused.reason</field>
+            <field name="arch" type="xml">
+                <form string="Refused Reason">
+                    <group class="oe_title">
+                        <field name="reason"/>
+                    </group>
+                    <footer>
+                        <button name="action_reason_apply" string="Refuse" type="object" class="btn-primary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+
+        <record id="refused_reason_action" model="ir.actions.act_window">
+            <field name="name">Refused Reason</field>
+            <field name="type">ir.actions.act_window</field>
+            <field name="res_model">refused.reason</field>
+            <field name="view_mode">form</field>
+            <field name="view_id" ref="refused_reason_view_form"/>
+            <field name="target">new</field>
+        </record>
+</odoo>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_multi_level_approval_root" name="Approvals"
+        groups="group_approval_user,group_approval_manager,base.group_user"
+        web_icon="multi_level_approval,static/description/approval_icon.png" sequence="100" />
+
+    <menuitem id="menu_multi_level_approval_type" name="Dashboard"
+        parent="menu_multi_level_approval_root" sequence="0"
+        action="multi_approval_type_action"/>
+
+    <menuitem id="menu_multi_approval" name="Approvals"
+        parent="menu_multi_level_approval_root" sequence="10"
+        />
+    <menuitem id="menu_multi_approval_approval" name="To Review"
+        parent="menu_multi_approval" sequence="10"
+        action="multi_approval_approval_action"/>
+
+    <menuitem id="menu_multi_request_approval" name="My Requests"
+        parent="menu_multi_approval" sequence="20"
+        action="multi_approval_request_action"/>
+    
+    <menuitem id="menu_multi_approval_configuration" name="Configuration"
+        parent="menu_multi_level_approval_root" sequence="11"
+        />
+</odoo>

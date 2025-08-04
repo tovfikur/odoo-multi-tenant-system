@@ -8,8 +8,20 @@ echo "DETAILED_DEBUG: === Starting command line argument parsing ==="
 echo "DETAILED_DEBUG: Total arguments received: $#"
 echo "DETAILED_DEBUG: All arguments: $@"
 
-GDRIVE_CLIENT_ID="967583927626-1kclefad7u5o40g1dhni7hme4ambemu9.apps.googleusercontent.com"
-GDRIVE_CLIENT_SECRET="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"
+# Load environment variables from config file
+ENV_FILE="../dr-config.env"
+echo "DETAILED_DEBUG: === Loading environment config from $ENV_FILE ==="
+if [[ -f "$ENV_FILE" ]]; then
+    # shellcheck disable=SC1091
+    source "$ENV_FILE"
+    echo "DETAILED_DEBUG: Loaded env variables from $ENV_FILE"
+else
+    echo "WARNING: Env file '$ENV_FILE' not found. Proceeding without it."
+fi
+
+# Set default values from environment (can be overridden by arguments)
+GDRIVE_CLIENT_ID="${GDRIVE_CLIENT_ID:-}"
+GDRIVE_CLIENT_SECRET="${GDRIVE_CLIENT_SECRET:-}"
 GDRIVE_ACCESS_TOKEN=""
 GDRIVE_REFRESH_TOKEN=""
 

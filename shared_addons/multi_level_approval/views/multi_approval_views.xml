@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="multi_approval_view_tree" model="ir.ui.view">
+        <field name="name">multi_approval_view_tree</field>
+        <field name="model">multi.approval</field>
+        <field name="arch" type="xml">
+            <tree string="Approvals" import="false">
+                <field name="priority" widget="priority"/>
+                <field name="name"/>
+                <field name="user_id"/>
+                <field name="request_date"/>
+                <field name="pic_id"/>
+                <field name="deadline"/>
+                <field name="state"/>
+            </tree>
+        </field>
+    </record>
+    <record id="multi_approval_view_filter" model="ir.ui.view">
+        <field name="name">multi_approval_view_filter</field>
+        <field name="model">multi.approval</field>
+        <field name="arch" type="xml">
+            <search string="Approvals">
+                <filter string="My Request" name="my_request" domain="[(&apos;user_id&apos;, &apos;=&apos;, uid)]"/>
+                <separator/>
+                <field name="name"/>
+                <separator/>
+                <filter string="My Approvals" name="my_approval" domain="[(&apos;pic_id&apos;,&apos;=&apos;,uid)]"/>
+                <filter string="To Review" name="to_review" domain="[(&apos;pic_id&apos;,&apos;=&apos;, uid), (&apos;state&apos;, &apos;=&apos;, &apos;Submitted&apos;)]"/>
+                <separator/>
+                <field name="user_id"/>
+                <field name="pic_id"/>
+                <field name="type_id"/>
+                <group expand="1" string="Group By">
+                    <filter string="User" name="user" context="{&apos;group_by&apos;:&apos;user_id&apos;}"/>
+                    <filter string="Type" name="type_id" context="{&apos;group_by&apos;:&apos;type_id&apos;}"/>
+                    <filter string="Status" name="status" context="{&apos;group_by&apos;:&apos;state&apos;}"/>
+                    <separator orientation="vertical"/>
+                    <filter string="Request Date" name="date" context="{&apos;group_by&apos;:&apos;request_date:month&apos;}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+    
+    <record id="multi_approval_view_form" model="ir.ui.view">
+        <field name="name">multi_approval_view_form</field>
+        <field name="model">multi.approval</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="is_pic" invisible="1"/>
+                    <button name="action_submit" type="object" string="Submit"  class="oe_highlight"/>
+                    <button name="action_approve" type="object" string="Approve" class="oe_highlight"/>
+                    <button name="%(multi_level_approval.refused_reason_action)d" type="action" string="Refuse"/>
+                    <widget name="attach_document" string="Attach Document" action="message_post"/>
+                    <widget name="attach_document" string="Attach Document" action="message_post" highlight="1"/>
+                    <button name="action_cancel" type="object" string="Cancel" />
+                    <field name="state" widget="statusbar" statusbar_visible="Draft,Submitted,Approved,Cancel"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" class="oe_edit_only"/>
+                        <h1>
+                            <field name="name" placeholder="Title"/>
+                        </h1>
+                        <field name="priority" widget="priority"/>
+                    </div>
+                    <div style="background: rgb(245, 245, 245);margin: 0px !important;padding: 0px 10px;border: 1px solid rgb(207, 207, 207);">
+                        <group colspan="2" col="4">
+                            <field name="user_id" readonly="1"/>
+                            <field name="request_date"/>
+                            <field name="type_id" options="{&apos;no_create&apos;: True, &apos;no_open&apos;: True}"/>
+                            <field name="deadline" readonly="1"/>
+                            <field name="pic_id" readonly="1"/>
+                        </group>
+                        <group colspan="2" col="4">
+                            <field name="contact_id"/>
+                            <field name="date"/>
+                            <label for="date_start" string="Period"/>
+                            <div>
+                                <div>
+                                    <span>From: </span>
+                                    <field name="date_start" class="oe_inline"/>
+                                </div>
+                                <div>
+                                    <span>to: </span>
+                                    <field name="date_end" class="oe_inline"/>
+                                </div>
+                            </div>
+                            <field name="item_id"/>
+                            <field name="quantity"/>
+                            <field name="amount"/>
+                            <field name="payment"/>
+                            <field name="reference"/>
+                            <field name="location"/>
+                        </group>
+                    </div>
+                    <notebook>
+                        <page string="Description" name="description">
+                            <field name="description" nolabel="1" placeholder="Description"/>
+                        </page>
+                        <page string="Approver(s)" name="approver">
+                            <field name="line_ids">
+                                <tree editable="top" create="false" delete="false">
+                                    <field name="name" readonly="1"/>
+                                    <field name="user_id" readonly="1"/>
+                                    <field name="require_opt" readonly="1"/>
+                                    <field name="deadline"/>
+                                    <field name="state" readonly="1"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Options" name="options" invisible="1">
+                            <group string="Fields" name="option_settings">
+                                <group>
+                                    <field name="document_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="contact_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="date_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="period_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="item_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                </group>
+                                <group>
+                                    <field name="quantity_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="amount_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="payment_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="reference_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="location_opt" widget="radio" options="{&apos;horizontal&apos;: true}"/>
+                                    <field name="attachment_number" invisible="1"/>
+                                </group>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids" widget="mail_followers" groups="base.group_user"/>
+                    <field name="message_ids" widget="mail_thread"/>
+                </div>
+            </form>
+        </field>
+    </record>
+</odoo>

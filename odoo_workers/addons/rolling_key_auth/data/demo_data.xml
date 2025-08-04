@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Demo rolling key auth record -->
+        <record id="demo_rolling_key_auth" model="rolling.key.auth">
+            <field name="name">Demo Rolling Key Auth</field>
+            <field name="user_id" ref="base.user_admin"/>
+            <field name="seed">demo_seed_12345</field>
+            <field name="last_key_index">0</field>
+            <field name="is_active">True</field>
+        </record>
+    </data>
+</odoo>

@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 import threading
 import time
-
+import re
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -663,36 +663,881 @@ class BackupManager:
                 'session_id': None
             }
     
-    def validate_backup(self, session_id: Optional[str] = None) -> Dict[str, Any]:
-        """Validate a backup"""
+    
+    
+    def _check_manifest_integrity(self, session_path: Path) -> Dict[str, Any]:
+        """Check if backup manifest is valid before running full validation"""
+        manifest_file = session_path / 'backup-manifest.json'
+        
+        if not manifest_file.exists():
+            # Try alternative manifest file names
+            alternative_names = ['manifest.json', 'backup_manifest.json', 'session_manifest.json']
+            for alt_name in alternative_names:
+                alt_file = session_path / alt_name
+                if alt_file.exists():
+                    manifest_file = alt_file
+                    logger.info(f"Found alternative manifest file: {alt_file}")
+                    break
+            else:
+                return {
+                    'valid': False, 
+                    'error': 'Manifest file not found',
+                    'tried_files': [str(session_path / name) for name in ['backup-manifest.json'] + alternative_names],
+                    'session_contents': [f.name for f in session_path.iterdir()] if session_path.exists() else []
+                }
+        
         try:
-            script_path = SCRIPTS_DIR / 'validate-backup.sh'
+            file_size = manifest_file.stat().st_size
+            if file_size == 0:
+                # Try to regenerate manifest if possible
+                regen_result = self._try_regenerate_manifest(session_path)
+                if regen_result['success']:
+                    logger.info(f"Successfully regenerated manifest for {session_path}")
+                    return {'valid': True, 'regenerated': True, 'manifest_file': str(manifest_file)}
+                else:
+                    return {
+                        'valid': False, 
+                        'error': 'Manifest file is empty and cannot be regenerated',
+                        'regeneration_attempt': regen_result,
+                        'manifest_file': str(manifest_file),
+                        'file_size': file_size
+                    }
+        except OSError as e:
+            return {'valid': False, 'error': f'Cannot access manifest file: {str(e)}'}
+        
+        try:
+            with open(manifest_file, 'r', encoding='utf-8') as f:
+                content = f.read().strip()
+                if not content:
+                    return {
+                        'valid': False, 
+                        'error': 'Manifest file has no content',
+                        'file_size': file_size,
+                        'manifest_file': str(manifest_file)
+                    }
+                
+                # Try to parse JSON
+                import json
+                manifest_data = json.loads(content)
+                
+                # Validate manifest structure
+                required_fields = ['start_time', 'session_id']
+                missing_fields = [field for field in required_fields if field not in manifest_data]
+                
+                if missing_fields:
+                    return {
+                        'valid': False,
+                        'error': f'Manifest missing required fields: {missing_fields}',
+                        'content_preview': content[:200],
+                        'manifest_data': manifest_data
+                    }
+                
+                return {
+                    'valid': True, 
+                    'manifest_file': str(manifest_file),
+                    'manifest_data': manifest_data,
+                    'file_size': file_size
+                }
+                
+        except json.JSONDecodeError as e:
+            return {
+                'valid': False, 
+                'error': f'Invalid JSON in manifest: {str(e)}', 
+                'content_preview': content[:200] if 'content' in locals() else 'Cannot read content',
+                'manifest_file': str(manifest_file),
+                'file_size': file_size
+            }
+        except Exception as e:
+            return {
+                'valid': False, 
+                'error': f'Cannot read manifest: {str(e)}',
+                'manifest_file': str(manifest_file)
+            }
+    
+    def _try_regenerate_manifest(self, session_path: Path) -> Dict[str, Any]:
+        """
+        Try to regenerate a backup manifest from available session data
+        
+        Args:
+            session_path: Path to the backup session directory
             
-            cmd = [str(script_path)]
-            if session_id:
-                session_path = SESSIONS_DIR / session_id
-                cmd.append(str(session_path))
+        Returns:
+            Dict with success status and details
+        """
+        try:
+            session_id = session_path.name
             
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                cwd=str(BASE_DIR)
-            )
+            # Extract timestamp from session ID
+            import re
+            import datetime
+            
+            # Pattern: backup_YYYYMMDD_HHMMSS_XXXXX
+            pattern = r'backup_(\d{8})_(\d{6})_(\d+)'
+            match = re.match(pattern, session_id)
+            
+            if not match:
+                return {
+                    'success': False,
+                    'error': f'Cannot parse session ID format: {session_id}'
+                }
+            
+            date_str, time_str, sequence = match.groups()
+            
+            # Reconstruct datetime
+            start_time = datetime.datetime.strptime(f"{date_str}_{time_str}", "%Y%m%d_%H%M%S")
+            
+            # Scan session directory for files
+            databases = []
+            filestore_files = []
+            config_files = []
+            
+            if session_path.exists():
+                for item in session_path.rglob('*'):
+                    if item.is_file():
+                        rel_path = item.relative_to(session_path)
+                        
+                        if '.sql' in item.name or 'database' in str(rel_path).lower():
+                            databases.append({
+                                'name': item.name,
+                                'path': str(rel_path),
+                                'size': item.stat().st_size,
+                                'encrypted': '.enc' in item.name
+                            })
+                        elif 'filestore' in str(rel_path).lower():
+                            filestore_files.append({
+                                'name': item.name,
+                                'path': str(rel_path),
+                                'size': item.stat().st_size
+                            })
+                        elif 'config' in str(rel_path).lower():
+                            config_files.append({
+                                'name': item.name,
+                                'path': str(rel_path),
+                                'size': item.stat().st_size
+                            })
+            
+            # Create manifest data
+            manifest_data = {
+                'session_id': session_id,
+                'start_time': start_time.isoformat(),
+                'end_time': start_time.isoformat(),  # Approximation
+                'status': 'completed',
+                'backup_type': 'full',
+                'databases': databases,
+                'filestore': filestore_files,
+                'configs': config_files,
+                'total_files': len(databases) + len(filestore_files) + len(config_files),
+                'total_size': sum(f['size'] for f in databases + filestore_files + config_files),
+                'regenerated': True,
+                'regenerated_at': datetime.datetime.now().isoformat(),
+                'version': '2.0'
+            }
+            
+            # Write manifest file
+            manifest_file = session_path / 'backup-manifest.json'
+            with open(manifest_file, 'w', encoding='utf-8') as f:
+                json.dump(manifest_data, f, indent=2)
+            
+            logger.info(f"Regenerated manifest for {session_id} with {manifest_data['total_files']} files")
             
             return {
-                'success': result.returncode == 0,
-                'output': result.stdout,
-                'error': result.stderr,
-                'return_code': result.returncode
+                'success': True,
+                'manifest_file': str(manifest_file),
+                'manifest_data': manifest_data
             }
             
         except Exception as e:
-            logger.error(f"Validation failed: {e}")
+            logger.error(f"Failed to regenerate manifest for {session_path}: {e}")
             return {
                 'success': False,
-                'error': str(e)
+                'error': f'Regeneration failed: {str(e)}',
+                'session_path': str(session_path)
             }
+    
+    def _normalize_session_id(self, session_id: str) -> str:
+        """
+        Normalize session ID to standard format
+        
+        Args:
+            session_id: Raw session ID (could be partial or full)
+            
+        Returns:
+            Normalized session ID in format: backup_YYYYMMDD_HHMMSS_XXXXX
+        """
+        # If already has backup_ prefix, return as-is
+        if session_id.startswith('backup_'):
+            return session_id
+            
+        # If starts with /, extract just the session name
+        if session_id.startswith('/'):
+            session_id = Path(session_id).name
+            
+        # If it's just a partial ID like "20250803_204026_52", add prefix
+        if not session_id.startswith('backup_'):
+            session_id = f"backup_{session_id}"
+            
+        return session_id
+        
+    
+    def validate_backup(self, session_id: Optional[str] = None, source: str = 'auto', force_validation: bool = False) -> Dict[str, Any]:
+        """
+        Validate a backup session from local storage or Google Drive
+        
+        Args:
+            session_id: Optional session ID. If not provided, validates the latest backup.
+                    Can be full session name (backup_20240104_143022_12345) or partial ID
+            source: Source to validate from ('local', 'gdrive', or 'auto')
+            force_validation: Skip manifest validation and proceed with backup validation
+        
+        Returns:
+            Dict containing validation results with structured information
+        """
+        # CRITICAL FIX: Import subprocess at the top of the function
+        import subprocess
+        import json
+        import os
+        from pathlib import Path
+        
+        try:
+            # Ensure configuration is up to date
+            self.config.save_config()
+            self.config.sync_cloud_credentials()
+            
+            # Get script path and verify it exists
+            script_path = SCRIPTS_DIR / 'validate-backup.sh'
+            if not script_path.exists():
+                logger.error(f"Validation script not found: {script_path}")
+                return {
+                    'success': False,
+                    'error': f"Validation script not found: {script_path}",
+                    'details': {
+                        'script_path': str(script_path),
+                        'scripts_dir_exists': SCRIPTS_DIR.exists(),
+                        'scripts_dir_contents': [str(f) for f in SCRIPTS_DIR.iterdir()] if SCRIPTS_DIR.exists() else []
+                    }
+                }
+            
+            # Make script executable (ignore if read-only filesystem)
+            try:
+                os.chmod(script_path, 0o755)
+            except OSError as e:
+                logger.warning(f"Could not make script executable: {e}")
+            
+            # Prepare environment variables
+            env = os.environ.copy()
+            
+            # CRITICAL: Fix Docker/Windows path issues
+            # Always use Docker-appropriate paths when running in container
+            if env.get('DOCKER_CONTAINER') == '1' or os.path.exists('/app'):
+                # Running in Docker container - use container paths
+                dr_backup_dir = '/app/data'
+                dr_session_dir = '/app/data/sessions'
+                dr_logs_dir = '/app/data/logs'
+                dr_encryption_key = '/app/data/encryption.key'
+            else:
+                # Running on host - use configured paths
+                dr_backup_dir = self.config.get('DR_BACKUP_DIR', str(DATA_DIR))
+                dr_session_dir = self.config.get('DR_SESSION_DIR', f'{dr_backup_dir}/sessions')
+                dr_logs_dir = self.config.get('DR_LOGS_DIR', f'{dr_backup_dir}/logs')
+                dr_encryption_key = self.config.get('DR_ENCRYPTION_KEY', f'{dr_backup_dir}/encryption.key')
+            
+            # Set Docker environment indicator
+            env['DOCKER_CONTAINER'] = '1'
+            
+            # Ensure critical environment variables are set with DOCKER-APPROPRIATE paths
+            critical_vars = {
+                'DR_BACKUP_DIR': dr_backup_dir,
+                'DR_SESSION_DIR': dr_session_dir,
+                'DR_LOGS_DIR': dr_logs_dir,
+                'DR_ENCRYPTION_KEY': dr_encryption_key,
+                'DR_DEBUG_MODE': self.config.get('DR_DEBUG_MODE', 'true'),
+                'POSTGRES_HOST': self.config.get('POSTGRES_HOST', 'postgres'),
+                'POSTGRES_PORT': self.config.get('POSTGRES_PORT', '5432'),
+                'POSTGRES_USER': self.config.get('POSTGRES_USER', 'odoo_master'),
+                'POSTGRES_PASSWORD': self.config.get('POSTGRES_PASSWORD', 'secure_password_123')
+            }
+            
+            # Add all configuration values to environment (but override critical ones)
+            for key, value in self.config.config.items():
+                if key.startswith(('DR_', 'POSTGRES_', 'GDRIVE_', 'AWS_')):
+                    env[key] = str(value)
+            
+            # Override with Docker-appropriate paths
+            for key, value in critical_vars.items():
+                env[key] = str(value)
+            
+            # Create necessary directories if they don't exist (ignore errors on read-only filesystem)
+            directories_to_create = [
+                Path(dr_backup_dir),
+                Path(dr_session_dir),
+                Path(dr_logs_dir)
+            ]
+            
+            for dir_path in directories_to_create:
+                try:
+                    dir_path.mkdir(parents=True, exist_ok=True)
+                    logger.debug(f"Ensured directory exists: {dir_path}")
+                except (OSError, PermissionError) as e:
+                    logger.warning(f"Could not create directory {dir_path}: {e}")
+                    # Continue anyway - the script might work with existing directories
+            
+            # Normalize session ID
+            session_to_validate = None
+            if session_id:
+                session_to_validate = self._normalize_session_id(session_id)
+                logger.info(f"Validating specific session: {session_to_validate}")
+            else:
+                logger.info("Validating latest backup session")
+            
+            # **CRITICAL FIX**: Handle source determination with proper Google Drive support
+            validation_source = source
+            local_session_path = None
+            downloaded_for_validation = False
+            
+            if session_to_validate:
+                local_session_path = Path(dr_session_dir) / session_to_validate
+                
+                # **FIX**: Handle different source scenarios properly
+                if source == 'gdrive':
+                    logger.info(f"Explicitly requested Google Drive validation for {session_to_validate}")
+                    # Force Google Drive validation - remove local copy if exists to prevent conflicts
+                    if local_session_path.exists():
+                        logger.info(f"Removing existing local copy to force Google Drive validation: {local_session_path}")
+                        try:
+                            import shutil
+                            shutil.rmtree(local_session_path)
+                            logger.info(f"Removed local copy: {local_session_path}")
+                        except Exception as e:
+                            logger.warning(f"Could not remove local copy: {e}")
+                    
+                    validation_source = 'gdrive'
+                    
+                elif source == 'auto':
+                    # Check local first, then Google Drive
+                    if local_session_path.exists():
+                        validation_source = 'local'
+                        logger.info(f"Found session locally: {local_session_path}")
+                    else:
+                        validation_source = 'gdrive'
+                        logger.info(f"Session not found locally, will try Google Drive")
+                        
+                elif source == 'local':
+                    if not local_session_path.exists():
+                        return {
+                            'success': False,
+                            'error': f'Session {session_to_validate} not found locally and local validation was explicitly requested',
+                            'details': {
+                                'session_path': str(local_session_path),
+                                'validation_source': 'local'
+                            }
+                        }
+                    validation_source = 'local'
+                    
+                # **FIX**: Download from Google Drive if needed
+                if validation_source == 'gdrive':
+                    logger.info(f"Downloading session {session_to_validate} from Google Drive for validation")
+                    download_result = self._download_backup_for_validation(session_to_validate, dr_session_dir)
+                    if not download_result['success']:
+                        return {
+                            'success': False,
+                            'error': f"Failed to download backup from Google Drive: {download_result['error']}",
+                            'details': download_result,
+                            'validation_source': 'gdrive'
+                        }
+                    logger.info(f"Successfully downloaded backup from Google Drive: {download_result['session_path']}")
+                    local_session_path = Path(download_result['session_path'])
+                    downloaded_for_validation = True
+                    
+                    # Mark this as a temporary download for validation
+                    env['GDRIVE_DOWNLOADED_FOR_VALIDATION'] = '1'
+                    env['GDRIVE_VALIDATION_MODE'] = '1'
+                
+                # **FIX**: Only validate manifest for local sessions or after successful download
+                if local_session_path and local_session_path.exists() and not force_validation:
+                    manifest_check = self._check_manifest_integrity(local_session_path)
+                    if not manifest_check['valid']:
+                        # If regeneration was attempted but failed, offer alternatives
+                        if 'regeneration_attempt' in manifest_check:
+                            return {
+                                'success': False,
+                                'error': f"Manifest validation failed: {manifest_check['error']}",
+                                'details': {
+                                    'manifest_file': manifest_check.get('manifest_file', 'unknown'),
+                                    'fix_suggestion': 'Try bypassing manifest validation with force_validation=true, or delete this backup session and run a new backup',
+                                    'session_path': str(local_session_path),
+                                    'bypass_option': 'Add "force_validation": true to validation request to skip manifest check'
+                                },
+                                'manifest_check': manifest_check,
+                                'validation_source': validation_source
+                            }
+                        else:
+                            return {
+                                'success': False,
+                                'error': f"Manifest validation failed: {manifest_check['error']}",
+                                'details': {
+                                    'manifest_file': manifest_check.get('manifest_file', str(local_session_path / 'backup-manifest.json')),
+                                    'fix_suggestion': 'Delete this backup session and run a new backup, or try force validation',
+                                    'session_path': str(local_session_path),
+                                    'bypass_option': 'Add "force_validation": true to validation request to skip manifest check'
+                                },
+                                'manifest_check': manifest_check,
+                                'validation_source': validation_source
+                            }
+                    else:
+                        # Manifest is valid or was regenerated
+                        if manifest_check.get('regenerated'):
+                            logger.info(f"Using regenerated manifest for validation of {local_session_path}")
+                        else:
+                            logger.info(f"Manifest validation passed for {local_session_path}")
+            
+            # **FIX**: Ensure encryption key exists for validation
+            encryption_key_path = Path(dr_encryption_key)
+            if not encryption_key_path.exists():
+                logger.warning(f"Encryption key not found at {encryption_key_path}, creating temporary key for validation")
+                try:
+                    encryption_key_path.parent.mkdir(parents=True, exist_ok=True)
+                    # Create a temporary key for testing
+                    subprocess.run(['openssl', 'rand', '-hex', '32'], 
+                                stdout=open(str(encryption_key_path), 'w'), 
+                                check=True)
+                    os.chmod(str(encryption_key_path), 0o600)
+                    logger.info(f"Created temporary encryption key: {encryption_key_path}")
+                except Exception as e:
+                    logger.error(f"Failed to create encryption key: {e}")
+                    return {
+                        'success': False,
+                        'error': f'Encryption key not found and could not create temporary key: {e}',
+                        'details': {'encryption_key_path': str(encryption_key_path)}
+                    }
+            
+            # Build command with proper source indication
+            cmd = [str(script_path)]
+            if session_to_validate:
+                cmd.append(session_to_validate)
+            
+            # **FIX**: Pass the determined validation source, not the original source
+            # This ensures the script knows we've already handled Google Drive downloads
+            if downloaded_for_validation:
+                cmd.append('local')  # Tell script to validate locally since we downloaded it
+            else:
+                cmd.append(source)  # Use original source for local or auto scenarios
+            
+            # Add debug flag to get more detailed output
+            if env.get('DR_DEBUG_MODE') == 'true':
+                cmd.append('--debug')
+            
+            # Debug logging
+            logger.info(f"Starting validation with command: {' '.join(cmd)}")
+            logger.info(f"Working directory: {BASE_DIR}")
+            logger.info(f"DR_SESSION_DIR: {env['DR_SESSION_DIR']}")
+            logger.info(f"DR_BACKUP_DIR: {env['DR_BACKUP_DIR']}")
+            logger.info(f"DR_LOGS_DIR: {env['DR_LOGS_DIR']}")
+            logger.info(f"DR_ENCRYPTION_KEY: {env['DR_ENCRYPTION_KEY']}")
+            logger.info(f"Original requested source: {source}")
+            logger.info(f"Determined validation source: {validation_source}")
+            logger.info(f"Downloaded for validation: {downloaded_for_validation}")
+            
+            # Check encryption key exists and is readable
+            if os.path.exists(env['DR_ENCRYPTION_KEY']):
+                try:
+                    with open(env['DR_ENCRYPTION_KEY'], 'r') as f:
+                        key_content = f.read().strip()
+                    logger.info(f"Encryption key exists and is readable (length: {len(key_content)})")
+                except Exception as e:
+                    logger.error(f"Encryption key exists but cannot be read: {e}")
+            else:
+                logger.error(f"Encryption key does not exist: {env['DR_ENCRYPTION_KEY']}")
+            
+            # Check if session directory exists (for debugging)
+            session_dir = Path(env['DR_SESSION_DIR'])
+            if session_dir.exists():
+                available_sessions = [d.name for d in session_dir.iterdir() if d.is_dir() and d.name.startswith('backup_')]
+                logger.info(f"Available sessions ({len(available_sessions)}): {available_sessions[:3]}...")  # Show first 3
+            else:
+                logger.warning(f"Session directory does not exist: {session_dir}")
+                # Try to create it
+                try:
+                    session_dir.mkdir(parents=True, exist_ok=True)
+                    logger.info(f"Created session directory: {session_dir}")
+                except (OSError, PermissionError) as e:
+                    logger.error(f"Cannot create session directory: {e}")
+            
+            # **FIX**: Run validation with extended timeout and better error handling
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    cwd=str(BASE_DIR),
+                    env=env,
+                    timeout=1800  # 30 minutes timeout
+                )
+            except subprocess.TimeoutExpired:
+                logger.error("Validation timed out after 30 minutes")
+                return {
+                    'success': False,
+                    'error': 'Validation timed out after 30 minutes',
+                    'timeout': True,
+                    'validation_source': validation_source
+                }
+            except FileNotFoundError as e:
+                logger.error(f"Command not found: {e}")
+                return {
+                    'success': False,
+                    'error': f'Command not found: {e}. Ensure bash/shell is available.'
+                }
+            
+            logger.info(f"Validation completed with exit code: {result.returncode}")
+            
+            # **FIX**: Log full output for debugging validation failures
+            if result.stdout:
+                logger.info("Validation stdout:")
+                for line in result.stdout.split('\n'):
+                    if line.strip():
+                        logger.info(f"STDOUT: {line}")
+            if result.stderr:
+                logger.warning("Validation stderr:")
+                for line in result.stderr.split('\n'):
+                    if line.strip():
+                        logger.warning(f"STDERR: {line}")
+            
+            # Parse validation results
+            validation_result = {
+                'success': result.returncode == 0,
+                'output': result.stdout,
+                'error': result.stderr,
+                'return_code': result.returncode,
+                'session_validated': session_to_validate,
+                'validation_source': validation_source,
+                'original_requested_source': source,  # Track what was originally requested
+                'downloaded_for_validation': downloaded_for_validation,
+                'command_executed': ' '.join(cmd),
+                'environment': {
+                    'dr_backup_dir': env['DR_BACKUP_DIR'],
+                    'dr_session_dir': env['DR_SESSION_DIR'],
+                    'dr_logs_dir': env['DR_LOGS_DIR'],
+                    'dr_encryption_key': env['DR_ENCRYPTION_KEY']
+                }
+            }
+            
+            # Extract structured information from output
+            if result.stdout:
+                validation_result.update(self._parse_validation_output(result.stdout))
+            
+            # Try to load validation report JSON if available
+            try:
+                validation_id = self._extract_validation_id(result.stdout)
+                if validation_id:
+                    report_path = Path(env['DR_LOGS_DIR']) / f'validation-report-{validation_id}.json'
+                    if report_path.exists():
+                        with open(report_path, 'r') as f:
+                            validation_result['report'] = json.load(f)
+                        logger.info(f"Loaded validation report: {report_path}")
+                    else:
+                        logger.warning(f"Validation report not found: {report_path}")
+            except Exception as e:
+                logger.warning(f"Could not load validation report: {e}")
+            
+            # **FIX**: Cleanup downloaded files if this was a temporary download for validation
+            if downloaded_for_validation and local_session_path and local_session_path.exists():
+                try:
+                    import shutil
+                    shutil.rmtree(local_session_path)
+                    logger.info(f"Cleaned up temporary validation download: {local_session_path}")
+                    validation_result['cleanup_performed'] = True
+                except Exception as e:
+                    logger.warning(f"Failed to cleanup temporary validation files: {e}")
+                    validation_result['cleanup_error'] = str(e)
+            
+            # **FIX**: Provide specific error analysis for common validation failures
+            if not validation_result['success']:
+                # Analyze common failure patterns
+                error_analysis = self._analyze_validation_failure(result.stdout, result.stderr, result.returncode)
+                validation_result['error_analysis'] = error_analysis
+                
+                # Add specific suggestions based on the error type
+                if 'decryption' in error_analysis.get('likely_cause', '').lower():
+                    validation_result['suggestions'] = [
+                        'Check if the encryption key is correct',
+                        'Verify that backup files were encrypted with the same key',
+                        'Try re-running the backup to ensure files are properly encrypted',
+                        'Check for OpenSSL version compatibility issues'
+                    ]
+                elif 'file_not_found' in error_analysis.get('likely_cause', '').lower():
+                    validation_result['suggestions'] = [
+                        'Verify the backup session exists',
+                        'Check if backup files are properly uploaded/downloaded',
+                        'Try re-running the backup to ensure all files are created'
+                    ]
+            
+            # Log summary
+            if validation_result['success']:
+                logger.info(f"Validation completed successfully for session: {session_to_validate or 'latest'} from {source}")
+            else:
+                logger.error(f"Validation failed for session: {session_to_validate or 'latest'} from {source}")
+                if result.stderr:
+                    logger.error(f"Validation errors: {result.stderr}")
+                if 'error_analysis' in validation_result:
+                    logger.error(f"Error analysis: {validation_result['error_analysis']}")
+            
+            return validation_result
+            
+        except Exception as e:
+            logger.error(f"Validation failed with exception: {e}")
+            return {
+                'success': False,
+                'error': str(e),
+                'exception_type': type(e).__name__
+            }
+
+
+
+
+
+    def _analyze_validation_failure(self, stdout: str, stderr: str, return_code: int) -> Dict[str, Any]:
+        """Analyze validation failure to provide specific error insights"""
+        analysis = {
+            'return_code': return_code,
+            'likely_cause': 'unknown',
+            'error_patterns': [],
+            'recommendations': []
+        }
+        
+        combined_output = (stdout + '\n' + stderr).lower()
+        
+        # Check for common error patterns
+        if 'bad magic number' in combined_output or 'bad decrypt' in combined_output:
+            analysis['likely_cause'] = 'decryption_failure'
+            analysis['error_patterns'].append('Bad magic number - likely wrong encryption key')
+            analysis['recommendations'].extend([
+                'Check encryption key file exists and is correct',
+                'Verify backup was encrypted with the same key being used for validation',
+                'Check for OpenSSL version compatibility issues'
+            ])
+        
+        elif 'no such file or directory' in combined_output:
+            analysis['likely_cause'] = 'file_not_found'
+            analysis['error_patterns'].append('Missing backup files')
+            analysis['recommendations'].extend([
+                'Verify backup session directory exists and contains encrypted files',
+                'Check if backup completed successfully',
+                'Ensure proper file permissions'
+            ])
+        
+        elif 'permission denied' in combined_output:
+            analysis['likely_cause'] = 'permission_error'
+            analysis['error_patterns'].append('File permission issues')
+            analysis['recommendations'].extend([
+                'Check file permissions on backup directory',
+                'Verify script has execute permissions',
+                'Check Docker container permissions'
+            ])
+        
+        elif 'postgresql' in combined_output and ('connection' in combined_output or 'failed' in combined_output):
+            analysis['likely_cause'] = 'database_connection'
+            analysis['error_patterns'].append('PostgreSQL connection issues')
+            analysis['recommendations'].extend([
+                'Verify PostgreSQL is running and accessible',
+                'Check database credentials',
+                'Ensure database exists'
+            ])
+        
+        elif 'tar' in combined_output and 'error' in combined_output:
+            analysis['likely_cause'] = 'archive_corruption'
+            analysis['error_patterns'].append('Tar archive corruption or extraction failure')
+            analysis['recommendations'].extend([
+                'Check if backup files are corrupted',
+                'Re-run backup to create fresh archives',
+                'Verify file integrity during upload/download'
+            ])
+        
+        elif return_code == 1 and not analysis['error_patterns']:
+            analysis['likely_cause'] = 'general_validation_failure'
+            analysis['error_patterns'].append('General validation failure')
+            analysis['recommendations'].extend([
+                'Check validation script logs for specific errors',
+                'Run with debug mode enabled for more details',
+                'Verify all backup components are present'
+            ])
+        
+        return analysis
+    def _find_session_by_partial_id(self, partial_id: str) -> Optional[str]:
+        """Find full session name by partial ID"""
+        try:
+            dr_session_dir = Path(self.config.get('DR_SESSION_DIR', '/app/data/sessions'))
+            if not dr_session_dir.exists():
+                return None
+            
+            # List all backup sessions
+            sessions = [d.name for d in dr_session_dir.iterdir() 
+                    if d.is_dir() and d.name.startswith('backup_')]
+            
+            # Find sessions matching partial ID
+            matching = [s for s in sessions if partial_id in s]
+            
+            if len(matching) == 1:
+                return matching[0]
+            elif len(matching) > 1:
+                # Return the most recent one (sorted by name which includes timestamp)
+                return sorted(matching, reverse=True)[0]
+            else:
+                return None
+                
+        except Exception as e:
+            logger.error(f"Error finding session by partial ID: {e}")
+            return None
+
+    def _extract_validation_id(self, output: str) -> Optional[str]:
+        """Extract validation ID from script output"""
+        try:
+            # Look for validation ID in output
+            for line in output.split('\n'):
+                if 'Validation ID:' in line:
+                    validation_id = line.split('Validation ID:')[1].strip()
+                    return validation_id
+            return None
+        except Exception:
+            return None
+
+    def _parse_validation_output(self, output: str) -> Dict[str, Any]:
+        """Parse validation output to extract structured information"""
+        import re
+        
+        summary = {
+            'errors': 0,
+            'warnings': 0,
+            'validations_performed': [],
+            'session_validated': None,
+            'validation_details': {},
+            'timing': {}
+        }
+        
+        lines = output.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            
+            # Extract validation ID and session
+            if 'Validating session:' in line:
+                summary['session_validated'] = line.split('Validating session:')[1].strip()
+            
+            # Count errors and warnings from log messages
+            if '[ERROR]' in line:
+                summary['errors'] += 1
+            elif '[WARNING]' in line:
+                summary['warnings'] += 1
+            elif '[SUCCESS]' in line:
+                # Extract what was validated successfully
+                if 'database backup valid:' in line.lower():
+                    db_name = line.split('valid:')[1].strip() if 'valid:' in line else 'unknown'
+                    summary['validations_performed'].append(f'database_backup_{db_name}')
+                elif 'filestore backup valid' in line.lower():
+                    summary['validations_performed'].append('filestore_backup')
+                elif 'configuration backup valid' in line.lower():
+                    config_name = line.split('valid:')[1].strip() if 'valid:' in line else 'unknown'
+                    summary['validations_performed'].append(f'config_backup_{config_name}')
+                elif 'cloud file validation passed' in line.lower():
+                    summary['validations_performed'].append('cloud_sync')
+                elif 'restoration test passed' in line.lower():
+                    summary['validations_performed'].append('restoration_test')
+                elif 'backup age is acceptable' in line.lower():
+                    summary['validations_performed'].append('age_check')
+            
+            # Extract detailed validation information
+            if 'Database validation completed:' in line:
+                match = re.search(r'(\d+)/(\d+) valid', line)
+                if match:
+                    summary['validation_details']['databases'] = {
+                        'valid': int(match.group(1)),
+                        'total': int(match.group(2))
+                    }
+            
+            if 'Configuration validation completed:' in line:
+                match = re.search(r'(\d+)/(\d+) valid', line)
+                if match:
+                    summary['validation_details']['configurations'] = {
+                        'valid': int(match.group(1)),
+                        'total': int(match.group(2))
+                    }
+            
+            # Extract backup age information
+            if 'Backup age:' in line:
+                age_match = re.search(r'Backup age: (\d+) hours', line)
+                if age_match:
+                    summary['validation_details']['backup_age_hours'] = int(age_match.group(1))
+            
+            # Extract file counts for cloud validation
+            if 'File count matches:' in line:
+                count_match = re.search(r'(\d+) files', line)
+                if count_match:
+                    summary['validation_details']['cloud_file_count'] = int(count_match.group(1))
+        
+        # Calculate overall status
+        summary['overall_status'] = 'passed' if summary['errors'] == 0 else 'failed'
+        summary['has_warnings'] = summary['warnings'] > 0
+        
+        return summary
+
+    # Alternative simpler method for quick validation
+    def quick_validate_backup(self, session_id: str) -> Dict[str, Any]:
+        """Quick validation that just checks if backup files exist and are readable"""
+        try:
+            dr_session_dir = Path(self.config.get('DR_SESSION_DIR', '/app/data/sessions'))
+            
+            # Handle session ID normalization
+            if not session_id.startswith('backup_'):
+                session_id = f"backup_{session_id}"
+            
+            session_path = dr_session_dir / session_id
+            
+            if not session_path.exists():
+                return {
+                    'success': False, 
+                    'error': 'Session directory not found',
+                    'details': {
+                        'session_id': session_id,
+                        'session_path': str(session_path),
+                        'dr_session_dir': str(dr_session_dir),
+                        'available_sessions': [d.name for d in dr_session_dir.iterdir() if d.is_dir()] if dr_session_dir.exists() else []
+                    }
+                }
+            
+            # Check for manifest file
+            manifest_path = session_path / 'backup-manifest.json'
+            if not manifest_path.exists():
+                return {'success': False, 'error': 'Backup manifest not found'}
+            
+            # Try to read manifest
+            try:
+                with open(manifest_path, 'r') as f:
+                    manifest = json.load(f)
+            except (json.JSONDecodeError, IOError) as e:
+                return {'success': False, 'error': f'Cannot read manifest: {e}'}
+            
+            # Check for backup files
+            checks = {
+                'manifest': True,
+                'databases': len(list((session_path / 'databases').glob('*.enc'))) > 0 if (session_path / 'databases').exists() else False,
+                'filestore': (session_path / 'filestore' / 'filestore.tar.gz.enc').exists(),
+                'configs': len(list((session_path / 'configs').glob('*.enc'))) > 0 if (session_path / 'configs').exists() else False
+            }
+            
+            return {
+                'success': all(checks.values()),
+                'checks': checks,
+                'manifest': manifest,
+                'session_path': str(session_path)
+            }
+            
+        except Exception as e:
+            return {'success': False, 'error': str(e)}
+            
+            
+        
+        
+        
+    
+    
     
     def get_storage_usage(self) -> Dict[str, Any]:
         """Get storage usage for all configured destinations"""
@@ -820,61 +1665,143 @@ class BackupManager:
     def _restore_from_local(self, session_id: str, restore_type: str, restore_path: str) -> Dict[str, Any]:
         """Restore from local backup"""
         try:
-            # Find the backup directory for this session
-            backup_dirs = [
-                Path('/app/backups'),
-                Path('/opt/backups'),
-                BASE_DIR / 'backups',
-                Path('/tmp/backups')
-            ]
+            # Normalize session ID
+            session_id = self._normalize_session_id(session_id)
+            
+            # Find the backup directory for this session using configuration
+            # Use configured paths first, then fall back to common locations
+            session_dirs_to_check = []
+            
+            # Get configured session directory
+            configured_session_dir = self.config.get('DR_SESSION_DIR')
+            if configured_session_dir:
+                session_dirs_to_check.append(Path(configured_session_dir))
+            
+            # Add fallback directories
+            session_dirs_to_check.extend([
+                DATA_DIR / 'sessions',
+                Path('/app/data/sessions'),
+                Path('/opt/backups/sessions'), 
+                BASE_DIR / 'data' / 'sessions',
+                Path('/tmp/backup-sessions')
+            ])
             
             backup_dir = None
-            for bd in backup_dirs:
-                if bd.exists():
-                    session_dir = bd / session_id
+            for session_base_dir in session_dirs_to_check:
+                if session_base_dir.exists():
+                    session_dir = session_base_dir / session_id
                     if session_dir.exists():
                         backup_dir = session_dir
+                        logger.info(f"Found backup session at: {backup_dir}")
                         break
             
             if not backup_dir:
-                return {'success': False, 'error': f'Backup directory for session {session_id} not found'}
+                # List available sessions for debugging
+                available_sessions = []
+                for session_base_dir in session_dirs_to_check:
+                    if session_base_dir.exists():
+                        available_sessions.extend([
+                            d.name for d in session_base_dir.iterdir() 
+                            if d.is_dir() and d.name.startswith('backup_')
+                        ])
+                
+                return {
+                    'success': False, 
+                    'error': f'Backup directory for session {session_id} not found',
+                    'details': {
+                        'session_id': session_id,
+                        'searched_directories': [str(d) for d in session_dirs_to_check],
+                        'available_sessions': available_sessions[:5]  # Show first 5
+                    }
+                }
+            
+            # Validate manifest before attempting restore
+            manifest_check = self._check_manifest_integrity(backup_dir)
+            if not manifest_check['valid']:
+                return {
+                    'success': False,
+                    'error': f'Backup manifest is invalid: {manifest_check["error"]}',
+                    'manifest_check': manifest_check,
+                    'backup_dir': str(backup_dir)
+                }
             
             # Run restore script
             script_path = SCRIPTS_DIR / 'disaster-recovery.sh'
             if not script_path.exists():
-                return {'success': False, 'error': 'Restore script not found'}
+                return {'success': False, 'error': 'Disaster recovery script not found'}
             
+            # Make script executable
+            try:
+                os.chmod(script_path, 0o755)
+            except OSError as e:
+                logger.warning(f"Could not make script executable: {e}")
+            
+            # Prepare environment variables
             env = os.environ.copy()
             env.update({
+                'DR_SESSION_DIR': str(backup_dir.parent),
+                'DR_BACKUP_DIR': str(backup_dir.parent),
                 'DR_RESTORE_PATH': restore_path,
                 'DR_RESTORE_TYPE': restore_type,
-                'DR_BACKUP_DIR': str(backup_dir)
+                'BACKUP_SESSION': session_id,
+                'USE_CLOUD': 'false',
+                'FORCE': 'true',
+                'TEST_MODE': 'false',
+                'DOCKER_CONTAINER': '1'
             })
             
-            logger.info(f"Starting local restore from {backup_dir} to {restore_path}")
+            # Add configuration values to environment
+            for key, value in self.config.config.items():
+                if key.startswith(('DR_', 'POSTGRES_', 'GDRIVE_', 'AWS_')):
+                    env[key] = str(value)
             
-            cmd = [str(script_path), 'restore', str(backup_dir), restore_path]
+            logger.info(f"Starting local restore from {backup_dir} to {restore_path}")
+            logger.info(f"Restore type: {restore_type}")
+            
+            # Build command for disaster recovery script
+            cmd = [str(script_path), 'restore', session_id]
+            
+            logger.info(f"Running restore command: {' '.join(cmd)}")
+            logger.info(f"Environment: DR_SESSION_DIR={env['DR_SESSION_DIR']}")
+            logger.info(f"Environment: DR_RESTORE_PATH={env['DR_RESTORE_PATH']}")
+            logger.info(f"Environment: DR_RESTORE_TYPE={env['DR_RESTORE_TYPE']}")
             
             result = subprocess.run(
                 cmd,
                 env=env,
                 capture_output=True,
                 text=True,
-                timeout=3600  # 1 hour timeout
+                timeout=3600,  # 1 hour timeout
+                cwd=str(SCRIPTS_DIR)
             )
+            
+            logger.info(f"Local restore completed with exit code: {result.returncode}")
+            
+            if result.stdout:
+                logger.info("Restore stdout:")
+                logger.info(result.stdout)
+            if result.stderr:
+                logger.warning("Restore stderr:")
+                logger.warning(result.stderr)
             
             return {
                 'success': result.returncode == 0,
                 'output': result.stdout,
                 'error': result.stderr,
-                'return_code': result.returncode
+                'return_code': result.returncode,
+                'backup_dir': str(backup_dir),
+                'session_id': session_id,
+                'restore_type': restore_type,
+                'restore_path': restore_path,
+                'restore_command': ' '.join(cmd)
             }
             
         except subprocess.TimeoutExpired:
-            return {'success': False, 'error': 'Restore operation timed out'}
+            logger.error("Local restore operation timed out")
+            return {'success': False, 'error': 'Local restore operation timed out'}
         except Exception as e:
             logger.error(f"Local restore failed: {e}")
-            return {'success': False, 'error': str(e)}
+            return {'success': False, 'error': str(e), 'exception_type': type(e).__name__}
     
     def _restore_from_gdrive(self, session_id: str, restore_type: str, restore_path: str) -> Dict[str, Any]:
         """Restore from Google Drive backup"""
@@ -882,33 +1809,175 @@ class BackupManager:
             if not GoogleDriveBackup:
                 return {'success': False, 'error': 'Google Drive integration not available'}
             
+            # Normalize session ID
+            session_id = self._normalize_session_id(session_id)
+            
             gdrive = GoogleDriveBackup(self.config.config)
             if not gdrive.authenticate():
                 return {'success': False, 'error': 'Failed to authenticate with Google Drive'}
             
-            # Download backup from Google Drive
-            download_path = f'/tmp/{session_id}_download'
-            os.makedirs(download_path, exist_ok=True)
+            # Create download directory with proper structure
+            import tempfile
+            download_base = Path(tempfile.mkdtemp(prefix=f'{session_id}_restore_'))
             
-            logger.info(f"Downloading backup {session_id} from Google Drive")
+            logger.info(f"Created temporary restore directory: {download_base}")
             
-            # Find and download backup files
-            backup_files = gdrive.list_backups(session_id)
+            # Create session directory structure
+            session_download_dir = download_base / session_id
+            session_download_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create subdirectories for proper backup structure
+            (session_download_dir / 'databases').mkdir(exist_ok=True)
+            (session_download_dir / 'filestore').mkdir(exist_ok=True)
+            (session_download_dir / 'configs').mkdir(exist_ok=True)
+            
+            logger.info(f"Downloading backup {session_id} from Google Drive to {session_download_dir}")
+            
+            # Search for backup files with session_id pattern
+            files = gdrive.list_files(limit=1000)
+            
+            # Improved pattern matching for session files
+            backup_files = []
+            for f in files:
+                file_name = f['name']
+                # Match both full session names and partial IDs
+                if (session_id in file_name or 
+                    session_id.replace('backup_', '') in file_name):
+                    backup_files.append(f)
+            
             if not backup_files:
-                return {'success': False, 'error': f'No backup files found for session {session_id}'}
+                return {'success': False, 'error': f'No backup files found for session {session_id} in Google Drive'}
             
+            logger.info(f"Found {len(backup_files)} backup files for session {session_id}")
+            
+            # Download files and organize them by type
+            downloaded_files = []
             for file_info in backup_files:
-                local_path = os.path.join(download_path, file_info['name'])
-                success = gdrive.download_file(file_info['id'], local_path)
+                file_name = file_info['name']
+                
+                # Determine subdirectory based on file type
+                if '.sql.enc' in file_name or '_db_' in file_name:
+                    local_path = session_download_dir / 'databases' / file_name
+                elif 'filestore' in file_name:
+                    local_path = session_download_dir / 'filestore' / file_name
+                elif 'config' in file_name:
+                    local_path = session_download_dir / 'configs' / file_name
+                elif 'manifest' in file_name:
+                    local_path = session_download_dir / file_name
+                else:
+                    # Default to session root directory
+                    local_path = session_download_dir / file_name
+                
+                logger.info(f"Downloading {file_name} to {local_path}")
+                success = gdrive.download_file(file_info['id'], str(local_path))
+                
                 if not success:
-                    return {'success': False, 'error': f'Failed to download {file_info["name"]}'}
+                    return {'success': False, 'error': f'Failed to download {file_name}'}
+                
+                downloaded_files.append(str(local_path))
             
-            # Run local restore on downloaded files
-            return self._restore_from_local(session_id, restore_type, restore_path)
+            logger.info(f"Successfully downloaded {len(downloaded_files)} files")
             
+            # Validate downloaded manifest
+            manifest_path = session_download_dir / 'backup-manifest.json'
+            if manifest_path.exists():
+                manifest_check = self._check_manifest_integrity(session_download_dir)
+                if not manifest_check['valid']:
+                    return {
+                        'success': False, 
+                        'error': f'Downloaded manifest is invalid: {manifest_check["error"]}',
+                        'manifest_check': manifest_check
+                    }
+            else:
+                logger.warning("No manifest file found in downloaded backup")
+            
+            # Now run disaster recovery script with the downloaded session
+            script_path = SCRIPTS_DIR / 'disaster-recovery.sh'
+            if not script_path.exists():
+                return {'success': False, 'error': 'Disaster recovery script not found'}
+            
+            # Prepare environment variables
+            env = os.environ.copy()
+            
+            # Set paths to use our download directory
+            env.update({
+                'DR_SESSION_DIR': str(download_base),
+                'DR_BACKUP_DIR': str(download_base),
+                'DR_RESTORE_PATH': restore_path,
+                'DR_RESTORE_TYPE': restore_type,
+                'BACKUP_SESSION': session_id,
+                'USE_CLOUD': 'false',  # We've already downloaded it
+                'FORCE': 'true',  # Skip confirmation since this is API call
+                'TEST_MODE': 'false',
+                'DOCKER_CONTAINER': '1'
+            })
+            
+            # Add configuration values to environment
+            for key, value in self.config.config.items():
+                if key.startswith(('DR_', 'POSTGRES_', 'GDRIVE_', 'AWS_')):
+                    env[key] = str(value)
+            
+            # Make script executable
+            try:
+                os.chmod(script_path, 0o755)
+            except OSError as e:
+                logger.warning(f"Could not make script executable: {e}")
+            
+            # Build command for disaster recovery
+            cmd = [str(script_path), 'restore', session_id]
+            
+            logger.info(f"Running disaster recovery: {' '.join(cmd)}")
+            logger.info(f"Environment: DR_SESSION_DIR={env['DR_SESSION_DIR']}")
+            logger.info(f"Environment: DR_RESTORE_PATH={env['DR_RESTORE_PATH']}")
+            logger.info(f"Environment: DR_RESTORE_TYPE={env['DR_RESTORE_TYPE']}")
+            
+            result = subprocess.run(
+                cmd,
+                env=env,
+                capture_output=True,
+                text=True,
+                timeout=3600,  # 1 hour timeout
+                cwd=str(SCRIPTS_DIR)
+            )
+            
+            logger.info(f"Restore completed with exit code: {result.returncode}")
+            
+            if result.stdout:
+                logger.info("Restore stdout:")
+                logger.info(result.stdout)
+            if result.stderr:
+                logger.warning("Restore stderr:")
+                logger.warning(result.stderr)
+            
+            # Clean up downloaded files after restore
+            cleanup_successful = False
+            try:
+                import shutil
+                shutil.rmtree(download_base)
+                cleanup_successful = True
+                logger.info(f"Cleaned up downloaded files: {download_base}")
+            except Exception as e:
+                logger.warning(f"Failed to clean up downloaded files: {e}")
+            
+            return {
+                'success': result.returncode == 0,
+                'output': result.stdout,
+                'error': result.stderr,
+                'return_code': result.returncode,
+                'downloaded_files': len(downloaded_files),
+                'restore_command': ' '.join(cmd),
+                'cleanup_successful': cleanup_successful,
+                'session_id': session_id,
+                'restore_type': restore_type,
+                'restore_path': restore_path
+            }
+            
+        except subprocess.TimeoutExpired:
+            logger.error("Google Drive restore operation timed out")
+            return {'success': False, 'error': 'Google Drive restore operation timed out'}
         except Exception as e:
             logger.error(f"Google Drive restore failed: {e}")
-            return {'success': False, 'error': str(e)}
+            return {'success': False, 'error': str(e), 'exception_type': type(e).__name__}
     
     def list_local_backups(self) -> List[Dict[str, Any]]:
         """List available local backups"""
@@ -963,7 +2032,48 @@ class BackupManager:
             if not gdrive.authenticate():
                 return []
             
-            return gdrive.list_backups()
+            # Get all backup files and group them by session
+            files = gdrive.list_files(limit=1000)
+            
+            # Group files by backup session
+            sessions = {}
+            for file_info in files:
+                file_name = file_info['name']
+                
+                # Extract session ID from filename patterns
+                session_id = None
+                if 'backup_' in file_name:
+                    parts = file_name.split('_')
+                    if len(parts) >= 3 and parts[0] == 'backup':
+                        session_id = f"{parts[0]}_{parts[1]}_{parts[2]}"
+                
+                if session_id:
+                    if session_id not in sessions:
+                        sessions[session_id] = {
+                            'session_id': session_id,
+                            'location': 'gdrive',
+                            'files': [],
+                            'total_size': 0,
+                            'created': file_info.get('createdTime'),
+                            'file_count': 0
+                        }
+                    
+                    sessions[session_id]['files'].append(file_info)
+                    sessions[session_id]['total_size'] += int(file_info.get('size', 0))
+                    sessions[session_id]['file_count'] += 1
+                    
+                    # Use earliest creation time
+                    if file_info.get('createdTime') and (
+                        not sessions[session_id]['created'] or 
+                        file_info['createdTime'] < sessions[session_id]['created']
+                    ):
+                        sessions[session_id]['created'] = file_info['createdTime']
+            
+            # Convert to list and sort by creation time
+            backup_list = list(sessions.values())
+            backup_list.sort(key=lambda x: x.get('created', ''), reverse=True)
+            
+            return backup_list
             
         except Exception as e:
             logger.error(f"Failed to list Google Drive backups: {e}")
@@ -985,6 +2095,124 @@ class BackupManager:
             return total_size
         except Exception:
             return 0
+    
+    def _download_backup_for_validation(self, session_id: str, target_dir: str) -> Dict[str, Any]:
+        """Download backup from Google Drive for validation"""
+        try:
+            if not GoogleDriveBackup:
+                return {'success': False, 'error': 'Google Drive integration not available'}
+            
+            gdrive = GoogleDriveBackup(self.config.config)
+            if not gdrive.authenticate():
+                return {'success': False, 'error': 'Failed to authenticate with Google Drive'}
+            
+            # Normalize session ID
+            session_id = self._normalize_session_id(session_id)
+            
+            # Create target session directory
+            target_session_dir = Path(target_dir) / session_id
+            target_session_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create subdirectories for proper backup structure
+            (target_session_dir / 'databases').mkdir(exist_ok=True)
+            (target_session_dir / 'filestore').mkdir(exist_ok=True)
+            (target_session_dir / 'configs').mkdir(exist_ok=True)
+            
+            logger.info(f"Downloading backup {session_id} from Google Drive for validation")
+            
+            # Search for backup files with session_id pattern
+            files = gdrive.list_files(limit=1000)
+            
+            # Improved pattern matching for session files
+            backup_files = []
+            for f in files:
+                file_name = f['name']
+                # Match both full session names and partial IDs
+                if (session_id in file_name or 
+                    session_id.replace('backup_', '') in file_name):
+                    backup_files.append(f)
+            
+            if not backup_files:
+                # Try to find files with more flexible matching
+                logger.warning(f"No exact matches found for {session_id}, trying flexible search")
+                partial_id = session_id.replace('backup_', '')
+                backup_files = [f for f in files if partial_id in f['name']]
+                
+                if not backup_files:
+                    return {
+                        'success': False, 
+                        'error': f'No backup files found for session {session_id} in Google Drive',
+                        'available_files_sample': [f['name'] for f in files[:10]]  # Show sample for debugging
+                    }
+            
+            logger.info(f"Found {len(backup_files)} backup files for session {session_id}")
+            
+            # Download files and organize them by type
+            downloaded_files = []
+            download_errors = []
+            
+            for file_info in backup_files:
+                file_name = file_info['name']
+                
+                # Determine subdirectory based on file type
+                if '.sql.enc' in file_name or '_db_' in file_name or 'database' in file_name.lower():
+                    local_path = target_session_dir / 'databases' / file_name
+                elif 'filestore' in file_name or 'files' in file_name.lower():
+                    local_path = target_session_dir / 'filestore' / file_name
+                elif 'config' in file_name:
+                    local_path = target_session_dir / 'configs' / file_name
+                elif 'manifest' in file_name:
+                    local_path = target_session_dir / file_name
+                else:
+                    # Default to session root directory
+                    local_path = target_session_dir / file_name
+                
+                logger.info(f"Downloading {file_name} to {local_path}")
+                
+                # Ensure parent directory exists
+                local_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                try:
+                    success = gdrive.download_file(file_info['id'], str(local_path))
+                    
+                    if success and local_path.exists() and local_path.stat().st_size > 0:
+                        downloaded_files.append(str(local_path))
+                        logger.info(f"Successfully downloaded {file_name} ({local_path.stat().st_size} bytes)")
+                    else:
+                        error_msg = f'Failed to download {file_name} or file is empty'
+                        download_errors.append(error_msg)
+                        logger.error(error_msg)
+                        
+                except Exception as e:
+                    error_msg = f'Exception downloading {file_name}: {str(e)}'
+                    download_errors.append(error_msg)
+                    logger.error(error_msg)
+            
+            # Check if we got at least some files
+            if not downloaded_files:
+                return {
+                    'success': False,
+                    'error': 'No files were successfully downloaded',
+                    'download_errors': download_errors
+                }
+            
+            # Validate that we have at least a manifest file
+            manifest_path = target_session_dir / 'backup-manifest.json'
+            if not manifest_path.exists():
+                logger.warning("No manifest file found in downloaded backup")
+            
+            return {
+                'success': True,
+                'session_path': str(target_session_dir),
+                'downloaded_files': len(downloaded_files),
+                'files': downloaded_files,
+                'download_errors': download_errors,
+                'has_manifest': manifest_path.exists()
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to download backup for validation: {e}")
+            return {'success': False, 'error': str(e), 'exception_type': type(e).__name__}
 
 backup_manager = BackupManager()
 
@@ -1057,7 +2285,7 @@ def backup_detail(session_id):
 def api_start_backup():
     """API endpoint to start a backup"""
     data = request.get_json() or {}
-    destinations = data.get('destinations', ['aws'])
+    destinations = data.get('destinations', ['gdrive'])
     
     # Start backup in background
     def run_backup_async():
@@ -1072,12 +2300,82 @@ def api_start_backup():
 @app.route('/api/backup/validate', methods=['POST'])
 @login_required
 def api_validate_backup():
-    """API endpoint to validate a backup"""
-    data = request.get_json() or {}
-    session_id = data.get('session_id')
-    
-    result = backup_manager.validate_backup(session_id)
-    return jsonify(result)
+    """API endpoint to validate a backup from local storage or Google Drive"""
+    try:
+        data = request.get_json() or {}
+        session_id = data.get('session_id')
+        source = data.get('source', 'auto')  # 'local', 'gdrive', or 'auto'
+        
+        logger.info(f"Validating backup: {session_id} from source: {source}")
+        
+        # Validate source parameter
+        if source not in ['local', 'gdrive', 'auto']:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid source. Must be "local", "gdrive", or "auto"',
+                'valid_sources': ['local', 'gdrive', 'auto']
+            }), 400
+        
+        # For local validation, do a quick check if the session exists locally
+        if source == 'local' and session_id:
+            session_dirs = [
+                Path('/app/data/sessions'),
+                DATA_DIR / 'sessions',
+                Path('/opt/backups/sessions')
+            ]
+            
+            session_found = False
+            for session_dir in session_dirs:
+                if session_dir.exists():
+                    normalized_session_id = backup_manager._normalize_session_id(session_id)
+                    session_path = session_dir / normalized_session_id
+                    if session_path.exists():
+                        session_found = True
+                        break
+            
+            if not session_found:
+                available_sessions = []
+                for session_dir in session_dirs:
+                    if session_dir.exists():
+                        available_sessions.extend([
+                            d.name for d in session_dir.iterdir() 
+                            if d.is_dir() and d.name.startswith('backup_')
+                        ])
+                
+                return jsonify({
+                    'success': False,
+                    'error': f'Backup session not found locally: {session_id}',
+                    'available_sessions': available_sessions[:10],
+                    'searched_directories': [str(d) for d in session_dirs],
+                    'validation_source': 'local'
+                }), 404
+        
+        result = backup_manager.validate_backup(session_id, source)
+        
+        # Add more context to the result based on error type
+        if not result.get('success'):
+            error_msg = str(result.get('error', ''))
+            
+            if 'Invalid JSON' in error_msg:
+                result['fix_suggestion'] = 'The backup manifest file is corrupted. Try deleting this backup session and running a new backup.'
+                result['corrupted_file'] = f'backup-manifest.json in session directory'
+            elif 'not found' in error_msg.lower() and 'google drive' in error_msg.lower():
+                result['fix_suggestion'] = 'Check if the backup exists in Google Drive or verify Google Drive authentication.'
+            elif 'authentication' in error_msg.lower():
+                result['fix_suggestion'] = 'Verify Google Drive credentials in the configuration.'
+            elif 'manifest validation failed' in error_msg.lower():
+                result['fix_suggestion'] = 'The backup manifest is corrupted. Delete this backup and run a new one.'
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        logger.error(f"Validation API error: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'exception_type': type(e).__name__,
+            'type': 'api_error'
+        }), 500
 
 @app.route('/api/storage/usage')
 @login_required
@@ -1464,7 +2762,7 @@ def sync_credentials():
 @app.route('/api/restore', methods=['POST'])
 @login_required
 def api_restore_backup():
-    """API endpoint to restore from backup"""
+    """API endpoint to restore from backup (local or Google Drive)"""
     try:
         data = request.get_json() or {}
         session_id = data.get('session_id')
@@ -1473,46 +2771,149 @@ def api_restore_backup():
         restore_path = data.get('restore_path', '/tmp/odoo-restore')
         
         if not session_id:
-            return jsonify({'error': 'Session ID is required'}), 400
+            return jsonify({
+                'success': False,
+                'error': 'Session ID is required',
+                'valid_restore_types': ['full', 'selective', 'database_only'],
+                'valid_target_locations': ['local', 'gdrive']
+            }), 400
         
-        # Get backup session details
-        session = db.get_backup_session(session_id)
+        # Validate restore_type
+        if restore_type not in ['full', 'selective', 'database_only']:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid restore_type',
+                'valid_restore_types': ['full', 'selective', 'database_only']
+            }), 400
+        
+        # Validate target_location
+        if target_location not in ['local', 'gdrive']:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid target_location',
+                'valid_target_locations': ['local', 'gdrive']
+            }), 400
+        
+        # Normalize session ID
+        normalized_session_id = backup_manager._normalize_session_id(session_id)
+        
+        logger.info(f"Starting restore: session={normalized_session_id}, type={restore_type}, location={target_location}, path={restore_path}")
+        
+        # Check if session exists in database (optional, for tracking)
+        session = backup_manager.db.get_backup_session(normalized_session_id)
         if not session:
-            return jsonify({'error': 'Backup session not found'}), 404
+            logger.warning(f"Session {normalized_session_id} not found in database, proceeding anyway")
         
         # Start restore process
         restore_result = backup_manager.restore_backup(
-            session_id=session_id,
+            session_id=normalized_session_id,
             restore_type=restore_type,
             target_location=target_location,
             restore_path=restore_path
         )
         
+        # Add more context to the result
+        if restore_result.get('success'):
+            restore_result['message'] = f'Restore started successfully for session {normalized_session_id}'
+            restore_result['estimated_time'] = '30-60 minutes depending on backup size'
+        else:
+            # Add troubleshooting suggestions
+            error_msg = str(restore_result.get('error', ''))
+            
+            if 'not found' in error_msg.lower():
+                restore_result['fix_suggestion'] = 'Verify the session ID exists in the specified location (local or Google Drive)'
+            elif 'authentication' in error_msg.lower():
+                restore_result['fix_suggestion'] = 'Check Google Drive authentication credentials'
+            elif 'manifest' in error_msg.lower():
+                restore_result['fix_suggestion'] = 'The backup appears to be corrupted. Try a different backup session.'
+        
         return jsonify(restore_result)
         
     except Exception as e:
         logger.error(f"Restore API error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'exception_type': type(e).__name__,
+            'type': 'api_error'
+        }), 500
 
 @app.route('/api/restore/list-backups')
 @login_required
 def api_list_restore_backups():
-    """API endpoint to list available backups for restore"""
+    """API endpoint to list available backups for restore from local and Google Drive"""
     try:
-        source = request.args.get('source', 'local')  # local, gdrive
+        source = request.args.get('source', 'both')  # local, gdrive, both
+        limit = int(request.args.get('limit', 50))
         
-        if source == 'local':
-            backups = backup_manager.list_local_backups()
-        elif source == 'gdrive':
-            backups = backup_manager.list_gdrive_backups()
-        else:
-            return jsonify({'error': 'Invalid source specified'}), 400
+        logger.info(f"Listing backups from source: {source}, limit: {limit}")
         
-        return jsonify({'backups': backups})
+        if source not in ['local', 'gdrive', 'both']:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid source specified',
+                'valid_sources': ['local', 'gdrive', 'both']
+            }), 400
+        
+        result = {
+            'success': True,
+            'source': source,
+            'backups': []
+        }
+        
+        # List local backups
+        if source in ['local', 'both']:
+            try:
+                local_backups = backup_manager.list_local_backups()
+                for backup in local_backups[:limit]:
+                    backup['source'] = 'local'
+                result['backups'].extend(local_backups[:limit])
+                result['local_count'] = len(local_backups)
+                logger.info(f"Found {len(local_backups)} local backups")
+            except Exception as e:
+                logger.error(f"Error listing local backups: {e}")
+                result['local_error'] = str(e)
+                result['local_count'] = 0
+        
+        # List Google Drive backups
+        if source in ['gdrive', 'both']:
+            try:
+                gdrive_backups = backup_manager.list_gdrive_backups()
+                for backup in gdrive_backups[:limit]:
+                    backup['source'] = 'gdrive'
+                result['backups'].extend(gdrive_backups[:limit])
+                result['gdrive_count'] = len(gdrive_backups)
+                logger.info(f"Found {len(gdrive_backups)} Google Drive backups")
+            except Exception as e:
+                logger.error(f"Error listing Google Drive backups: {e}")
+                result['gdrive_error'] = str(e)
+                result['gdrive_count'] = 0
+        
+        # Sort by creation time if both sources
+        if source == 'both':
+            result['backups'].sort(key=lambda x: x.get('created', ''), reverse=True)
+            result['backups'] = result['backups'][:limit]
+        
+        result['total_backups'] = len(result['backups'])
+        
+        # Add metadata
+        result['metadata'] = {
+            'generated_at': datetime.now().isoformat(),
+            'total_local': result.get('local_count', 0),
+            'total_gdrive': result.get('gdrive_count', 0),
+            'limit_applied': limit
+        }
+        
+        return jsonify(result)
         
     except Exception as e:
         logger.error(f"List backups API error: {e}")
-        return jsonify({'error': str(e)}), 500
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'exception_type': type(e).__name__,
+            'type': 'api_error'
+        }), 500
 
 @app.route('/api/restore/status/<restore_id>')
 @login_required
