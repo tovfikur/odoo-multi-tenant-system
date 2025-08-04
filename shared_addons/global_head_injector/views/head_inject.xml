@@ -262,6 +262,16 @@
     transition: transform 0.25s ease;
 }
 
+.dropdown-menu[role="menu"] {
+    background: linear-gradient(135deg, #000205ff 0%, #f1f1f1ff 100%) !important;
+    border-radius: 8px;
+}
+
+.mk_apps_sidebar_panel .mk_apps_sidebar_panel_item:hover {
+    background: linear-gradient(-45deg, #174ea6, #1a73e8, #2e7ce8, #1565c0, #1976d2, #174ea6) !important;
+    transition: background-color 0.3s ease;
+}
+
 .o_menu_sections .dropdown:hover .dropdown-menu,
 .o_menu_sections .dropdown.show .dropdown-menu {
     transform: scaleY(1);
