@@ -275,6 +275,12 @@
     transition: background-color 0.3s ease;
 }
 
+.mk_apps_sidebar_panel {
+    background: linear-gradient(-45deg, #174ea6, #1a73e8, #2e7ce8, #1565c0, #1976d2, #174ea6) !important;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
 .o_menu_sections .dropdown:hover .dropdown-menu,
 .o_menu_sections .dropdown.show .dropdown-menu {
     transform: scaleY(1);
