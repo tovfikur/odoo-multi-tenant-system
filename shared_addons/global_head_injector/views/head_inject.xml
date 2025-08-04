@@ -269,10 +269,7 @@
 
 .dropdown-menu[role="menu"] {
     background: linear-gradient(-45deg, #4285f4, #66a3ff, #87ceeb, #40a9ff, #1e90ff, #4169e1, #6495ed) !important;
-    display: flex !important;
-    flex-direction: row !important;
-    justify-content: center;
-    align-content: center;
+
 }
 
 .mk_apps_sidebar_panel .mk_apps_sidebar_panel_item:hover {
