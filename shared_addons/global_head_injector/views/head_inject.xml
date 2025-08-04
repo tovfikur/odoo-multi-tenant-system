@@ -264,8 +264,8 @@
 
 .dropdown-menu[role="menu"] {
     background: linear-gradient(-45deg, #174ea6, #1a73e8, #2e7ce8, #1565c0, #1976d2, #174ea6) !important;
-    background-size: 400% 400% !important;
-    animation: gradientShift 8s ease infinite !important;
+    background-size: 600% 600% !important;
+    animation: gradientShift 4s ease-in-out infinite !important;
     display: flex !important;
     flex-direction: row !important;
     justify-content: center;
@@ -274,13 +274,19 @@
 
 @keyframes gradientShift {
     0% {
-        background-position: 0% 50% !important;
+        background-position: 0% 0% !important;
+    }
+    25% {
+        background-position: 100% 0% !important;
     }
     50% {
-        background-position: 100% 50% !important;
+        background-position: 100% 100% !important;
+    }
+    75% {
+        background-position: 0% 100% !important;
     }
     100% {
-        background-position: 0% 50% !important;
+        background-position: 0% 0% !important;
     }
 }
 
