@@ -212,8 +212,8 @@ ODOO_MASTER_PASSWORD=admin_password
 
 # SSL Configuration
 USE_SSL=true
-DOMAIN=yourdomain.com
-EMAIL=admin@yourdomain.com
+DOMAIN=khudroo.com
+EMAIL=admin@khudroo.com
 
 # Scaling Limits
 MIN_WORKERS=2
@@ -362,8 +362,8 @@ SCALE_DOWN_THRESHOLD=30 # CPU threshold for scaling down
 
 | Plan | Price/Month | Users | Storage | Features |
 |------|------------|-------|---------|----------|
-| **Starter** | $49 | 5 | 5GB | Basic modules, Email support |
-| **Professional** | $149 | 25 | 50GB | Advanced modules, Phone support |
+| **Starter** | $5 | 5 | 5GB | Basic modules, Email support |
+| **Professional** | $20 | 25 | 50GB | Advanced modules, Phone support |
 | **Enterprise** | $399 | 100 | 200GB | All modules, Dedicated support |
 | **White-Label** | $999 | Unlimited | 1TB | Custom branding, API access |
 
@@ -719,18 +719,18 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 - **Bug Reports**: [GitHub Issues](https://github.com/tovfikur/odoo-multi-tenant-system/issues)
 - **Feature Requests**: [GitHub Discussions](https://github.com/tovfikur/odoo-multi-tenant-system/discussions)
-- **Security Issues**: security@yourdomain.com
+- **Security Issues**: security@khudroo.com
 
 ## 📞 Support & Community
 
 ### 💬 Community Channels
 - **Discord**: [Join our community](https://discord.gg/odoo-saas)
-- **Forum**: [Community Forum](https://forum.yourdomain.com)
-- **Newsletter**: [Monthly updates](https://newsletter.yourdomain.com)
+- **Forum**: [Community Forum](https://forum.khudroo.com)
+- **Newsletter**: [Monthly updates](https://newsletter.khudroo.com)
 
 ### 🆘 Professional Support
-- **Email**: support@yourdomain.com
-- **Enterprise Support**: enterprise@yourdomain.com
+- **Email**: support@khudroo.com
+- **Enterprise Support**: enterprise@khudroo.com
 - **Emergency Support**: +1-800-ODOO-HELP
 
 ### 📅 Roadmap
@@ -756,7 +756,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 
 **🚀 Ready to Transform Your Business?**
 
-[**Start Free Trial**](https://yourdomain.com/trial) | [**Schedule Demo**](https://yourdomain.com/demo) | [**Contact Sales**](https://yourdomain.com/contact)
+[**Start Free Trial**](http://khudroo.com) | [**Schedule Demo**](http://khudroo.com) | [**Contact Sales**](http://khudroo.com)
 
 ---
 

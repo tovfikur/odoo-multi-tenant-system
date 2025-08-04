@@ -394,7 +394,7 @@ Attach relevant screenshots and log files
 
 ## 📞 **Communication & Escalation**
 
-### **Daily Standup Items:**
+### **Standup Items:**
 - Test progress update
 - Blockers and dependencies
 - Bug discovery and resolution
@@ -404,13 +404,14 @@ Attach relevant screenshots and log files
 1. **Level 1:** Test Lead (for test execution issues)
 2. **Level 2:** Development Team Lead (for technical blockers)
 3. **Level 3:** Project Manager (for timeline impacts)
-4. **Level 4:** Product Owner (for requirement clarifications)
+4. **Level 4:** Business Development team (for requirement clarifications)
+5.  (Now only report to Tovfikur Rahman)
 
 ### **Communication Channels:**
-- **Bug Reports:** GitHub Issues / Jira
-- **Daily Updates:** Team Slack/Teams channel
+- **Bug Reports:** GitHub Issues / ERP
+- **Daily Updates:** Team WA/Teams ERP channel
 - **Critical Issues:** Immediate phone/video call
-- **Weekly Reports:** Email to stakeholders
+- **Reports:** WA or Call to Tovfikur
 
 ---
 
