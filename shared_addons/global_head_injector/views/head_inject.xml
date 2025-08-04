@@ -264,30 +264,10 @@
 
 .dropdown-menu[role="menu"] {
     background: linear-gradient(-45deg, #4285f4, #66a3ff, #87ceeb, #40a9ff, #1e90ff, #4169e1, #6495ed) !important;
-    background-size: 600% 600% !important;
-    animation: gradientShift 4s ease-in-out infinite !important;
     display: flex !important;
     flex-direction: row !important;
     justify-content: center;
     align-content: center;
-}
-
-@keyframes gradientShift {
-    0% {
-        background-position: 0% 0% !important;
-    }
-    25% {
-        background-position: 100% 0% !important;
-    }
-    50% {
-        background-position: 100% 100% !important;
-    }
-    75% {
-        background-position: 0% 100% !important;
-    }
-    100% {
-        background-position: 0% 0% !important;
-    }
 }
 
 .mk_apps_sidebar_panel .mk_apps_sidebar_panel_item:hover {
