@@ -405,7 +405,7 @@ async def create_database(db_name, username='admin', password='admin',  modules=
     except ImportError:
         pass  # Use global BillingService if available
     
-    default_modules = ['base', 'web', 'auth_signup', 'global_head_injector', 'saas_user_limit', 'muk_web_theme']
+    default_modules = ['base', 'web', 'auth_signup', 'global_head_injector', 'saas_user_limit']
     if modules is None:
         modules = default_modules
     else:
