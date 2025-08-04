@@ -281,6 +281,12 @@
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
+.mk_apps_sidebar_panel .mk_apps_sidebar .mk_apps_sidebar_menu > li.active > a {
+  background: linear-gradient(-45deg, #174ea6, #1a73e8, #2e7ce8, #1565c0, #1976d2, #174ea6) !important;
+  font-family: 'Caveat', cursive !important;
+  font-size: 1.3rem;
+}
+
 .o_menu_sections .dropdown:hover .dropdown-menu,
 .o_menu_sections .dropdown.show .dropdown-menu {
     transform: scaleY(1);
