@@ -51,6 +51,8 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d
       - ./nginx/letsencrypt.conf:/etc/nginx/letsencrypt.conf
       - ./ssl:/etc/nginx/ssl
+      - ./ssl/localhost.crt:/etc/nginx/ssl/localhost.crt
+      - ./ssl/localhost.key:/etc/nginx/ssl/localhost.key
       - ./nginx/errors/:/usr/share/nginx/html/errors/
     networks:
       - odoo_network

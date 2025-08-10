@@ -17,7 +17,13 @@
       "Bash(timeout:*)",
       "Bash(chmod:*)",
       "Bash(docker-compose restart:*)",
-      "Bash(docker-compose logs:*)"
+      "Bash(docker-compose logs:*)",
+      "Bash(docker-compose:*)",
+      "Bash(mkdir:*)",
+      "Bash(openssl dhparam:*)",
+      "Bash(pkill:*)",
+      "Bash(openssl req:*)",
+      "Bash(mv:*)"
     ],
     "deny": []
   }
