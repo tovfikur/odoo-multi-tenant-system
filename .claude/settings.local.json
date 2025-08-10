@@ -15,7 +15,9 @@
       "Bash(python:*)",
       "Bash(timeout 10 python saas_manager/app.py)",
       "Bash(timeout:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(docker-compose restart:*)",
+      "Bash(docker-compose logs:*)"
     ],
     "deny": []
   }

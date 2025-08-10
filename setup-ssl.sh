@@ -84,14 +84,7 @@ sed -i.bak "s/khudroo.com/$DOMAIN/g" $DOCKER_COMPOSE_FILE
 sed -i.bak "s/your-email@domain.com/$EMAIL/g" $DOCKER_COMPOSE_FILE
 
 # Update main nginx.conf to include Let's Encrypt configuration
-print_status "Updating nginx configuration to include Let's Encrypt support..."
-if ! grep -q "include.*letsencrypt.conf" nginx/nginx.conf; then
-    # Add include directive to the SaaS Manager server block
-    sed -i '/server_name.*khudroo\.com.*localhost;/a\\n        # Include Let'\''s Encrypt configuration\n        include /etc/nginx/letsencrypt.conf;' nginx/nginx.conf
-    
-    # Add include directive to the tenant subdomains server block
-    sed -i '/server_name.*khudroo\.com.*localhost;/a\\n        # Include Let'\''s Encrypt configuration\n        include /etc/nginx/letsencrypt.conf;' nginx/nginx.conf
-fi
+print_status "Nginx configuration already includes Let's Encrypt support inline..."
 
 # Stop existing nginx if running
 print_status "Stopping existing nginx container if running..."
