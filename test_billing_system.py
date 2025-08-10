@@ -4,7 +4,6 @@ Simple test script to verify billing system functionality
 """
 import requests
 import sys
-import json
 
 def test_endpoint(url, description):
     """Test an endpoint and report results"""

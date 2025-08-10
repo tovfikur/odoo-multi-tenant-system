@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(docker-compose build:*)",
+      "Bash(docker-compose up:*)",
+      "Bash(docker ps:*)",
+      "Bash(curl:*)",
+      "Bash(docker exec:*)",
+      "Bash(rm:*)",
+      "Bash(docker logs:*)",
+      "Bash(python test_unified_workers.py)",
+      "Bash(docker restart:*)",
+      "Bash(python test:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(timeout 10 python saas_manager/app.py)",
+      "Bash(timeout:*)"
+    ],
+    "deny": []
+  }
+}

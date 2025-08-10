@@ -8,7 +8,6 @@ Handles authentication, file uploads, and management for Google Drive backups
 import os
 import sys
 import json
-import pickle
 import logging
 from pathlib import Path
 from typing import Optional, Dict, List, Any

@@ -1,7 +1,6 @@
 # Billing Routes for Usage-Based Billing System
 from flask import Blueprint, render_template, request, jsonify, redirect, url_for, flash
 from flask_login import login_required, current_user
-import uuid
 from datetime import datetime
 from billing_service import BillingService
 from models import Tenant, BillingCycle, PaymentHistory, BillingNotification, SaasUser, TenantUser
@@ -100,10 +99,8 @@ def process_payment(tenant_id):
         payment_method = request.form.get('payment_method', 'stripe')
         
         # Generate unique payment ID
+        import uuid
         payment_id = f"pay_{uuid.uuid4().hex[:16]}"
-        
-        # For demo purposes, we'll simulate successful payment
-        # In production, integrate with actual payment gateway
         
         payment_data = {
             'payment_id': payment_id,

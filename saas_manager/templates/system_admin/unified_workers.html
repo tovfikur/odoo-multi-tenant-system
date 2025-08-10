@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Worker Management - SaaS Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .worker-card {
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        .worker-card:hover {
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .worker-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .status-running { background: #d4edda; color: #155724; }
+        .status-stopped { background: #f8d7da; color: #721c24; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .server-badge {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .local-badge {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            font-weight: 500;
+        }
+        .resource-indicator {
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            background: #f8f9fa;
+        }
+        .resource-bar {
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+        .cpu-bar { background: linear-gradient(90deg, #28a745, #ffc107, #dc3545); }
+        .memory-bar { background: linear-gradient(90deg, #17a2b8, #6c757d); }
+        .dashboard-stats {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            color: white;
+            margin-bottom: 30px;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .btn-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            color: white;
+        }
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            color: white;
+        }
+        .deployment-log {
+            background: #1e1e1e;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+        .deployment-type-selector {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 5px;
+            margin-bottom: 20px;
+        }
+        .deployment-type-btn {
+            flex: 1;
+            background: transparent;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        .deployment-type-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .deployment-type-btn:not(.active) {
+            color: #6c757d;
+        }
+        .deployment-type-btn:hover:not(.active) {
+            background: #e9ecef;
+        }
+        .vps-connection-status {
+            padding: 10px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .connection-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .connection-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .connection-testing {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('system_admin.dashboard') }}">
+                <i class="fas fa-server"></i> SaaS Manager
+            </a>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{{ url_for('system_admin.dashboard') }}" class="text-light">Dashboard</a></li>
+                    <li class="breadcrumb-item active text-light" aria-current="page">Worker Management</li>
+                </ol>
+            </nav>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Dashboard Statistics -->
+        <div class="dashboard-stats">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-workers">{{ all_workers|length }}</div>
+                        <div class="stat-label">Total Workers</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="running-workers">{{ all_workers|selectattr("status", "equalto", "running")|list|length }}</div>
+                        <div class="stat-label">Running Workers</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-servers">{{ servers|length + 1 }}</div>
+                        <div class="stat-label">Available Servers</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <div class="stat-number" id="total-tenants">{{ all_workers|sum(attribute="current_tenants") or 0 }}</div>
+                        <div class="stat-label">Active Tenants</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2><i class="fas fa-cogs"></i> Worker Management</h2>
+                    <div>
+                        <button class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#deployWorkerModal">
+                            <i class="fas fa-plus"></i> Deploy New Worker
+                        </button>
+                        <button class="btn btn-info" onclick="refreshWorkerStatus()">
+                            <i class="fas fa-sync"></i> Refresh Status
+                        </button>
+                        <button class="btn btn-success" onclick="bulkAction('start')" id="bulk-start" disabled>
+                            <i class="fas fa-play"></i> Start Selected
+                        </button>
+                        <button class="btn btn-warning" onclick="bulkAction('stop')" id="bulk-stop" disabled>
+                            <i class="fas fa-stop"></i> Stop Selected
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Container -->
+        <div id="alertContainer"></div>
+
+        <!-- Filters -->
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <select class="form-select" id="deploymentFilter" onchange="filterWorkers()">
+                    <option value="">All Deployments</option>
+                    <option value="local">Local Workers</option>
+                    <option value="remote">Remote Workers</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="statusFilter" onchange="filterWorkers()">
+                    <option value="">All Status</option>
+                    <option value="running">Running</option>
+                    <option value="stopped">Stopped</option>
+                    <option value="pending">Pending</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <input type="text" class="form-control" id="searchFilter" placeholder="Search workers..." onkeyup="filterWorkers()">
+            </div>
+            <div class="col-md-3">
+                <div class="form-check mt-2">
+                    <input class="form-check-input" type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                    <label class="form-check-label" for="selectAll">
+                        Select All
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Workers Grid -->
+        <div class="row" id="workersContainer">
+            {% for worker in all_workers %}
+            <div class="col-lg-6 worker-item" 
+                 data-deployment="{{ 'remote' if worker.server_id else 'local' }}" 
+                 data-status="{{ worker.status }}" 
+                 data-name="{{ worker.name.lower() }}">
+                <div class="worker-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center">
+                            <input type="checkbox" class="form-check-input worker-checkbox me-3" value="{{ worker.id }}" onchange="updateBulkButtons()">
+                            <h5 class="mb-0">
+                                <i class="fas fa-server"></i> {{ worker.name }}
+                            </h5>
+                        </div>
+                        <div>
+                            <span class="worker-status status-{{ worker.status }}">{{ worker.status.title() }}</span>
+                            {% if worker.server %}
+                            <span class="server-badge ms-2">{{ worker.server.name }}</span>
+                            {% else %}
+                            <span class="local-badge ms-2">Local</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-8">
+                                {% if worker.server %}
+                                <p class="mb-2">
+                                    <strong><i class="fas fa-globe"></i> Server:</strong> 
+                                    {{ worker.server.name }} ({{ worker.server.ip_address }})
+                                </p>
+                                {% else %}
+                                <p class="mb-2">
+                                    <strong><i class="fas fa-home"></i> Deployment:</strong> 
+                                    Local Docker Container
+                                </p>
+                                {% endif %}
+                                <p class="mb-2">
+                                    <strong><i class="fas fa-plug"></i> Port:</strong> {{ worker.port }}
+                                    {% if worker.status == 'running' %}
+                                    <a href="http://{{ worker.server.ip_address if worker.server else 'localhost' }}:{{ worker.port }}" target="_blank" class="ms-2">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </a>
+                                    {% endif %}
+                                </p>
+                                <p class="mb-2">
+                                    <strong><i class="fas fa-users"></i> Tenants:</strong> 
+                                    {{ worker.current_tenants or 0 }} / {{ worker.max_tenants }}
+                                </p>
+                                {% if worker.last_health_check %}
+                                <p class="mb-2">
+                                    <strong><i class="fas fa-heartbeat"></i> Last Check:</strong> 
+                                    {{ worker.last_health_check.strftime('%Y-%m-%d %H:%M:%S') }}
+                                </p>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-4">
+                                {% if worker.server %}
+                                <div class="mb-3">
+                                    <small class="text-muted">CPU Usage</small>
+                                    <div class="resource-indicator">
+                                        <div class="resource-bar cpu-bar" style="width: {{ (worker.server.cpu_usage_percent or 0) }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ worker.server.cpu_usage_percent or 0 }}%</small>
+                                </div>
+                                <div class="mb-3">
+                                    <small class="text-muted">Memory Usage</small>
+                                    <div class="resource-indicator">
+                                        <div class="resource-bar memory-bar" style="width: {{ (worker.server.memory_usage_percent or 0) }}%"></div>
+                                    </div>
+                                    <small class="text-muted">{{ worker.server.memory_usage_percent or 0 }}%</small>
+                                </div>
+                                {% else %}
+                                <div class="text-center">
+                                    <div class="mb-2">
+                                        <i class="fas fa-docker fa-2x text-info"></i>
+                                    </div>
+                                    <small class="text-muted">Local Container</small>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-3 d-flex justify-content-end">
+                            {% if worker.status == 'running' %}
+                            <button class="btn btn-sm btn-warning me-2" onclick="manageWorker('{{ worker.name }}', 'stop')">
+                                <i class="fas fa-stop"></i> Stop
+                            </button>
+                            <button class="btn btn-sm btn-info me-2" onclick="manageWorker('{{ worker.name }}', 'restart')">
+                                <i class="fas fa-redo"></i> Restart
+                            </button>
+                            {% else %}
+                            <button class="btn btn-sm btn-success me-2" onclick="manageWorker('{{ worker.name }}', 'start')">
+                                <i class="fas fa-play"></i> Start
+                            </button>
+                            {% endif %}
+                            <button class="btn btn-sm btn-primary me-2" onclick="showWorkerDetails('{{ worker.name }}')">
+                                <i class="fas fa-info-circle"></i> Details
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteWorker('{{ worker.name }}')">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if not all_workers %}
+        <div class="text-center py-5">
+            <i class="fas fa-server fa-5x text-muted mb-3"></i>
+            <h3 class="text-muted">No Workers Deployed</h3>
+            <p class="text-muted">Deploy your first worker on a local container or remote VPS to get started.</p>
+            <button class="btn btn-gradient btn-lg" data-bs-toggle="modal" data-bs-target="#deployWorkerModal">
+                <i class="fas fa-plus"></i> Deploy Worker
+            </button>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Deploy Worker Modal -->
+    <div class="modal fade" id="deployWorkerModal" tabindex="-1" aria-labelledby="deployWorkerModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deployWorkerModalLabel">
+                        <i class="fas fa-plus"></i> Deploy New Worker
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Deployment Type Selector -->
+                    <div class="deployment-type-selector">
+                        <button type="button" class="deployment-type-btn active" id="localDeployBtn" onclick="selectDeploymentType('local')">
+                            <i class="fas fa-home me-2"></i>
+                            Local Container
+                        </button>
+                        <button type="button" class="deployment-type-btn" id="remoteDeployBtn" onclick="selectDeploymentType('remote')">
+                            <i class="fas fa-cloud me-2"></i>
+                            Remote VPS
+                        </button>
+                    </div>
+
+                    <form id="deployWorkerForm">
+                        <input type="hidden" id="deploymentType" name="deployment_type" value="local">
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label for="workerName" class="form-label">Worker Name</label>
+                                    <input type="text" class="form-control" id="workerName" name="name" required>
+                                    <div class="form-text">Unique name for the worker instance</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="workerPort" class="form-label">Worker Port</label>
+                                    <input type="number" class="form-control" id="workerPort" name="worker_port" value="8069" min="1024" max="65535" required>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Remote VPS Configuration -->
+                        <div id="remoteConfig" style="display: none;">
+                            <div class="mb-3">
+                                <label for="serverId" class="form-label">Target VPS Server</label>
+                                <select class="form-select" id="serverId" name="server_id" onchange="testVPSConnection()">
+                                    <option value="">Select a VPS server...</option>
+                                    {% for server in servers %}
+                                    <option value="{{ server.id }}" data-ip="{{ server.ip_address }}" data-specs="{{ server.cpu_cores }}C/{{ server.memory_gb }}GB">
+                                        {{ server.name }} ({{ server.ip_address }}) - {{ server.cpu_cores }}C/{{ server.memory_gb }}GB
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <div id="vpsConnectionStatus" class="vps-connection-status" style="display: none;"></div>
+                            </div>
+
+                            <!-- Database Configuration for Remote -->
+                            <h6 class="mt-4 mb-3"><i class="fas fa-database"></i> Database Configuration</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="postgresHost" class="form-label">PostgreSQL Host</label>
+                                        <input type="text" class="form-control" id="postgresHost" name="postgres_host" placeholder="Database server IP">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="postgresPort" class="form-label">PostgreSQL Port</label>
+                                        <input type="number" class="form-control" id="postgresPort" name="postgres_port" value="5432">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="postgresUser" class="form-label">DB User</label>
+                                        <input type="text" class="form-control" id="postgresUser" name="postgres_user" placeholder="odoo">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="postgresPassword" class="form-label">DB Password</label>
+                                        <input type="password" class="form-control" id="postgresPassword" name="postgres_password">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label for="postgresDb" class="form-label">DB Name</label>
+                                        <input type="text" class="form-control" id="postgresDb" name="postgres_db" placeholder="postgres">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="maxTenants" class="form-label">Max Tenants</label>
+                                    <input type="number" class="form-control" id="maxTenants" name="max_tenants" value="10" min="1" max="100" required>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="cpuCores" class="form-label">CPU Cores</label>
+                                    <input type="number" class="form-control" id="cpuCores" name="cpu" value="2" min="1" max="16">
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label for="memoryGb" class="form-label">Memory (GB)</label>
+                                    <input type="number" class="form-control" id="memoryGb" name="memory" value="2" min="1" max="64">
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-gradient" onclick="deployWorker()">
+                        <i class="fas fa-rocket"></i> Deploy Worker
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Worker Details Modal -->
+    <div class="modal fade" id="workerDetailsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-info-circle"></i> Worker Details
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="workerDetailsContent">
+                    <!-- Dynamic content loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deployment Progress Modal -->
+    <div class="modal fade" id="deploymentProgressModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-cog fa-spin"></i> Deploying Worker
+                    </h5>
+                </div>
+                <div class="modal-body">
+                    <div class="progress mb-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <div class="deployment-log" id="deploymentLog">
+                        Initializing deployment...<br>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Global variables
+        let deploymentProgressModal;
+        let deploymentLog;
+        let currentDeploymentType = 'local';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            deploymentProgressModal = new bootstrap.Modal(document.getElementById('deploymentProgressModal'));
+            deploymentLog = document.getElementById('deploymentLog');
+        });
+
+        function selectDeploymentType(type) {
+            currentDeploymentType = type;
+            
+            // Update buttons
+            document.getElementById('localDeployBtn').classList.toggle('active', type === 'local');
+            document.getElementById('remoteDeployBtn').classList.toggle('active', type === 'remote');
+            
+            // Update form
+            document.getElementById('deploymentType').value = type;
+            document.getElementById('remoteConfig').style.display = type === 'remote' ? 'block' : 'none';
+            
+            // Update required fields
+            const serverSelect = document.getElementById('serverId');
+            if (type === 'remote') {
+                serverSelect.setAttribute('required', 'required');
+            } else {
+                serverSelect.removeAttribute('required');
+                serverSelect.value = '';
+            }
+        }
+
+        function testVPSConnection() {
+            const serverId = document.getElementById('serverId').value;
+            const statusDiv = document.getElementById('vpsConnectionStatus');
+            
+            if (!serverId) {
+                statusDiv.style.display = 'none';
+                return;
+            }
+            
+            statusDiv.style.display = 'block';
+            statusDiv.className = 'vps-connection-status connection-testing';
+            statusDiv.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Testing connection...';
+            
+            // Simulate connection test (you can implement actual test via API)
+            setTimeout(() => {
+                const serverOption = document.querySelector(`#serverId option[value="${serverId}"]`);
+                const serverName = serverOption.textContent;
+                
+                // For demo, randomly simulate success/failure
+                const isSuccess = Math.random() > 0.3; // 70% success rate
+                
+                if (isSuccess) {
+                    statusDiv.className = 'vps-connection-status connection-success';
+                    statusDiv.innerHTML = '<i class="fas fa-check-circle me-2"></i>Connection successful to ' + serverName;
+                } else {
+                    statusDiv.className = 'vps-connection-status connection-error';
+                    statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>Connection failed. Please check server credentials.';
+                }
+            }, 2000);
+        }
+
+        function deployWorker() {
+            const form = document.getElementById('deployWorkerForm');
+            const formData = new FormData(form);
+            
+            // Validate required fields
+            if (!formData.get('name')) {
+                showAlert('Please enter a worker name', 'danger');
+                return;
+            }
+            
+            if (currentDeploymentType === 'remote' && !formData.get('server_id')) {
+                showAlert('Please select a VPS server for remote deployment', 'danger');
+                return;
+            }
+            
+            // Show deployment progress
+            document.getElementById('deployWorkerModal').style.display = 'none';
+            bootstrap.Modal.getInstance(document.getElementById('deployWorkerModal')).hide();
+            deploymentProgressModal.show();
+            
+            updateDeploymentProgress(10, 'Validating configuration...');
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '{{ csrf_token() }}';
+            
+            // Submit deployment request
+            fetch('/api/worker', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                },
+                body: JSON.stringify(Object.fromEntries(formData))
+            })
+            .then(response => {
+                if (currentDeploymentType === 'remote') {
+                    updateDeploymentProgress(50, 'Connecting to remote VPS server...');
+                } else {
+                    updateDeploymentProgress(50, 'Creating Docker container...');
+                }
+                
+                // Check if response is JSON or redirect
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json();
+                } else {
+                    // Handle non-JSON responses (like redirects or errors)
+                    throw new Error(`Authentication required or server error (status: ${response.status})`);
+                }
+            })
+            .then(data => {
+                if (data.success) {
+                    updateDeploymentProgress(100, 'Worker deployed successfully!');
+                    setTimeout(() => {
+                        deploymentProgressModal.hide();
+                        showAlert(`Worker "${formData.get('name')}" deployed successfully`, 'success');
+                        location.reload();
+                    }, 2000);
+                } else {
+                    updateDeploymentProgress(0, `Deployment failed: ${data.message}`);
+                    setTimeout(() => {
+                        deploymentProgressModal.hide();
+                        showAlert(`Deployment failed: ${data.message}`, 'danger');
+                    }, 3000);
+                }
+            })
+            .catch(error => {
+                updateDeploymentProgress(0, `Error: ${error.message}`);
+                setTimeout(() => {
+                    deploymentProgressModal.hide();
+                    showAlert('Deployment failed due to network error', 'danger');
+                }, 3000);
+            });
+        }
+        
+        function updateDeploymentProgress(percent, message) {
+            const progressBar = document.querySelector('#deploymentProgressModal .progress-bar');
+            progressBar.style.width = percent + '%';
+            progressBar.setAttribute('aria-valuenow', percent);
+            
+            deploymentLog.innerHTML += message + '<br>';
+            deploymentLog.scrollTop = deploymentLog.scrollHeight;
+        }
+        
+        function manageWorker(workerName, action) {
+            const actionMessages = {
+                'start': 'Starting',
+                'stop': 'Stopping',
+                'restart': 'Restarting'
+            };
+            
+            showAlert(`${actionMessages[action]} worker ${workerName}...`, 'info');
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '{{ csrf_token() }}';
+            
+            fetch(`/api/worker/${encodeURIComponent(workerName)}/${action}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert(data.message, 'success');
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    showAlert(data.message, 'danger');
+                }
+            })
+            .catch(error => {
+                showAlert(`Error ${action}ing worker: ${error.message}`, 'danger');
+            });
+        }
+        
+        function deleteWorker(workerName) {
+            if (confirm(`Are you sure you want to delete worker "${workerName}"? This action cannot be undone.`)) {
+                showAlert(`Deleting worker ${workerName}...`, 'info');
+                
+                // Get CSRF token
+                const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '{{ csrf_token() }}';
+                
+                fetch(`/api/worker/${encodeURIComponent(workerName)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRFToken': csrfToken
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert(data.message, 'success');
+                        setTimeout(() => location.reload(), 1000);
+                    } else {
+                        showAlert(data.message, 'danger');
+                    }
+                })
+                .catch(error => {
+                    showAlert(`Error deleting worker: ${error.message}`, 'danger');
+                });
+            }
+        }
+        
+        function showWorkerDetails(workerName) {
+            fetch(`/api/worker/${encodeURIComponent(workerName)}/status`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const details = `
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Basic Information</h6>
+                                <p><strong>Name:</strong> ${data.worker_name}</p>
+                                <p><strong>Server:</strong> ${data.server_name} (${data.server_ip})</p>
+                                <p><strong>Port:</strong> ${data.port}</p>
+                                <p><strong>Status:</strong> <span class="worker-status status-${data.health_status.toLowerCase()}">${data.health_status}</span></p>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Resource Usage</h6>
+                                <p><strong>Container Status:</strong> ${data.container_status}</p>
+                                <p><strong>Resource Usage:</strong> ${data.resource_usage}</p>
+                                <p><strong>Last Checked:</strong> ${new Date(data.last_checked).toLocaleString()}</p>
+                            </div>
+                        </div>
+                    `;
+                    document.getElementById('workerDetailsContent').innerHTML = details;
+                } else {
+                    document.getElementById('workerDetailsContent').innerHTML = `<p class="text-danger">Error loading worker details: ${data.message}</p>`;
+                }
+                new bootstrap.Modal(document.getElementById('workerDetailsModal')).show();
+            });
+        }
+        
+        function refreshWorkerStatus() {
+            showAlert('Refreshing worker status...', 'info');
+            location.reload();
+        }
+        
+        function filterWorkers() {
+            const deploymentFilter = document.getElementById('deploymentFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const searchFilter = document.getElementById('searchFilter').value.toLowerCase();
+            
+            const workers = document.querySelectorAll('.worker-item');
+            
+            workers.forEach(worker => {
+                const deployment = worker.getAttribute('data-deployment');
+                const status = worker.getAttribute('data-status');
+                const name = worker.getAttribute('data-name');
+                
+                let show = true;
+                
+                if (deploymentFilter && deployment !== deploymentFilter) show = false;
+                if (statusFilter && status !== statusFilter) show = false;
+                if (searchFilter && !name.includes(searchFilter)) show = false;
+                
+                worker.style.display = show ? 'block' : 'none';
+            });
+        }
+        
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.worker-checkbox');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+            });
+            
+            updateBulkButtons();
+        }
+        
+        function updateBulkButtons() {
+            const checkedBoxes = document.querySelectorAll('.worker-checkbox:checked');
+            const bulkStart = document.getElementById('bulk-start');
+            const bulkStop = document.getElementById('bulk-stop');
+            
+            const hasSelection = checkedBoxes.length > 0;
+            bulkStart.disabled = !hasSelection;
+            bulkStop.disabled = !hasSelection;
+        }
+        
+        function bulkAction(action) {
+            const checkedBoxes = document.querySelectorAll('.worker-checkbox:checked');
+            const workerIds = Array.from(checkedBoxes).map(cb => cb.value);
+            
+            if (workerIds.length === 0) return;
+            
+            showAlert(`${action}ing ${workerIds.length} workers...`, 'info');
+            
+            // Get CSRF token
+            const csrfToken = document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || '{{ csrf_token() }}';
+            
+            Promise.all(workerIds.map(id => {
+                return fetch(`/api/worker/${id}/${action}`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    }
+                });
+            }))
+            .then(responses => Promise.all(responses.map(r => r.json())))
+            .then(results => {
+                const success = results.filter(r => r.success).length;
+                const failed = results.length - success;
+                
+                if (failed === 0) {
+                    showAlert(`Successfully ${action}ed ${success} workers`, 'success');
+                } else {
+                    showAlert(`${action}ed ${success} workers, ${failed} failed`, 'warning');
+                }
+                
+                setTimeout(() => location.reload(), 1000);
+            })
+            .catch(error => {
+                showAlert(`Error performing bulk action: ${error.message}`, 'danger');
+            });
+        }
+        
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alertContainer');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type} alert-dismissible fade show`;
+            alert.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            alertContainer.appendChild(alert);
+            
+            // Auto-dismiss after 5 seconds
+            setTimeout(() => {
+                if (alert.parentNode) {
+                    alert.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

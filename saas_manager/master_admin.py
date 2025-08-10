@@ -6,40 +6,28 @@ import os
 import io
 import csv
 import json
+import logging
 import psutil
 import docker
 import xmlrpc.client
 import requests
 from sqlalchemy import func, desc, text
-from sqlalchemy.orm import joinedload
 
 from models import (
     SaasUser, Tenant, TenantUser, SubscriptionPlan,
-    CredentialAccess, WorkerInstance, UserPublicKey, AuditLog, SystemSetting
+    CredentialAccess, WorkerInstance, UserPublicKey, AuditLog, SystemSetting, Payment
 )
 from db import db
 from OdooDatabaseManager import OdooDatabaseManager
-from utils import track_errors, error_tracker, generate_password
+from utils import track_errors, error_tracker, generate_password, logger
 from billing import BillingService
 
-# Add these imports if not already present
-import psutil
-import redis
+# Import shared utilities
+from shared_utils import get_redis_client, get_docker_client, safe_execute, database_transaction
 
-# Add these variables if not already defined
-redis_client = None
-docker_client = None
-
-try:
-    redis_client = redis.Redis.from_url(os.environ.get('REDIS_URL', 'redis://redis:6379/0'))
-    redis_client.ping()
-except:
-    redis_client = None
-
-try:
-    docker_client = docker.from_env()
-except:
-    docker_client = None
+# Get managed client instances
+redis_client = get_redis_client()
+docker_client = get_docker_client()
 
 master_admin_bp = Blueprint('master_admin', __name__)
 
@@ -64,9 +52,9 @@ def log_admin_action(action, details=None):
         )
         db.session.add(audit_log)
         db.session.commit()
-        print(f"[ADMIN LOG] {current_user.username}: {action} - {details}")
+        logging.info(f"Admin action by {current_user.username}: {action} - {details}")
     except Exception as e:
-        print(f"[ADMIN LOG ERROR] Failed to log action: {e}")
+        logging.error(f"Failed to log admin action: {e}")
 
 @master_admin_bp.route('/master-admin/email-settings', methods=['GET', 'POST'])
 @login_required
@@ -223,9 +211,9 @@ def get_available_modules():
                 admin_user='admin',
                 admin_password='admin'
             )
-            print(f"[✓] Successfully fetched {len(modules)} modules from odoo_master database")
+            logging.info(f"Successfully fetched {len(modules)} modules from odoo_master database")
         except Exception as e:
-            print(f"[!] Failed to fetch modules from odoo_master: {e}")
+            logging.warning(f"Failed to fetch modules from odoo_master: {e}")
             
         # If odoo_master doesn't work, try saas_manager database 
         if not modules:
@@ -235,9 +223,9 @@ def get_available_modules():
                     admin_user='admin',
                     admin_password='admin'
                 )
-                print(f"[✓] Successfully fetched {len(modules)} modules from saas_manager database")
+                logging.info(f"Successfully fetched {len(modules)} modules from saas_manager database")
             except Exception as e:
-                print(f"[!] Failed to fetch modules from saas_manager: {e}")
+                logging.warning(f"Failed to fetch modules from saas_manager: {e}")
         
         if not modules:
             # Return a basic set of common modules if we can't fetch from Odoo
@@ -2214,7 +2202,7 @@ def get_table_info(table_name):
 def get_system_config():
     try:
         config = {
-            'app_name': 'Odoo SaaS Management',
+            'app_name': 'Khudroo Management',
             'version': '2.1.0',
             'environment': os.environ.get('FLASK_ENV', 'production'),
             'debug_mode': os.environ.get('FLASK_DEBUG', 'False') == 'True',

@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 """
-Odoo SaaS Management Application with Enhanced Error Tracking and Redis Integration
+Khudroo Management Application with Enhanced Error Tracking and Redis Integration
 Main Flask application for managing Odoo tenants
 """
 
 # Standard library imports
 import asyncio
 import base64
-import bcrypt
 import hashlib
-import inspect
 import json
 import logging
 import os
@@ -24,9 +22,8 @@ from datetime import datetime, timedelta
 from functools import wraps
 
 # Third-party imports
-import docker
+import docker.errors
 import psycopg2
-import redis
 import requests
 from urllib.parse import urlparse
 from cryptography.exceptions import InvalidSignature
@@ -55,46 +52,28 @@ from factory import create_app, init_db
 from models import SaasUser, Tenant, TenantUser, SubscriptionPlan, WorkerInstance, UserPublicKey, CredentialAccess, Report, AuditLog, PaymentTransaction
 from utils import error_tracker, logger, track_errors
 from websocket_handler import WebSocketManager, setup_websocket_handlers, UpdateTrigger
+from shared_utils import get_redis_client, get_docker_client, safe_execute, database_transaction, log_error_with_context
 
+# Local application imports - use relative imports in package context
 try:
     from .infra_admin import infra_admin_bp
-except ImportError:
-    from infra_admin import infra_admin_bp
-    
-try:
     from .master_admin import master_admin_bp
-except ImportError:
-    from master_admin import master_admin_bp
-    
-try:
     from .system_admin import system_admin_bp
-except ImportError:
-    from system_admin import system_admin_bp
-    
-try:
     from .OdooDatabaseManager import OdooDatabaseManager
-except ImportError:
-    from OdooDatabaseManager import OdooDatabaseManager
-    
-try:
     from .TenantLogManager import TenantLogManager
-except ImportError:
-    from TenantLogManager import TenantLogManager
-
-try:
     from .support import support_bp
-except ImportError:
-    from support import support_bp
-
-try:
     from .support_admin import support_admin_bp
-except ImportError:
-    from support_admin import support_admin_bp
-    
-try:
     from .billing import BillingService, register_unified_billing_routes
     from .billing_routes import billing_bp
 except ImportError:
+    # Fallback to absolute imports when running as script
+    from infra_admin import infra_admin_bp
+    from master_admin import master_admin_bp
+    from system_admin import system_admin_bp
+    from OdooDatabaseManager import OdooDatabaseManager
+    from TenantLogManager import TenantLogManager
+    from support import support_bp
+    from support_admin import support_admin_bp
     from billing import BillingService, register_unified_billing_routes
     from billing_routes import billing_bp
     
@@ -139,6 +118,54 @@ app.register_blueprint(support_admin_bp)
 app.register_blueprint(billing_bp)
 register_unified_billing_routes(app, csrf)
 
+# Register API routes (after all imports are available)
+try:
+    from api_routes import api_bp
+    app.register_blueprint(api_bp)
+    print("✅ API routes registered successfully")
+except ImportError as e:
+    print(f"⚠️  API routes not available: {e}")
+
+# Register User API routes
+try:
+    from user_api import user_api_bp
+    app.register_blueprint(user_api_bp)
+    print("✅ User API routes registered successfully")
+except ImportError as e:
+    print(f"⚠️  User API routes not available: {e}")
+
+# Register Public API routes
+try:
+    from public_api import public_api_bp
+    app.register_blueprint(public_api_bp)
+    print("✅ Public API routes registered successfully")
+except ImportError as e:
+    print(f"⚠️  Public API routes not available: {e}")
+
+# Register Tenant API routes
+try:
+    from tenant_api import tenant_api_bp
+    app.register_blueprint(tenant_api_bp)
+    print("✅ Tenant API routes registered successfully")
+except ImportError as e:
+    print(f"⚠️  Tenant API routes not available: {e}")
+
+# Register Billing API routes
+try:
+    from billing_api import billing_api_bp
+    app.register_blueprint(billing_api_bp)
+    print("✅ Billing API routes registered successfully")
+except ImportError as e:
+    print(f"⚠️  Billing API routes not available: {e}")
+
+# Register Support API routes
+try:
+    from support_api import support_api_bp
+    app.register_blueprint(support_api_bp)
+    print("✅ Support API routes registered successfully")
+except ImportError as e:
+    print(f"⚠️  Support API routes not available: {e}")
+
 # Add CSRF token to template context
 @app.context_processor
 def inject_csrf_token():
@@ -164,21 +191,15 @@ def csrf_error(reason):
 
 # Initialize Odoo manager and other services
 odoo = OdooDatabaseManager(odoo_url="http://odoo_master:8069", master_pwd=os.environ.get('ODOO_MASTER_PASSWORD', 'admin123'))
-print(f"Using Odoo URL: {odoo.odoo_url}")
-print(f"Using Odoo Master Password: {odoo.master_pwd}")
+logger.info(f"Using Odoo URL: {odoo.odoo_url}")
+logger.info(f"Using Odoo Master Password: {odoo.master_pwd}")
 
-# Initialize Redis client
-redis_client = None
-try:
-    redis_client = redis.Redis.from_url(os.environ.get('REDIS_URL', 'redis://redis:6379/0'))
-    redis_client.ping()
+# Initialize Redis client using shared utilities
+redis_client = get_redis_client()
+if redis_client:
     logger.info("Redis client initialized successfully")
-except redis.ConnectionError as e:
-    error_tracker.log_error(e, {'component': 'redis_initialization'})
-    redis_client = None
-except Exception as e:
-    error_tracker.log_error(e, {'component': 'redis_initialization'})
-    redis_client = None
+else:
+    logger.warning("Redis client not available")
 
 # Configure Flask-Session to use Redis
 if redis_client:
@@ -200,17 +221,12 @@ else:
     logger.warning("Redis not available, rate limiting disabled")
     limiter = None
 
-docker_client = None
-try:
-    docker_client = docker.from_env()
-    docker_client.ping()
+# Initialize Docker client using shared utilities
+docker_client = get_docker_client()
+if docker_client:
     logger.info("Docker client initialized successfully")
-except docker.errors.DockerException as e:
-    error_tracker.log_error(e, {'component': 'docker_initialization'})
-    docker_client = None
-except Exception as e:
-    error_tracker.log_error(e, {'component': 'docker_initialization'})
-    docker_client = None
+else:
+    logger.warning("Docker client not available")
 
 # Initialize SocketIO
 # Initialize SocketIO with proper configuration
@@ -548,7 +564,7 @@ async def create_database(db_name, username='admin', password='admin',  modules=
         except Exception as saas_config_error:
             logger.warning(f"Failed to initialize SaaS user limit config for {db_name}: {saas_config_error}")
         
-        print("[✓] Odoo Database created successfully.")
+        logger.info("Odoo Database created successfully.")
 
         # Disable signup
         try:
@@ -576,7 +592,7 @@ async def create_database(db_name, username='admin', password='admin',  modules=
             logger.warning(f"Failed to disable signup for {db_name}: {str(e)}")
             error_tracker.log_error(e, {'database_name': db_name, 'function': 'disable_signup'})
             
-        print("[✓] Signup disabled for Odoo database.")
+        logger.info("Signup disabled for Odoo database.")
         # Set primary color if web_debranding module is available
         try:
             module_ids = models.execute_kw(
@@ -602,7 +618,7 @@ async def create_database(db_name, username='admin', password='admin',  modules=
             logger.warning(f"Failed to set primary color for {db_name}: {str(e)}")
             error_tracker.log_error(e, {'database_name': db_name, 'function': 'set_primary_color'})
         
-        print("[✓] Odoo Database created.")
+        logger.info("Odoo Database created.")
 
         # UPDATE TENANT STATUS TO ACTIVE after successful database creation
         try:
@@ -3536,33 +3552,7 @@ def inject_now():
     """Inject current datetime into all template contexts"""
     return {'now': datetime.utcnow()}
 
-# You can also add other useful template globals
-@app.template_global()
-def moment_js_format(dt):
-    """Format datetime for moment.js"""
-    if dt:
-        return dt.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-    return None
 
-@app.template_filter('timeago')
-def timeago_filter(dt):
-    """Calculate time ago from datetime"""
-    if not dt:
-        return 'Never'
-    
-    now = datetime.utcnow()
-    diff = now - dt
-    
-    if diff.days > 0:
-        return f"{diff.days}d ago"
-    elif diff.seconds > 3600:
-        hours = diff.seconds // 3600
-        return f"{hours}h ago"
-    elif diff.seconds > 60:
-        minutes = diff.seconds // 60
-        return f"{minutes}m ago"
-    else:
-        return "Just now"
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 8000))

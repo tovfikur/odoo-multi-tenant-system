@@ -636,22 +636,28 @@
     });
   }
 
-  // Preloader
+  // Lottie Preloader - Your custom animation
   function initializePreloader() {
-    // Create preloader
+    // Load Lottie web component script
+    if (!document.querySelector('script[src*="dotlottie-wc"]')) {
+      const lottieScript = document.createElement('script');
+      lottieScript.src = 'https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.2/dist/dotlottie-wc.js';
+      lottieScript.type = 'module';
+      document.head.appendChild(lottieScript);
+    }
+
+    // Create preloader with your exact Lottie animation
     const preloader = document.createElement("div");
     preloader.id = "preloader";
     preloader.innerHTML = `
             <div class="preloader-content">
-                <div class="preloader-logo">
-                    <i class="fas fa-cloud fa-3x text-primary"></i>
-                    <h3 class="mt-3">Odoo SaaS</h3>
-                </div>
-                <div class="preloader-spinner">
-                    <div class="spinner-ring"></div>
-                    <div class="spinner-ring"></div>
-                    <div class="spinner-ring"></div>
-                </div>
+                <dotlottie-wc 
+                    src="https://lottie.host/2ca5e67b-55b9-4f90-8bd5-8c536ebfb522/6r2AmJ81Et.lottie" 
+                    style="width: 300px; height: 300px;" 
+                    speed="1" 
+                    autoplay 
+                    loop>
+                </dotlottie-wc>
             </div>
         `;
 
@@ -661,7 +667,10 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            background: linear-gradient(135deg, 
+                #2563eb 0%, 
+                #7c3aed 50%, 
+                #c026d3 100%);
             z-index: 10000;
             display: flex;
             align-items: center;
@@ -676,38 +685,36 @@
     preloaderStyles.textContent = `
             .preloader-content {
                 text-align: center;
-                color: white;
+                background: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(20px);
+                border-radius: 25px;
+                padding: 50px;
+                box-shadow: 
+                    0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                    0 0 0 1px rgba(255, 255, 255, 0.2);
+                max-width: 400px;
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                transform: translateY(20px) scale(0.9);
+                animation: preloaderFadeIn 0.5s ease-out forwards;
             }
             
-            .preloader-logo {
-                animation: float 2s ease-in-out infinite;
+            @keyframes preloaderFadeIn {
+                to {
+                    transform: translateY(0) scale(1);
+                }
             }
             
-            .preloader-spinner {
-                position: relative;
-                width: 60px;
-                height: 60px;
-                margin: 20px auto;
-            }
-            
-            .spinner-ring {
-                position: absolute;
-                width: 100%;
-                height: 100%;
-                border: 3px solid transparent;
-                border-top: 3px solid white;
-                border-radius: 50%;
-                animation: spin 1.5s linear infinite;
-            }
-            
-            .spinner-ring:nth-child(2) {
-                animation-delay: 0.2s;
-                border-top-color: rgba(255, 255, 255, 0.7);
-            }
-            
-            .spinner-ring:nth-child(3) {
-                animation-delay: 0.4s;
-                border-top-color: rgba(255, 255, 255, 0.4);
+            /* Mobile responsive */
+            @media (max-width: 640px) {
+                .preloader-content {
+                    margin: 20px;
+                    padding: 30px 20px;
+                }
+                
+                .preloader-content dotlottie-wc {
+                    width: 200px !important;
+                    height: 200px !important;
+                }
             }
         `;
 

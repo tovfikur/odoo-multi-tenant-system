@@ -1,7 +1,6 @@
 # Billing Service for Usage-Based Billing System
 from datetime import datetime, timedelta
 import logging
-from flask import current_app
 from db import db
 from models import (
     Tenant, BillingCycle, UsageTracking, PaymentHistory, 

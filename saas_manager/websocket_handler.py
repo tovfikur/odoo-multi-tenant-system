@@ -186,6 +186,21 @@ def setup_websocket_handlers(socketio, ws_manager):
                     'data': stats,
                     'timestamp': datetime.utcnow().isoformat()
                 })
+            
+            elif data_type == 'notifications':
+                from user_notifications import NotificationService
+                notification_service = NotificationService()
+                notifications = notification_service.get_user_notifications(current_user.id, limit=10)
+                counts = notification_service.get_notification_counts(current_user.id)
+                
+                emit('data_refreshed', {
+                    'type': 'notifications',
+                    'data': {
+                        'notifications': [n.to_dict() for n in notifications],
+                        'counts': counts
+                    },
+                    'timestamp': datetime.utcnow().isoformat()
+                })
         
         except Exception as e:
             logger.error(f"Failed to refresh data for user {current_user.id}: {e}")
@@ -193,6 +208,81 @@ def setup_websocket_handlers(socketio, ws_manager):
                 'message': 'Failed to refresh data',
                 'error': str(e)
             })
+    
+    @socketio.on('mark_notification_read')
+    def handle_mark_notification_read(data):
+        """Handle marking notification as read via WebSocket"""
+        if not current_user.is_authenticated:
+            return
+        
+        notification_id = data.get('notification_id')
+        if not notification_id:
+            emit('error', {'message': 'Notification ID required'})
+            return
+        
+        try:
+            from user_notifications import NotificationService
+            notification_service = NotificationService(ws_manager)
+            success = notification_service.mark_as_read(notification_id, current_user.id)
+            
+            if success:
+                emit('notification_action_completed', {
+                    'action': 'read',
+                    'notification_id': notification_id,
+                    'success': True
+                })
+            else:
+                emit('error', {'message': 'Notification not found or access denied'})
+        
+        except Exception as e:
+            logger.error(f"Failed to mark notification as read via WebSocket: {e}")
+            emit('error', {'message': 'Failed to mark notification as read'})
+    
+    @socketio.on('dismiss_notification')
+    def handle_dismiss_notification(data):
+        """Handle dismissing notification via WebSocket"""
+        if not current_user.is_authenticated:
+            return
+        
+        notification_id = data.get('notification_id')
+        if not notification_id:
+            emit('error', {'message': 'Notification ID required'})
+            return
+        
+        try:
+            from user_notifications import NotificationService
+            notification_service = NotificationService(ws_manager)
+            success = notification_service.dismiss_notification(notification_id, current_user.id)
+            
+            if success:
+                emit('notification_action_completed', {
+                    'action': 'dismiss',
+                    'notification_id': notification_id,
+                    'success': True
+                })
+            else:
+                emit('error', {'message': 'Notification not found or access denied'})
+        
+        except Exception as e:
+            logger.error(f"Failed to dismiss notification via WebSocket: {e}")
+            emit('error', {'message': 'Failed to dismiss notification'})
+    
+    @socketio.on('get_notification_counts')
+    def handle_get_notification_counts():
+        """Get notification counts via WebSocket"""
+        if not current_user.is_authenticated:
+            return
+        
+        try:
+            from user_notifications import NotificationService
+            notification_service = NotificationService()
+            counts = notification_service.get_notification_counts(current_user.id)
+            
+            emit('notification_counts', counts)
+        
+        except Exception as e:
+            logger.error(f"Failed to get notification counts via WebSocket: {e}")
+            emit('error', {'message': 'Failed to get notification counts'})
 
 
 # Update triggers for cache invalidation and real-time updates

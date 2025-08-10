@@ -134,12 +134,12 @@
 <!-- Navigation Tabs -->
 <ul class="nav nav-pills justify-content-center mb-4" id="mainTabs">
   <li class="nav-item">
-    <a class="nav-link active" data-bs-toggle="pill" href="#workers">
-      <i class="fas fa-cogs me-2"></i>Workers
+    <a class="nav-link" href="/system-admin/workers">
+      <i class="fas fa-cogs me-2"></i>Worker Management
     </a>
   </li>
   <li class="nav-item">
-    <a class="nav-link" data-bs-toggle="pill" href="#redis">
+    <a class="nav-link active" data-bs-toggle="pill" href="#redis">
       <i class="fas fa-database me-2"></i>Redis
     </a>
   </li>
@@ -154,6 +154,11 @@
     </a>
   </li>
   <li class="nav-item">
+    <a class="nav-link" data-bs-toggle="pill" href="#vps-servers">
+      <i class="fas fa-cloud me-2"></i>VPS Servers
+    </a>
+  </li>
+  <li class="nav-item">
     <a class="nav-link" data-bs-toggle="pill" href="#monitoring">
       <i class="fas fa-chart-line me-2"></i>Monitoring
     </a>
@@ -162,44 +167,8 @@
 
 <!-- Tab Content -->
 <div class="tab-content">
-  <!-- Workers Tab -->
-  <div class="tab-pane fade show active" id="workers">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-      <div>
-        <h3 class="mb-1">
-          <i class="fas fa-cogs me-2 text-primary"></i>
-          Worker Management
-        </h3>
-        <p class="text-muted mb-0">
-          Monitor and control Odoo worker containers
-        </p>
-      </div>
-      <div class="d-flex gap-2">
-        <button class="btn btn-primary btn-action" onclick="createWorker()">
-          <i class="fas fa-plus me-2"></i>
-          Create Worker
-        </button>
-        <button class="btn btn-warning btn-action" onclick="rebalanceLoad()">
-          <i class="fas fa-balance-scale me-2"></i>
-          Rebalance Load
-        </button>
-        <button class="btn btn-info btn-action" onclick="refreshWorkers()">
-          <i class="fas fa-sync-alt me-2"></i>
-          Refresh
-        </button>
-      </div>
-    </div>
-
-    <div id="workersContainer">
-      <div class="text-center py-5">
-        <div class="loading-spinner"></div>
-        <p class="mt-3 text-muted">Loading workers...</p>
-      </div>
-    </div>
-  </div>
-
   <!-- Redis Tab -->
-  <div class="tab-pane fade" id="redis">
+  <div class="tab-pane fade show active" id="redis">
     <div class="d-flex justify-content-between align-items-center mb-4">
       <div>
         <h3 class="mb-1">
@@ -591,6 +560,184 @@ SELECT * FROM tenants LIMIT 10;</textarea
       </div>
     </div>
   </div>
+
+  <!-- VPS Servers Tab -->
+  <div class="tab-pane fade" id="vps-servers">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <div>
+        <h3 class="mb-1">
+          <i class="fas fa-cloud me-2 text-primary"></i>
+          VPS Server Management
+        </h3>
+        <p class="text-muted mb-0">
+          Monitor and manage remote VPS servers from infrastructure admin
+        </p>
+      </div>
+      <div class="d-flex gap-2">
+        <button class="btn btn-info btn-action" onclick="refreshVPSServers()">
+          <i class="fas fa-sync-alt me-2"></i>
+          Refresh
+        </button>
+        <button class="btn btn-warning btn-action" onclick="healthCheckAllVPS()">
+          <i class="fas fa-heartbeat me-2"></i>
+          Health Check All
+        </button>
+      </div>
+    </div>
+
+    <!-- VPS Summary Cards -->
+    <div class="row mb-4">
+      <div class="col-md-3">
+        <div class="metric-card text-center">
+          <div class="metric-value" id="totalVPSServers">0</div>
+          <div class="metric-label">Total Servers</div>
+          <i class="fas fa-server metric-icon text-primary"></i>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card text-center">
+          <div class="metric-value" id="onlineVPSServers">0</div>
+          <div class="metric-label">Online</div>
+          <i class="fas fa-check-circle metric-icon text-success"></i>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card text-center">
+          <div class="metric-value" id="workerCapableVPS">0</div>
+          <div class="metric-label">Worker Capable</div>
+          <i class="fas fa-cogs metric-icon text-info"></i>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="metric-card text-center">
+          <div class="metric-value" id="vpsWithWorkers">0</div>
+          <div class="metric-label">With Workers</div>
+          <i class="fas fa-play-circle metric-icon text-warning"></i>
+        </div>
+      </div>
+    </div>
+
+    <!-- VPS Servers Table -->
+    <div class="card">
+      <div class="card-header bg-gradient-primary text-white">
+        <div class="d-flex justify-content-between align-items-center">
+          <h5 class="card-title mb-0">
+            <i class="fas fa-list me-2"></i>
+            VPS Servers List
+          </h5>
+          <div class="d-flex gap-2">
+            <button class="btn btn-sm btn-outline-light" onclick="filterVPSServers('all')">
+              <i class="fas fa-list me-1"></i>All
+            </button>
+            <button class="btn btn-sm btn-outline-light" onclick="filterVPSServers('active')">
+              <i class="fas fa-circle me-1 text-success"></i>Active
+            </button>
+            <button class="btn btn-sm btn-outline-light" onclick="filterVPSServers('offline')">
+              <i class="fas fa-times-circle me-1 text-danger"></i>Offline
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0">
+            <thead class="table-dark">
+              <tr>
+                <th style="width: 15%">Server Name</th>
+                <th style="width: 12%">IP Address</th>
+                <th style="width: 10%">Status</th>
+                <th style="width: 8%">Health</th>
+                <th style="width: 15%">Specs</th>
+                <th style="width: 15%">Services</th>
+                <th style="width: 10%">Workers</th>
+                <th style="width: 15%">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="vpsServersTableBody">
+              <tr>
+                <td colspan="8" class="text-center py-4">
+                  <div class="loading-spinner"></div>
+                  <p class="mt-2 text-muted">Loading VPS servers...</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- VPS Server Details Modal -->
+    <div class="modal fade" id="vpsServerModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-server me-2"></i>
+              VPS Server Details
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div id="vpsServerDetails">
+              <div class="text-center py-4">
+                <div class="loading-spinner"></div>
+                <p class="mt-2 text-muted">Loading server details...</p>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-info" onclick="testVPSConnection()">
+              <i class="fas fa-plug me-2"></i>Test Connection
+            </button>
+            <button type="button" class="btn btn-primary" onclick="showVPSWorkers()">
+              <i class="fas fa-cogs me-2"></i>View Workers
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Command Execution Modal -->
+    <div class="modal fade" id="vpsCommandModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header bg-dark text-white">
+            <h5 class="modal-title">
+              <i class="fas fa-terminal me-2"></i>
+              Execute Command on VPS
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="vpsCommand" class="form-label">Command</label>
+              <div class="input-group">
+                <span class="input-group-text bg-dark text-white">$</span>
+                <input type="text" class="form-control" id="vpsCommand" placeholder="Enter command (e.g., ls -la, ps aux, docker ps)">
+                <button class="btn btn-primary" onclick="executeVPSCommand()">
+                  <i class="fas fa-play me-2"></i>Execute
+                </button>
+              </div>
+              <div class="form-text">Only safe commands are allowed. Dangerous operations are blocked.</div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Output</label>
+              <div id="vpsCommandOutput" class="border rounded p-3 bg-dark text-light" style="min-height: 200px; font-family: monospace;">
+                <div class="text-muted">Command output will appear here...</div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-warning" onclick="clearCommandOutput()">
+              <i class="fas fa-eraser me-2"></i>Clear
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <!-- Create Worker Modal -->
 <div class="modal fade" id="createWorkerModal" tabindex="-1">
@@ -609,6 +756,18 @@ SELECT * FROM tenants LIMIT 10;</textarea
       </div>
       <div class="modal-body">
         <form id="createWorkerForm">
+          <div class="mb-3">
+            <label class="form-label">Target Server</label>
+            <select class="form-control" name="server_id" id="targetServerSelect" required>
+              <option value="">Select a server...</option>
+            </select>
+            <small class="form-text text-muted">Choose which server to deploy the Odoo worker on</small>
+            <div id="serverStatusIndicator" class="mt-2" style="display: none;">
+              <span class="badge bg-success">
+                <i class="fas fa-check-circle me-1"></i>Server is online
+              </span>
+            </div>
+          </div>
           <div class="mb-3">
             <label class="form-label">Worker Name</label>
             <input
@@ -663,6 +822,74 @@ SELECT * FROM tenants LIMIT 10;</textarea
               <option value="backup">Backup/Failover</option>
               <option value="development">Development</option>
             </select>
+          </div>
+          
+          <!-- PostgreSQL Configuration Section -->
+          <div class="card mt-3 mb-3">
+            <div class="card-header">
+              <h6 class="mb-0"><i class="fas fa-database me-2"></i>PostgreSQL Configuration</h6>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-md-8">
+                  <label class="form-label">PostgreSQL Host/IP</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="postgres_host"
+                    placeholder="192.168.50.152"
+                    value="192.168.50.152"
+                    required
+                  />
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Port</label>
+                  <input
+                    type="number"
+                    class="form-control"
+                    name="postgres_port"
+                    placeholder="5432"
+                    value="5432"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="row mt-3">
+                <div class="col-md-6">
+                  <label class="form-label">Database Name</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="postgres_database"
+                    placeholder="postgres"
+                    value="postgres"
+                    required
+                  />
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Username</label>
+                  <input
+                    type="text"
+                    class="form-control"
+                    name="postgres_user"
+                    placeholder="odoo_master"
+                    value="odoo_master"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="mt-3">
+                <label class="form-label">Password</label>
+                <input
+                  type="password"
+                  class="form-control"
+                  name="postgres_password"
+                  placeholder="secure_password_123"
+                  value="secure_password_123"
+                  required
+                />
+              </div>
+            </div>
           </div>
         </form>
       </div>
@@ -746,6 +973,8 @@ SELECT * FROM tenants LIMIT 10;</textarea
   });
 
   function initializeSystemDashboard() {
+    console.log("Initializing System Dashboard...");
+    
     // Load initial system resources
     loadSystemResources();
 
@@ -757,6 +986,8 @@ SELECT * FROM tenants LIMIT 10;</textarea
 
     // Update last check time
     updateLastCheckTime();
+    
+    console.log("System Dashboard initialized successfully");
   }
 
   function updateLastCheckTime() {
@@ -835,18 +1066,37 @@ SELECT * FROM tenants LIMIT 10;</textarea
 
   // Worker Management
   function loadWorkers() {
+    console.log("Loading workers...");
+    
+    // Show loading state
+    const container = document.getElementById("workersContainer");
+    if (container) {
+      container.innerHTML = `
+        <div class="text-center py-5">
+          <div class="loading-spinner"></div>
+          <p class="mt-3 text-muted">Loading workers...</p>
+        </div>
+      `;
+    }
+    
     fetch("/system-admin/api/workers/list")
-      .then((response) => response.json())
+      .then((response) => {
+        console.log("Workers API response status:", response.status);
+        return response.json();
+      })
       .then((data) => {
+        console.log("Workers API response data:", data);
         if (data.success) {
+          console.log("Found", data.workers.length, "workers");
           renderWorkers(data.workers);
         } else {
-          showWorkersError();
+          console.error("Workers API returned error:", data.message);
+          showWorkersError(data.message);
         }
       })
       .catch((error) => {
         console.error("Failed to load workers:", error);
-        showWorkersError();
+        showWorkersError(error.message);
       });
   }
 
@@ -956,13 +1206,14 @@ SELECT * FROM tenants LIMIT 10;</textarea
     container.innerHTML = workersHtml;
   }
 
-  function showWorkersError() {
+  function showWorkersError(errorMessage = "Unknown error") {
     document.getElementById("workersContainer").innerHTML = `
         <div class="alert alert-danger">
             <i class="fas fa-exclamation-triangle me-2"></i>
-            Failed to load workers. Please check your connection and try again.
+            Failed to load workers: ${errorMessage}
+            <br><small class="text-muted mt-2">Please check your connection and try again.</small>
             <button class="btn btn-sm btn-outline-danger ms-2" onclick="loadWorkers()">
-                <i class="fas fa-retry me-1"></i>Retry
+                <i class="fas fa-sync-alt me-1"></i>Retry
             </button>
         </div>
     `;
@@ -972,17 +1223,76 @@ SELECT * FROM tenants LIMIT 10;</textarea
     const modal = new bootstrap.Modal(
       document.getElementById("createWorkerModal")
     );
+    
+    // Load available servers when modal opens
+    loadAvailableServers();
     modal.show();
   }
+
+  async function loadAvailableServers() {
+    try {
+      const response = await fetch('/infra-admin/api/servers/available-workers');
+      const result = await response.json();
+      
+      const select = document.getElementById('targetServerSelect');
+      select.innerHTML = '<option value="">Select a server...</option>';
+      
+      if (result.success && result.servers) {
+        result.servers.forEach(server => {
+          const option = document.createElement('option');
+          option.value = server.id;
+          option.textContent = `${server.name} (${server.ip_address}) - ${server.status}`;
+          option.dataset.serverIp = server.ip_address;
+          option.dataset.serverStatus = server.status;
+          select.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error loading servers:', error);
+      showNotification('Failed to load available servers', 'error');
+    }
+  }
+
+  // Add server status check when server is selected
+  document.addEventListener('DOMContentLoaded', function() {
+    const serverSelect = document.getElementById('targetServerSelect');
+    if (serverSelect) {
+      serverSelect.addEventListener('change', async function() {
+        const serverStatusIndicator = document.getElementById('serverStatusIndicator');
+        
+        if (this.value) {
+          const selectedOption = this.options[this.selectedIndex];
+          const serverStatus = selectedOption.dataset.serverStatus;
+          
+          if (serverStatus === 'active') {
+            serverStatusIndicator.innerHTML = '<span class="badge bg-success"><i class="fas fa-check-circle me-1"></i>Server is online</span>';
+            serverStatusIndicator.style.display = 'block';
+          } else {
+            serverStatusIndicator.innerHTML = '<span class="badge bg-warning"><i class="fas fa-exclamation-triangle me-1"></i>Server status: ' + serverStatus + '</span>';
+            serverStatusIndicator.style.display = 'block';
+          }
+        } else {
+          serverStatusIndicator.style.display = 'none';
+        }
+      });
+    }
+  });
 
   function submitCreateWorker() {
     const form = document.getElementById("createWorkerForm");
     const formData = new FormData(form);
     const data = Object.fromEntries(formData);
 
+    // Check if a server is selected
+    if (!data.server_id) {
+      showNotification("Please select a target server", "error");
+      return;
+    }
+
     showLoadingState("createWorkerBtn", "Creating...");
 
-    fetch("/system-admin/api/workers/create", {
+    // Use the remote worker creation endpoint with server selection
+    fetch("/system-admin/api/workers/create-remote", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",
@@ -1874,5 +2184,495 @@ SELECT * FROM tenants LIMIT 10;</textarea
       }, duration);
     };
   }
+
+  // ================= VPS SERVER MANAGEMENT FUNCTIONS =================
+
+  let currentVPSServers = [];
+  let selectedVPSServer = null;
+
+  function refreshVPSServers() {
+    showLoadingState(null, "Refreshing...");
+    
+    fetch('/system-admin/api/vps/servers/list')
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          currentVPSServers = data.servers;
+          updateVPSSummary(data);
+          displayVPSServers(data.servers);
+          showNotification("VPS servers refreshed successfully!", "success");
+        } else {
+          showNotification("Failed to load VPS servers: " + (data.message || "Unknown error"), "error");
+        }
+      })
+      .catch(error => {
+        console.error('Error loading VPS servers:', error);
+        showNotification("Error loading VPS servers: " + error.message, "error");
+      })
+      .finally(() => {
+        hideLoadingState();
+      });
+  }
+
+  function updateVPSSummary(data) {
+    document.getElementById('totalVPSServers').textContent = data.total_servers || 0;
+    document.getElementById('onlineVPSServers').textContent = data.online_servers || 0;
+    document.getElementById('workerCapableVPS').textContent = data.worker_capable_servers || 0;
+    
+    // Count servers with workers
+    const serversWithWorkers = data.servers.filter(server => 
+      server.current_services && server.current_services.some(service => 
+        service.includes('odoo') || service.includes('worker')
+      )
+    ).length;
+    document.getElementById('vpsWithWorkers').textContent = serversWithWorkers;
+  }
+
+  function displayVPSServers(servers) {
+    const tbody = document.getElementById('vpsServersTableBody');
+    
+    if (!servers || servers.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="8" class="text-center py-4">
+            <i class="fas fa-server fa-3x text-muted mb-3"></i>
+            <p class="text-muted">No VPS servers found</p>
+            <small class="text-muted">Servers from infra-admin will appear here</small>
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    tbody.innerHTML = servers.map(server => {
+      const statusBadge = getStatusBadge(server.status, server.connection_status);
+      const healthBadge = getHealthBadge(server.health_score);
+      const specsBadge = `${server.cpu_cores || '?'}C/${server.memory_gb || '?'}GB/${server.disk_gb || '?'}GB`;
+      const servicesBadge = (server.current_services || []).slice(0, 2).join(', ') + 
+        (server.current_services && server.current_services.length > 2 ? '...' : '');
+      
+      // Count workers on this server (this would need to be fetched from backend)
+      const workerCount = '?'; // TODO: Fetch actual worker count
+      
+      return `
+        <tr onclick="selectVPSServer(${server.id})" style="cursor: pointer;">
+          <td>
+            <div class="d-flex align-items-center">
+              <i class="fas fa-server me-2 text-primary"></i>
+              <div>
+                <div class="fw-bold">${server.name}</div>
+                <small class="text-muted">${server.os_type || 'Unknown OS'}</small>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge bg-secondary">${server.ip_address}</span>
+            ${server.internal_ip && server.internal_ip !== server.ip_address ? 
+              `<br><small class="text-muted">Int: ${server.internal_ip}</small>` : ''}
+          </td>
+          <td>${statusBadge}</td>
+          <td>${healthBadge}</td>
+          <td>
+            <span class="badge bg-info">${specsBadge}</span>
+          </td>
+          <td>
+            <span class="badge bg-warning">${servicesBadge || 'None'}</span>
+          </td>
+          <td>
+            <span class="badge bg-primary">${workerCount}</span>
+          </td>
+          <td>
+            <div class="btn-group btn-group-sm">
+              <button class="btn btn-outline-primary btn-sm" onclick="event.stopPropagation(); showVPSDetails(${server.id})" title="Details">
+                <i class="fas fa-eye"></i>
+              </button>
+              <button class="btn btn-outline-success btn-sm" onclick="event.stopPropagation(); testVPSConnection(${server.id})" title="Test Connection">
+                <i class="fas fa-plug"></i>
+              </button>
+              <button class="btn btn-outline-info btn-sm" onclick="event.stopPropagation(); showVPSCommandModal(${server.id})" title="Execute Command">
+                <i class="fas fa-terminal"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function getStatusBadge(status, connectionStatus) {
+    if (connectionStatus === 'online') {
+      return '<span class="badge bg-success"><i class="fas fa-circle me-1"></i>Online</span>';
+    } else if (connectionStatus === 'offline') {
+      return '<span class="badge bg-danger"><i class="fas fa-times-circle me-1"></i>Offline</span>';
+    } else if (status === 'active') {
+      return '<span class="badge bg-primary"><i class="fas fa-check-circle me-1"></i>Active</span>';
+    } else {
+      return `<span class="badge bg-secondary"><i class="fas fa-question-circle me-1"></i>${status || 'Unknown'}</span>`;
+    }
+  }
+
+  function getHealthBadge(healthScore) {
+    if (healthScore >= 90) {
+      return '<span class="badge bg-success">Excellent</span>';
+    } else if (healthScore >= 70) {
+      return '<span class="badge bg-warning">Good</span>';
+    } else if (healthScore >= 50) {
+      return '<span class="badge bg-orange">Fair</span>';
+    } else {
+      return '<span class="badge bg-danger">Poor</span>';
+    }
+  }
+
+  function selectVPSServer(serverId) {
+    selectedVPSServer = currentVPSServers.find(s => s.id === serverId);
+    showVPSDetails(serverId);
+  }
+
+  function showVPSDetails(serverId) {
+    const server = currentVPSServers.find(s => s.id === serverId);
+    if (!server) {
+      showNotification("Server not found", "error");
+      return;
+    }
+
+    selectedVPSServer = server;
+    
+    const detailsHTML = `
+      <div class="row">
+        <div class="col-md-6">
+          <h6 class="text-primary">Server Information</h6>
+          <table class="table table-sm">
+            <tr><td><strong>Name:</strong></td><td>${server.name}</td></tr>
+            <tr><td><strong>IP Address:</strong></td><td>${server.ip_address}</td></tr>
+            <tr><td><strong>Status:</strong></td><td>${getStatusBadge(server.status, server.connection_status)}</td></tr>
+            <tr><td><strong>Health Score:</strong></td><td>${getHealthBadge(server.health_score)}</td></tr>
+            <tr><td><strong>OS Type:</strong></td><td>${server.os_type || 'Unknown'}</td></tr>
+            <tr><td><strong>Network Zone:</strong></td><td>${server.network_zone || 'production'}</td></tr>
+          </table>
+        </div>
+        <div class="col-md-6">
+          <h6 class="text-info">System Specifications</h6>
+          <table class="table table-sm">
+            <tr><td><strong>CPU Cores:</strong></td><td>${server.cpu_cores || 'Unknown'}</td></tr>
+            <tr><td><strong>Memory:</strong></td><td>${server.memory_gb || 'Unknown'} GB</td></tr>
+            <tr><td><strong>Disk:</strong></td><td>${server.disk_gb || 'Unknown'} GB</td></tr>
+            <tr><td><strong>Internal IP:</strong></td><td>${server.internal_ip || 'Not set'}</td></tr>
+            <tr><td><strong>External IP:</strong></td><td>${server.external_ip || 'Not set'}</td></tr>
+            <tr><td><strong>Last Check:</strong></td><td>${server.last_health_check ? new Date(server.last_health_check).toLocaleString() : 'Never'}</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-12">
+          <h6 class="text-warning">Services & Roles</h6>
+          <div class="mb-2">
+            <strong>Service Roles:</strong>
+            ${(server.service_roles || []).map(role => `<span class="badge bg-primary me-1">${role}</span>`).join('') || '<span class="text-muted">None defined</span>'}
+          </div>
+          <div>
+            <strong>Current Services:</strong>
+            ${(server.current_services || []).map(service => `<span class="badge bg-success me-1">${service}</span>`).join('') || '<span class="text-muted">None running</span>'}
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.getElementById('vpsServerDetails').innerHTML = detailsHTML;
+    const modal = new bootstrap.Modal(document.getElementById('vpsServerModal'));
+    modal.show();
+  }
+
+  function testVPSConnection(serverId = null) {
+    const targetServerId = serverId || (selectedVPSServer ? selectedVPSServer.id : null);
+    if (!targetServerId) {
+      showNotification("No server selected", "error");
+      return;
+    }
+
+    showLoadingState(null, "Testing connection...");
+
+    fetch(`/system-admin/api/vps/servers/${targetServerId}/connect`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        showNotification(`Connection successful to ${data.server_name}!`, "success");
+        // Refresh the server list to show updated status
+        setTimeout(() => refreshVPSServers(), 1000);
+      } else {
+        showNotification(`Connection failed to ${data.server_name}: ${data.message}`, "error");
+      }
+    })
+    .catch(error => {
+      console.error('Error testing connection:', error);
+      showNotification("Error testing connection: " + error.message, "error");
+    })
+    .finally(() => {
+      hideLoadingState();
+    });
+  }
+
+  function showVPSWorkers(serverId = null) {
+    const targetServerId = serverId || (selectedVPSServer ? selectedVPSServer.id : null);
+    if (!targetServerId) {
+      showNotification("No server selected", "error");
+      return;
+    }
+
+    fetch(`/system-admin/api/vps/servers/${targetServerId}/workers`)
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show workers in a modal or new view
+          displayVPSWorkers(data);
+        } else {
+          showNotification("Failed to load workers: " + data.message, "error");
+        }
+      })
+      .catch(error => {
+        console.error('Error loading workers:', error);
+        showNotification("Error loading workers: " + error.message, "error");
+      });
+  }
+
+  function displayVPSWorkers(data) {
+    const workersHTML = `
+      <div class="alert alert-info">
+        <h6><i class="fas fa-server me-2"></i>${data.server_name} (${data.server_ip})</h6>
+        <p class="mb-0">Workers: ${data.total_workers} | Running: ${data.running_workers} | Tenants: ${data.total_tenants}/${data.total_capacity}</p>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm">
+          <thead>
+            <tr>
+              <th>Worker Name</th>
+              <th>Status</th>
+              <th>Port</th>
+              <th>Load</th>
+              <th>Last Seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${data.workers.map(worker => `
+              <tr>
+                <td>${worker.name}</td>
+                <td><span class="badge bg-${worker.status === 'running' ? 'success' : 'danger'}">${worker.status}</span></td>
+                <td>${worker.port}</td>
+                <td>
+                  <div class="progress" style="height: 20px;">
+                    <div class="progress-bar" role="progressbar" style="width: ${worker.load_percentage}%;">
+                      ${worker.current_tenants}/${worker.max_tenants}
+                    </div>
+                  </div>
+                </td>
+                <td>${worker.last_seen ? new Date(worker.last_seen).toLocaleString() : 'Never'}</td>
+              </tr>
+            `).join('') || '<tr><td colspan="5" class="text-center text-muted">No workers found</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById('vpsServerDetails').innerHTML = workersHTML;
+  }
+
+  function showVPSCommandModal(serverId) {
+    selectedVPSServer = currentVPSServers.find(s => s.id === serverId);
+    if (!selectedVPSServer) {
+      showNotification("Server not found", "error");
+      return;
+    }
+
+    // Clear previous command and output
+    document.getElementById('vpsCommand').value = '';
+    document.getElementById('vpsCommandOutput').innerHTML = '<div class="text-muted">Command output will appear here...</div>';
+    
+    const modal = new bootstrap.Modal(document.getElementById('vpsCommandModal'));
+    modal.show();
+  }
+
+  function executeVPSCommand() {
+    const command = document.getElementById('vpsCommand').value.trim();
+    if (!command) {
+      showNotification("Please enter a command", "warning");
+      return;
+    }
+
+    if (!selectedVPSServer) {
+      showNotification("No server selected", "error");
+      return;
+    }
+
+    const outputDiv = document.getElementById('vpsCommandOutput');
+    outputDiv.innerHTML = '<div class="text-info"><i class="fas fa-spinner fa-spin"></i> Executing command...</div>';
+
+    fetch(`/system-admin/api/vps/servers/${selectedVPSServer.id}/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ command: command })
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const output = `
+          <div class="mb-2">
+            <strong class="text-success">$ ${data.command}</strong>
+          </div>
+          <div class="mb-2">
+            <strong>Exit Code:</strong> <span class="badge bg-${data.exit_code === 0 ? 'success' : 'danger'}">${data.exit_code}</span>
+          </div>
+          ${data.output ? `
+            <div class="mb-2">
+              <strong>Output:</strong>
+              <pre class="text-light mb-0">${data.output}</pre>
+            </div>
+          ` : ''}
+          ${data.error ? `
+            <div class="mb-2">
+              <strong class="text-warning">Error:</strong>
+              <pre class="text-warning mb-0">${data.error}</pre>
+            </div>
+          ` : ''}
+        `;
+        outputDiv.innerHTML = output;
+        showNotification("Command executed successfully", "success");
+      } else {
+        outputDiv.innerHTML = `<div class="text-danger">Error: ${data.message}</div>`;
+        showNotification("Command execution failed: " + data.message, "error");
+      }
+    })
+    .catch(error => {
+      console.error('Error executing command:', error);
+      outputDiv.innerHTML = `<div class="text-danger">Network error: ${error.message}</div>`;
+      showNotification("Error executing command: " + error.message, "error");
+    });
+  }
+
+  function clearCommandOutput() {
+    document.getElementById('vpsCommandOutput').innerHTML = '<div class="text-muted">Command output will appear here...</div>';
+    document.getElementById('vpsCommand').value = '';
+  }
+
+  function healthCheckAllVPS() {
+    showLoadingState(null, "Checking all servers...");
+
+    fetch('/system-admin/api/vps/servers/health-check', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        const summary = data.summary;
+        showNotification(`Health check completed! Online: ${summary.online_servers}, Offline: ${summary.offline_servers}`, "info");
+        refreshVPSServers(); // Refresh to show updated status
+      } else {
+        showNotification("Health check failed: " + data.message, "error");
+      }
+    })
+    .catch(error => {
+      console.error('Error during health check:', error);
+      showNotification("Error during health check: " + error.message, "error");
+    })
+    .finally(() => {
+      hideLoadingState();
+    });
+  }
+
+  function filterVPSServers(filter) {
+    let filteredServers;
+    
+    switch(filter) {
+      case 'active':
+        filteredServers = currentVPSServers.filter(s => s.status === 'active' || s.connection_status === 'online');
+        break;
+      case 'offline':
+        filteredServers = currentVPSServers.filter(s => s.connection_status === 'offline' || s.status === 'offline');
+        break;
+      default:
+        filteredServers = currentVPSServers;
+    }
+    
+    displayVPSServers(filteredServers);
+  }
+
+  // Auto-load VPS servers when the tab is shown
+  document.addEventListener('DOMContentLoaded', function() {
+    // Add event listener for when VPS tab is shown
+    const vpsTab = document.querySelector('a[href="#vps-servers"]');
+    if (vpsTab) {
+      vpsTab.addEventListener('shown.bs.tab', function() {
+        if (currentVPSServers.length === 0) {
+          refreshVPSServers();
+        }
+      });
+    }
+  });
+
+  // Debug function to check containers
+  function debugContainers() {
+    console.log("Debug containers called!");
+    
+    fetch('/system-admin/api/debug/containers')
+      .then(response => response.json())
+      .then(data => {
+        console.log("Debug containers response:", data);
+        
+        if (data.success) {
+          const debugInfo = `
+            Total Containers: ${data.total_containers}
+            Docker Available: ${data.docker_available}
+            DB Workers: ${data.db_workers.length}
+            
+            Containers:
+            ${data.containers.map(c => `- ${c.name} (${c.status}) - Odoo Worker: ${c.is_odoo_worker}`).join('\n')}
+            
+            DB Workers:
+            ${data.db_workers.map(w => `- ${w.name} (${w.status})`).join('\n')}
+          `;
+          
+          alert(debugInfo);
+        } else {
+          alert("Debug failed: " + data.message);
+        }
+      })
+      .catch(error => {
+        console.error("Debug error:", error);
+        alert("Debug error: " + error.message);
+      });
+  }
+
+  // Make sure key functions are available globally for onclick handlers
+  window.createWorker = createWorker;
+  window.debugContainers = debugContainers;
+  window.refreshWorkers = refreshWorkers;
+  window.loadWorkers = loadWorkers;
+  window.rebalanceLoad = rebalanceLoad;
+  window.refreshRedisInfo = refreshRedisInfo;
+  window.flushRedis = flushRedis;
+  window.searchRedisKeys = searchRedisKeys;
+  window.refreshPostgresInfo = refreshPostgresInfo;
+  window.executePostgresQuery = executePostgresQuery;
+  window.reloadNginx = reloadNginx;
+  window.refreshNginxStatus = refreshNginxStatus;
+  window.viewNginxConfig = viewNginxConfig;
+  window.refreshMonitoringData = refreshMonitoringData;
+  window.refreshVPSServers = refreshVPSServers;
+  window.healthCheckAllVPS = healthCheckAllVPS;
+  window.testVPSConnection = testVPSConnection;
+  window.showVPSDetails = showVPSDetails;
+  window.showVPSCommandModal = showVPSCommandModal;
+  window.executeVPSCommand = executeVPSCommand;
+  window.clearCommandOutput = clearCommandOutput;
+  window.filterVPSServers = filterVPSServers;
+  window.showVPSWorkers = showVPSWorkers;
 </script>
 {% endblock %}

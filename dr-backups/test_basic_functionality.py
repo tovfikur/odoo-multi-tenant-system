@@ -7,7 +7,6 @@ Tests core functionality without external dependencies
 
 import sys
 import os
-import json
 from pathlib import Path
 
 # Add the backup_panel directory to Python path

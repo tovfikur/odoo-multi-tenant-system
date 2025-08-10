@@ -22,7 +22,6 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import check_password_hash, generate_password_hash
 import schedule
 import secrets
-import base64
 from urllib.parse import urlencode, urlparse, parse_qs
 import requests
 

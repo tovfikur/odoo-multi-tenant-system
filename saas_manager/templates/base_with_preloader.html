@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Odoo Multi-Tenant System{% endblock %}</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    
+    <!-- CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.7.2/font/bootstrap-icons.css">
+    
+    <!-- Lottie Web Component -->
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.2/dist/dotlottie-wc.js" type="module"></script>
+    
+    <!-- Custom styles for preloader -->
+    <style>
+        /* Enhanced preloader styles */
+        #lottie-preloader-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, 
+                #2563eb 0%, 
+                #7c3aed 50%, 
+                #c026d3 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+        }
+        
+        #lottie-preloader-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .preloader-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 50px;
+            box-shadow: 
+                0 25px 50px -12px rgba(0, 0, 0, 0.25),
+                0 0 0 1px rgba(255, 255, 255, 0.2);
+            text-align: center;
+            max-width: 400px;
+            transform: translateY(20px) scale(0.9);
+            transition: all 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        #lottie-preloader-overlay.show .preloader-container {
+            transform: translateY(0) scale(1);
+        }
+        
+        .preloader-animation {
+            margin-bottom: 20px;
+        }
+        
+        #loading-text {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 16px;
+            font-weight: 500;
+            color: #374151;
+            margin: 0;
+            opacity: 0;
+            animation: fadeInUp 0.5s ease-out 0.2s forwards;
+        }
+        
+        .loading-dots {
+            display: inline-block;
+            margin-left: 4px;
+        }
+        
+        .loading-dots::after {
+            content: '';
+            animation: dots 1.5s infinite;
+        }
+        
+        @keyframes dots {
+            0%, 20% { content: ''; }
+            40% { content: '.'; }
+            60% { content: '..'; }
+            90%, 100% { content: '...'; }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        /* Loading progress bar */
+        .loading-progress {
+            width: 200px;
+            height: 3px;
+            background: #e5e7eb;
+            border-radius: 2px;
+            margin: 15px 0 5px 0;
+            overflow: hidden;
+        }
+        
+        .loading-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            border-radius: 2px;
+            animation: progress 2s ease-in-out infinite;
+        }
+        
+        @keyframes progress {
+            0% { width: 0%; transform: translateX(-100%); }
+            50% { width: 70%; transform: translateX(0%); }
+            100% { width: 100%; transform: translateX(100%); }
+        }
+        
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            #lottie-preloader-overlay {
+                background: rgba(17, 24, 39, 0.95);
+            }
+            
+            .preloader-container {
+                background: #1f2937;
+                color: #f9fafb;
+            }
+            
+            #loading-text {
+                color: #f3f4f6;
+            }
+        }
+        
+        /* Mobile responsive */
+        @media (max-width: 640px) {
+            .preloader-container {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+            
+            .preloader-animation dotlottie-wc {
+                width: 200px !important;
+                height: 200px !important;
+            }
+        }
+        
+        /* Accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            #lottie-preloader-overlay,
+            .preloader-container,
+            #loading-text,
+            .loading-progress-bar {
+                animation: none;
+                transition: none;
+            }
+            
+            .preloader-animation dotlottie-wc {
+                animation-play-state: paused;
+            }
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    
+    <!-- Lottie Preloader -->
+    <div id="lottie-preloader-overlay">
+        <div class="preloader-container">
+            <div class="preloader-animation">
+                <dotlottie-wc 
+                    src="https://lottie.host/2ca5e67b-55b9-4f90-8bd5-8c536ebfb522/6r2AmJ81Et.lottie" 
+                    style="width: 300px; height: 300px;" 
+                    speed="1" 
+                    autoplay 
+                    loop>
+                </dotlottie-wc>
+            </div>
+            
+            <div class="loading-progress">
+                <div class="loading-progress-bar"></div>
+            </div>
+            
+            <p id="loading-text">Loading<span class="loading-dots"></span></p>
+        </div>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Navigation -->
+    {% if current_user.is_authenticated %}
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{{ url_for('dashboard') }}">
+                    <i class="bi bi-cloud"></i>
+                    SaaS Manager
+                </a>
+                
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('dashboard') }}">
+                                <i class="bi bi-house"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('create_tenant') }}">
+                                <i class="bi bi-plus-circle"></i> Create Tenant
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <ul class="navbar-nav">
+                        <!-- Notification Bell -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle position-relative" href="#" id="notificationDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-bell"></i>
+                                <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                                    0
+                                </span>
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end notification-dropdown" style="width: 350px; max-height: 400px; overflow-y: auto;">
+                                <div class="dropdown-header d-flex justify-content-between align-items-center">
+                                    <span>Notifications</span>
+                                    <button type="button" class="btn btn-sm btn-link p-0" onclick="markAllNotificationsRead()">
+                                        Mark all read
+                                    </button>
+                                </div>
+                                <div id="notifications-container">
+                                    <div class="text-center p-3">
+                                        <div class="spinner-border spinner-border-sm" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        
+                        <!-- User Menu -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i>
+                                {{ current_user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{{ url_for('user_profile') }}">
+                                    <i class="bi bi-person"></i> Profile
+                                </a></li>
+                                <li><a class="dropdown-item" href="/billing">
+                                    <i class="bi bi-credit-card"></i> Billing
+                                </a></li>
+                                <li><a class="dropdown-item" href="/support">
+                                    <i class="bi bi-headset"></i> Support
+                                </a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                                    <i class="bi bi-box-arrow-right"></i> Logout
+                                </a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="{% if current_user.is_authenticated %}container-fluid mt-4{% endif %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    {% if current_user.is_authenticated %}
+        <footer class="mt-5 py-4 bg-light text-center">
+            <div class="container">
+                <p class="text-muted mb-0">
+                    © 2024 Odoo Multi-Tenant System. 
+                    <span id="connection-status" class="badge bg-success ms-2">
+                        <i class="bi bi-wifi"></i> Connected
+                    </span>
+                </p>
+            </div>
+        </footer>
+    {% endif %}
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket.io.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/preloader.js') }}"></script>
+    
+    <!-- WebSocket and Notifications -->
+    <script>
+        // WebSocket connection for real-time updates
+        let socket;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            if ({{ 'true' if current_user.is_authenticated else 'false' }}) {
+                initializeWebSocket();
+                loadNotifications();
+            }
+        });
+        
+        function initializeWebSocket() {
+            socket = io();
+            
+            socket.on('connect', function() {
+                document.getElementById('connection-status').innerHTML = '<i class="bi bi-wifi"></i> Connected';
+                document.getElementById('connection-status').className = 'badge bg-success ms-2';
+            });
+            
+            socket.on('disconnect', function() {
+                document.getElementById('connection-status').innerHTML = '<i class="bi bi-wifi-off"></i> Disconnected';
+                document.getElementById('connection-status').className = 'badge bg-danger ms-2';
+            });
+            
+            socket.on('new_notification', function(notification) {
+                showNotificationToast(notification);
+                updateNotificationBadge();
+                loadNotifications(); // Refresh notifications
+            });
+            
+            socket.on('notification_counts', function(counts) {
+                updateNotificationBadge(counts.unread);
+            });
+        }
+        
+        function showNotificationToast(notification) {
+            // Create toast notification
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-primary border-0';
+            toast.setAttribute('role', 'alert');
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <strong>${notification.title}</strong><br>
+                        ${notification.message}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            
+            // Add to toast container or create one
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.className = 'toast-container position-fixed top-0 end-0 p-3';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+            
+            toastContainer.appendChild(toast);
+            
+            // Show toast
+            const bsToast = new bootstrap.Toast(toast);
+            bsToast.show();
+            
+            // Remove from DOM after hiding
+            toast.addEventListener('hidden.bs.toast', function() {
+                toast.remove();
+            });
+        }
+        
+        function updateNotificationBadge(count = null) {
+            const badge = document.getElementById('notification-badge');
+            if (count === null) {
+                // Fetch current count
+                fetch('/api/user/notifications/counts', { credentials: 'include' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            updateBadgeDisplay(data.counts.unread);
+                        }
+                    });
+            } else {
+                updateBadgeDisplay(count);
+            }
+        }
+        
+        function updateBadgeDisplay(count) {
+            const badge = document.getElementById('notification-badge');
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : count;
+                badge.classList.remove('d-none');
+            } else {
+                badge.classList.add('d-none');
+            }
+        }
+        
+        function loadNotifications() {
+            fetch('/api/user/notifications?per_page=10', { credentials: 'include' })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        displayNotifications(data.notifications);
+                        updateBadgeDisplay(data.counts.unread);
+                    }
+                })
+                .catch(error => {
+                    console.error('Failed to load notifications:', error);
+                    document.getElementById('notifications-container').innerHTML = 
+                        '<div class="text-center p-3 text-muted">Failed to load notifications</div>';
+                });
+        }
+        
+        function displayNotifications(notifications) {
+            const container = document.getElementById('notifications-container');
+            
+            if (notifications.length === 0) {
+                container.innerHTML = '<div class="text-center p-3 text-muted">No notifications</div>';
+                return;
+            }
+            
+            container.innerHTML = notifications.map(notification => `
+                <div class="dropdown-item notification-item ${notification.is_read ? 'read' : 'unread'}" 
+                     onclick="handleNotificationClick(${notification.id}, '${notification.action_url || '#'}')">
+                    <div class="d-flex justify-content-between">
+                        <strong class="text-truncate">${notification.title}</strong>
+                        <small class="text-muted">${formatTime(notification.created_at)}</small>
+                    </div>
+                    <div class="text-muted small">${notification.message}</div>
+                    ${notification.priority === 'urgent' ? '<span class="badge bg-danger">URGENT</span>' : ''}
+                </div>
+            `).join('');
+        }
+        
+        function handleNotificationClick(notificationId, actionUrl) {
+            // Mark as read
+            fetch(`/api/user/notifications/${notificationId}/read`, {
+                method: 'POST',
+                credentials: 'include'
+            });
+            
+            // Navigate if URL provided
+            if (actionUrl && actionUrl !== '#') {
+                window.location.href = actionUrl;
+            }
+        }
+        
+        function markAllNotificationsRead() {
+            fetch('/api/user/notifications/mark-all-read', {
+                method: 'POST',
+                credentials: 'include'
+            }).then(() => {
+                loadNotifications();
+            });
+        }
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            const now = new Date();
+            const diff = now - date;
+            const hours = Math.floor(diff / (1000 * 60 * 60));
+            
+            if (hours < 1) {
+                const minutes = Math.floor(diff / (1000 * 60));
+                return minutes + 'm';
+            } else if (hours < 24) {
+                return hours + 'h';
+            } else {
+                const days = Math.floor(hours / 24);
+                return days + 'd';
+            }
+        }
+        
+        // Auto-refresh notifications every 30 seconds
+        setInterval(updateNotificationBadge, 30000);
+    </script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

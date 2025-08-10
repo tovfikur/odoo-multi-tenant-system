@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lottie Preloader Test</title>
+    
+    <!-- Your exact Lottie script -->
+    <script src="https://unpkg.com/@lottiefiles/dotlottie-wc@0.6.2/dist/dotlottie-wc.js" type="module"></script>
+    
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 10px;
+            transition: background 0.2s;
+        }
+        
+        .button:hover {
+            background: #0056CC;
+        }
+        
+        .direct-example {
+            text-align: center;
+            padding: 30px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .direct-example h3 {
+            margin-top: 0;
+        }
+        
+        /* Preloader overlay styles */
+        #test-preloader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        #test-preloader.show {
+            display: flex;
+            opacity: 1;
+        }
+        
+        .test-preloader-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 
+                0 20px 25px -5px rgba(0, 0, 0, 0.1),
+                0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            max-width: 380px;
+        }
+        
+        .loading-message {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Lottie Preloader Test</h1>
+        <p>Test your custom Lottie preloader with the exact specifications you requested.</p>
+        
+        <div class="direct-example">
+            <h3>Your Direct Example (300px × 300px)</h3>
+            <!-- Your exact code -->
+            <dotlottie-wc 
+                src="https://lottie.host/2ca5e67b-55b9-4f90-8bd5-8c536ebfb522/6r2AmJ81Et.lottie" 
+                style="width: 300px; height: 300px;" 
+                speed="1" 
+                autoplay 
+                loop>
+            </dotlottie-wc>
+        </div>
+        
+        <h3>Test Interactive Preloader</h3>
+        <button class="button" onclick="showTestPreloader()">Show Preloader for 3 seconds</button>
+        <button class="button" onclick="simulateAPICall()">Simulate API Call with Preloader</button>
+        
+        <h3>Integration Status</h3>
+        <div style="background: #e8f5e8; padding: 15px; border-radius: 5px; margin: 20px 0;">
+            <p><strong>✅ Updated Files:</strong></p>
+            <ul>
+                <li>✅ <code>static/js/preloader.js</code> - Web preloader updated to 300px × 300px</li>
+                <li>✅ <code>templates/base_with_preloader.html</code> - Template updated with your exact code</li>
+                <li>✅ <code>mobile_components/LottiePreloader.js</code> - React Native component updated</li>
+                <li>✅ <code>mobile_examples/PreloaderExamples.js</code> - Examples updated</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- Test Preloader Overlay -->
+    <div id="test-preloader">
+        <div class="test-preloader-container">
+            <!-- Your exact preloader -->
+            <dotlottie-wc 
+                src="https://lottie.host/2ca5e67b-55b9-4f90-8bd5-8c536ebfb522/6r2AmJ81Et.lottie" 
+                style="width: 300px; height: 300px;" 
+                speed="1" 
+                autoplay 
+                loop>
+            </dotlottie-wc>
+            <div class="loading-message" id="loading-message">Loading...</div>
+        </div>
+    </div>
+
+    <script>
+        function showTestPreloader() {
+            const preloader = document.getElementById('test-preloader');
+            const message = document.getElementById('loading-message');
+            
+            message.textContent = 'Testing your preloader...';
+            preloader.classList.add('show');
+            
+            setTimeout(() => {
+                preloader.classList.remove('show');
+            }, 3000);
+        }
+        
+        function simulateAPICall() {
+            const preloader = document.getElementById('test-preloader');
+            const message = document.getElementById('loading-message');
+            
+            message.textContent = 'Making API call...';
+            preloader.classList.add('show');
+            
+            // Simulate API call
+            setTimeout(() => {
+                message.textContent = 'Processing response...';
+                
+                setTimeout(() => {
+                    preloader.classList.remove('show');
+                    alert('API call completed!');
+                }, 1500);
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

@@ -96,6 +96,7 @@ services:
       - ./saas_manager/logs/saas_manager.log:/app/logs/saas_manager.log
       - odoo_filestore:/opt/odoo/filestore
       - /var/run/docker.sock:/var/run/docker.sock
+      - ./nginx/conf.d:/host-nginx/conf.d
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s

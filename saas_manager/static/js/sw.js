@@ -270,7 +270,7 @@ self.addEventListener("fetch", (event) => {
                   `<!DOCTYPE html>
                 <html>
                 <head>
-                  <title>Offline - Odoo SaaS Platform</title>
+                  <title>Offline - Khudroo Platform</title>
                   <meta name="viewport" content="width=device-width, initial-scale=1">
                   <style>
                     body { 
@@ -355,9 +355,7 @@ self.addEventListener("push", (event) => {
   console.log("Service Worker: Push message received", event);
 
   const options = {
-    body: event.data
-      ? event.data.text()
-      : "New notification from Odoo SaaS Platform",
+    body: event.data ? event.data.text() : "New notification from Khudroo",
     icon: "/static/img/kdoo-logo.png",
     badge: "/static/img/favicon.ico",
     vibrate: [200, 100, 200],
@@ -380,7 +378,7 @@ self.addEventListener("push", (event) => {
   };
 
   event.waitUntil(
-    self.registration.showNotification("Odoo SaaS Platform", options)
+    self.registration.showNotification("Khudroo Platform", options)
   );
 });
 

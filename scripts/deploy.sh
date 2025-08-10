@@ -366,7 +366,7 @@ setup_cron() {
 show_summary() {
     info "=== Deployment Summary ==="
     echo
-    success "Odoo SaaS System deployed successfully!"
+    success "Khudroo System deployed successfully!"
     echo
     info "Services:"
     info "  - Nginx (Load Balancer): http://localhost"

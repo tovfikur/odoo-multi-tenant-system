@@ -7,14 +7,15 @@ import os
 from flask import Flask
 from flask_login import LoginManager
 from flask_moment import Moment
-from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
+
 
 # Local application imports
 from billing import register_billing_routes
 from db import db
 from models import SaasUser
 from utils import error_tracker
+from infra_admin import init_infra_tables
 
 def create_app():
     app = Flask(__name__)
@@ -29,7 +30,7 @@ def create_app():
     # Initialize SQLAlchemy with the app
     db.init_app(app)
     register_billing_routes(app, csrf)
-    
+        
     # Initialize Flask-Login
     login_manager = LoginManager()
     login_manager.init_app(app)
@@ -51,4 +52,5 @@ def create_app():
 
 def init_db(app):
     with app.app_context():
+        init_infra_tables()
         db.create_all()

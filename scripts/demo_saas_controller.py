@@ -6,7 +6,6 @@ Creates a demo tenant and tests SaaS Controller functionality
 
 import sys
 import os
-import time
 
 def print_demo_step(step_number, title, description):
     """Print formatted demo step"""

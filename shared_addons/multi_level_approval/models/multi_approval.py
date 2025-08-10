@@ -247,7 +247,7 @@ class MultiApproval(models.Model):
     def create(self,values):
         res = super(MultiApproval, self).create(values)
         res.type_id.have_update = res.type_id.have_update + 1
-        # print(res.line_id)
+
         # res.send_mail_to_approver(res.pic_id)
         return res
     

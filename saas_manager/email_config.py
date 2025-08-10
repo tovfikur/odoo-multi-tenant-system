@@ -1,9 +1,7 @@
 # Email configuration management for SaaS Manager
 import smtplib
-import ssl
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from flask import current_app
 from models import SystemSetting
 
 class EmailManager:

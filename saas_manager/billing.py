@@ -1,5 +1,4 @@
 # Standard library imports
-import asyncio
 import hashlib
 import json
 import logging
@@ -27,135 +26,7 @@ SSLCOMMERZ_STORE_PASSWORD = "kendr686995fcc52be@ssl"
 SSLCOMMERZ_SESSION_API = "https://sandbox.sslcommerz.com/gwprocess/v4/api.php"
 SSLCOMMERZ_VALIDATION_API = "https://sandbox.sslcommerz.com/validator/api/validationserverAPI.php"
 
-def run_async_in_background(coro):
-    """Helper function to run an async coroutine in the background."""
-    loop = asyncio.new_event_loop()
-    try:
-        loop.run_until_complete(coro)
-    finally:
-        loop.close()
 
-
-# Enhanced payment success handler specifically for unified registration
-@staticmethod
-@track_errors('handle_unified_payment_success')
-def handle_unified_payment_success(tenant_id, transaction_id, validation_id=None):
-    """Enhanced payment success handler for unified registration flow"""
-    try:
-        if BillingService.validate_payment(transaction_id, tenant_id, validation_id):
-            # Update transaction status to SUCCESS
-            transaction = PaymentTransaction.query.filter_by(
-                transaction_id=transaction_id,
-                tenant_id=tenant_id
-            ).first()
-            
-            if transaction:
-                transaction.status = 'SUCCESS'
-                transaction.updated_at = datetime.utcnow()
-                db.session.commit()
-
-            # Get tenant and user for activation
-            tenant = Tenant.query.get(tenant_id)
-            if not tenant:
-                logger.error(f"Tenant {tenant_id} not found for payment success")
-                flash('Payment successful, but tenant not found. Please contact support.', 'error')
-                return redirect(url_for('dashboard'))
-
-            # Activate the user account (was set to inactive during unified registration)
-            user = SaasUser.query.get(transaction.user_id)
-            if user and not user.is_active:
-                user.is_active = True
-                user.email_verified = True  # Auto-verify on successful payment
-                db.session.commit()
-                logger.info(f"Activated user {user.username} after successful payment")
-
-            if tenant.status == 'pending':
-                logger.info(f"Payment successful for tenant {tenant.name}. Creating Odoo database.")
-                
-                # Get plan modules
-                subscription_plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
-                plan_modules = subscription_plan.modules if subscription_plan and subscription_plan.modules else []
-                
-                # Import create_database function
-                try:
-                    from app import create_database
-                    from flask import current_app
-                    
-                    # Create database in background after successful payment
-                    executor = ThreadPoolExecutor(max_workers=1)
-                    executor.submit(
-                        run_async_in_background, 
-                        create_database(
-                            tenant.database_name, 
-                            tenant.admin_username, 
-                            tenant.get_admin_password(), 
-                            plan_modules,
-                            current_app._get_current_object()  # Pass app instance
-                        )
-                    )
-                    executor.shutdown(wait=False)
-                    
-                    # Update tenant status to 'creating' to indicate database creation is in progress
-                    tenant.status = 'creating'
-                    db.session.commit()
-                    
-                    logger.info(f"Database creation initiated for tenant {tenant.name}")
-                    
-                    # Send welcome email (if email service is configured)
-                    try:
-                        BillingService.send_welcome_email(user, tenant)
-                    except Exception as email_error:
-                        logger.warning(f"Failed to send welcome email: {email_error}")
-                    
-                except ImportError as e:
-                    logger.error(f"Failed to import create_database function: {e}")
-                    flash('Payment successful, but database creation failed to start. Please contact support.', 'warning')
-                except Exception as e:
-                    logger.error(f"Failed to start database creation: {e}")
-                    flash('Payment successful, but database creation failed to start. Please contact support.', 'warning')
-            
-            flash('Payment successful! Your Odoo instance is being created and will be ready shortly. Check your email for login credentials.', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Payment validation failed.', 'error')
-            return redirect(url_for('unified_register'))
-
-    except Exception as e:
-        error_tracker.log_error(e, {
-            'tenant_id': tenant_id,
-            'transaction_id': transaction_id,
-            'validation_id': validation_id,
-            'function': 'handle_unified_payment_success'
-        })
-        flash('Error processing payment success.', 'error')
-        return redirect(url_for('dashboard'))
-
-@staticmethod
-@track_errors('send_welcome_email')
-def send_welcome_email(user, tenant):
-    """Send welcome email with login credentials and setup instructions"""
-    try:
-        # This is a placeholder for email functionality
-        # You can integrate with services like SendGrid, Mailgun, or AWS SES
-        
-        logger.info(f"Would send welcome email to {user.email} for tenant {tenant.subdomain}")
-        
-        # Email content would include:
-        # - Welcome message
-        # - Odoo instance URL: https://{tenant.subdomain}.{domain}
-        # - Login credentials (encrypted or temporary)
-        # - Setup guide links
-        # - Support contact information
-        
-        return True
-        
-    except Exception as e:
-        error_tracker.log_error(e, {
-            'user_id': user.id,
-            'tenant_id': tenant.id,
-            'function': 'send_welcome_email'
-        })
-        return False
 
 @staticmethod
 @track_errors('handle_unified_payment_fail')
@@ -273,7 +144,7 @@ def register_unified_billing_routes(app, csrf=None):
                 flash('Invalid transaction. Please contact support.', 'error')
                 return redirect(url_for('unified_register'))
 
-        return BillingService.handle_unified_payment_success(tenant_id, transaction_id, validation_id)
+        return BillingService.handle_payment_success(tenant_id, transaction_id, validation_id, is_unified=True)
 
     @app.route('/billing/unified/<int:tenant_id>/fail', methods=['GET', 'POST'])
     @csrf.exempt
@@ -325,105 +196,47 @@ def register_unified_billing_routes(app, csrf=None):
         return BillingService.handle_unified_payment_fail(tenant_id, transaction_id)
 
 
-# Enhanced payment initiation for unified registration
-@staticmethod
-@track_errors('initiate_unified_payment')
-def initiate_unified_payment(tenant_id, user_id, plan):
-    """Initiate payment specifically for unified registration flow"""
-    try:
-        tenant = Tenant.query.get_or_404(tenant_id)
-        user = SaasUser.query.get_or_404(user_id)
 
-        if tenant.status != 'pending':
-            raise ValueError(f"Tenant {tenant.subdomain} is not in pending status")
-
-        plan_obj = SubscriptionPlan.query.filter_by(name=plan, is_active=True).first()
-        if not plan_obj:
-            raise ValueError(f"Invalid or inactive plan: {plan}")
-        amount = plan_obj.price
-
-        transaction_id = f"UNIFIED-{uuid.uuid4().hex[:16]}"
-        domain = os.environ.get('DOMAIN', 'khudroo.com')
-        protocol = request.scheme  # Gets 'http' or 'https' from current request
-        
-        # Use unified-specific URLs
-        success_url = f"{protocol}://{domain}{url_for('unified_payment_success', tenant_id=tenant_id)}"
-        fail_url = f"{protocol}://{domain}{url_for('unified_payment_fail', tenant_id=tenant_id)}"
-        cancel_url = f"{protocol}://{domain}{url_for('unified_payment_cancel', tenant_id=tenant_id)}"
-        ipn_url = f"{protocol}://{domain}/billing/ipn"
-
-        # Prepare SSLCommerz payment request
-        payload = {
-            'store_id': SSLCOMMERZ_STORE_ID,
-            'store_passwd': SSLCOMMERZ_STORE_PASSWORD,
-            'total_amount': str(Decimal(str(amount))),
-            'currency': 'BDT',
-            'tran_id': transaction_id,
-            'success_url': success_url,
-            'fail_url': fail_url,
-            'cancel_url': cancel_url,
-            'ipn_url': ipn_url,
-            'emi_option': 0,
-            'cus_name': user.full_name or user.username,
-            'cus_email': user.email,
-            'cus_add1': user.company or 'Bangladesh',
-            'cus_add2': '',
-            'cus_city': 'N/A',
-            'cus_postcode': 'N/A',
-            'cus_country': 'Bangladesh',
-            'cus_phone': 'N/A',
-            'shipping_method': 'NO',
-            'product_name': f"{plan} Plan - {tenant.name}",
-            'product_category': 'SaaS-Registration',
-            'product_profile': 'general',
-            'num_of_item': 1,
-            'value_a': str(tenant_id),  # Store tenant_id for IPN
-            'value_b': str(user_id),
-            'value_c': plan,
-            'value_d': transaction_id
-        }
-
-        logger.info(f"Initiating unified payment for tenant {tenant_id}, transaction {transaction_id}")
-        headers = {'Content-Type': 'application/x-www-form-urlencoded'}
-        BillingService._log_sslcommerz_request('POST', SSLCOMMERZ_SESSION_API, headers, payload)
-
-        response = requests.post(SSLCOMMERZ_SESSION_API, data=payload, headers=headers, timeout=30)
-        BillingService._log_sslcommerz_response(response)
-        response_data = response.json()
-
-        if response.status_code != 200 or response_data.get('status') != 'SUCCESS':
-            logger.error(f"Unified payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
-            raise Exception(f"Payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
-
-        # Store transaction in database
-        transaction = PaymentTransaction(
-            transaction_id=transaction_id,
-            validation_id=response_data.get('val_id'),
-            tenant_id=tenant_id,
-            user_id=user_id,
-            amount=amount,
-            status='PENDING',
-            response_data=str(response_data)[:2000]
-        )
-        db.session.add(transaction)
-        db.session.commit()
-
-        logger.info(f"Unified payment initiated successfully for transaction {transaction_id}, val_id={response_data.get('val_id')}")
-        return response_data.get('GatewayPageURL')
-
-    except Exception as e:
-        db.session.rollback()
-        error_tracker.log_error(e, {
-            'tenant_id': tenant_id,
-            'user_id': user_id,
-            'plan': plan,
-            'function': 'initiate_unified_payment'
-        })
-        raise
-        
 
 class BillingService:
     """Service class to handle billing and payment operations with SSLCommerz"""
+
+    @staticmethod
+    def _run_async_in_background(coro):
+        """Helper function to run an async coroutine in the background."""
+        import asyncio
+        loop = asyncio.new_event_loop()
+        try:
+            loop.run_until_complete(coro)
+        finally:
+            loop.close()
+
+    @staticmethod
+    @track_errors('send_welcome_email')
+    def send_welcome_email(user, tenant):
+        """Send welcome email with login credentials and setup instructions"""
+        try:
+            # This is a placeholder for email functionality
+            # You can integrate with services like SendGrid, Mailgun, or AWS SES
+            
+            logger.info(f"Would send welcome email to {user.email} for tenant {tenant.subdomain}")
+            
+            # Email content would include:
+            # - Welcome message
+            # - Odoo instance URL: https://{tenant.subdomain}.{domain}
+            # - Login credentials (encrypted or temporary)
+            # - Setup guide links
+            # - Support contact information
+            
+            return True
+            
+        except Exception as e:
+            error_tracker.log_error(e, {
+                'user_id': user.id,
+                'tenant_id': tenant.id,
+                'function': 'send_welcome_email'
+            })
+            return False
 
     @staticmethod
     def _log_sslcommerz_request(method, url, headers, payload=None):
@@ -627,7 +440,7 @@ class BillingService:
 
     @staticmethod
     @track_errors('handle_payment_success')
-    def handle_payment_success(tenant_id, transaction_id, validation_id=None):
+    def handle_payment_success(tenant_id, transaction_id, validation_id=None, is_unified=False):
         """Handle successful payment callback and create database"""
         try:
             if BillingService.validate_payment(transaction_id, tenant_id, validation_id):
@@ -642,14 +455,28 @@ class BillingService:
                     transaction.updated_at = datetime.utcnow()
                     db.session.commit()
 
-                # Get tenant and create database NOW (after successful payment)
+                # Get tenant and user for activation
                 tenant = Tenant.query.get(tenant_id)
-                if tenant and tenant.status == 'pending':
+                if not tenant:
+                    logger.error(f"Tenant {tenant_id} not found for payment success")
+                    flash('Payment successful, but tenant not found. Please contact support.', 'error')
+                    return redirect(url_for('dashboard'))
+
+                # For unified registration, activate the user account
+                if is_unified and transaction:
+                    user = SaasUser.query.get(transaction.user_id)
+                    if user and not user.is_active:
+                        user.is_active = True
+                        user.email_verified = True  # Auto-verify on successful payment
+                        db.session.commit()
+                        logger.info(f"Activated user {user.username} after successful payment")
+
+                if tenant.status == 'pending':
                     logger.info(f"Payment successful for tenant {tenant.name}. Creating Odoo database.")
                     
                     # Get plan modules
                     subscription_plan = SubscriptionPlan.query.filter_by(name=tenant.plan).first()
-                    plan_modules = subscription_plan.modules if subscription_plan.modules else []
+                    plan_modules = subscription_plan.modules if subscription_plan and subscription_plan.modules else []
                     
                     # Import create_database function
                     try:
@@ -659,7 +486,7 @@ class BillingService:
                         # Create database in background after successful payment
                         executor = ThreadPoolExecutor(max_workers=1)
                         executor.submit(
-                            run_async_in_background, 
+                            BillingService._run_async_in_background, 
                             create_database(
                                 tenant.database_name, 
                                 tenant.admin_username, 
@@ -676,6 +503,15 @@ class BillingService:
                         
                         logger.info(f"Database creation initiated for tenant {tenant.name}")
                         
+                        # Send welcome email (if email service is configured and unified)
+                        if is_unified and transaction:
+                            user = SaasUser.query.get(transaction.user_id)
+                            if user:
+                                try:
+                                    BillingService.send_welcome_email(user, tenant)
+                                except Exception as email_error:
+                                    logger.warning(f"Failed to send welcome email: {email_error}")
+                        
                     except ImportError as e:
                         logger.error(f"Failed to import create_database function: {e}")
                         flash('Payment successful, but database creation failed to start. Please contact support.', 'warning')
@@ -683,21 +519,29 @@ class BillingService:
                         logger.error(f"Failed to start database creation: {e}")
                         flash('Payment successful, but database creation failed to start. Please contact support.', 'warning')
                 
-                flash('Payment successful! Your Odoo instance is being created and will be ready shortly.', 'success')
-                return redirect(url_for('dashboard'))
+                success_msg = 'Payment successful! Your Odoo instance is being created and will be ready shortly.'
+                if is_unified:
+                    success_msg += ' Check your email for login credentials.'
+                flash(success_msg, 'success')
+                
+                redirect_url = url_for('unified_register') if is_unified else url_for('dashboard')
+                return redirect(redirect_url)
             else:
                 flash('Payment validation failed.', 'error')
-                return redirect(url_for('dashboard'))
+                redirect_url = url_for('unified_register') if is_unified else url_for('dashboard')
+                return redirect(redirect_url)
 
         except Exception as e:
             error_tracker.log_error(e, {
                 'tenant_id': tenant_id,
                 'transaction_id': transaction_id,
                 'validation_id': validation_id,
+                'is_unified': is_unified,
                 'function': 'handle_payment_success'
             })
             flash('Error processing payment success.', 'error')
-            return redirect(url_for('dashboard'))
+            redirect_url = url_for('unified_register') if is_unified else url_for('dashboard')
+            return redirect(redirect_url)
 
     @staticmethod
     @track_errors('handle_payment_fail')

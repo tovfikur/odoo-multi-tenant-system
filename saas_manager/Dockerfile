@@ -231,7 +231,3 @@ CMD ["sh", "-c", "\
         exit 1; \
     }"]
 
-# RUN flask --app app.py db init
-# RUN flask --app app.py db migrate -m "Initial migration"
-# RUN flask --app app.py db upgrade
-# RUN python __init__.py --force

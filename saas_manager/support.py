@@ -4,7 +4,6 @@ from flask_login import login_required, current_user
 from datetime import datetime
 from db import db
 from models import SupportTicket, SupportReply
-import json
 
 support_bp = Blueprint('support', __name__, url_prefix='/support')
 

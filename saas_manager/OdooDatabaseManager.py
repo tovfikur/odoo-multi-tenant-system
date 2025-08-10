@@ -1,14 +1,13 @@
 # Standard library imports
-import json
+import logging
 import os
 import subprocess
 import xmlrpc.client
 
 # Third-party imports
-import docker
 import psycopg2
 import requests
-from tabulate import tabulate
+from shared_utils import get_docker_client, safe_execute, log_error_with_context
 
 class OdooDatabaseManager:
     def __init__(
@@ -50,7 +49,7 @@ class OdooDatabaseManager:
         Raises:
             RuntimeError: If the database status cannot be checked.
         """
-        print(f"[+] Checking active status for database: {db_name}")
+        logging.info(f"Checking active status for database: {db_name}")
         try:
             conn = psycopg2.connect(
                 dbname='postgres',
@@ -67,7 +66,7 @@ class OdooDatabaseManager:
             if result is None:
                 raise RuntimeError(f"Database {db_name} not found")
             is_active = result[0]
-            print(f"[✓] Database {db_name} is {'active' if is_active else 'inactive'}")
+            logging.info(f"Database {db_name} is {'active' if is_active else 'inactive'}")
             return is_active
         except Exception as e:
             raise RuntimeError(f"Failed to check database status for {db_name}: {str(e)}")
@@ -77,7 +76,7 @@ class OdooDatabaseManager:
         Create a ZIP backup of the Odoo database.
         Returns the local path to the backup file.
         """
-        print(f"[+] Backing up database: {db_name}")
+        logging.info(f"Backing up database: {db_name}")
         resp = requests.post(
             f"{self.odoo_url}/web/database/backup",
             data={"master_pwd": self.master_pwd, "name": db_name, "backup_format": "zip"},
@@ -90,7 +89,7 @@ class OdooDatabaseManager:
         with open(backup_path, 'wb') as f:
             for chunk in resp.iter_content(chunk_size=8192):
                 f.write(chunk)
-        print(f"[✓] Backup saved at: {backup_path}")
+        logging.info(f"Backup saved at: {backup_path}")
         return backup_path
 
     def delete_backup(self, db_name: str) -> None:
@@ -103,11 +102,11 @@ class OdooDatabaseManager:
         Raises:
             RuntimeError: If the backup file does not exist or deletion fails.
         """
-        print(f"[+] Deleting backup for database: {db_name}")
+        logging.info(f"Deleting backup for database: {db_name}")
         backup_path = os.path.join(self.backup_folder, f"{db_name}.zip")
         try:
             os.remove(backup_path)
-            print(f"[✓] Deleted backup: {backup_path}")
+            logging.info(f"Deleted backup: {backup_path}")
         except FileNotFoundError:
             raise RuntimeError(f"Backup file not found: {backup_path}")
         except OSError as e:
@@ -117,7 +116,7 @@ class OdooDatabaseManager:
         """
         Restore the database from a local ZIP backup.
         """
-        print(f"[+] Restoring database: {db_name} from {file_path}")
+        logging.info(f"Restoring database: {db_name} from {file_path}")
         with open(file_path, 'rb') as f:
             files = {'backup_file': (os.path.basename(file_path), f, 'application/zip')}
             resp = requests.post(
@@ -127,42 +126,42 @@ class OdooDatabaseManager:
             )
         if not resp.ok:
             raise RuntimeError(f"Restore failed: {resp.status_code} {resp.text}")
-        print("[✓] Restore successful.")
+        logging.info("Restore successful.")
 
     def delete(self, db_name: str) -> None:
         """
         Permanently drop the database via Odoo HTTP endpoint.
         """
-        print(f"[+] Deleting database: {db_name}")
+        logging.info(f"Deleting database: {db_name}")
         resp = requests.post(
             f"{self.odoo_url}/web/database/drop",
             data={"master_pwd": self.master_pwd, "name": db_name}
         )
         if not resp.ok:
             raise RuntimeError(f"Delete failed: {resp.status_code} {resp.text}")
-        print("[✓] Database deleted.")
+        logging.info("Database deleted.")
 
     def deactivate(self, db_name: str) -> None:
         """
         Deactivate cron jobs and block new connections.
         """
-        print(f"[+] Deactivating database: {db_name}")
+        logging.info(f"Deactivating database: {db_name}")
         # First disable cron jobs directly in the database
         self._update_cron_in_db(db_name, False)
         # Then block connections
         self._set_postgres_allowconn(db_name, allow=False)
-        print("[✓] Deactivated database.")
+        logging.info("Deactivated database.")
 
     def activate(self, db_name: str) -> None:
         """
         Unblock connections and activate cron jobs.
         """
-        print(f"[+] Activating database: {db_name}")
+        logging.info(f"Activating database: {db_name}")
         # First unblock connections
         self._set_postgres_allowconn(db_name, allow=True)
         # Then enable cron jobs
         self._update_cron_in_db(db_name, True)
-        print("[✓] Activated database.")
+        logging.info("Activated database.")
 
     def get_active_users_count(self, db_name: str, admin_user: str, admin_password: str, minutes: int = 30) -> int:
         """
@@ -221,7 +220,7 @@ class OdooDatabaseManager:
                 return len(user_ids)
             
         except Exception as e:
-            print(f"[!] Failed to get active users for {db_name}: {e}")
+            logging.error(f"Failed to get active users for {db_name}: {e}")
         return 0
     
     def get_installed_applications_count(self, db_name: str, admin_user: str, admin_password: str) -> int:
@@ -257,11 +256,11 @@ class OdooDatabaseManager:
             )
         
             app_count = len(app_ids)
-            print(f"[✓] Found {app_count} installed applications in database {db_name}")
+            logging.info(f"Found {app_count} installed applications in database {db_name}")
             return app_count
         
         except Exception as e:
-            print(f"[!] Failed to get installed applications count for {db_name}: {e}")
+            logging.error(f"Failed to get installed applications count for {db_name}: {e}")
             return 0
         
     def get_modules_details(self, db_name: str, admin_user: str, admin_password: str) -> list:
@@ -306,11 +305,11 @@ class OdooDatabaseManager:
                 [module_ids, ['name', 'shortdesc', 'author', 'version', 'state', 'category_id']]
             )
             
-            print(f"[✓] Retrieved details for {len(modules)} installed modules")
+            logging.info(f"Retrieved details for {len(modules)} installed modules")
             return modules
             
         except Exception as e:
-            print(f"[!] Failed to get modules details for {db_name}: {e}")
+            logging.error(f"Failed to get modules details for {db_name}: {e}")
             return []
 
     def get_all_available_modules(self, db_name: str = None, admin_user: str = None, admin_password: str = None) -> list:
@@ -340,7 +339,7 @@ class OdooDatabaseManager:
             uid = common.authenticate(db_name, admin_user, admin_password, {})
             
             if not uid:
-                print(f"[!] Authentication failed for database {db_name}, trying alternative...")
+                logging.warning(f"Authentication failed for database {db_name}, trying alternative...")
                 # Try with any tenant database that might exist
                 return []
             
@@ -355,7 +354,7 @@ class OdooDatabaseManager:
             )
             
             if not module_ids:
-                print(f"[!] No modules found in database {db_name}")
+                logging.warning(f"No modules found in database {db_name}")
                 return []
             
             # Get module details (some fields might not exist in all Odoo versions)
@@ -404,11 +403,11 @@ class OdooDatabaseManager:
                     'version': ''  # Version field might not be available
                 })
             
-            print(f"[✓] Retrieved {len(formatted_modules)} available modules")
+            logging.info(f"Retrieved {len(formatted_modules)} available modules")
             return formatted_modules
             
         except Exception as e:
-            print(f"[!] Failed to get available modules: {e}")
+            logging.error(f"Failed to get available modules: {e}")
             return []
 
     def get_modules_by_category(self, db_name: str, admin_user: str, admin_password: str) -> dict:
@@ -445,15 +444,15 @@ class OdooDatabaseManager:
                     'version': module.get('version', 'Unknown')
                 })
             
-            # Print summary
-            print(f"[✓] Modules grouped into {len(categorized)} categories:")
+            # Log summary
+            logging.info(f"Modules grouped into {len(categorized)} categories:")
             for category, modules_list in categorized.items():
-                print(f"    - {category}: {len(modules_list)} modules")
+                logging.info(f"    - {category}: {len(modules_list)} modules")
             
             return categorized
             
         except Exception as e:
-            print(f"[!] Failed to categorize modules for {db_name}: {e}")
+            logging.error(f"Failed to categorize modules for {db_name}: {e}")
             return {}
 
 
@@ -1109,7 +1108,6 @@ class OdooDatabaseManager:
         """
         from datetime import datetime, timedelta, timezone
         import time
-        import subprocess
         
         uptime_info = {
             'database_name': db_name,
@@ -1302,7 +1300,6 @@ class OdooDatabaseManager:
     def _get_container_uptime(self) -> dict:
         """Get Docker container uptime."""
         from datetime import datetime, timezone
-        import subprocess
         
         try:
             # Get Odoo container uptime
@@ -1399,7 +1396,6 @@ class OdooDatabaseManager:
     def get_all_tenants_uptime(self) -> dict:
         """Get uptime summary for all active tenant databases."""
         from datetime import datetime
-        import subprocess
         
         try:
             postgres_container = self._get_postgres_container_name()

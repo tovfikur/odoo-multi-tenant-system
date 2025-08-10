@@ -1,8 +1,7 @@
 # Database Migration for Billing System
 from flask import Flask
-from flask_migrate import Migrate
 from db import db
-from models import *  # Import all models including new billing models
+from models import Tenant, BillingCycle, SystemSetting
 
 def create_migration_app():
     """Create Flask app for migration purposes"""
@@ -11,9 +10,8 @@ def create_migration_app():
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     
     db.init_app(app)
-    migrate = Migrate(app, db)
     
-    return app, migrate
+    return app
 
 def create_billing_tables():
     """Create billing system tables"""
@@ -120,7 +118,7 @@ if __name__ == "__main__":
     print("🚀 Starting billing system database migration...")
     
     # Create Flask app context
-    app, migrate = create_migration_app()
+    app = create_migration_app()
     
     with app.app_context():
         try:

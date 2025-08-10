@@ -1,58 +1,62 @@
+"""System Admin Module
+
+Provides comprehensive system administration functionality including:
+- Worker management (local and remote)
+- System monitoring and resource usage
+- Database operations (PostgreSQL, Redis)
+- Load balancing and health checks
+- VPS server management
+"""
+
 # Standard library imports
 import json
 import logging
 import os
-import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from typing import Dict, Any, Optional
 
 # Third-party imports
-import docker
 import psutil
 import psycopg2
-import redis
 import requests
-from flask import Blueprint, render_template, jsonify, request, redirect, url_for
+from flask import Blueprint, render_template, jsonify, request
 from flask_login import login_required, current_user
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from sqlalchemy import text, func
 
 # Local application imports
 from db import db
-from models import SaasUser, Tenant, WorkerInstance, AuditLog
-from OdooDatabaseManager import OdooDatabaseManager
+from models import SaasUser, Tenant, WorkerInstance, AuditLog, InfrastructureServer
+from services import UnifiedWorkerService
+from services.nginx_service import NginxLoadBalancerService
 from utils import track_errors, error_tracker
+from shared_utils import (
+    get_redis_client, get_docker_client, safe_execute, 
+    database_transaction, log_error_with_context
+)
+
 system_admin_bp = Blueprint('system_admin', __name__, url_prefix='/system-admin')
 
-# Initialize connections
-redis_client = None
-docker_client = None
-
-try:
-    redis_client = redis.Redis.from_url(os.environ.get('REDIS_URL', 'redis://redis:6379/0'))
-    redis_client.ping()
-except:
-    redis_client = None
-
-try:
-    docker_client = docker.from_env()
-    docker_client.ping()
-except:
-    docker_client = None
+# Initialize connections using shared utilities
+redis_client = get_redis_client()
+docker_client = get_docker_client()
 
 def require_super_admin():
     """Decorator for super admin access"""
     def decorator(fn):
         def wrapper(*args, **kwargs):
             if not current_user.is_authenticated or not current_user.is_admin:
-                return jsonify({'success': False, 'message': 'Super admin access required'}), 403
-            # Add additional super admin check here if needed
+                return jsonify({
+                    'success': False, 
+                    'message': 'Super admin access required'
+                }), 403
             return fn(*args, **kwargs)
         wrapper.__name__ = fn.__name__
         return wrapper
     return decorator
 
-def log_system_action(action, details=None):
-    """Log system admin actions"""
+def log_system_action(action: str, details: Optional[Dict[str, Any]] = None):
+    """Log system admin actions with proper error handling"""
     try:
         audit_log = AuditLog(
             user_id=current_user.id,
@@ -62,8 +66,10 @@ def log_system_action(action, details=None):
         )
         db.session.add(audit_log)
         db.session.commit()
+        logging.info(f"Logged system action: {action} by user {current_user.id}")
     except Exception as e:
-        print(f"[SYSTEM LOG ERROR] {e}")
+        logging.error(f"Failed to log system action '{action}': {e}")
+        # Don't fail the main operation due to logging issues
 
 # ================= MAIN DASHBOARD =================
 
@@ -75,6 +81,77 @@ def dashboard():
     """System Admin Dashboard"""
     return render_template('system_admin/dashboard.html')
 
+
+@system_admin_bp.route('/workers')
+@login_required
+@require_super_admin()
+def unified_workers():
+    """Unified worker management interface for both local and remote workers"""
+    try:
+        # Get all workers (both local and remote)
+        all_workers = WorkerInstance.query.all()
+        
+        # Get all available servers for remote deployment
+        servers = InfrastructureServer.query.filter_by(status='active').all()
+        
+        # Enhance workers with server information
+        workers_data = []
+        for worker in all_workers:
+            worker_data = {
+                'id': worker.id,
+                'name': worker.name,
+                'container_name': worker.container_name,
+                'port': worker.port,
+                'status': worker.status,
+                'current_tenants': worker.current_tenants or 0,
+                'max_tenants': worker.max_tenants,
+                'server_id': worker.server_id,
+                'created_at': worker.created_at,
+                'last_health_check': worker.last_health_check,
+                'server': None
+            }
+            
+            # Add server information for remote workers
+            if worker.server_id:
+                server = InfrastructureServer.query.get(worker.server_id)
+                if server:
+                    worker_data['server'] = {
+                        'id': server.id,
+                        'name': server.name,
+                        'ip_address': server.ip_address,
+                        'status': server.status,
+                        'cpu_cores': server.cpu_cores,
+                        'memory_gb': server.memory_gb,
+                        'cpu_usage_percent': getattr(server, 'cpu_usage_percent', 0),
+                        'memory_usage_percent': getattr(server, 'memory_usage_percent', 0)
+                    }
+            
+            workers_data.append(worker_data)
+        
+        # Prepare servers data for deployment options
+        servers_data = []
+        for server in servers:
+            servers_data.append({
+                'id': server.id,
+                'name': server.name,
+                'ip_address': server.ip_address,
+                'status': server.status,
+                'cpu_cores': server.cpu_cores,
+                'memory_gb': server.memory_gb,
+                'service_roles': server.service_roles or []
+            })
+        
+        return render_template('system_admin/unified_workers.html', 
+                             all_workers=workers_data, 
+                             servers=servers_data)
+                             
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return render_template('system_admin/unified_workers.html', 
+                             all_workers=[], 
+                             servers=[],
+                             error=str(e))
+
 # ================= WORKER MANAGEMENT =================
 
 @system_admin_bp.route('/api/workers/list')
@@ -82,210 +159,267 @@ def dashboard():
 @require_super_admin()
 @track_errors('get_workers_detailed')
 def get_workers_detailed():
-   """Get detailed worker information"""
-   try:
-       workers_data = []
-       
-       if docker_client:
-           # Get all containers
-           containers = docker_client.containers.list(all=True)
+    """Get detailed worker information"""
+    try:
+        workers_data = []
+        
+        if docker_client:
+            # Get all containers
+            containers = docker_client.containers.list(all=True)
+            
+            # Clean up orphaned database records first
+            try:
+                all_container_names = [c.name for c in containers]
+                orphaned_workers = WorkerInstance.query.filter(
+                    ~WorkerInstance.container_name.in_(all_container_names)
+                ).all()
+                
+                for worker in orphaned_workers:
+                    db.session.delete(worker)
+                
+                if orphaned_workers:
+                    db.session.commit()
+                    logging.info(f"Cleaned up {len(orphaned_workers)} orphaned worker records")
+                   
+            except Exception as e:
+                logging.error(f"Database cleanup failed: {e}")
            
-           # Clean up orphaned database records first
-           try:
-               all_container_names = [c.name for c in containers]
-               orphaned_workers = WorkerInstance.query.filter(
-                   ~WorkerInstance.container_name.in_(all_container_names)
-               ).all()
-               
-               for worker in orphaned_workers:
-                   db.session.delete(worker)
-               
-               if orphaned_workers:
-                   db.session.commit()
-                   print(f"Cleaned up {len(orphaned_workers)} orphaned worker records")
-                   
-           except Exception as e:
-               print(f"Database cleanup failed: {e}")
-           
-           for container in containers:
-               # Include all Odoo containers that are workers or custom workers
-               if ('odoo' in container.name.lower() and 'worker' in container.name.lower()) or \
-                  (container.name.startswith('odoo_worker') or container.name.startswith('test')):
-                   
-                   # Get container stats
-                   try:
-                       if container.status == 'running':
-                           stats = container.stats(stream=False)
-                           cpu_percent = calculate_cpu_percent(stats)
-                           memory_usage = stats['memory_stats'].get('usage', 0)
-                           memory_limit = stats['memory_stats'].get('limit', 0)
-                           memory_percent = (memory_usage / memory_limit * 100) if memory_limit > 0 else 0
-                       else:
-                           cpu_percent = 0
-                           memory_percent = 0
-                           memory_usage = 0
-                   except:
-                       cpu_percent = 0
-                       memory_percent = 0
-                       memory_usage = 0
-                   
-                   # Get logs
-                   try:
-                       if container.status == 'running':
-                           logs = container.logs(tail=50, timestamps=True).decode('utf-8')
-                           log_lines = logs.split('\n')[-10:]  # Last 10 lines
-                           # Filter out empty lines
-                           log_lines = [line for line in log_lines if line.strip()]
-                       else:
-                           log_lines = ["Container is not running"]
-                   except:
-                       log_lines = ["Unable to fetch logs"]
-                   
-                   # Check if worker is in database
-                   db_worker = WorkerInstance.query.filter_by(container_name=container.name).first()
-                   
-                   # Auto-create database record if missing for worker containers
-                   if not db_worker and ('worker' in container.name.lower() or container.name.startswith('odoo_worker')):
-                       try:
-                           db_worker = WorkerInstance(
-                               name=container.name,
-                               container_name=container.name,
-                               port=8069,
-                               max_tenants=10,  # Default value
-                               status=container.status
-                           )
-                           db.session.add(db_worker)
-                           db.session.commit()
-                           print(f"Auto-created DB record for container: {container.name}")
-                       except Exception as e:
-                           print(f"Failed to create DB record for {container.name}: {e}")
-                   
-                   # Update status if database record exists
-                   if db_worker and db_worker.status != container.status:
-                       try:
-                           db_worker.status = container.status
-                           db.session.commit()
-                       except Exception as e:
-                           print(f"Failed to update status for {container.name}: {e}")
-                   
-                   workers_data.append({
-                       'container_name': container.name,
-                       'container_id': container.id[:12],
-                       'status': container.status,
-                       'image': container.image.tags[0] if container.image.tags else 'unknown',
-                       'created': container.attrs['Created'],
-                       'ports': container.ports,
-                       'cpu_percent': round(cpu_percent, 2),
-                       'memory_percent': round(memory_percent, 2),
-                       'memory_usage_mb': round(memory_usage / 1024 / 1024, 2),
-                       'recent_logs': log_lines,
-                       'db_worker_id': db_worker.id if db_worker else None,
-                       'db_current_tenants': db_worker.current_tenants if db_worker else 0,
-                       'db_max_tenants': db_worker.max_tenants if db_worker else 0,
-                       'health_check': check_worker_health(container.name)
-                   })
-       
-       return jsonify({'success': True, 'workers': workers_data})
-   except Exception as e:
-       error_tracker.log_error(e, {'admin_user': current_user.id})
-       return jsonify({'success': False, 'message': str(e)}), 500
+            for container in containers:
+                # Include all Odoo containers that are workers or custom workers
+                if ('odoo' in container.name.lower() and 'worker' in container.name.lower()) or \
+                   (container.name.startswith('odoo_worker') or container.name.startswith('test')):
+                    
+                    # Get container stats
+                    try:
+                        if container.status == 'running':
+                            stats = container.stats(stream=False)
+                            cpu_percent = calculate_cpu_percent(stats)
+                            memory_usage = stats['memory_stats'].get('usage', 0)
+                            memory_limit = stats['memory_stats'].get('limit', 0)
+                            memory_percent = (memory_usage / memory_limit * 100) if memory_limit > 0 else 0
+                        else:
+                            cpu_percent = 0
+                            memory_percent = 0
+                            memory_usage = 0
+                    except Exception as e:
+                        logging.warning(f"Failed to get stats for container {container.name}: {e}")
+                        cpu_percent = 0
+                        memory_percent = 0
+                        memory_usage = 0
+                    
+                    # Get logs
+                    try:
+                        if container.status == 'running':
+                            logs = container.logs(tail=50, timestamps=True).decode('utf-8')
+                            log_lines = logs.split('\n')[-10:]  # Last 10 lines
+                            # Filter out empty lines
+                            log_lines = [line for line in log_lines if line.strip()]
+                        else:
+                            log_lines = ["Container is not running"]
+                    except Exception as e:
+                        logging.warning(f"Failed to fetch logs for container {container.name}: {e}")
+                        log_lines = ["Unable to fetch logs"]
+                    
+                    # Check if worker is in database
+                    db_worker = WorkerInstance.query.filter_by(container_name=container.name).first()
+                    
+                    # Auto-create database record if missing for worker containers
+                    if not db_worker and ('worker' in container.name.lower() or container.name.startswith('odoo_worker')):
+                        try:
+                            db_worker = WorkerInstance(
+                                name=container.name,
+                                container_name=container.name,
+                                port=8069,
+                                max_tenants=10,  # Default value
+                                status=container.status
+                            )
+                            db.session.add(db_worker)
+                            db.session.commit()
+                            logging.info(f"Auto-created DB record for container: {container.name}")
+                        except Exception as e:
+                            logging.error(f"Failed to create DB record for {container.name}: {e}")
+                    
+                    # Update status if database record exists
+                    if db_worker and db_worker.status != container.status:
+                        try:
+                            db_worker.status = container.status
+                            db.session.commit()
+                        except Exception as e:
+                            logging.error(f"Failed to update status for {container.name}: {e}")
+                    
+                    workers_data.append({
+                        'container_name': container.name,
+                        'container_id': container.id[:12],
+                        'status': container.status,
+                        'image': container.image.tags[0] if container.image.tags else 'unknown',
+                        'created': container.attrs['Created'],
+                        'ports': container.ports,
+                        'cpu_percent': round(cpu_percent, 2),
+                        'memory_percent': round(memory_percent, 2),
+                        'memory_usage_mb': round(memory_usage / 1024 / 1024, 2),
+                        'recent_logs': log_lines,
+                        'db_worker_id': db_worker.id if db_worker else None,
+                        'db_current_tenants': db_worker.current_tenants if db_worker else 0,
+                        'db_max_tenants': db_worker.max_tenants if db_worker else 0,
+                        'health_check': check_worker_health(container.name)
+                    })
+                    
+        return jsonify({'success': True, 'workers': workers_data})
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @system_admin_bp.route('/api/workers/create', methods=['POST'])
 @login_required
 @require_super_admin()
 @track_errors('create_worker_container')
 def create_worker_container():
-    """Create a new worker container"""
-    try:
-        data = request.json
-        worker_name = data.get('name', f"odoo_worker_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
-        worker_port = data.get('port', 8069)
-        max_tenants = data.get('max_tenants', 10)
-        
-        if not docker_client:
-            return jsonify({'success': False, 'message': 'Docker not available'}), 500
-        
-        # Get the correct network name from existing containers
-        network_name = None
+    """Create a new local worker container using unified service"""
+    worker_service = UnifiedWorkerService()
+    
+    result = worker_service.create_local_worker(
+        data=request.json or {},
+        user_id=current_user.id,
+        ip_address=request.remote_addr
+    )
+    
+    # If worker creation was successful, add to nginx load balancer
+    if result['success'] and 'worker_details' in result:
         try:
-            # Look for the network used by existing odoo containers
-            for container in docker_client.containers.list():
-                if 'odoo' in container.name.lower():
-                    networks = container.attrs['NetworkSettings']['Networks']
-                    for net_name in networks.keys():
-                        if 'odoo' in net_name.lower():
-                            network_name = net_name
-                            break
-                    if network_name:
-                        break
+            nginx_service = NginxLoadBalancerService()
+            worker_details = result['worker_details']
             
-            # Fallback: list all networks and find the odoo one
-            if not network_name:
-                for network in docker_client.networks.list():
-                    if 'odoo' in network.name.lower():
-                        network_name = network.name
-                        break
-        except Exception as e:
-            print(f"Warning: Could not determine network name: {e}")
+            # Add worker to load balancer (use container name for Docker networks)
+            nginx_result = nginx_service.add_worker(
+                worker_ip=worker_details['name'],  # Use container name
+                worker_port=8069,  # Internal Odoo port
+                worker_name=worker_details['name']
+            )
+            
+            if nginx_result['success']:
+                result['load_balancer'] = 'added'
+                logging.info(f"Worker {worker_details['name']} added to load balancer")
+            else:
+                result['load_balancer'] = 'failed'
+                result['load_balancer_error'] = nginx_result.get('error')
+                
+        except Exception as nginx_error:
+            logging.warning(f"Nginx integration failed: {nginx_error}")
+            result['load_balancer'] = 'error'
+    
+    status_code = 200 if result['success'] else 500
+    return jsonify(result), status_code
+
+@system_admin_bp.route('/api/workers/available-infrastructure-servers')
+@login_required
+@require_super_admin()
+@track_errors('get_available_infrastructure_servers')
+def get_available_infrastructure_servers():
+    """Get available infrastructure servers for worker deployment"""
+    try:
+        # InfrastructureServer already imported at top
         
-        # Create container
-        container = docker_client.containers.create(
-            'odoo:17.0',
-            name=worker_name,
-            environment={
-                'HOST': 'postgres',
-                'USER': 'odoo_master',
-                'PASSWORD': 'secure_password_123'
-            },
-            volumes={
-                'odoomulti-tenantsystem_odoo_filestore': {'bind': '/var/lib/odoo', 'mode': 'rw'},
-                'odoomulti-tenantsystem_odoo_worker_logs': {'bind': '/var/log/odoo', 'mode': 'rw'}
-            },
-            command=f'odoo -c /etc/odoo/odoo.conf --logfile=/var/log/odoo/{worker_name}.log',
-            restart_policy={'Name': 'unless-stopped'}
-        )
+        # Get all active servers from infra-admin
+        servers = InfrastructureServer.query.filter(
+            InfrastructureServer.status.in_(['active', 'ready'])
+        ).all()
         
-        # Connect to network if found
-        if network_name:
-            try:
-                network = docker_client.networks.get(network_name)
-                network.connect(container)
-                print(f"Connected to network: {network_name}")
-            except Exception as e:
-                print(f"Warning: Could not connect to network {network_name}: {e}")
+        available_servers = []
+        for server in servers:
+            # Check if server can host workers (either explicitly set or inferred)
+            can_host_workers = (
+                server.service_roles and 'odoo_worker' in server.service_roles
+            ) or (
+                server.current_services and any('odoo' in service for service in server.current_services)
+            ) or (
+                # Default: assume any active server can potentially host workers
+                server.status == 'active'
+            )
+            
+            available_servers.append({
+                'id': server.id,
+                'name': server.name,
+                'ip_address': server.ip_address,
+                'health_score': server.health_score or 100,
+                'current_services': server.current_services or [],
+                'service_roles': server.service_roles or [],
+                'cpu_cores': server.cpu_cores,
+                'memory_gb': server.memory_gb,
+                'disk_gb': server.disk_gb,
+                'os_type': server.os_type,
+                'status': server.status,
+                'deployment_status': server.deployment_status,
+                'last_health_check': server.last_health_check.isoformat() if server.last_health_check else None,
+                'location': 'remote',
+                'can_host_workers': can_host_workers,
+                'network_zone': getattr(server, 'network_zone', 'production'),
+                'internal_ip': getattr(server, 'internal_ip', server.ip_address),
+                'external_ip': getattr(server, 'external_ip', server.ip_address)
+            })
         
-        # Start the container
-        container.start()
-        
-        # Add to database
-        db_worker = WorkerInstance(
-            name=worker_name,
-            container_name=worker_name,
-            port=worker_port,
-            max_tenants=max_tenants,
-            status='running'
-        )
-        db.session.add(db_worker)
-        db.session.commit()
-        
-        log_system_action('worker_created', {
-            'worker_name': worker_name,
-            'container_id': container.id,
-            'max_tenants': max_tenants,
-            'network': network_name
-        })
+        # Sort by health score and status
+        available_servers.sort(key=lambda x: (x['status'] == 'active', x['health_score']), reverse=True)
         
         return jsonify({
-            'success': True, 
-            'message': f'Worker {worker_name} created successfully',
-            'container_id': container.id,
-            'worker_id': db_worker.id,
-            'network': network_name
+            'success': True,
+            'servers': available_servers,
+            'total_servers': len(available_servers),
+            'active_servers': len([s for s in available_servers if s['status'] == 'active']),
+            'worker_capable_servers': len([s for s in available_servers if s['can_host_workers']])
         })
         
     except Exception as e:
         error_tracker.log_error(e, {'admin_user': current_user.id})
         return jsonify({'success': False, 'message': str(e)}), 500
+
+@system_admin_bp.route('/api/workers/create-remote', methods=['POST'])
+@login_required
+@require_super_admin()
+@track_errors('create_remote_worker')
+def create_remote_worker():
+    """Create worker on remote infrastructure server using unified service"""
+    worker_service = UnifiedWorkerService()
+    
+    result = worker_service.create_remote_worker(
+        data=request.json or {},
+        user_id=current_user.id,
+        request_obj=request,
+        ip_address=request.remote_addr
+    )
+    
+    # If remote worker creation was successful, add to nginx load balancer
+    if result['success'] and 'worker_details' in result:
+        try:
+            nginx_service = NginxLoadBalancerService()
+            worker_details = result['worker_details']
+            
+            # For remote workers, use server IP and external port
+            server_ip = worker_details.get('server_ip', 'localhost')
+            worker_port = worker_details.get('port', 8069)
+            
+            nginx_result = nginx_service.add_worker(
+                worker_ip=server_ip,
+                worker_port=worker_port,
+                worker_name=worker_details['name']
+            )
+            
+            if nginx_result['success']:
+                result['load_balancer'] = 'added'
+                logging.info(f"Remote worker {worker_details['name']} added to load balancer")
+            else:
+                result['load_balancer'] = 'failed'
+                result['load_balancer_error'] = nginx_result.get('error')
+                
+        except Exception as nginx_error:
+            logging.warning(f"Nginx integration failed for remote worker: {nginx_error}")
+            result['load_balancer'] = 'error'
+    
+    status_code = 200 if result['success'] else (
+        400 if 'not found' in result.get('message', '').lower() or 
+              'required' in result.get('message', '').lower()
+        else 500
+    )
+    return jsonify(result), status_code
 
 @system_admin_bp.route('/api/workers/<container_name>/action', methods=['POST'])
 @login_required
@@ -385,8 +519,8 @@ def redis_info():
                 size = redis_client.dbsize()
                 if size > 0:
                     db_info[f'db{i}'] = size
-            except:
-                pass
+            except Exception as e:
+                logging.warning(f"Failed to get size for Redis DB {i}: {e}")
         
         return jsonify({
             'success': True,
@@ -857,8 +991,8 @@ def system_resources():
                                'uptime': str(datetime.utcnow() - datetime.fromisoformat(container.attrs['Created'].replace('Z', '+00:00').replace('+00:00', ''))).split('.')[0]
                            })
                    except Exception as e:
-                       print(f"Failed to get stats for {container.name}: {e}")
-                       # Add container even if stats fail
+                       logging.warning(f"Failed to get stats for {container.name}: {e}")
+                   # Add container even if stats fail
                        containers_usage.append({
                            'name': container.name[:30],
                            'type': 'unknown',
@@ -875,7 +1009,7 @@ def system_resources():
                        })
                        continue
            except Exception as e:
-               print(f"Failed to get container stats: {e}")
+               logging.error(f"Failed to get container stats: {e}")
 
        # Sort by CPU usage (highest first), then by memory usage
        containers_usage.sort(key=lambda x: (x['cpu_percent'], x['memory_percent']), reverse=True)
@@ -906,38 +1040,438 @@ def system_resources():
        return jsonify({'success': False, 'message': str(e)}), 500
 
 # ================= HELPER FUNCTIONS =================
+# Note: Many helper functions below could be moved to utility modules
 
-def calculate_cpu_percent(stats):
-    """Calculate CPU percentage from Docker stats"""
-    try:
-        cpu_delta = stats['cpu_stats']['cpu_usage']['total_usage'] - \
-                   stats['precpu_stats']['cpu_usage']['total_usage']
-        system_delta = stats['cpu_stats']['system_cpu_usage'] - \
-                      stats['precpu_stats']['system_cpu_usage']
+def calculate_cpu_percent(stats: Dict[str, Any]) -> float:
+    """Calculate CPU percentage from Docker stats
+    
+    Args:
+        stats: Docker stats dictionary
         
-        if system_delta > 0:
-            cpu_percent = (cpu_delta / system_delta) * len(stats['cpu_stats']['cpu_usage']['percpu_usage']) * 100
+    Returns:
+        CPU percentage as float, 0 if calculation fails
+    """
+    try:
+        cpu_delta = (
+            stats['cpu_stats']['cpu_usage']['total_usage'] - 
+            stats['precpu_stats']['cpu_usage']['total_usage']
+        )
+        system_delta = (
+            stats['cpu_stats']['system_cpu_usage'] - 
+            stats['precpu_stats']['system_cpu_usage']
+        )
+        
+        if system_delta > 0 and cpu_delta >= 0:
+            cpu_percent = (
+                (cpu_delta / system_delta) * 
+                len(stats['cpu_stats']['cpu_usage']['percpu_usage']) * 100
+            )
             return round(cpu_percent, 2)
-        return 0
-    except:
-        return 0
+        return 0.0
+    except (KeyError, TypeError, ZeroDivisionError) as e:
+        logging.debug(f"CPU calculation error: {e}")
+        return 0.0
 
-def check_worker_health(container_name):
-    """Check if worker is healthy"""
+def check_worker_health(container_name: str) -> bool:
+    """Check if worker container is healthy
+    
+    Args:
+        container_name: Name of the container to check
+        
+    Returns:
+        True if worker is healthy, False otherwise
+    """
     try:
         if not docker_client:
+            logging.warning("Docker client not available for health check")
             return False
         
         container = docker_client.containers.get(container_name)
         if container.status != 'running':
             return False
         
-        # Try to access health endpoint
+        # Try to access health endpoint with timeout
         try:
-            health_check = container.exec_run('curl -f http://localhost:8069/web/health')
+            health_check = container.exec_run(
+                'curl -f -m 5 http://localhost:8069/web/health',
+                timeout=10
+            )
             return health_check.exit_code == 0
-        except:
+        except Exception as e:
+            logging.debug(f"Health check failed for {container_name}, falling back to status: {e}")
             return container.status == 'running'
             
-    except:
+    except Exception as e:
+        logging.warning(f"Could not check health for container {container_name}: {e}")
         return False
+
+# ================= VPS SERVER MANAGEMENT =================
+
+@system_admin_bp.route('/api/vps/servers/list')
+@login_required
+@require_super_admin()
+@track_errors('get_vps_servers')
+def get_vps_servers():
+    """Get list of all VPS servers from infrastructure admin"""
+    try:
+        # InfrastructureServer already imported at top
+        
+        # Get all servers with their details
+        servers = InfrastructureServer.query.all()
+        
+        server_list = []
+        for server in servers:
+            # Test connection status
+            connection_status = test_server_connection(server)
+            
+            server_data = {
+                'id': server.id,
+                'name': server.name,
+                'ip_address': server.ip_address,
+                'status': server.status,
+                'health_score': server.health_score or 0,
+                'current_services': server.current_services or [],
+                'service_roles': server.service_roles or [],
+                'cpu_cores': server.cpu_cores,
+                'memory_gb': server.memory_gb,
+                'disk_gb': server.disk_gb,
+                'os_type': server.os_type,
+                'deployment_status': server.deployment_status,
+                'last_health_check': server.last_health_check.isoformat() if server.last_health_check else None,
+                'created_at': server.created_at.isoformat() if server.created_at else None,
+                'connection_status': connection_status,
+                'network_zone': getattr(server, 'network_zone', 'production'),
+                'monitoring_enabled': getattr(server, 'monitoring_enabled', True),
+                'backup_enabled': getattr(server, 'backup_enabled', True),
+                'internal_ip': getattr(server, 'internal_ip', server.ip_address),
+                'external_ip': getattr(server, 'external_ip', server.ip_address)
+            }
+            server_list.append(server_data)
+        
+        # Group servers by status for summary
+        status_summary = {}
+        for server in server_list:
+            status = server['status']
+            if status not in status_summary:
+                status_summary[status] = 0
+            status_summary[status] += 1
+        
+        return jsonify({
+            'success': True,
+            'servers': server_list,
+            'total_servers': len(server_list),
+            'status_summary': status_summary,
+            'online_servers': len([s for s in server_list if s['connection_status'] == 'online']),
+            'worker_capable_servers': len([s for s in server_list if 'odoo_worker' in s['service_roles']])
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@system_admin_bp.route('/api/vps/servers/<int:server_id>/connect', methods=['POST'])
+@login_required
+@require_super_admin()
+@track_errors('connect_to_vps_server')
+def connect_to_vps_server(server_id):
+    """Test connection to specific VPS server and get system info"""
+    try:
+        # InfrastructureServer already imported at top
+        
+        server = InfrastructureServer.query.get(server_id)
+        if not server:
+            return jsonify({'success': False, 'message': 'Server not found'}), 404
+        
+        # Import SSH connection function from infra_admin
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from infra_admin import test_ssh_connection, decrypt_password
+        
+        # Test SSH connection with detailed info
+        password = decrypt_password(server.password) if server.password else None
+        
+        connection_result = test_ssh_connection(
+            ip=server.ip_address,
+            username=server.username,
+            password=password,
+            key_path=server.ssh_key_path,
+            port=server.port or 22,
+            debug=True
+        )
+        
+        if connection_result['success']:
+            # Update server status and health check
+            server.last_health_check = datetime.utcnow()
+            server.status = 'active'
+            server.health_score = 100
+            db.session.commit()
+            
+            log_system_action('vps_connection_test', {
+                'server_id': server_id,
+                'server_name': server.name,
+                'ip_address': server.ip_address,
+                'success': True
+            })
+        
+        return jsonify({
+            'success': connection_result['success'],
+            'server_info': connection_result,
+            'server_name': server.name,
+            'ip_address': server.ip_address
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id, 'server_id': server_id})
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@system_admin_bp.route('/api/vps/servers/<int:server_id>/workers')
+@login_required
+@require_super_admin()
+@track_errors('get_vps_server_workers')
+def get_vps_server_workers(server_id):
+    """Get list of workers running on specific VPS server"""
+    try:
+        # InfrastructureServer already imported at top
+        
+        server = InfrastructureServer.query.get(server_id)
+        if not server:
+            return jsonify({'success': False, 'message': 'Server not found'}), 404
+        
+        # Get workers associated with this server
+        workers = WorkerInstance.query.filter_by(server_id=server_id).all()
+        
+        worker_list = []
+        for worker in workers:
+            worker_data = {
+                'id': worker.id,
+                'name': worker.name,
+                'container_name': worker.container_name,
+                'port': worker.port,
+                'status': worker.status,
+                'current_tenants': worker.current_tenants,
+                'max_tenants': worker.max_tenants,
+                'created_at': worker.created_at.isoformat() if worker.created_at else None,
+                'last_seen': worker.last_seen.isoformat() if worker.last_seen else None,
+                'db_host': getattr(worker, 'db_host', None),
+                'db_port': getattr(worker, 'db_port', None),
+                'load_percentage': round((worker.current_tenants / worker.max_tenants * 100), 1) if worker.max_tenants > 0 else 0
+            }
+            worker_list.append(worker_data)
+        
+        return jsonify({
+            'success': True,
+            'server_name': server.name,
+            'server_ip': server.ip_address,
+            'workers': worker_list,
+            'total_workers': len(worker_list),
+            'running_workers': len([w for w in worker_list if w['status'] == 'running']),
+            'total_tenants': sum(w['current_tenants'] for w in worker_list),
+            'total_capacity': sum(w['max_tenants'] for w in worker_list)
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id, 'server_id': server_id})
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@system_admin_bp.route('/api/vps/servers/<int:server_id>/execute', methods=['POST'])
+@login_required
+@require_super_admin()
+@track_errors('execute_command_on_vps')
+def execute_command_on_vps(server_id):
+    """Execute command on VPS server"""
+    try:
+        # InfrastructureServer already imported at top
+        
+        server = InfrastructureServer.query.get(server_id)
+        if not server:
+            return jsonify({'success': False, 'message': 'Server not found'}), 404
+        
+        data = request.json
+        command = data.get('command', '').strip()
+        
+        if not command:
+            return jsonify({'success': False, 'message': 'Command is required'}), 400
+        
+        # Security check - only allow safe commands
+        dangerous_commands = ['rm -rf', 'format', 'mkfs', 'dd if=', 'shutdown', 'reboot', '> /dev/', 'rm -f']
+        if any(dangerous in command.lower() for dangerous in dangerous_commands):
+            return jsonify({'success': False, 'message': 'Command not allowed for security reasons'}), 400
+        
+        # Import SSH functions
+        import sys
+        import os
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        from infra_admin import setup_ssh_connection, decrypt_password
+        
+        # Establish SSH connection
+        ssh_client = setup_ssh_connection(server)
+        if not ssh_client:
+            return jsonify({'success': False, 'message': 'Could not establish SSH connection'}), 500
+        
+        try:
+            # Execute command
+            stdin, stdout, stderr = ssh_client.exec_command(command, timeout=30)
+            
+            output = stdout.read().decode('utf-8')
+            error = stderr.read().decode('utf-8')
+            exit_code = stdout.channel.recv_exit_status()
+            
+            ssh_client.close()
+            
+            log_system_action('vps_command_execution', {
+                'server_id': server_id,
+                'server_name': server.name,
+                'command': command[:100],  # Log first 100 chars
+                'exit_code': exit_code,
+                'success': exit_code == 0
+            })
+            
+            return jsonify({
+                'success': True,
+                'command': command,
+                'output': output,
+                'error': error,
+                'exit_code': exit_code,
+                'server_name': server.name
+            })
+            
+        except Exception as e:
+            ssh_client.close()
+            return jsonify({'success': False, 'message': f'Command execution failed: {str(e)}'}), 500
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id, 'server_id': server_id})
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@system_admin_bp.route('/api/vps/servers/health-check', methods=['POST'])
+@login_required
+@require_super_admin()
+@track_errors('bulk_health_check_vps')
+def bulk_health_check_vps():
+    """Perform health check on all VPS servers"""
+    try:
+        # InfrastructureServer already imported at top
+        # ThreadPoolExecutor already imported at top
+        
+        servers = InfrastructureServer.query.all()
+        
+        def check_single_server(server):
+            try:
+                connection_status = test_server_connection(server)
+                
+                # Update server health
+                if connection_status == 'online':
+                    server.last_health_check = datetime.utcnow()
+                    server.health_score = 100
+                    server.status = 'active'
+                else:
+                    server.health_score = max(0, (server.health_score or 100) - 20)
+                    if server.health_score <= 0:
+                        server.status = 'offline'
+                
+                return {
+                    'id': server.id,
+                    'name': server.name,
+                    'ip_address': server.ip_address,
+                    'status': connection_status,
+                    'health_score': server.health_score
+                }
+            except Exception as e:
+                return {
+                    'id': server.id,
+                    'name': server.name,
+                    'ip_address': server.ip_address,
+                    'status': 'error',
+                    'error': str(e)
+                }
+        
+        # Use thread pool for parallel health checks (max 5 concurrent connections)
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            results = list(executor.map(check_single_server, servers))
+        
+        # Commit all changes
+        db.session.commit()
+        
+        # Summarize results
+        online_count = len([r for r in results if r.get('status') == 'online'])
+        offline_count = len([r for r in results if r.get('status') in ['offline', 'error']])
+        
+        log_system_action('bulk_vps_health_check', {
+            'total_servers': len(servers),
+            'online_servers': online_count,
+            'offline_servers': offline_count
+        })
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'summary': {
+                'total_servers': len(servers),
+                'online_servers': online_count,
+                'offline_servers': offline_count,
+                'health_check_time': datetime.utcnow().isoformat()
+            }
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# ================= HELPER FUNCTIONS FOR VPS =================
+
+def test_server_connection(server):
+    """Test basic connection to server (ping-like check)"""
+    try:
+        import socket
+        
+        # Test basic network connectivity
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(5)
+        
+        result = sock.connect_ex((server.ip_address, server.port or 22))
+        sock.close()
+        
+        if result == 0:
+            return 'online'
+        else:
+            return 'offline'
+            
+    except Exception:
+        return 'error'
+
+@system_admin_bp.route('/api/debug/containers')
+@login_required
+@require_super_admin()
+def debug_containers():
+    """Debug endpoint to check what containers exist"""
+    try:
+        if not docker_client:
+            return jsonify({'success': False, 'message': 'Docker not available'})
+        
+        containers = docker_client.containers.list(all=True)
+        container_info = []
+        
+        for container in containers:
+            container_info.append({
+                'name': container.name,
+                'status': container.status,
+                'image': container.image.tags[0] if container.image.tags else 'unknown',
+                'is_odoo_worker': ('odoo' in container.name.lower() and 'worker' in container.name.lower()) or container.name.startswith('odoo_worker') or container.name.startswith('test')
+            })
+        
+        # Also check database workers
+        db_workers = WorkerInstance.query.all()
+        db_worker_info = [{'id': w.id, 'name': w.name, 'container_name': w.container_name, 'status': w.status} for w in db_workers]
+        
+        return jsonify({
+            'success': True,
+            'total_containers': len(containers),
+            'containers': container_info,
+            'db_workers': db_worker_info,
+            'docker_available': docker_client is not None
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})

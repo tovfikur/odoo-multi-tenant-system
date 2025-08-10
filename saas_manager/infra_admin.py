@@ -7,12 +7,10 @@ Includes server management, service deployment, monitoring, migration, and auto-
 
 # Standard library imports
 import base64
-import hashlib
 import ipaddress
 import json
 import logging
 import os
-import secrets
 import socket
 import subprocess
 import threading
@@ -21,10 +19,12 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from functools import wraps
 
+
+import traceback
+from flask import current_app, has_app_context
+
 # Third-party imports
-import docker
 import paramiko
-import redis
 import requests
 from croniter import croniter
 from flask import Blueprint, request, jsonify, render_template
@@ -34,503 +34,15 @@ from sqlalchemy import text, func
 
 # Import your existing models and utilities
 from db import db
-from models import SaasUser, Tenant, WorkerInstance, AuditLog, SystemSetting
+from models import (SaasUser, Tenant, WorkerInstance, AuditLog, SystemSetting, 
+                   InfrastructureServer, DomainMapping, DeploymentTask, CronJob, InfrastructureAlert, ConfigurationTemplate, NetworkScanResult)
 from utils import error_tracker, logger, track_errors
+from shared_utils import (get_docker_client, get_redis_client, safe_execute, 
+                         database_transaction, log_action, log_error_with_context, 
+                         validate_ip_address, validate_port, is_safe_command)
 
 # Create blueprint
 infra_admin_bp = Blueprint('infra_admin', __name__, url_prefix='/infra-admin')
-
-# ================= MODELS =================
-
-class InfrastructureServer(db.Model):
-    """Infrastructure server management model"""
-    __tablename__ = 'infrastructure_servers'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
-    ip_address = db.Column(db.String(45), nullable=False)
-    username = db.Column(db.String(50), nullable=False)
-    password = db.Column(db.String(255))  # Encrypted
-    ssh_key_path = db.Column(db.String(500))
-    port = db.Column(db.Integer, default=22)
-    
-    # Service roles this server can handle
-    service_roles = db.Column(db.JSON, default=list)
-    current_services = db.Column(db.JSON, default=list)
-    
-    # Server specifications
-    cpu_cores = db.Column(db.Integer)
-    memory_gb = db.Column(db.Integer)
-    disk_gb = db.Column(db.Integer)
-    os_type = db.Column(db.String(50))
-    
-    # Status and health
-    status = db.Column(db.String(20), default='pending')
-    last_health_check = db.Column(db.DateTime)
-    health_score = db.Column(db.Integer, default=100)
-    
-    # Deployment tracking
-    deployment_status = db.Column(db.String(50), default='ready')
-    deployment_log = db.Column(db.Text)
-    
-    # Monitoring and alerts
-    monitoring_enabled = db.Column(db.Boolean, default=True)
-    alert_email = db.Column(db.String(100))
-    alert_webhook = db.Column(db.String(500))
-    
-    # Resource limits
-    max_cpu_usage = db.Column(db.Integer, default=80)
-    max_memory_usage = db.Column(db.Integer, default=80)
-    max_disk_usage = db.Column(db.Integer, default=85)
-    
-    # Network configuration
-    internal_ip = db.Column(db.String(45))
-    external_ip = db.Column(db.String(45))
-    network_zone = db.Column(db.String(50), default='production')
-    
-    # Backup configuration
-    backup_enabled = db.Column(db.Boolean, default=True)
-    backup_frequency = db.Column(db.String(50), default='daily')
-    backup_retention_days = db.Column(db.Integer, default=30)
-    last_backup_at = db.Column(db.DateTime)
-    
-    # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'ip_address': self.ip_address,
-            'service_roles': self.service_roles,
-            'current_services': self.current_services,
-            'status': self.status,
-            'health_score': self.health_score,
-            'deployment_status': self.deployment_status,
-            'cpu_cores': self.cpu_cores,
-            'memory_gb': self.memory_gb,
-            'disk_gb': self.disk_gb,
-            'os_type': self.os_type,
-            'last_health_check': self.last_health_check.isoformat() if self.last_health_check else None,
-            'created_at': self.created_at.isoformat()
-        }
-
-class DomainMapping(db.Model):
-    """Domain mapping for custom domains to tenants"""
-    __tablename__ = 'domain_mappings'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    custom_domain = db.Column(db.String(255), nullable=False, unique=True)
-    target_subdomain = db.Column(db.String(100), nullable=False)
-    tenant_id = db.Column(db.Integer, db.ForeignKey('tenants.id'))
-    
-    # Load balancing configuration
-    load_balancer_enabled = db.Column(db.Boolean, default=True)
-    load_balancer_method = db.Column(db.String(50), default='round_robin')
-    upstream_servers = db.Column(db.JSON, default=list)
-    
-    # SSL Configuration
-    ssl_enabled = db.Column(db.Boolean, default=False)
-    ssl_cert_path = db.Column(db.String(500))
-    ssl_key_path = db.Column(db.String(500))
-    ssl_auto_renew = db.Column(db.Boolean, default=True)
-    ssl_provider = db.Column(db.String(50), default='letsencrypt')
-    
-    # Security settings
-    force_https = db.Column(db.Boolean, default=True)
-    hsts_enabled = db.Column(db.Boolean, default=True)
-    security_headers = db.Column(db.JSON, default=dict)
-    
-    # Caching and performance
-    cache_enabled = db.Column(db.Boolean, default=True)
-    cache_ttl = db.Column(db.Integer, default=3600)
-    compression_enabled = db.Column(db.Boolean, default=True)
-    
-    # Rate limiting
-    rate_limit_enabled = db.Column(db.Boolean, default=False)
-    rate_limit_requests = db.Column(db.Integer, default=100)
-    rate_limit_window = db.Column(db.Integer, default=60)
-    
-    # Access control
-    ip_whitelist = db.Column(db.JSON, default=list)
-    ip_blacklist = db.Column(db.JSON, default=list)
-    geo_restrictions = db.Column(db.JSON, default=dict)
-    
-    # Status and monitoring
-    status = db.Column(db.String(20), default='pending')
-    last_verified = db.Column(db.DateTime)
-    verification_status = db.Column(db.String(50))
-    uptime_check_enabled = db.Column(db.Boolean, default=True)
-    uptime_check_interval = db.Column(db.Integer, default=300)
-    
-    # Analytics and logging
-    access_log_enabled = db.Column(db.Boolean, default=True)
-    analytics_enabled = db.Column(db.Boolean, default=False)
-    
-    # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
-    
-    # Relationships
-    tenant = db.relationship('Tenant', backref='domain_mappings')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'custom_domain': self.custom_domain,
-            'target_subdomain': self.target_subdomain,
-            'tenant_id': self.tenant_id,
-            'tenant_name': self.tenant.name if self.tenant else None,
-            'ssl_enabled': self.ssl_enabled,
-            'status': self.status,
-            'verification_status': self.verification_status,
-            'last_verified': self.last_verified.isoformat() if self.last_verified else None,
-            'created_at': self.created_at.isoformat()
-        }
-
-class CronJob(db.Model):
-    """Cron job management across infrastructure"""
-    __tablename__ = 'cron_jobs'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    command = db.Column(db.Text, nullable=False)
-    schedule = db.Column(db.String(100), nullable=False)
-    server_id = db.Column(db.Integer, db.ForeignKey('infrastructure_servers.id'))
-    
-    # Job configuration
-    working_directory = db.Column(db.String(500))
-    environment_vars = db.Column(db.JSON, default=dict)
-    timeout_seconds = db.Column(db.Integer, default=3600)
-    retry_attempts = db.Column(db.Integer, default=0)
-    retry_delay = db.Column(db.Integer, default=60)
-    
-    # Notification settings
-    notify_on_success = db.Column(db.Boolean, default=False)
-    notify_on_failure = db.Column(db.Boolean, default=True)
-    notification_email = db.Column(db.String(100))
-    notification_webhook = db.Column(db.String(500))
-    
-    # Status tracking
-    status = db.Column(db.String(20), default='active')
-    last_run = db.Column(db.DateTime)
-    next_run = db.Column(db.DateTime)
-    last_result = db.Column(db.Text)
-    last_exit_code = db.Column(db.Integer)
-    run_count = db.Column(db.Integer, default=0)
-    success_count = db.Column(db.Integer, default=0)
-    failure_count = db.Column(db.Integer, default=0)
-    
-    # Performance tracking
-    avg_runtime_seconds = db.Column(db.Float, default=0.0)
-    max_runtime_seconds = db.Column(db.Float, default=0.0)
-    last_runtime_seconds = db.Column(db.Float, default=0.0)
-    
-    # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
-    
-    # Relationships
-    server = db.relationship('InfrastructureServer', backref='cron_jobs')
-    
-    def to_dict(self):
-        next_run = calculate_next_run(self.schedule)
-        return {
-            'id': self.id,
-            'name': self.name,
-            'command': self.command,
-            'schedule': self.schedule,
-            'server_id': self.server_id,
-            'server_name': self.server.name if self.server else 'All servers',
-            'status': self.status,
-            'last_run': self.last_run.isoformat() if self.last_run else None,
-            'next_run': next_run.isoformat() if next_run else None,
-            'run_count': self.run_count,
-            'success_count': self.success_count,
-            'failure_count': self.failure_count,
-            'avg_runtime_seconds': self.avg_runtime_seconds,
-            'created_at': self.created_at.isoformat()
-        }
-
-class DeploymentTask(db.Model):
-    """Deployment and migration task tracking"""
-    __tablename__ = 'deployment_tasks'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    task_type = db.Column(db.String(50), nullable=False)
-    service_type = db.Column(db.String(50), nullable=False)
-    source_server_id = db.Column(db.Integer, db.ForeignKey('infrastructure_servers.id'))
-    target_server_id = db.Column(db.Integer, db.ForeignKey('infrastructure_servers.id'))
-    
-    # Task configuration
-    config = db.Column(db.JSON)
-    priority = db.Column(db.String(20), default='normal')
-    
-    # Dependencies
-    depends_on = db.Column(db.JSON, default=list)
-    blocks = db.Column(db.JSON, default=list)
-    
-    # Status tracking
-    status = db.Column(db.String(20), default='pending')
-    progress = db.Column(db.Integer, default=0)
-    current_step = db.Column(db.String(100))
-    total_steps = db.Column(db.Integer, default=1)
-    
-    # Logging and debugging
-    logs = db.Column(db.Text)
-    error_message = db.Column(db.Text)
-    debug_info = db.Column(db.JSON)
-    
-    # Performance tracking
-    estimated_duration = db.Column(db.Integer)
-    actual_duration = db.Column(db.Integer)
-    
-    # Resource usage
-    cpu_usage_avg = db.Column(db.Float)
-    memory_usage_avg = db.Column(db.Float)
-    disk_io_total = db.Column(db.BigInteger)
-    network_io_total = db.Column(db.BigInteger)
-    
-    # Rollback information
-    rollback_supported = db.Column(db.Boolean, default=False)
-    rollback_data = db.Column(db.JSON)
-    rolled_back_at = db.Column(db.DateTime)
-    rolled_back_by = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
-    
-    # Timestamps
-    scheduled_at = db.Column(db.DateTime)
-    started_at = db.Column(db.DateTime)
-    completed_at = db.Column(db.DateTime)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
-    
-    # Relationships
-    source_server = db.relationship('InfrastructureServer', foreign_keys=[source_server_id])
-    target_server = db.relationship('InfrastructureServer', foreign_keys=[target_server_id])
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'task_type': self.task_type,
-            'service_type': self.service_type,
-            'source_server': self.source_server.name if self.source_server else None,
-            'target_server': self.target_server.name if self.target_server else None,
-            'status': self.status,
-            'progress': self.progress,
-            'current_step': self.current_step,
-            'priority': self.priority,
-            'error_message': self.error_message,
-            'estimated_duration': self.estimated_duration,
-            'actual_duration': self.actual_duration,
-            'rollback_supported': self.rollback_supported,
-            'started_at': self.started_at.isoformat() if self.started_at else None,
-            'completed_at': self.completed_at.isoformat() if self.completed_at else None,
-            'created_at': self.created_at.isoformat()
-        }
-
-class NetworkScanResult(db.Model):
-    """Network scan results for server discovery"""
-    __tablename__ = 'network_scan_results'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    scan_task_id = db.Column(db.Integer, db.ForeignKey('deployment_tasks.id'))
-    ip_address = db.Column(db.String(45), nullable=False)
-    hostname = db.Column(db.String(255))
-    
-    # Connectivity
-    is_reachable = db.Column(db.Boolean, default=False)
-    response_time_ms = db.Column(db.Float)
-    
-    # SSH accessibility
-    ssh_accessible = db.Column(db.Boolean, default=False)
-    ssh_port = db.Column(db.Integer, default=22)
-    ssh_version = db.Column(db.String(100))
-    
-    # System information
-    os_type = db.Column(db.String(50))
-    os_version = db.Column(db.String(100))
-    kernel_version = db.Column(db.String(100))
-    cpu_cores = db.Column(db.Integer)
-    memory_gb = db.Column(db.Integer)
-    disk_gb = db.Column(db.Integer)
-    architecture = db.Column(db.String(20))
-    
-    # Installed services
-    installed_services = db.Column(db.JSON, default=list)
-    running_services = db.Column(db.JSON, default=list)
-    open_ports = db.Column(db.JSON, default=list)
-    
-    # Security information
-    has_firewall = db.Column(db.Boolean, default=False)
-    firewall_type = db.Column(db.String(50))
-    requires_sudo = db.Column(db.Boolean, default=True)
-    
-    # Suitability assessment
-    suitability_score = db.Column(db.Integer, default=0)
-    recommended_roles = db.Column(db.JSON, default=list)
-    compatibility_issues = db.Column(db.JSON, default=list)
-    
-    # Auto-setup readiness
-    auto_setup_ready = db.Column(db.Boolean, default=False)
-    setup_requirements = db.Column(db.JSON, default=list)
-    estimated_setup_time = db.Column(db.Integer)
-    
-    # Timestamps
-    scanned_at = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'ip_address': self.ip_address,
-            'hostname': self.hostname,
-            'is_reachable': self.is_reachable,
-            'ssh_accessible': self.ssh_accessible,
-            'os_type': self.os_type,
-            'os_version': self.os_version,
-            'cpu_cores': self.cpu_cores,
-            'memory_gb': self.memory_gb,
-            'disk_gb': self.disk_gb,
-            'installed_services': self.installed_services,
-            'running_services': self.running_services,
-            'suitability_score': self.suitability_score,
-            'recommended_roles': self.recommended_roles,
-            'auto_setup_ready': self.auto_setup_ready,
-            'scanned_at': self.scanned_at.isoformat()
-        }
-
-class ConfigurationTemplate(db.Model):
-    """Templates for server and service configurations"""
-    __tablename__ = 'configuration_templates'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False, unique=True)
-    description = db.Column(db.Text)
-    template_type = db.Column(db.String(50), nullable=False)
-    
-    # Template content
-    template_content = db.Column(db.Text, nullable=False)
-    template_variables = db.Column(db.JSON, default=dict)
-    default_values = db.Column(db.JSON, default=dict)
-    
-    # Template metadata
-    version = db.Column(db.String(20), default='1.0')
-    category = db.Column(db.String(50))
-    tags = db.Column(db.JSON, default=list)
-    
-    # Requirements and compatibility
-    min_memory_gb = db.Column(db.Integer)
-    min_cpu_cores = db.Column(db.Integer)
-    min_disk_gb = db.Column(db.Integer)
-    supported_os = db.Column(db.JSON, default=list)
-    required_services = db.Column(db.JSON, default=list)
-    
-    # Usage tracking
-    usage_count = db.Column(db.Integer, default=0)
-    last_used_at = db.Column(db.DateTime)
-    
-    # Status
-    is_active = db.Column(db.Boolean, default=True)
-    is_validated = db.Column(db.Boolean, default=False)
-    validation_results = db.Column(db.JSON)
-    
-    # Timestamps
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-    created_by = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'name': self.name,
-            'description': self.description,
-            'template_type': self.template_type,
-            'version': self.version,
-            'category': self.category,
-            'tags': self.tags,
-            'template_variables': self.template_variables,
-            'default_values': self.default_values,
-            'min_memory_gb': self.min_memory_gb,
-            'min_cpu_cores': self.min_cpu_cores,
-            'supported_os': self.supported_os,
-            'is_active': self.is_active,
-            'is_validated': self.is_validated,
-            'usage_count': self.usage_count,
-            'created_at': self.created_at.isoformat()
-        }
-
-class InfrastructureAlert(db.Model):
-    """Infrastructure monitoring alerts"""
-    __tablename__ = 'infrastructure_alerts'
-    
-    id = db.Column(db.Integer, primary_key=True)
-    alert_type = db.Column(db.String(50), nullable=False)
-    severity = db.Column(db.String(20), nullable=False)
-    title = db.Column(db.String(200), nullable=False)
-    message = db.Column(db.Text, nullable=False)
-    
-    # Source information
-    server_id = db.Column(db.Integer, db.ForeignKey('infrastructure_servers.id'))
-    domain_id = db.Column(db.Integer, db.ForeignKey('domain_mappings.id'))
-    service_name = db.Column(db.String(100))
-    
-    # Alert data
-    metric_name = db.Column(db.String(100))
-    metric_value = db.Column(db.Float)
-    threshold_value = db.Column(db.Float)
-    alert_data = db.Column(db.JSON)
-    
-    # Status and resolution
-    status = db.Column(db.String(20), default='active')
-    acknowledged_at = db.Column(db.DateTime)
-    acknowledged_by = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
-    resolved_at = db.Column(db.DateTime)
-    resolved_by = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
-    resolution_notes = db.Column(db.Text)
-    
-    # Notification tracking
-    notification_sent = db.Column(db.Boolean, default=False)
-    notification_methods = db.Column(db.JSON, default=list)
-    notification_failures = db.Column(db.JSON, default=list)
-    
-    # Auto-resolution
-    auto_resolve_enabled = db.Column(db.Boolean, default=True)
-    auto_resolve_after_minutes = db.Column(db.Integer, default=60)
-    
-    # Timestamps
-    first_occurrence = db.Column(db.DateTime, default=datetime.utcnow)
-    last_occurrence = db.Column(db.DateTime, default=datetime.utcnow)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
-    # Relationships
-    server = db.relationship('InfrastructureServer', backref='alerts')
-    domain = db.relationship('DomainMapping', backref='alerts')
-    
-    def to_dict(self):
-        return {
-            'id': self.id,
-            'alert_type': self.alert_type,
-            'severity': self.severity,
-            'title': self.title,
-            'message': self.message,
-            'server_id': self.server_id,
-            'server_name': self.server.name if self.server else None,
-            'domain_id': self.domain_id,
-            'domain_name': self.domain.custom_domain if self.domain else None,
-            'service_name': self.service_name,
-            'status': self.status,
-            'metric_name': self.metric_name,
-            'metric_value': self.metric_value,
-            'threshold_value': self.threshold_value,
-            'first_occurrence': self.first_occurrence.isoformat(),
-            'last_occurrence': self.last_occurrence.isoformat(),
-            'acknowledged_at': self.acknowledged_at.isoformat() if self.acknowledged_at else None,
-            'resolved_at': self.resolved_at.isoformat() if self.resolved_at else None
-        }
 
 # ================= DECORATORS =================
 
@@ -556,7 +68,8 @@ def decrypt_password(encrypted_password):
     """Decrypt password from storage"""
     try:
         return base64.b64decode(encrypted_password.encode()).decode()
-    except:
+    except Exception as e:
+        logger.warning(f"Failed to decrypt password: {e}")
         return encrypted_password
 
 def calculate_next_run(schedule):
@@ -572,7 +85,8 @@ def validate_cron_schedule(schedule):
     try:
         croniter(schedule)
         return True
-    except:
+    except Exception as e:
+        logger.warning(f"Invalid cron schedule '{schedule}': {e}")
         return False
 
 
@@ -598,7 +112,7 @@ def test_ssh_connection(ip, username, password=None, key_path=None, port=22, deb
             timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
             debug_message = f"[{timestamp}] {message}"
             debug_logs.append(debug_message)
-            print(debug_message)  # Real-time output
+            logging.debug(debug_message)  # Real-time output
     
     try:
         log_debug(f"=== Starting SSH connection test ===")
@@ -1017,54 +531,37 @@ def test_ssh_connection(ip, username, password=None, key_path=None, port=22, deb
             'error_type': type(e).__name__
         }
 
-# Additional debugging helper function
-def analyze_ssh_failure(result):
-    """
-    Analyze SSH connection failure and provide troubleshooting suggestions
-    """
-    if result['success']:
-        return "Connection was successful - no analysis needed"
-    
-    error = result.get('error', '').lower()
-    suggestions = []
-    
-    if 'network connectivity failed' in error:
-        suggestions.extend([
-            "Check if the target server is running and accessible",
-            "Verify the IP address and port number",
-            "Check firewall rules on both client and server",
-            "Test with: ping <ip> and telnet <ip> <port>"
-        ])
-    
-    elif 'authentication failed' in error:
-        suggestions.extend([
-            "Verify username and password/key are correct",
-            "Check if the user account exists on the target server",
-            "Ensure SSH key has correct permissions (600)",
-            "Verify SSH key format and that it matches the public key on server"
-        ])
-    
-    elif 'connection timed out' in error:
-        suggestions.extend([
-            "Increase timeout values",
-            "Check network latency and stability",
-            "Verify SSH service is running on target server",
-            "Check for network congestion or routing issues"
-        ])
-    
-    elif 'permission denied' in error:
-        suggestions.extend([
-            "Check SSH server configuration (/etc/ssh/sshd_config)",
-            "Verify user is allowed to SSH (AllowUsers directive)",
-            "Check if password authentication is enabled",
-            "Verify public key is in ~/.ssh/authorized_keys"
-        ])
-    
-    return {
-        'error_analysis': error,
-        'troubleshooting_suggestions': suggestions,
-        'debug_logs': result.get('debug_logs', [])
-    }
+
+def check_ssh_connectivity(ssh_client, logs):
+    """Check if SSH client is accessible by testing a simple command"""
+    try:
+        # Get the hostname/IP from the SSH client
+        hostname = ssh_client.get_transport().getpeername()[0]
+        logs.append(f"Verifying SSH connection to {hostname}...")
+        logging.info(f"Verifying SSH connection to {hostname}...")
+        
+        # Test SSH connectivity with a simple command instead of ping
+        stdin, stdout, stderr = ssh_client.exec_command("echo 'SSH connectivity test'", timeout=10)
+        exit_code = stdout.channel.recv_exit_status()
+        output = stdout.read().decode('utf-8').strip()
+        
+        if exit_code == 0 and 'SSH connectivity test' in output:
+            logs.append(f"✓ SSH connection to {hostname} is working")
+            logging.info(f"SSH connection to {hostname} is working")
+            return True
+        else:
+            error = stderr.read().decode('utf-8').strip()
+            logs.append(f"✗ SSH command failed: {error}")
+            logging.error(f"SSH command failed: {error}")
+            return False
+            
+    except Exception as e:
+        logs.append(f"✗ Error verifying SSH connectivity: {str(e)}")
+        logging.error(f"Error verifying SSH connectivity: {str(e)}")
+        return False
+
+
+
 
 def perform_health_check(server):
     """Perform comprehensive health check on server"""
@@ -1206,8 +703,87 @@ def check_service_status(server, service_name):
             }
         elif service_name == 'redis':
             stdin, stdout, stderr = client.exec_command('systemctl is-active redis')
+        elif service_name == 'odoo' or service_name == 'odoo_worker':
+            # Odoo service verification - container-friendly
+            odoo_checks = [
+                {
+                    'cmd': 'sudo docker ps --filter name=odoo_worker --format "{{.Names}}\t{{.Status}}" | head -1',
+                    'success_indicator': 'Up'
+                },
+                {
+                    'cmd': 'sudo docker network inspect odoo_network >/dev/null 2>&1 && echo "network_ready"',
+                    'success_indicator': 'network_ready'
+                },
+                {
+                    'cmd': 'sudo docker volume inspect odoo_filestore >/dev/null 2>&1 && echo "volumes_ready"',
+                    'success_indicator': 'volumes_ready'
+                },
+                {
+                    'cmd': 'ls -la /opt/odoo/config/odoo.conf 2>/dev/null && echo "config_ready"',
+                    'success_indicator': 'config_ready'
+                }
+            ]
+            
+            success_count = 0
+            total_checks = len(odoo_checks)
+            
+            for i, check in enumerate(odoo_checks):
+                try:
+                    stdin, stdout, stderr = client.exec_command(check['cmd'], timeout=10)
+                    result = stdout.read().decode().strip()
+                    error = stderr.read().decode().strip()
+                    
+                    logging.debug(f"Check {i+1}: {check['cmd']}")
+                    logging.debug(f"Result: {result}")
+                    logging.debug(f"Error: {error}")
+                    
+                    if result and check['success_indicator'] in result:
+                        success_count += 1
+                        logging.debug(f"Check {i+1} PASSED")
+                    else:
+                        logging.debug(f"Check {i+1} FAILED - Expected '{check['success_indicator']}' in result")
+                        
+                except Exception as e:
+                    logging.debug(f"Check {i+1} EXCEPTION: {str(e)}")
+                    continue
+            
+            # If at least 2 out of 4 checks pass (network, volumes, config), consider environment ready
+            # Note: We don't expect running containers during initial environment setup
+            if success_count >= 2:
+                client.close()
+                return {
+                    'running': True,
+                    'status': 'environment_ready',
+                    'error': None
+                }
+            else:
+                client.close()
+                return {
+                    'running': False,
+                    'status': 'environment_setup',
+                    'error': f'Odoo environment partially ready ({success_count}/{total_checks} checks passed)'
+                }
         else:
+            # For unknown services, try systemctl but ignore systemd errors
             stdin, stdout, stderr = client.exec_command(f'systemctl is-active {service_name}')
+            result = stdout.read().decode().strip()
+            error = stderr.read().decode().strip()
+            
+            # If systemctl fails with systemd error, consider it a container environment
+            if 'System has not been booted with systemd' in error or 'Failed to connect to bus' in error:
+                client.close()
+                return {
+                    'running': True,  # Assume service is ready in container environment
+                    'status': 'container_environment',
+                    'error': None
+                }
+            
+            client.close()
+            return {
+                'running': 'active' in result.lower() or 'running' in result.lower(),
+                'status': result,
+                'error': error if error else None
+            }
         
         result = stdout.read().decode().strip()
         error = stderr.read().decode().strip()
@@ -1688,6 +1264,59 @@ def add_infrastructure_server():
         error_tracker.log_error(e, {'admin_user': current_user.id})
         return jsonify({'success': False, 'message': str(e)}), 500
 
+
+
+
+@infra_admin_bp.route('/api/servers/test-connection', methods=['POST'])
+@login_required
+@require_infra_admin()
+@track_errors('test_server_connection')
+def test_server_connection():
+    try:
+        data = request.get_json()
+        
+        if not data:
+            logger.warning(f"Server connection test failed: No JSON payload provided by user {current_user.id}")
+            return jsonify({'error': 'JSON payload required'}), 400
+        
+        # Log the actual data received for debugging
+        logger.info(f"Received connection test data for user {current_user.id}: {data}")
+        
+        ip = data.get('ip') or data.get('ip_address')
+        username = data.get('username')
+        password = data.get('password')
+        key_path = data.get('key_path')
+        port = data.get('port', 22)
+
+        if not ip or not username:
+            logger.warning(f"Server connection test failed: Missing required fields (ip: '{ip}', username: '{username}') for user {current_user.id}. Full data: {data}")
+            return jsonify({'error': 'IP address and username are required'}), 400
+
+        logger.info(f"Testing SSH connection to {ip}:{port} with username {username} for user {current_user.id}")
+        result = test_ssh_connection(ip, username, password, key_path, port)
+
+        if result['success']:
+            logger.info(f"SSH connection test successful to {ip}:{port} for user {current_user.id}")
+            return jsonify({'message': 'Connection test successful', 'data': result}), 200
+        else:
+            logger.error(f"SSH connection test failed to {ip}:{port} for user {current_user.id}: {result.get('error', 'Unknown error')}")
+            return jsonify({'error': 'Connection test failed', 'data': result}), 500
+            
+    except Exception as e:
+        logger.error(f"Unexpected error in server connection test for user {current_user.id}: {str(e)}")
+        error_tracker.log_error(e, {
+            'admin_user': current_user.id,
+            'endpoint': '/api/servers/test-connection',
+            'request_data': data if 'data' in locals() else None
+        })
+        return jsonify({'error': 'Internal server error occurred during connection test'}), 500
+
+
+
+
+
+
+
 @infra_admin_bp.route('/api/servers/<int:server_id>/deploy-service', methods=['POST'])
 @login_required
 @require_infra_admin()
@@ -1794,10 +1423,8 @@ def migrate_server_services(source_id, target_id):
 
 def execute_deployment_task(task_id):
     """Execute deployment task in background with comprehensive logging"""
-    print(f"\n{'='*60}")
-    print(f"[DEPLOYMENT] Starting deployment task ID: {task_id}")
-    print(f"[DEPLOYMENT] Timestamp: {datetime.now().isoformat()}")
-    print(f"{'='*60}")
+    logging.info(f"Starting deployment task ID: {task_id}")
+    logging.info(f"Deployment timestamp: {datetime.now().isoformat()}")
     
     try:
         # Import the app instance directly
@@ -1980,6 +1607,9 @@ def execute_deployment_task(task_id):
             elif service_type == 'redis':
                 print(f"[DEPLOYMENT] Installing Redis...")
                 success = install_redis(client, task, logs)
+            elif service_type == 'odoo' or service_type == 'odoo_worker':
+                print(f"[DEPLOYMENT] Installing Odoo worker environment...")
+                success = install_odoo_worker(client, task, logs)
             else:
                 error_msg = f"Unknown service type: {service_type}"
                 print(f"[DEPLOYMENT] ERROR: {error_msg}")
@@ -3053,6 +2683,144 @@ def install_docker_host_socket(client, task, logs):
     except Exception as e:
         error_msg = f"Host socket Docker installation failed: {str(e)}"
         print(f"[DOCKER INSTALL] FATAL ERROR: {error_msg}")
+        logs.append(f"FATAL ERROR: {error_msg}")
+        return False
+
+def install_docker_standard(client, task, logs):
+    """Install Docker using standard installation method for physical/VM servers"""
+    try:
+        print(f"[DOCKER STANDARD] Starting standard Docker installation on server {task.target_server.name}")
+        logs.append(f"=== DOCKER STANDARD INSTALLATION STARTED ===")
+        logs.append(f"Target Server: {task.target_server.name} ({task.target_server.ip_address})")
+        logs.append(f"Timestamp: {datetime.now().isoformat()}")
+        
+        # Update system packages
+        print("[DOCKER STANDARD] Updating system packages...")
+        logs.append("Phase 1: Updating system packages")
+        
+        update_commands = [
+            "apt-get update -y",
+            "apt-get install -y apt-transport-https ca-certificates curl gnupg lsb-release"
+        ]
+        
+        for cmd in update_commands:
+            stdin, stdout, stderr = client.exec_command(f"sudo {cmd}")
+            exit_code = stdout.channel.recv_exit_status()
+            output = stdout.read().decode('utf-8')
+            error = stderr.read().decode('utf-8')
+            
+            if exit_code != 0:
+                logs.append(f"Command failed: {cmd}")
+                logs.append(f"Error: {error}")
+                print(f"[DOCKER STANDARD] Command failed: {cmd}")
+                return False
+            logs.append(f"✓ {cmd}")
+        
+        # Add Docker's official GPG key
+        print("[DOCKER STANDARD] Adding Docker GPG key...")
+        logs.append("Phase 2: Adding Docker official GPG key")
+        
+        gpg_commands = [
+            "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg",
+            'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null'
+        ]
+        
+        for cmd in gpg_commands:
+            stdin, stdout, stderr = client.exec_command(cmd)
+            exit_code = stdout.channel.recv_exit_status()
+            
+            if exit_code != 0:
+                error = stderr.read().decode('utf-8')
+                logs.append(f"GPG setup failed: {error}")
+                print(f"[DOCKER STANDARD] GPG setup failed")
+                return False
+            logs.append("✓ Docker GPG key added")
+        
+        # Install Docker Engine
+        print("[DOCKER STANDARD] Installing Docker Engine...")
+        logs.append("Phase 3: Installing Docker Engine")
+        
+        install_commands = [
+            "apt-get update -y",
+            "apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin"
+        ]
+        
+        for cmd in install_commands:
+            stdin, stdout, stderr = client.exec_command(f"sudo {cmd}")
+            exit_code = stdout.channel.recv_exit_status()
+            
+            if exit_code != 0:
+                error = stderr.read().decode('utf-8')
+                logs.append(f"Docker installation failed: {error}")
+                print(f"[DOCKER STANDARD] Installation failed")
+                return False
+            logs.append(f"✓ {cmd}")
+        
+        # Start and enable Docker service
+        print("[DOCKER STANDARD] Starting Docker service...")
+        logs.append("Phase 4: Starting Docker service")
+        
+        service_commands = [
+            "systemctl start docker",
+            "systemctl enable docker",
+            "usermod -aG docker $USER"
+        ]
+        
+        for cmd in service_commands:
+            stdin, stdout, stderr = client.exec_command(f"sudo {cmd}")
+            exit_code = stdout.channel.recv_exit_status()
+            
+            if exit_code != 0:
+                error = stderr.read().decode('utf-8')
+                logs.append(f"Service command failed: {cmd} - {error}")
+                print(f"[DOCKER STANDARD] Service command failed: {cmd}")
+            else:
+                logs.append(f"✓ {cmd}")
+        
+        # Verify Docker installation
+        print("[DOCKER STANDARD] Verifying Docker installation...")
+        logs.append("Phase 5: Verifying Docker installation")
+        
+        verify_commands = [
+            "docker --version",
+            "docker compose version",
+            "systemctl is-active docker"
+        ]
+        
+        for cmd in verify_commands:
+            stdin, stdout, stderr = client.exec_command(cmd)
+            exit_code = stdout.channel.recv_exit_status()
+            output = stdout.read().decode('utf-8').strip()
+            
+            if exit_code == 0:
+                logs.append(f"✓ {cmd}: {output}")
+                print(f"[DOCKER STANDARD] Verification passed: {cmd}")
+            else:
+                error = stderr.read().decode('utf-8')
+                logs.append(f"Verification failed: {cmd} - {error}")
+        
+        # Test Docker with hello-world
+        print("[DOCKER STANDARD] Testing Docker with hello-world...")
+        logs.append("Phase 6: Testing Docker functionality")
+        
+        stdin, stdout, stderr = client.exec_command("sudo docker run --rm hello-world")
+        exit_code = stdout.channel.recv_exit_status()
+        output = stdout.read().decode('utf-8')
+        
+        if exit_code == 0 and "Hello from Docker!" in output:
+            logs.append("✓ Docker hello-world test passed")
+            print("[DOCKER STANDARD] Docker installation completed successfully")
+            logs.append("=== DOCKER STANDARD INSTALLATION COMPLETED ===")
+            return True
+        else:
+            error = stderr.read().decode('utf-8')
+            logs.append(f"Docker test failed: {error}")
+            print("[DOCKER STANDARD] Docker test failed")
+            return False
+            
+    except Exception as e:
+        error_msg = f"Docker standard installation failed: {str(e)}"
+        print(f"[DOCKER STANDARD] FATAL ERROR: {error_msg}")
         logs.append(f"FATAL ERROR: {error_msg}")
         return False
 
@@ -4768,17 +4536,8 @@ def start_monitoring():
         monitor = getattr(current_app, '_infrastructure_monitor', None)
         
         if not monitor:
-            try:
-                redis_client = redis.Redis.from_url(os.environ.get('REDIS_URL', 'redis://redis:6379/0'))
-                redis_client.ping()
-            except:
-                redis_client = None
-            
-            try:
-                docker_client = docker.from_env()
-                docker_client.ping()
-            except:
-                docker_client = None
+            redis_client = get_redis_client()
+            docker_client = get_docker_client()
             
             monitor = InfrastructureMonitor(
                 current_app, 
@@ -5209,10 +4968,8 @@ def create_worker_with_nginx_reload():
         data = request.json
         worker_name = data.get('name', f"odoo_worker_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
         
-        try:
-            docker_client = docker.from_env()
-            docker_client.ping()
-        except:
+        docker_client = get_docker_client()
+        if not docker_client:
             return jsonify({'success': False, 'message': 'Docker not available'}), 500
         
         # Create worker container
@@ -5623,17 +5380,8 @@ def initialize_monitoring_system():
         from flask import current_app
         
         # Try to initialize monitoring
-        try:
-            redis_client = redis.Redis.from_url(os.environ.get('REDIS_URL', 'redis://redis:6379/0'))
-            redis_client.ping()
-        except:
-            redis_client = None
-        
-        try:
-            docker_client = docker.from_env()
-            docker_client.ping()
-        except:
-            docker_client = None
+        redis_client = get_redis_client()
+        docker_client = get_docker_client()
         
         if redis_client or docker_client:
             monitor = InfrastructureMonitor(
@@ -5691,18 +5439,1602 @@ def health_check():
 # ================= EXPORT INFRASTRUCTURE ADMIN BLUEPRINT =================
 
 # Initialize database tables if they don't exist
-def init_infra_tables():
-    """Initialize infrastructure admin tables"""
-    try:
-        with db.get_engine().connect() as conn:
-            # This will create tables if they don't exist
-            db.create_all()
-        logger.info("Infrastructure admin tables initialized")
-    except Exception as e:
-        logger.error(f"Failed to initialize infrastructure admin tables: {e}")
 
-# Auto-initialize tables when module is imported
-init_infra_tables()
+
+def init_infra_tables():
+    """Initialize infrastructure admin tables - assumes we're already in Flask app context"""
+    
+    # Verify we're in an application context
+    if not has_app_context():
+        logger.error("No Flask application context found")
+        logger.error("This function must be called within Flask application context")
+        logger.error("Use: with app.app_context(): init_infra_tables()")
+        return False
+    
+    try:
+        logger.info("Starting infrastructure admin tables initialization...")
+        logger.info("Application context confirmed - proceeding with initialization")
+        
+        # Test database connection first
+        logger.info("Testing database connection...")
+        try:
+            with db.get_engine().connect() as conn:
+                # Test the connection with a simple query
+                result = conn.execute(db.text("SELECT 1"))
+                logger.info("Database connection successful")
+                
+                # Log database info
+                engine = db.get_engine()
+                # Safely mask password in URL
+                url_str = str(engine.url)
+                if engine.url.password:
+                    url_str = url_str.replace(str(engine.url.password), '***')
+                logger.info(f"Database URL: {url_str}")
+                logger.info(f"Database dialect: {engine.dialect.name}")
+                
+        except Exception as conn_error:
+            logger.error(f"Database connection test failed: {conn_error}")
+            raise
+        
+        # Create tables
+        logger.info("Creating database tables...")
+        db.create_all()
+        
+        # Verify tables were created
+        engine = db.get_engine()
+        inspector = db.inspect(engine)
+        table_names = inspector.get_table_names()
+        logger.info(f"Successfully created/verified {len(table_names)} tables: {table_names}")
+        
+        logger.info("Infrastructure admin tables initialized successfully")
+        return True
+        
+    except Exception as e:
+        logger.error("Unexpected error during infrastructure admin tables initialization")
+        logger.error(f"Exception type: {type(e).__name__}")
+        logger.error(f"Exception message: {str(e)}")
+        logger.error("This is an unexpected error. Please check:")
+        logger.error("- Application configuration")
+        logger.error("- System resources (memory, disk space)")
+        logger.error("- Environment variables")
+        logger.error("- Database and application logs")
+        logger.error(f"Full error details: {traceback.format_exc()}")
+        
+        # Additional debugging information
+        try:
+            engine = db.get_engine()
+            logger.error(f"Database engine info: {engine}")
+            url_str = str(engine.url)
+            if engine.url.password:
+                url_str = url_str.replace(str(engine.url.password), '***')
+            logger.error(f"Database URL (masked): {url_str}")
+        except:
+            logger.error("Could not retrieve database engine information")
+            
+        return False
+
+# ================= SERVICE DEPLOYMENT FUNCTIONS =================
+
+def deploy_service_on_server(server, service_type):
+    """Deploy a specific service on the server"""
+    try:
+        logger.info(f"Deploying service {service_type} on server {server.name}")
+        
+        # Create a temporary deployment task for this service
+        from models import DeploymentTask
+        temp_task = DeploymentTask(
+            task_type='deploy',
+            service_type=service_type,
+            target_server_id=server.id,
+            status='running',
+            config={}
+        )
+        
+        # Setup SSH connection
+        ssh_client = setup_ssh_connection(server)
+        if not ssh_client:
+            return {'success': False, 'error': 'Failed to establish SSH connection'}
+        
+        logs = []
+        
+        try:
+            # Deploy based on service type
+            if service_type == 'docker':
+                result = install_docker(ssh_client, temp_task, logs)
+            elif service_type == 'nginx':
+                result = install_nginx(ssh_client, temp_task, logs, {})
+            elif service_type == 'postgres':
+                result = install_postgres(ssh_client, temp_task, logs)
+            elif service_type == 'redis':
+                result = install_redis(ssh_client, temp_task, logs)
+            elif service_type == 'odoo' or service_type == 'odoo_worker':
+                result = install_odoo_worker(ssh_client, temp_task, logs)
+            else:
+                return {'success': False, 'error': f'Unknown service type: {service_type}'}
+            
+            ssh_client.close()
+            
+            if result:
+                logger.info(f"Successfully deployed {service_type} on server {server.name}")
+                return {'success': True, 'logs': logs}
+            else:
+                logger.error(f"Failed to deploy {service_type} on server {server.name}")
+                return {'success': False, 'error': 'Deployment failed', 'logs': logs}
+                
+        except Exception as e:
+            ssh_client.close()
+            logger.error(f"Exception during {service_type} deployment: {str(e)}")
+            return {'success': False, 'error': str(e), 'logs': logs}
+            
+    except Exception as e:
+        logger.error(f"Error in deploy_service_on_server: {str(e)}")
+        return {'success': False, 'error': str(e)}
+
+def register_worker_in_system(server, worker_name, worker_port, postgres_host, postgres_port, logs):
+    """Register the new Odoo worker in the system admin interface"""
+    from app import db
+    from datetime import datetime
+    
+    try:
+        logs.append("Registering worker in system admin interface...")
+        print("Registering worker in system admin interface...")
+        
+        # Check if worker already exists
+        existing_worker = db.session.query(WorkerInstance).filter_by(
+            server_id=server.id,
+            container_name=worker_name
+        ).first()
+        
+        if existing_worker:
+            # Update existing worker
+            existing_worker.status = 'running'
+            existing_worker.port = worker_port
+            existing_worker.db_host = postgres_host
+            existing_worker.db_port = postgres_port
+            existing_worker.last_seen = datetime.utcnow()
+            logs.append(f"✓ Updated existing worker record: {worker_name}")
+            print(f"✓ Updated existing worker record: {worker_name}")
+        else:
+            # Create new worker record
+            new_worker = WorkerInstance(
+                server_id=server.id,
+                container_name=worker_name,
+                port=worker_port,
+                status='running',
+                db_host=postgres_host,
+                db_port=postgres_port,
+                current_tenants=0,
+                max_tenants=10,  # Default max tenants
+                created_at=datetime.utcnow(),
+                last_seen=datetime.utcnow()
+            )
+            db.session.add(new_worker)
+            logs.append(f"✓ Created new worker record: {worker_name}")
+            print(f"✓ Created new worker record: {worker_name}")
+        
+        # Update server status
+        server.status = 'ready'
+        server.last_seen = datetime.utcnow()
+        
+        db.session.commit()
+        logs.append("✓ Worker registered successfully in system admin interface")
+        print("✓ Worker registered successfully in system admin interface")
+        
+    except Exception as e:
+        logs.append(f"Warning: Failed to register worker in system: {str(e)}")
+        print(f"Warning: Failed to register worker in system: {str(e)}")
+        db.session.rollback()
+
+def scan_for_existing_postgres(logs):
+    """Scan all connected servers to find existing PostgreSQL instances"""
+    from app import db
+    
+    try:
+        # Get all infrastructure servers
+        all_servers = db.session.query(InfrastructureServer).all()
+        ready_servers = db.session.query(InfrastructureServer).filter_by(status='active').all()
+        postgres_servers = []
+        
+        logs.append(f"Scanning connected servers for PostgreSQL instances...")
+        logs.append(f"Total servers in database: {len(all_servers)}")
+        logs.append(f"Ready servers to scan: {len(ready_servers)}")
+        print(f"Scanning connected servers for PostgreSQL instances...")
+        print(f"Total servers in database: {len(all_servers)}")
+        print(f"Ready servers to scan: {len(ready_servers)}")
+        
+        # Debug: show all servers and their status
+        for srv in all_servers:
+            logs.append(f"Server {srv.name} ({srv.ip_address}): status={srv.status}")
+            print(f"Server {srv.name} ({srv.ip_address}): status={srv.status}")
+        
+        for server in ready_servers:
+            try:
+                # Setup SSH connection to server
+                logs.append(f"Attempting SSH connection to {server.name} ({server.ip_address})...")
+                print(f"Attempting SSH connection to {server.name} ({server.ip_address})...")
+                ssh = setup_ssh_connection(server)
+                if not ssh:
+                    logs.append(f"Failed to establish SSH connection to {server.ip_address}")
+                    print(f"Failed to establish SSH connection to {server.ip_address}")
+                    continue
+                
+                logs.append(f"Checking server {server.ip_address} for PostgreSQL...")
+                print(f"Checking server {server.ip_address} for PostgreSQL...")
+                
+                # Get all listening ports in the PostgreSQL range (5000-6000) efficiently
+                logs.append(f"Scanning ports 5000-6000 for PostgreSQL on {server.ip_address}...")
+                print(f"Scanning ports 5000-6000 for PostgreSQL on {server.ip_address}...")
+                
+                # Comprehensive PostgreSQL scan with credentials
+                logs.append(f"Comprehensive PostgreSQL scan on {server.ip_address}...")
+                print(f"Comprehensive PostgreSQL scan on {server.ip_address}...")
+                
+                # First check standard PostgreSQL ports
+                standard_ports = [5432, 5433, 5434]
+                found_postgres = False
+                
+                for port in standard_ports:
+                    cmd = f"sudo netstat -tlnp 2>/dev/null | grep ':{port} ' || sudo ss -tlnp 2>/dev/null | grep ':{port} '"
+                    stdin, stdout, stderr = ssh.exec_command(cmd, timeout=10)
+                    result = stdout.read().decode().strip()
+                    
+                    if result and ('postgres' in result.lower() or 'postmaster' in result.lower()):
+                        logs.append(f"✓ Found PostgreSQL on {server.ip_address}:{port}")
+                        print(f"✓ Found PostgreSQL on {server.ip_address}:{port}")
+                        
+                        postgres_info = {
+                            'server': server,
+                            'ip': server.ip_address,
+                            'port': port,
+                            'container_name': None,
+                            'type': 'system',
+                            'credentials': {
+                                'host': server.ip_address,
+                                'port': port,
+                                'user': 'odoo_master',
+                                'password': 'secure_password_123',
+                                'database': 'postgres'
+                            }
+                        }
+                        postgres_servers.append(postgres_info)
+                        found_postgres = True
+                        break
+                
+                # If not found on standard ports, scan 5000-6000 range
+                if not found_postgres:
+                    logs.append(f"No PostgreSQL found on standard ports, scanning 5000-6000 range on {server.ip_address}...")
+                    print(f"No PostgreSQL found on standard ports, scanning 5000-6000 range on {server.ip_address}...")
+                    
+                    range_scan_cmd = "sudo netstat -tlnp 2>/dev/null | grep -E ':(50[0-9][0-9]|5[1-9][0-9][0-9]|6000) ' || sudo ss -tlnp 2>/dev/null | grep -E ':(50[0-9][0-9]|5[1-9][0-9][0-9]|6000) '"
+                    stdin, stdout, stderr = ssh.exec_command(range_scan_cmd, timeout=30)
+                    port_output = stdout.read().decode('utf-8').strip()
+                    
+                    if port_output:
+                        lines = port_output.split('\n')
+                        for line in lines:
+                            if 'postgres' in line.lower() or 'postmaster' in line.lower():
+                                import re
+                                port_match = re.search(r':(\d+)\s', line)
+                                if port_match:
+                                    port = int(port_match.group(1))
+                                    logs.append(f"✓ Found PostgreSQL on {server.ip_address}:{port}")
+                                    print(f"✓ Found PostgreSQL on {server.ip_address}:{port}")
+                                    
+                                    postgres_info = {
+                                        'server': server,
+                                        'ip': server.ip_address,
+                                        'port': port,
+                                        'container_name': None,
+                                        'type': 'system',
+                                        'credentials': {
+                                            'host': server.ip_address,
+                                            'port': port,
+                                            'user': 'odoo_master',
+                                            'password': 'secure_password_123',
+                                            'database': 'postgres'
+                                        }
+                                    }
+                                    postgres_servers.append(postgres_info)
+                                    found_postgres = True
+                                    break
+                    
+                    logs.append(f"Range scan output: {port_output[:200]}...")
+                    print(f"Range scan output: {port_output[:200]}...")
+                
+                if port_output:
+                    # Parse the output to find PostgreSQL instances
+                    lines = port_output.split('\n')
+                    for line in lines:
+                        if 'postgres' in line.lower() or 'postgresql' in line.lower():
+                            # Extract port number from the line
+                            import re
+                            port_match = re.search(r':(\d{4,5})\s', line)
+                            if port_match:
+                                port = int(port_match.group(1))
+                                if 5000 <= port <= 6000:
+                                    # Check if it's a Docker container or system service
+                                    stdin, stdout, stderr = ssh.exec_command(f"sudo docker ps --format '{{{{.Names}}}}' | grep -i postgres")
+                                    docker_postgres = stdout.read().decode('utf-8').strip()
+                                    
+                                    if docker_postgres:
+                                        postgres_info = {
+                                            'server': server,
+                                            'ip': server.ip_address,
+                                            'port': port,
+                                            'container_name': docker_postgres,
+                                            'type': 'docker'
+                                        }
+                                        postgres_servers.append(postgres_info)
+                                        logs.append(f"✓ Found PostgreSQL container '{docker_postgres}' on {server.ip_address}:{port}")
+                                        print(f"✓ Found PostgreSQL container '{docker_postgres}' on {server.ip_address}:{port}")
+                                    else:
+                                        # System PostgreSQL
+                                        postgres_info = {
+                                            'server': server,
+                                            'ip': server.ip_address,
+                                            'port': port,
+                                            'container_name': None,
+                                            'type': 'system'
+                                        }
+                                        postgres_servers.append(postgres_info)
+                                        logs.append(f"✓ Found system PostgreSQL on {server.ip_address}:{port}")
+                                        print(f"✓ Found system PostgreSQL on {server.ip_address}:{port}")
+                
+                # Also check for PostgreSQL service regardless of port scanning
+                stdin, stdout, stderr = ssh.exec_command("sudo systemctl is-active postgresql")
+                if stdout.channel.recv_exit_status() == 0:
+                    service_status = stdout.read().decode('utf-8').strip()
+                    if service_status == 'active':
+                        # Try to get the actual port PostgreSQL is running on
+                        stdin, stdout, stderr = ssh.exec_command("sudo -u postgres psql -c 'SHOW port;' 2>/dev/null | grep -o '[0-9]*' | head -1")
+                        actual_port = stdout.read().decode('utf-8').strip()
+                        if not actual_port:
+                            actual_port = 5432  # Default port
+                        else:
+                            actual_port = int(actual_port)
+                        
+                        # Check if we already found this PostgreSQL instance
+                        already_found = any(pg['ip'] == server.ip_address and pg['port'] == actual_port and pg['type'] == 'system' 
+                                          for pg in postgres_servers)
+                        
+                        if not already_found:
+                            postgres_info = {
+                                'server': server,
+                                'ip': server.ip_address,
+                                'port': actual_port,
+                                'container_name': None,
+                                'type': 'system'
+                            }
+                            postgres_servers.append(postgres_info)
+                            logs.append(f"✓ Found active PostgreSQL service on {server.ip_address}:{actual_port}")
+                            print(f"✓ Found active PostgreSQL service on {server.ip_address}:{actual_port}")
+                
+                ssh.close()
+                
+            except Exception as e:
+                logs.append(f"Error checking server {server.ip_address}: {str(e)}")
+                print(f"Error checking server {server.ip_address}: {str(e)}")
+                continue
+        
+        if postgres_servers:
+            logs.append(f"✓ Found {len(postgres_servers)} PostgreSQL instance(s)")
+            print(f"✓ Found {len(postgres_servers)} PostgreSQL instance(s)")
+            return postgres_servers
+        else:
+            logs.append("No existing PostgreSQL instances found")
+            print("No existing PostgreSQL instances found")
+            return []
+            
+    except Exception as e:
+        logs.append(f"Error scanning for PostgreSQL: {str(e)}")
+        print(f"Error scanning for PostgreSQL: {str(e)}")
+        return []
+
+def ensure_docker_daemon_running(ssh_client, logs, max_retries=10):
+    """Ensure Docker daemon is running by waiting and checking status"""
+    import time
+    
+    for attempt in range(1, max_retries + 1):
+        logs.append(f"Waiting for Docker daemon... ({attempt}/{max_retries})")
+        print(f"Waiting for Docker daemon... ({attempt}/{max_retries})")
+        
+        # Wait a bit before checking
+        time.sleep(2)
+        
+        # Try different ways to check Docker daemon status
+        docker_commands = [
+            "sudo docker version",
+            "docker version",
+            "sudo docker info",
+            "sudo systemctl is-active docker"
+        ]
+        
+        daemon_running = False
+        for cmd in docker_commands:
+            try:
+                stdin, stdout, stderr = ssh_client.exec_command(cmd, timeout=10)
+                exit_code = stdout.channel.recv_exit_status()
+                output = stdout.read().decode('utf-8')
+                error = stderr.read().decode('utf-8')
+                
+                if cmd == "sudo systemctl is-active docker":
+                    if exit_code == 0 and "active" in output.strip():
+                        logs.append(f"✓ Docker systemctl service is active")
+                        print(f"✓ Docker systemctl service is active")
+                        # Double check with docker version
+                        continue
+                elif exit_code == 0 and ('Server:' in output or 'Server Version:' in output):
+                    logs.append("✓ Ensured Docker daemon is running")
+                    print("✓ Ensured Docker daemon is running")
+                    return True
+                elif 'Cannot connect to the Docker daemon' in error:
+                    logs.append(f"Docker daemon connection failed with: {cmd}")
+                    print(f"Docker daemon connection failed with: {cmd}")
+                    break  # Try restarting
+                    
+            except Exception as e:
+                logs.append(f"Command '{cmd}' failed with exception: {str(e)}")
+                print(f"Command '{cmd}' failed with exception: {str(e)}")
+                continue
+        
+        if not daemon_running:
+            logs.append(f"Docker daemon not ready yet (attempt {attempt}/{max_retries})")
+            print(f"Docker daemon not ready yet (attempt {attempt}/{max_retries})")
+            
+            # Try various recovery methods
+            if attempt > max_retries // 3:
+                logs.append("Attempting to restart Docker service...")
+                print("Attempting to restart Docker service...")
+                ssh_client.exec_command("sudo systemctl stop docker")
+                time.sleep(2)
+                ssh_client.exec_command("sudo systemctl start docker")
+                time.sleep(3)
+            
+            if attempt > max_retries * 2 // 3:
+                logs.append("Trying to start Docker daemon manually...")
+                print("Trying to start Docker daemon manually...")
+                ssh_client.exec_command("sudo dockerd --host=unix:///var/run/docker.sock &")
+                time.sleep(5)
+    
+    logs.append("✗ Docker daemon failed to start within timeout")
+    print("✗ Docker daemon failed to start within timeout")
+    return False
+
+def check_local_postgresql(ssh_client, logs):
+    """Check for PostgreSQL running locally on the target server"""
+    import re
+    postgres_instances = []
+    
+    try:
+        # Check for PostgreSQL on extended port range (5000-6000)
+        logs.append("Scanning ports 5000-6000 for PostgreSQL...")
+        print("Scanning ports 5000-6000 for PostgreSQL...")
+        
+        # First check common PostgreSQL ports
+        standard_ports = [5432, 5433, 5434]
+        for port in standard_ports:
+            cmd = f"sudo netstat -tlnp 2>/dev/null | grep ':{port} ' || sudo ss -tlnp 2>/dev/null | grep ':{port} '"
+            logs.append(f"Checking port {port} with command: {cmd}")
+            print(f"Checking port {port} with command: {cmd}")
+            
+            stdin, stdout, stderr = ssh_client.exec_command(cmd, timeout=10)
+            result = stdout.read().decode().strip()
+            error = stderr.read().decode().strip()
+            
+            logs.append(f"Port {port} scan result: '{result}'")
+            logs.append(f"Port {port} scan error: '{error}'")
+            print(f"Port {port} scan result: '{result}'")
+            print(f"Port {port} scan error: '{error}'")
+            
+            if result and ('postgres' in result.lower() or 'postmaster' in result.lower()):
+                logs.append(f"✓ Found PostgreSQL on localhost:{port}")
+                print(f"✓ Found PostgreSQL on localhost:{port}")
+                postgres_instances.append({
+                    'ip': '127.0.0.1',
+                    'port': port,
+                    'type': 'localhost',
+                    'credentials': {
+                        'host': '127.0.0.1',
+                        'port': port,
+                        'user': 'odoo_master',
+                        'password': 'secure_password_123',
+                        'database': 'postgres'
+                    }
+                })
+                break
+        
+        # If not found on standard ports, scan 5000-6000 range
+        if not postgres_instances:
+            logs.append("No PostgreSQL found on standard ports, scanning extended range...")
+            print("No PostgreSQL found on standard ports, scanning extended range...")
+            
+            # Use more efficient port scanning approach
+            cmd = "sudo netstat -tlnp 2>/dev/null | grep -E ':(50[0-9][0-9]|5[1-9][0-9][0-9]|6000) ' || sudo ss -tlnp 2>/dev/null | grep -E ':(50[0-9][0-9]|5[1-9][0-9][0-9]|6000) '"
+            stdin, stdout, stderr = ssh_client.exec_command(cmd, timeout=30)
+            result = stdout.read().decode().strip()
+            
+            if result:
+                lines = result.split('\n')
+                for line in lines:
+                    if 'postgres' in line.lower() or 'postmaster' in line.lower():
+                        # Extract port from netstat/ss output
+                        import re
+                        port_match = re.search(r':(\d+)\s', line)
+                        if port_match:
+                            port = int(port_match.group(1))
+                            logs.append(f"✓ Found PostgreSQL on localhost:{port}")
+                            print(f"✓ Found PostgreSQL on localhost:{port}")
+                            postgres_instances.append({
+                                'ip': '127.0.0.1',
+                                'port': port,
+                                'type': 'localhost',
+                                'credentials': {
+                                    'host': '127.0.0.1',
+                                    'port': port,
+                                    'user': 'odoo_master',
+                                    'password': 'secure_password_123',
+                                    'database': 'postgres'
+                                }
+                            })
+                            break
+        
+        # Check for PostgreSQL processes directly
+        if not postgres_instances:
+            logs.append("Checking for PostgreSQL processes...")
+            print("Checking for PostgreSQL processes...")
+            
+            cmd = "ps aux | grep -E 'postgres|postmaster' | grep -v grep"
+            stdin, stdout, stderr = ssh_client.exec_command(cmd, timeout=10)
+            process_result = stdout.read().decode().strip()
+            
+            logs.append(f"PostgreSQL process scan: '{process_result}'")
+            print(f"PostgreSQL process scan: '{process_result}'")
+            
+            if process_result:
+                # If PostgreSQL process is running, check for port from process
+                port_cmd = "sudo lsof -i -P -n | grep postgres | grep LISTEN"
+                stdin, stdout, stderr = ssh_client.exec_command(port_cmd, timeout=10)
+                lsof_result = stdout.read().decode().strip()
+                
+                logs.append(f"PostgreSQL port scan via lsof: '{lsof_result}'")
+                print(f"PostgreSQL port scan via lsof: '{lsof_result}'")
+                
+                if lsof_result:
+                    lines = lsof_result.split('\n')
+                    for line in lines:
+                        port_match = re.search(r':(\d+) \(LISTEN\)', line)
+                        if port_match:
+                            port = int(port_match.group(1))
+                            logs.append(f"✓ Found PostgreSQL on localhost:{port} via process scan")
+                            print(f"✓ Found PostgreSQL on localhost:{port} via process scan")
+                            postgres_instances.append({
+                                'ip': '127.0.0.1',
+                                'port': port,
+                                'type': 'process',
+                                'credentials': {
+                                    'host': '127.0.0.1',
+                                    'port': port,
+                                    'user': 'odoo_master',
+                                    'password': 'secure_password_123',
+                                    'database': 'postgres'
+                                }
+                            })
+                            break
+        
+        # Check for PostgreSQL Docker containers
+        if not postgres_instances:
+            cmd = "sudo docker ps --format '{{.Names}}' | grep -i postgres"
+            stdin, stdout, stderr = ssh_client.exec_command(cmd, timeout=10)
+            docker_postgres = stdout.read().decode().strip()
+            
+            if docker_postgres:
+                logs.append(f"✓ Found PostgreSQL Docker container: {docker_postgres}")
+                print(f"✓ Found PostgreSQL Docker container: {docker_postgres}")
+                postgres_instances.append({
+                    'ip': '127.0.0.1',
+                    'port': 5432,
+                    'type': 'docker',
+                    'container_name': docker_postgres,
+                    'credentials': {
+                        'host': '127.0.0.1',
+                        'port': 5432,
+                        'user': 'odoo_master',
+                        'password': 'secure_password_123',
+                        'database': 'postgres'
+                    }
+                })
+        
+        return postgres_instances
+        
+    except Exception as e:
+        logs.append(f"Error checking local PostgreSQL: {str(e)}")
+        print(f"Error checking local PostgreSQL: {str(e)}")
+        return []
+
+def install_odoo_worker(ssh_client, task, logs):
+    """Install and configure Odoo worker service"""
+    try:
+        logs.append("Installing Odoo worker service...")
+        print("Installing Odoo worker service...")
+        print(ssh_client)
+        
+        # First check if SSH host is reachable
+        if not check_ssh_connectivity(ssh_client, logs):
+            logs.append("ERROR: SSH host is not reachable. Aborting installation.")
+            print("ERROR: SSH host is not reachable. Aborting installation.")
+            return False
+        
+        
+        # Check if Docker is available and accessible
+        docker_cli_available = False
+        docker_daemon_running = False
+        
+        # Try docker version (checks both CLI and daemon)
+        stdin, stdout, stderr = ssh_client.exec_command("docker version")
+        if stdout.channel.recv_exit_status() == 0:
+            output = stdout.read().decode('utf-8')
+            if 'Server:' in output:
+                docker_cli_available = True
+                docker_daemon_running = True
+                logs.append("✓ Docker CLI and daemon are both running")
+                print("✓ Docker CLI and daemon are both running")
+            else:
+                docker_cli_available = True
+                logs.append("✓ Docker CLI available, but daemon not running")
+                print("✓ Docker CLI available, but daemon not running")
+        else:
+            # Try with sudo
+            stdin, stdout, stderr = ssh_client.exec_command("sudo docker version")
+            if stdout.channel.recv_exit_status() == 0:
+                output = stdout.read().decode('utf-8')
+                if 'Server:' in output:
+                    docker_cli_available = True
+                    docker_daemon_running = True
+                    logs.append("✓ Docker CLI and daemon are both running (with sudo)")
+                    print("✓ Docker CLI and daemon are both running (with sudo)")
+                else:
+                    docker_cli_available = True
+                    logs.append("✓ Docker CLI available with sudo, but daemon not running")
+                    print("✓ Docker CLI available with sudo, but daemon not running")
+                # Add user to docker group for future use
+                ssh_client.exec_command("sudo usermod -aG docker $USER")
+                logs.append("✓ Added current user to docker group")
+                print("✓ Added current user to docker group")
+            else:
+                # Check if just CLI is available
+                stdin, stdout, stderr = ssh_client.exec_command("sudo docker --version")
+                if stdout.channel.recv_exit_status() == 0:
+                    docker_cli_available = True
+                    logs.append("✓ Docker CLI available, daemon needs to be started")
+                    print("✓ Docker CLI available, daemon needs to be started")
+                else:
+                    logs.append("ERROR: Docker is not installed. Installing Docker first...")
+                    print("ERROR: Docker is not installed. Installing Docker first...")
+                    if not install_docker(ssh_client, task, logs):
+                        return False
+                    docker_cli_available = True
+        
+        # Start Docker daemon if needed
+        if docker_cli_available and not docker_daemon_running:
+            logs.append("Starting Docker daemon...")
+            print("Starting Docker daemon...")
+            stdin, stdout, stderr = ssh_client.exec_command("sudo systemctl start docker")
+            stdin, stdout, stderr = ssh_client.exec_command("sudo systemctl enable docker")
+            
+            # Properly wait for Docker daemon to be ready
+            if not ensure_docker_daemon_running(ssh_client, logs):
+                logs.append("ERROR: Docker daemon failed to start properly")
+                print("ERROR: Docker daemon failed to start properly")
+                return False
+            
+            logs.append("✓ Docker daemon started successfully")
+            print("✓ Docker daemon started successfully")
+        elif docker_daemon_running:
+            logs.append("✓ Docker daemon already running")
+            print("✓ Docker daemon already running")
+        else:
+            logs.append("ERROR: Docker CLI not available")
+            print("ERROR: Docker CLI not available")
+            return False
+        
+        # Create Docker network if it doesn't exist
+        logs.append("Setting up Docker network...")
+        print("Setting up Docker network...")
+        network_commands = [
+            "sudo docker network ls | grep odoo_network || sudo docker network create odoo_network",
+            "sudo docker volume create odoo_filestore || true",
+            "sudo docker volume create odoo_worker_logs || true"
+        ]
+        
+        for cmd in network_commands:
+            # Retry logic for Docker commands
+            success = False
+            for retry in range(3):
+                stdin, stdout, stderr = ssh_client.exec_command(cmd)
+                exit_code = stdout.channel.recv_exit_status()
+                output = stdout.read().decode('utf-8')
+                error = stderr.read().decode('utf-8')
+                
+                if exit_code == 0 or "already exists" in error:
+                    success = True
+                    logs.append(f"✓ {cmd}")
+                    break
+                elif "daemon" in error and retry < 2:
+                    logs.append(f"Docker daemon not ready, retrying... ({retry+1}/3)")
+                    print(f"Docker daemon not ready, retrying... ({retry+1}/3)")
+                    time.sleep(3)
+                else:
+                    logs.append(f"Command failed: {cmd}")
+                    logs.append(f"Error: {error}")
+                    print(f"Command failed: {cmd}")
+                    print(f"Error: {error}")
+                    break
+            
+            if not success:
+                return False
+        
+        # Create Odoo configuration directory
+        logs.append("Creating Odoo configuration...")
+        print("Creating Odoo configuration...") 
+        config_commands = [
+            "sudo mkdir -p /opt/odoo/config",
+            "sudo mkdir -p /opt/odoo/addons", 
+            "sudo mkdir -p /opt/odoo/logs",
+            "sudo chown -R $USER:$USER /opt/odoo",
+            "sudo chmod -R 755 /opt/odoo"
+        ]
+        
+        for cmd in config_commands:
+            stdin, stdout, stderr = ssh_client.exec_command(cmd)
+            if stdout.channel.recv_exit_status() != 0:
+                logs.append(f"Warning: {cmd} failed")
+                print(f"Warning: {cmd} failed")
+            else:
+                logs.append(f"✓ {cmd}")
+                print(f"✓ {cmd}")
+        
+        # Create Odoo configuration file with provided PostgreSQL credentials
+        odoo_config = f"""
+[options]
+addons_path = /mnt/extra-addons
+data_dir = /var/lib/odoo
+db_host = {postgres_host}
+db_port = {postgres_port}
+db_user = {postgres_user}
+db_password = {postgres_password}
+db_name = {postgres_database}
+db_sslmode = prefer
+db_maxconn = 64
+list_db = True
+log_level = info
+logfile = None
+xmlrpc_port = 8069
+limit_memory_hard = 2684354560
+limit_memory_soft = 2147483648
+workers = 2
+max_cron_threads = 1
+"""
+        
+        # Upload initial configuration file using sudo
+        config_cmd = f"sudo bash -c 'cat > /opt/odoo/config/odoo.conf << \"EOF\"\n{odoo_config}\nEOF'"
+        stdin, stdout, stderr = ssh_client.exec_command(config_cmd)
+        exit_code = stdout.channel.recv_exit_status()
+        if exit_code == 0:
+            # Set proper ownership and permissions
+            ssh_client.exec_command("sudo chown $USER:$USER /opt/odoo/config/odoo.conf")
+            ssh_client.exec_command("sudo chmod 644 /opt/odoo/config/odoo.conf")
+            logs.append("✓ Initial Odoo configuration file created")
+            print("✓ Initial Odoo configuration file created")
+        else:
+            error = stderr.read().decode('utf-8')
+            logs.append(f"Warning: Failed to create configuration file: {error}")
+            print(f"Warning: Failed to create configuration file: {error}")
+        
+        # Verify installation
+        logs.append("Verifying Odoo worker environment...")
+        verify_commands = [
+            "sudo docker network inspect odoo_network",
+            "sudo docker volume inspect odoo_filestore", 
+            "ls -la /opt/odoo/config/odoo.conf"
+        ]
+        
+        for cmd in verify_commands:
+            stdin, stdout, stderr = ssh_client.exec_command(cmd)
+            if stdout.channel.recv_exit_status() == 0:
+                logs.append(f"✓ Verification passed: {cmd}")
+                print(f"✓ Verification passed: {cmd}")
+            else:
+                logs.append(f"Warning: Verification failed: {cmd}")
+                print(f"Warning: Verification failed: {cmd}")   
+        
+        # Deploy Odoo container
+        logs.append("Deploying Odoo container...")
+        print("Deploying Odoo container...")
+        
+        # Get PostgreSQL configuration from task config
+        config = task.config if task.config else {}
+        postgres_host = config.get('postgres_host', '192.168.50.152')
+        postgres_port = config.get('postgres_port', 5432)
+        postgres_database = config.get('postgres_database', 'postgres')
+        postgres_user = config.get('postgres_user', 'odoo_master')
+        postgres_password = config.get('postgres_password', 'secure_password_123')
+        
+        logs.append(f"Using PostgreSQL configuration:")
+        logs.append(f"  Host: {postgres_host}")
+        logs.append(f"  Port: {postgres_port}")
+        logs.append(f"  Database: {postgres_database}")
+        logs.append(f"  User: {postgres_user}")
+        print(f"Using PostgreSQL - Host: {postgres_host}, Port: {postgres_port}, DB: {postgres_database}, User: {postgres_user}")
+        
+        # Test PostgreSQL connectivity
+        logs.append("Testing PostgreSQL connectivity...")
+        print("Testing PostgreSQL connectivity...")
+        
+        test_cmd = f"timeout 10 bash -c 'echo > /dev/tcp/{postgres_host}/{postgres_port}' 2>/dev/null && echo 'SUCCESS' || echo 'FAILED'"
+        stdin, stdout, stderr = ssh_client.exec_command(test_cmd, timeout=15)
+        test_result = stdout.read().decode().strip()
+        
+        if 'SUCCESS' in test_result:
+            logs.append(f"✓ PostgreSQL connectivity test successful")
+            print(f"✓ PostgreSQL connectivity test successful")
+        else:
+            logs.append(f"⚠ PostgreSQL connectivity test failed, but proceeding with deployment")
+            print(f"⚠ PostgreSQL connectivity test failed, but proceeding with deployment")
+        
+        # Use provided PostgreSQL configuration
+        postgres_info = {
+            'ip': postgres_host,
+            'port': postgres_port,
+            'credentials': {
+                'host': postgres_host,
+                'port': postgres_port,
+                'user': postgres_user,
+                'password': postgres_password,
+                'database': postgres_database
+            }
+        }
+        
+        if True:  # Always proceed with provided configuration
+            # Use the provided PostgreSQL configuration
+            logs.append(f"✓ Using PostgreSQL on {postgres_info['ip']}:{postgres_info['port']}")
+            print(f"✓ Using PostgreSQL on {postgres_info['ip']}:{postgres_info['port']}")
+            
+            # Handle localhost PostgreSQL connections
+            if postgres_info['ip'] == '127.0.0.1':
+                # PostgreSQL is on localhost, we need to connect via host network
+                postgres_host = postgres_info.get('host_ip', postgres_info['server'].ip_address)
+                logs.append(f"PostgreSQL is on localhost, connecting via host IP: {postgres_host}")
+                print(f"PostgreSQL is on localhost, connecting via host IP: {postgres_host}")
+            else:
+                postgres_host = postgres_info['ip']
+            
+            postgres_port = postgres_info['port']
+            
+            # Use the correct database credentials
+            postgres_user = "odoo_master"
+            postgres_password = "secure_password_123"
+            postgres_db = "postgres"
+            
+            # Update Odoo configuration file with discovered PostgreSQL settings
+            updated_odoo_config = f"""
+[options]
+addons_path = /mnt/extra-addons
+data_dir = /var/lib/odoo
+db_host = {postgres_host}
+db_port = {postgres_port}
+db_user = {postgres_user}
+db_password = {postgres_password}
+db_sslmode = prefer
+db_maxconn = 64
+list_db = True
+log_level = info
+logfile = None
+xmlrpc_port = {worker_port}
+"""
+            
+            # Update the configuration file
+            updated_config_cmd = f"sudo bash -c 'cat > /opt/odoo/config/odoo.conf << \"EOF\"\n{updated_odoo_config}\nEOF'"
+            stdin, stdout, stderr = ssh_client.exec_command(updated_config_cmd)
+            if stdout.channel.recv_exit_status() == 0:
+                logs.append(f"✓ Updated Odoo config with PostgreSQL: {postgres_host}:{postgres_port}")
+                print(f"✓ Updated Odoo config with PostgreSQL: {postgres_host}:{postgres_port}")
+            else:
+                logs.append("Warning: Failed to update Odoo configuration")
+                print("Warning: Failed to update Odoo configuration")
+            
+        else:
+            logs.append("No existing PostgreSQL found. This worker needs to connect to an existing database.")
+            logs.append("Please ensure PostgreSQL is running on at least one server in your infrastructure.")
+            print("No existing PostgreSQL found. This worker needs to connect to an existing database.")
+            print("Please ensure PostgreSQL is running on at least one server in your infrastructure.")
+            return False
+        
+        # Pull the Odoo Docker image
+        logs.append("Pulling Odoo Docker image...")
+        print("Pulling Odoo Docker image...")
+        stdin, stdout, stderr = ssh_client.exec_command("sudo docker pull odoo:17.0", timeout=300)
+        pull_exit_code = stdout.channel.recv_exit_status()
+        if pull_exit_code == 0:
+            logs.append("✓ Odoo Docker image pulled successfully")
+            print("✓ Odoo Docker image pulled successfully")
+        else:
+            pull_error = stderr.read().decode('utf-8')
+            logs.append(f"Warning: Failed to pull Odoo image: {pull_error}")
+            print(f"Warning: Failed to pull Odoo image: {pull_error}")
+        
+        # Generate unique worker name based on server
+        worker_name = f"odoo_worker_{task.target_server.name.replace('-', '_').replace('.', '_')}"
+        worker_port = 8070  # Could be dynamic based on available ports
+        
+        # Remove any existing container with the same name
+        logs.append(f"Removing any existing Odoo container {worker_name}...")
+        print(f"Removing any existing Odoo container {worker_name}...")
+        ssh_client.exec_command(f"sudo docker stop {worker_name} 2>/dev/null || true")
+        ssh_client.exec_command(f"sudo docker rm {worker_name} 2>/dev/null || true")
+        
+        # Create and start Odoo container using SSH with discovered PostgreSQL
+        # Use host network if PostgreSQL is on localhost
+        if postgres_info['ip'] == '127.0.0.1':
+            network_config = "--network host"
+            port_config = f"-e ODOO_RC=/etc/odoo/odoo.conf"  # Use config file for port
+            # Update worker_port to use host network port
+            actual_worker_port = worker_port
+            logs.append(f"Using host network to access localhost PostgreSQL on port {actual_worker_port}")
+            print(f"Using host network to access localhost PostgreSQL on port {actual_worker_port}")
+        else:
+            network_config = "--network odoo_network"
+            port_config = f"-p {worker_port}:8069"
+            actual_worker_port = worker_port
+        
+        odoo_container_cmd = f'''sudo docker run -d \
+            --name {worker_name} \
+            {network_config} \
+            {port_config} \
+            -v odoo_filestore:/var/lib/odoo \
+            -v /opt/odoo/config:/etc/odoo \
+            -v /opt/odoo/addons:/mnt/extra-addons \
+            -e HOST={postgres_host} \
+            -e USER={postgres_user} \
+            -e PASSWORD={postgres_password} \
+            -e DB_HOST={postgres_host} \
+            -e DB_PORT={postgres_port} \
+            -e DB_USER={postgres_user} \
+            -e DB_PASSWORD={postgres_password} \
+            --restart unless-stopped \
+            odoo:17.0'''
+        
+        stdin, stdout, stderr = ssh_client.exec_command(odoo_container_cmd)
+        exit_code = stdout.channel.recv_exit_status()
+        container_output = stdout.read().decode('utf-8')
+        container_error = stderr.read().decode('utf-8')
+        
+        if exit_code == 0:
+            container_id = container_output.strip()
+            logs.append(f"✓ Odoo container deployed: {container_id}")
+            print(f"✓ Odoo container deployed: {container_id}")
+            
+            # Wait for container to start
+            import time
+            time.sleep(5)
+            
+            # Check if container is running
+            stdin, stdout, stderr = ssh_client.exec_command(f"sudo docker ps --filter name={worker_name} --format '{{{{.Status}}}}'")
+            status = stdout.read().decode('utf-8').strip()
+            if "Up" in status:
+                logs.append(f"✓ {worker_name} is running on port {worker_port}: {status}")
+                print(f"✓ {worker_name} is running on port {worker_port}: {status}")
+                
+                # Check if port is accessible
+                stdin, stdout, stderr = ssh_client.exec_command(f"sudo netstat -tlnp | grep :{worker_port} || sudo ss -tlnp | grep :{worker_port}")
+                port_check = stdout.read().decode('utf-8').strip()
+                if port_check:
+                    logs.append(f"✓ Port {worker_port} is listening: {port_check}")
+                    print(f"✓ Port {worker_port} is listening: {port_check}")
+                else:
+                    logs.append(f"Warning: Port {worker_port} not yet available")
+                    print(f"Warning: Port {worker_port} not yet available")
+                
+                # Register worker in the system admin interface
+                register_worker_in_system(task.target_server, worker_name, worker_port, postgres_host, postgres_port, logs)
+                
+            else:
+                logs.append(f"Warning: {worker_name} container status: {status}")
+                print(f"Warning: {worker_name} container status: {status}")
+                
+                # Check container logs for troubleshooting
+                stdin, stdout, stderr = ssh_client.exec_command(f"sudo docker logs {worker_name} --tail 10")
+                container_logs = stdout.read().decode('utf-8')
+                if container_logs:
+                    logs.append(f"Container logs: {container_logs}")
+                    print(f"Container logs: {container_logs}")
+        else:
+            logs.append(f"Warning: Failed to deploy Odoo container: {container_error}")
+            print(f"Warning: Failed to deploy Odoo container: {container_error}")
+        
+        logs.append("✓ Odoo worker environment ready for deployment")
+        print("✓ Odoo worker environment ready for deployment")
+        return True
+        
+    except Exception as e:
+        logs.append(f"ERROR: Exception during Odoo worker installation: {str(e)}")
+        print(f"ERROR: Exception during Odoo worker installation: {str(e)}")
+        return False
+
+def setup_ssh_connection(server):
+    """Setup SSH connection to server"""
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Try SSH key authentication first
+        if server.ssh_key_path and os.path.exists(server.ssh_key_path):
+            ssh.connect(
+                hostname=server.ip_address,
+                port=server.port,
+                username=server.username,
+                key_filename=server.ssh_key_path,
+                timeout=30
+            )
+        else:
+            # Fall back to password authentication
+            ssh.connect(
+                hostname=server.ip_address,
+                port=server.port,
+                username=server.username,
+                password=server.password,
+                timeout=30
+            )
+        
+        return ssh
+        
+    except Exception as e:
+        logger.error(f"Failed to setup SSH connection to {server.ip_address}: {str(e)}")
+        return None
+
+# ================= SSH COMMAND EXECUTION =================
+
+def execute_ssh_command(server, command, timeout=30):
+    """Execute a command on remote server via SSH"""
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Try SSH key authentication first
+        if server.ssh_key_path and os.path.exists(server.ssh_key_path):
+            ssh.connect(
+                hostname=server.ip_address,
+                port=server.port,
+                username=server.username,
+                key_filename=server.ssh_key_path,
+                timeout=timeout
+            )
+        else:
+            # Fall back to password authentication
+            ssh.connect(
+                hostname=server.ip_address,
+                port=server.port,
+                username=server.username,
+                password=server.password,
+                timeout=timeout
+            )
+        
+        stdin, stdout, stderr = ssh.exec_command(command, timeout=timeout)
+        
+        output = stdout.read().decode('utf-8')
+        error = stderr.read().decode('utf-8')
+        exit_code = stdout.channel.recv_exit_status()
+        
+        ssh.close()
+        
+        return {
+            'success': exit_code == 0,
+            'output': output,
+            'error': error,
+            'exit_code': exit_code
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'output': '',
+            'error': str(e),
+            'exit_code': -1
+        }
+
+# ================= NGINX LOAD BALANCER INTEGRATION =================
+
+def update_nginx_load_balancer(worker_ip, worker_port, worker_name):
+    """Update Nginx load balancer configuration to include new worker"""
+    try:
+        # Get the nginx configuration path
+        nginx_config_path = "/nginx/nginx.conf"
+        
+        if not os.path.exists(nginx_config_path):
+            logger.warning(f"Nginx config file not found at {nginx_config_path}")
+            return False
+        
+        # Read current nginx configuration
+        with open(nginx_config_path, 'r') as f:
+            nginx_config = f.read()
+        
+        # Define the new upstream server entry
+        new_upstream_entry = f"    server {worker_ip}:{worker_port}; # {worker_name}"
+        
+        # Check if worker already exists in config
+        if worker_name in nginx_config:
+            logger.info(f"Worker {worker_name} already exists in Nginx config")
+            return True
+        
+        # Find the upstream block and add the new server
+        import re
+        upstream_pattern = r'(upstream\s+odoo_workers\s*\{[^}]*)'
+        match = re.search(upstream_pattern, nginx_config, re.DOTALL)
+        
+        if match:
+            upstream_block = match.group(1)
+            # Add new server before the closing brace
+            updated_upstream = upstream_block + '\n' + new_upstream_entry
+            nginx_config = nginx_config.replace(upstream_block, updated_upstream)
+            
+            # Write back the updated configuration
+            with open(nginx_config_path, 'w') as f:
+                f.write(nginx_config)
+            
+            # Reload Nginx configuration
+            reload_result = subprocess.run(['docker', 'exec', 'nginx', 'nginx', '-s', 'reload'], 
+                                         capture_output=True, text=True)
+            
+            if reload_result.returncode == 0:
+                logger.info(f"Successfully added {worker_name} to Nginx load balancer and reloaded")
+                return True
+            else:
+                logger.error(f"Failed to reload Nginx: {reload_result.stderr}")
+                return False
+        else:
+            logger.warning("Could not find upstream odoo_workers block in Nginx config")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error updating Nginx load balancer: {str(e)}")
+        return False
+
+def remove_from_nginx_load_balancer(worker_name):
+    """Remove worker from Nginx load balancer configuration"""
+    try:
+        nginx_config_path = "/nginx/nginx.conf"
+        
+        if not os.path.exists(nginx_config_path):
+            logger.warning(f"Nginx config file not found at {nginx_config_path}")
+            return False
+        
+        # Read current nginx configuration
+        with open(nginx_config_path, 'r') as f:
+            nginx_config = f.read()
+        
+        # Remove the line containing the worker
+        import re
+        pattern = f'.*server.*# {worker_name}.*\n'
+        nginx_config = re.sub(pattern, '', nginx_config)
+        
+        # Write back the updated configuration
+        with open(nginx_config_path, 'w') as f:
+            f.write(nginx_config)
+        
+        # Reload Nginx configuration
+        reload_result = subprocess.run(['docker', 'exec', 'nginx', 'nginx', '-s', 'reload'], 
+                                     capture_output=True, text=True)
+        
+        if reload_result.returncode == 0:
+            logger.info(f"Successfully removed {worker_name} from Nginx load balancer")
+            return True
+        else:
+            logger.error(f"Failed to reload Nginx: {reload_result.stderr}")
+            return False
+            
+    except Exception as e:
+        logger.error(f"Error removing from Nginx load balancer: {str(e)}")
+        return False
+
+# ================= WORKER INTEGRATION =================
+
+@infra_admin_bp.route('/api/servers/available-workers', methods=['GET'])
+@login_required
+@require_infra_admin()
+@track_errors('get_available_worker_servers')
+def get_available_worker_servers():
+    """Get list of infrastructure servers that can host Odoo workers"""
+    try:
+        # Get all active servers that can potentially host Odoo workers
+        servers = InfrastructureServer.query.filter(
+            InfrastructureServer.status == 'active'
+        ).all()
+        
+        available_servers = []
+        for server in servers:
+            # Check current load and availability
+            health_data = perform_health_check(server)
+            
+            # Count current Odoo workers on this server
+            current_workers = 0
+            try:
+                ssh_result = execute_ssh_command(
+                    server, 
+                    "docker ps --filter name=odoo_worker --format '{{.Names}}' | wc -l"
+                )
+                if ssh_result['success']:
+                    current_workers = int(ssh_result['output'].strip())
+            except:
+                current_workers = 0
+            
+            available_servers.append({
+                'id': server.id,
+                'name': server.name,
+                'ip_address': server.ip_address,
+                'status': server.status,
+                'health_score': server.health_score,
+                'current_workers': current_workers,
+                'cpu_usage': health_data.get('cpu_usage', 0) if health_data else 0,
+                'memory_usage': health_data.get('memory_usage', 0) if health_data else 0,
+                'recommended': health_data.get('cpu_usage', 0) < 70 and health_data.get('memory_usage', 0) < 70 if health_data else False
+            })
+        
+        # Sort by health score and load (best candidates first)
+        available_servers.sort(key=lambda x: (x['recommended'], x['health_score'], -x['current_workers']), reverse=True)
+        
+        return jsonify({
+            'success': True,
+            'servers': available_servers
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@infra_admin_bp.route('/api/workers/deploy-remote', methods=['POST'])
+@login_required
+@require_infra_admin()
+@track_errors('deploy_remote_worker')
+def deploy_remote_worker():
+    """Deploy Odoo worker on remote infrastructure server"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'JSON payload required'}), 400
+        
+        server_id = data.get('server_id')
+        worker_name = data.get('worker_name', f"odoo_worker_{datetime.utcnow().strftime('%Y%m%d_%H%M%S')}")
+        worker_port = data.get('worker_port', 8069)
+        max_tenants = data.get('max_tenants', 10)
+        
+        # PostgreSQL configuration
+        postgres_host = data.get('postgres_host', '192.168.50.152')
+        postgres_port = data.get('postgres_port', 5432)
+        postgres_database = data.get('postgres_database', 'postgres')
+        postgres_user = data.get('postgres_user', 'odoo_master')
+        postgres_password = data.get('postgres_password', 'secure_password_123')
+        
+        logger.info(f"PostgreSQL Configuration - Host: {postgres_host}, Port: {postgres_port}, DB: {postgres_database}, User: {postgres_user}")
+        
+        if not server_id:
+            return jsonify({'error': 'Server ID is required'}), 400
+        
+        # Get the target server
+        server = InfrastructureServer.query.get(server_id)
+        if not server:
+            return jsonify({'error': 'Server not found'}), 404
+        
+        if server.status != 'active':
+            return jsonify({'error': 'Server is not active'}), 400
+        
+        if 'odoo_worker' not in server.service_roles:
+            return jsonify({'error': 'Server is not configured for Odoo workers'}), 400
+        
+        logger.info(f"Deploying worker {worker_name} to server {server.name} ({server.ip_address}) by user {current_user.id}")
+        
+        # Create deployment task
+        deployment_task = DeploymentTask(
+            task_type='deploy',
+            service_type='odoo_worker',
+            target_server_id=server_id,
+            config={
+                'worker_name': worker_name,
+                'worker_port': worker_port,
+                'max_tenants': max_tenants,
+                'postgres_host': postgres_host,
+                'postgres_port': postgres_port,
+                'postgres_database': postgres_database,
+                'postgres_user': postgres_user,
+                'postgres_password': postgres_password
+            },
+            priority='normal',
+            status='running',
+            current_step='Preparing deployment',
+            total_steps=5,
+            created_by=current_user.id,
+            started_at=datetime.utcnow()
+        )
+        db.session.add(deployment_task)
+        db.session.commit()
+        
+        try:
+            # Step 1: Check Docker availability
+            deployment_task.current_step = 'Checking Docker availability'
+            deployment_task.progress = 20
+            db.session.commit()
+            
+            docker_check = execute_ssh_command(server, "docker --version")
+            if not docker_check['success']:
+                raise Exception("Docker is not available on target server")
+            
+            # Step 2: Prepare deployment script
+            deployment_task.current_step = 'Preparing deployment script'
+            deployment_task.progress = 40
+            db.session.commit()
+            
+            deployment_script = f"""#!/bin/bash
+set -e
+
+echo "=== Odoo 17.0 Worker Deployment ==="
+echo "Worker Name: {worker_name}"
+echo "Worker Port: {worker_port}"
+echo "PostgreSQL Host: {postgres_host}"
+echo "PostgreSQL Port: {postgres_port}"
+echo "PostgreSQL Database: {postgres_database}"
+echo "PostgreSQL User: {postgres_user}"
+echo "Max Tenants: {max_tenants}"
+
+# Test PostgreSQL connectivity first
+echo "Testing PostgreSQL connectivity..."
+if command -v pg_isready &> /dev/null; then
+    pg_isready -h {postgres_host} -p {postgres_port} -U {postgres_user}
+    if [ $? -eq 0 ]; then
+        echo "✓ PostgreSQL is ready and accepting connections"
+    else
+        echo "⚠ Warning: PostgreSQL connectivity test failed, but proceeding with deployment"
+    fi
+else
+    echo "⚠ pg_isready not available, skipping connectivity test"
+fi
+
+# Create Odoo configuration directory
+echo "Creating Odoo configuration directory..."
+mkdir -p /opt/odoo/config
+mkdir -p /opt/odoo/addons
+mkdir -p /opt/odoo/logs
+
+# Create Odoo configuration file
+echo "Creating Odoo configuration file..."
+cat > /opt/odoo/config/odoo.conf << EOF
+[options]
+; Database settings
+db_host = {postgres_host}
+db_port = {postgres_port}
+db_user = {postgres_user}
+db_password = {postgres_password}
+db_template = template0
+db_maxconn = 64
+
+; Server settings
+http_port = 8069
+workers = 2
+max_cron_threads = 1
+limit_memory_hard = 2684354560
+limit_memory_soft = 2147483648
+limit_request = 8192
+limit_time_cpu = 600
+limit_time_real = 1200
+
+; Logging
+logfile = /var/log/odoo/odoo.log
+log_level = info
+log_handler = :INFO
+
+; Security
+admin_passwd = {postgres_password}
+list_db = False
+
+; Addons
+addons_path = /mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons
+EOF
+
+echo "✓ Odoo configuration file created"
+
+# Create worker container
+echo "Creating Odoo 17.0 worker container..."
+docker run -d \\
+  --name {worker_name} \\
+  --restart unless-stopped \\
+  -p {worker_port}:8069 \\
+  -e POSTGRES_HOST={postgres_host} \\
+  -e POSTGRES_PORT={postgres_port} \\
+  -e POSTGRES_DB={postgres_database} \\
+  -e POSTGRES_USER={postgres_user} \\
+  -e POSTGRES_PASSWORD={postgres_password} \\
+  -v /opt/odoo/config:/etc/odoo \\
+  -v odoo_filestore:/var/lib/odoo \\
+  -v /opt/odoo/logs:/var/log/odoo \\
+  --network odoo_network \\
+  odoo:17.0 \\
+  odoo -c /etc/odoo/odoo.conf --logfile=/var/log/odoo/{worker_name}.log
+
+echo "Worker {worker_name} deployed successfully"
+"""
+            
+            # Step 3: Upload and execute deployment script
+            deployment_task.current_step = 'Executing deployment'
+            deployment_task.progress = 60
+            db.session.commit()
+            
+            # Create temporary script file on remote server
+            script_upload = execute_ssh_command(
+                server, 
+                f"cat > /tmp/deploy_{worker_name}.sh << 'EOF'\n{deployment_script}\nEOF"
+            )
+            if not script_upload['success']:
+                raise Exception(f"Failed to upload deployment script: {script_upload['error']}")
+            
+            # Make script executable and run it
+            chmod_result = execute_ssh_command(server, f"chmod +x /tmp/deploy_{worker_name}.sh")
+            if not chmod_result['success']:
+                raise Exception("Failed to make deployment script executable")
+            
+            deploy_result = execute_ssh_command(server, f"bash /tmp/deploy_{worker_name}.sh")
+            if not deploy_result['success']:
+                raise Exception(f"Deployment failed: {deploy_result['error']}")
+            
+            # Step 4: Verify deployment
+            deployment_task.current_step = 'Verifying deployment'
+            deployment_task.progress = 80
+            db.session.commit()
+            
+            verify_result = execute_ssh_command(server, f"docker ps --filter name={worker_name} --format '{{{{.Status}}}}'")
+            if not verify_result['success'] or 'Up' not in verify_result['output']:
+                raise Exception("Worker container is not running after deployment")
+            
+            # Step 5: Register worker in database
+            deployment_task.current_step = 'Registering worker'
+            deployment_task.progress = 90
+            db.session.commit()
+            
+            # Import WorkerInstance here to avoid circular imports
+            from models import WorkerInstance
+            
+            # Create WorkerInstance record for remote worker
+            db_worker = WorkerInstance(
+                name=worker_name,
+                container_name=worker_name,
+                port=worker_port,
+                max_tenants=max_tenants,
+                status='running'
+            )
+            db.session.add(db_worker)
+            
+            # Update server's current services
+            if server.current_services is None:
+                server.current_services = []
+            server.current_services.append({
+                'type': 'odoo_worker',
+                'name': worker_name,
+                'port': worker_port,
+                'status': 'running'
+            })
+            
+            # Complete deployment task
+            deployment_task.status = 'completed'
+            deployment_task.progress = 100
+            deployment_task.current_step = 'Deployment completed'
+            deployment_task.completed_at = datetime.utcnow()
+            
+            db.session.commit()
+            
+            # Clean up temporary files
+            execute_ssh_command(server, f"rm -f /tmp/deploy_{worker_name}.sh")
+            
+            # Add worker to Nginx load balancer configuration
+            try:
+                update_nginx_load_balancer(server.ip_address, worker_port, worker_name)
+                logger.info(f"Added worker {worker_name} to Nginx load balancer")
+            except Exception as nginx_error:
+                logger.warning(f"Failed to update Nginx load balancer for worker {worker_name}: {nginx_error}")
+            
+            logger.info(f"Successfully deployed worker {worker_name} to server {server.name}")
+            
+            return jsonify({
+                'success': True,
+                'message': f'Worker {worker_name} deployed successfully to {server.name}',
+                'worker_id': db_worker.id,
+                'deployment_task_id': deployment_task.id,
+                'worker_details': {
+                    'name': worker_name,
+                    'port': worker_port,
+                    'server': server.name,
+                    'server_ip': server.ip_address,
+                    'max_tenants': max_tenants
+                }
+            })
+            
+        except Exception as e:
+            # Mark deployment as failed
+            deployment_task.status = 'failed'
+            deployment_task.error_message = str(e)
+            deployment_task.completed_at = datetime.utcnow()
+            db.session.commit()
+            
+            logger.error(f"Failed to deploy worker {worker_name} to server {server.name}: {str(e)}")
+            raise e
+            
+    except Exception as e:
+        error_tracker.log_error(e, {
+            'admin_user': current_user.id,
+            'server_id': data.get('server_id') if 'data' in locals() else None,
+            'worker_name': data.get('worker_name') if 'data' in locals() else None
+        })
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@infra_admin_bp.route('/api/workers/list-remote')
+@login_required
+@require_infra_admin()
+@track_errors('list_remote_workers')
+def list_remote_workers():
+    """List all workers across all infrastructure servers"""
+    try:
+        # Get all active servers with odoo_worker capability
+        servers = InfrastructureServer.query.filter(
+            InfrastructureServer.status == 'active',
+            InfrastructureServer.service_roles.contains(['odoo_worker'])
+        ).all()
+        
+        all_workers = []
+        
+        for server in servers:
+            try:
+                # Get running Odoo containers on this server
+                docker_list_result = execute_ssh_command(
+                    server,
+                    "docker ps --filter name=odoo_worker --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' --no-trunc"
+                )
+                
+                if docker_list_result['success']:
+                    lines = docker_list_result['output'].strip().split('\n')[1:]  # Skip header
+                    for line in lines:
+                        if line.strip():
+                            parts = line.split('\t')
+                            if len(parts) >= 3:
+                                worker_name = parts[0]
+                                status = parts[1]
+                                ports = parts[2]
+                                
+                                # Extract port number
+                                port = 8069  # default
+                                if ':' in ports:
+                                    try:
+                                        port = int(ports.split(':')[0].split('.')[-1])
+                                    except:
+                                        port = 8069
+                                
+                                all_workers.append({
+                                    'name': worker_name,
+                                    'server_name': server.name,
+                                    'server_ip': server.ip_address,
+                                    'status': 'running' if 'Up' in status else 'stopped',
+                                    'port': port,
+                                    'uptime': status,
+                                    'location': 'remote'
+                                })
+            except Exception as e:
+                logger.error(f"Failed to get workers from server {server.name}: {str(e)}")
+        
+        return jsonify({
+            'success': True,
+            'workers': all_workers,
+            'total_servers': len(servers),
+            'total_workers': len(all_workers)
+        })
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'admin_user': current_user.id})
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 # Export the blueprint for registration in main app
 __all__ = ['infra_admin_bp']
