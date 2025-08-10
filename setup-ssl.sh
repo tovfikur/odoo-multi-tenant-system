@@ -86,13 +86,9 @@ sed -i.bak "s/your-email@domain.com/$EMAIL/g" $DOCKER_COMPOSE_FILE
 # Update main nginx.conf to include Let's Encrypt configuration
 print_status "Nginx configuration already includes Let's Encrypt support inline..."
 
-# Stop existing nginx if running
-print_status "Stopping existing nginx container if running..."
-docker-compose down nginx 2>/dev/null || true
-
-# Start nginx with temporary configuration
-print_status "Starting nginx with temporary configuration..."
-docker-compose -f $DOCKER_COMPOSE_FILE up -d nginx
+# Restart nginx to apply volume mounts
+print_status "Restarting nginx to mount SSL directories..."
+docker-compose up -d nginx
 
 # Wait for nginx to be ready
 print_status "Waiting for nginx to be ready..."
@@ -102,8 +98,15 @@ sleep 10
 print_status "Obtaining SSL certificate from Let's Encrypt..."
 print_warning "This may take a few minutes. Please ensure your domain points to this server."
 
-# Run certbot to obtain certificate
-docker-compose -f $DOCKER_COMPOSE_FILE run --rm certbot certonly \
+# Run certbot to obtain certificate using docker directly
+NETWORK_NAME=$(docker network ls | grep odoo | awk '{print $2}' | head -1)
+print_status "Using Docker network: $NETWORK_NAME"
+
+docker run --rm \
+    -v $(pwd)/ssl/certbot/conf:/etc/letsencrypt \
+    -v $(pwd)/ssl/certbot/www:/var/www/certbot \
+    --network $NETWORK_NAME \
+    certbot/certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
     --email $EMAIL \
@@ -221,10 +224,13 @@ EOF
     # Remove temporary configuration
     rm -f nginx/conf.d/temp-ssl.conf
     
+    # Enable production SSL configuration
+    print_status "Enabling production SSL configuration..."
+    ./enable-production-ssl.sh
+    
     # Restart nginx with SSL configuration
     print_status "Restarting nginx with SSL configuration..."
-    docker-compose -f $DOCKER_COMPOSE_FILE down nginx
-    docker-compose -f $DOCKER_COMPOSE_FILE up -d nginx
+    docker-compose restart nginx
     
     print_status "SSL setup completed successfully!"
     print_status "Your site is now available at: https://$DOMAIN"

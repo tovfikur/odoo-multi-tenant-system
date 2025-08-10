@@ -48,14 +48,14 @@ if [ ! -f ssl/certbot/conf/live/khudroo.com/fullchain.pem ]; then
     echo -e "${YELLOW}⚠ SSL certificates not found. Please run './setup-ssl.sh khudroo.com your-email@domain.com' first${NC}"
     
     # Comment out the include line temporarily
-    sed -i 's/^    include \/etc\/nginx\/conf.d\/\*\.conf;/#    include \/etc\/nginx\/conf.d\/\*\.conf;  # Disabled until SSL certificates are ready/' nginx/nginx.conf
+    sed -i 's/^    include \/etc\/nginx\/conf.d\/\*\.conf;/#    include \/etc\/nginx\/conf.d\/\*\.conf;  # Disabled until SSL certificates are ready/' nginx/nginx.conf 2>/dev/null || true
     
     echo -e "${BLUE}Next steps:${NC}"
     echo -e "1. Run: ${GREEN}./setup-ssl.sh khudroo.com your-email@domain.com${NC}"
     echo -e "2. Then run: ${GREEN}./enable-production-ssl.sh${NC} again"
 else
     # Uncomment the include line
-    sed -i 's/#    include \/etc\/nginx\/conf.d\/\*\.conf;  # Disabled until SSL certificates are ready/    include \/etc\/nginx\/conf.d\/\*\.conf;/' nginx/nginx.conf
+    sed -i 's/#    include \/etc\/nginx\/conf.d\/\*\.conf;  # Disabled until SSL certificates are ready/    include \/etc\/nginx\/conf.d\/\*\.conf;/' nginx/nginx.conf 2>/dev/null || true
     
     echo -e "${GREEN}✓ SSL certificates found, enabling production configuration...${NC}"
     

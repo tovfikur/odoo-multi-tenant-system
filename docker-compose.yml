@@ -54,6 +54,9 @@ services:
       - ./ssl/localhost.crt:/etc/nginx/ssl/localhost.crt
       - ./ssl/localhost.key:/etc/nginx/ssl/localhost.key
       - ./nginx/errors/:/usr/share/nginx/html/errors/
+      # Let's Encrypt SSL certificates
+      - ./ssl/certbot/conf:/etc/letsencrypt
+      - ./ssl/certbot/www:/var/www/certbot
     networks:
       - odoo_network
     depends_on:
