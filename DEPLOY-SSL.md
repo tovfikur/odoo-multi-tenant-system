@@ -10,13 +10,14 @@ cd /home/kendroo/odoo-multi-tenant-system
 git pull origin main
 ```
 
-### Step 2: Run the Quick SSL Setup
+### Step 2: Run the Automated SSL Setup
 ```bash
-# Option 1: Quick setup script (recommended)
-./quick-ssl-setup.sh khudroo.com admin@khudroo.com
+# NEW: Comprehensive automated setup (RECOMMENDED)
+./ssl-auto-setup.sh khudroo.com admin@khudroo.com
 
-# Option 2: Original detailed setup script
-./setup-ssl.sh khudroo.com admin@khudroo.com
+# Alternative options:
+./get-ssl-main.sh khudroo.com admin@khudroo.com    # Main domain only
+./setup-production-ssl.sh khudroo.com admin@khudroo.com    # Production focused
 ```
 
 ### Step 3: Verify SSL is Working
@@ -30,18 +31,20 @@ openssl s_client -connect khudroo.com:443 -servername khudroo.com
 
 ## What's Been Fixed
 
-✅ **Docker Compose**: Added SSL certificate volumes  
-✅ **SSL Scripts**: Fixed network detection and certificate paths  
-✅ **Production Config**: Ready for Let's Encrypt certificates  
+✅ **Comprehensive SSL Script**: New automated setup with bulletproof error handling  
+✅ **Smart Certificate Detection**: Handles Let's Encrypt suffix naming (-0001, -0002)  
+✅ **Docker Network Detection**: Multiple fallback methods for network discovery  
+✅ **Production Config**: Modern SSL configuration with security headers  
 ✅ **Auto-renewal**: Cron job configured for certificate renewal  
+✅ **Logging**: Comprehensive logging and debug modes  
 
 ## Files Updated
 
+- `ssl-auto-setup.sh` - **NEW** comprehensive automated SSL setup
+- `get-ssl-main.sh` - Main domain only setup (working)
+- `setup-production-ssl.sh` - Production-focused comprehensive setup
 - `docker-compose.yml` - Added SSL volume mounts
-- `setup-ssl.sh` - Fixed network detection and paths
-- `quick-ssl-setup.sh` - New simplified setup script
-- `enable-production-ssl.sh` - Enhanced production configuration
-- `nginx/conf.d/production-ssl.conf.disabled` - Ready for production
+- `nginx/conf.d/` - SSL configurations ready for production
 
 ## Expected Results
 
