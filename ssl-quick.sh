@@ -50,6 +50,13 @@ fi
 echo -e "${GREEN}Requesting SSL certificate from Let's Encrypt...${NC}"
 echo -e "${YELLOW}Domain will be validated from the internet${NC}"
 
+# Check if certificate already exists
+echo "Checking for existing certificates..."
+docker run --rm \
+    -v "$(pwd)/ssl/certbot/conf:/etc/letsencrypt" \
+    certbot/certbot certificates
+
+# Force certificate renewal/creation
 if docker run --rm \
     -v "$(pwd)/ssl/certbot/conf:/etc/letsencrypt" \
     -v "$(pwd)/ssl/certbot/www:/var/www/certbot" \
@@ -60,7 +67,7 @@ if docker run --rm \
     --email "$EMAIL" \
     --agree-tos \
     --no-eff-email \
-    --keep-until-expiring \
+    --force-renewal \
     --non-interactive \
     -d "$DOMAIN"; then
     
@@ -70,17 +77,46 @@ else
     exit 1
 fi
 
-# Find certificate path (handles -0001, -0002 suffixes)
+# Find certificate path (handles -0001, -0002 suffixes and more)
+echo "Searching for certificate files..."
 CERT_PATH=""
-for cert_dir in "ssl/certbot/conf/live/$DOMAIN" "ssl/certbot/conf/live/$DOMAIN-0001" "ssl/certbot/conf/live/$DOMAIN-0002"; do
-    if [[ -f "$cert_dir/fullchain.pem" ]]; then
+
+# Check multiple possible locations
+cert_candidates=(
+    "ssl/certbot/conf/live/$DOMAIN"
+    "ssl/certbot/conf/live/$DOMAIN-0001" 
+    "ssl/certbot/conf/live/$DOMAIN-0002"
+    "ssl/certbot/conf/live/$DOMAIN-0003"
+)
+
+for cert_dir in "${cert_candidates[@]}"; do
+    echo "Checking: $cert_dir"
+    if [[ -f "$cert_dir/fullchain.pem" && -f "$cert_dir/privkey.pem" ]]; then
         CERT_PATH="$cert_dir"
+        echo -e "${GREEN}Found certificate at: $cert_dir${NC}"
         break
     fi
 done
 
+# If still not found, search all live directories
+if [ -z "$CERT_PATH" ]; then
+    echo "Searching all certificate directories..."
+    if [ -d "ssl/certbot/conf/live" ]; then
+        for cert_dir in ssl/certbot/conf/live/*/; do
+            if [[ -f "$cert_dir/fullchain.pem" && -f "$cert_dir/privkey.pem" ]]; then
+                CERT_PATH="$cert_dir"
+                echo -e "${GREEN}Found certificate at: $cert_dir${NC}"
+                break
+            fi
+        done
+    fi
+fi
+
 if [ -z "$CERT_PATH" ]; then
     echo -e "${RED}Certificate files not found${NC}"
+    echo "Available directories:"
+    ls -la ssl/certbot/conf/ 2>/dev/null || echo "No certbot conf directory"
+    ls -la ssl/certbot/conf/live/ 2>/dev/null || echo "No live certificates directory"
     exit 1
 fi
 
