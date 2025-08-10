@@ -14,7 +14,8 @@
       "Bash(pip install:*)",
       "Bash(python:*)",
       "Bash(timeout 10 python saas_manager/app.py)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }
