@@ -23,7 +23,8 @@
       "Bash(openssl dhparam:*)",
       "Bash(pkill:*)",
       "Bash(openssl req:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(sudo ls:*)"
     ],
     "deny": []
   }
