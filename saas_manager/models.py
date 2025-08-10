@@ -35,7 +35,7 @@ class SaasUser(db.Model, UserMixin):
     
     tenants = db.relationship('TenantUser', back_populates='user')
     public_keys = db.relationship('UserPublicKey', backref='user')
-    notifications = db.relationship('UserNotification', backref='user', cascade='all, delete-orphan')
+    notifications = db.relationship('UserNotification', backref='saas_user', cascade='all, delete-orphan')
     support_tickets = db.relationship('SupportTicket', backref='user', cascade='all, delete-orphan')
     
     full_name = db.Column(db.String(100))
