@@ -12,10 +12,13 @@ git pull origin main
 
 ### Step 2: Run the Automated SSL Setup
 ```bash
-# NEW: Comprehensive automated setup (RECOMMENDED)
-./ssl-auto-setup.sh khudroo.com admin@khudroo.com
+# RECOMMENDED for NAT/Router environments (like khudroo.com):
+./ssl-quick.sh khudroo.com admin@khudroo.com
 
-# Alternative options:
+# Alternative: Comprehensive setup with tests skipped
+./ssl-auto-setup.sh --skip-tests khudroo.com admin@khudroo.com
+
+# Other options:
 ./get-ssl-main.sh khudroo.com admin@khudroo.com    # Main domain only
 ./setup-production-ssl.sh khudroo.com admin@khudroo.com    # Production focused
 ```

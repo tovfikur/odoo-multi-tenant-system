@@ -373,7 +373,7 @@ test_local_connectivity() {
         # Try to diagnose the issue
         if docker-compose ps nginx | grep -q "Up"; then
             print_info "Nginx container is running, checking logs..."
-            docker-compose logs nginx --tail=10
+            docker-compose logs --tail=10 nginx
         else
             print_error "Nginx container is not running"
             docker-compose ps
@@ -706,7 +706,7 @@ test_nginx_config() {
     else
         print_error "Nginx configuration test failed"
         print_info "Checking nginx logs..."
-        docker-compose logs nginx --tail=20
+        docker-compose logs --tail=20 nginx
         return 1
     fi
 }
@@ -729,7 +729,7 @@ restart_nginx() {
         done
         
         print_error "Nginx took too long to start"
-        docker-compose logs nginx --tail=10
+        docker-compose logs --tail=10 nginx
         return 1
     else
         print_error "Failed to restart nginx"
