@@ -211,7 +211,8 @@ detect_network() {
     fi
     
     print_status "Using Docker network: $network_name"
-    echo "$network_name"
+    # Return only the network name, not the status message
+    return 0
 }
 
 # Test local container connectivity
@@ -645,8 +646,14 @@ main() {
     setup_directories
     manage_containers
     
-    local network_name
-    network_name=$(detect_network)
+    # Detect network and store the name properly
+    detect_network
+    local network_name=$(docker network ls --format "{{.Name}}" | grep -E "(odoo|multi.*tenant)" | head -1)
+    
+    if [ -z "$network_name" ]; then
+        network_name="odoo-multi-tenant-system_odoo_network"
+        print_status "Using default network name: $network_name"
+    fi
     
     test_local_connectivity
     generate_dh_params
