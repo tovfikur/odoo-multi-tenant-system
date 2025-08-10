@@ -35,8 +35,8 @@ class SaasUser(db.Model, UserMixin):
     
     tenants = db.relationship('TenantUser', back_populates='user')
     public_keys = db.relationship('UserPublicKey', backref='user')
-    notifications = db.relationship('UserNotification', backref='saas_user', cascade='all, delete-orphan')
-    support_tickets = db.relationship('SupportTicket', backref='user', cascade='all, delete-orphan')
+    notifications = db.relationship('UserNotification', back_populates='user', cascade='all, delete-orphan')
+    support_tickets = db.relationship('SupportTicket', back_populates='user', cascade='all, delete-orphan')
     
     full_name = db.Column(db.String(100))
     bio = db.Column(db.Text)
@@ -259,7 +259,7 @@ class SupportTicket(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     admin_notes = db.Column(db.Text)
     
-    user = db.relationship('SaasUser', backref='support_tickets')
+    user = db.relationship('SaasUser', back_populates='support_tickets')
 
     def to_dict(self):
         return {

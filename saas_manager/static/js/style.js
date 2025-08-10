@@ -685,15 +685,10 @@
     preloaderStyles.textContent = `
             .preloader-content {
                 text-align: center;
-                background: rgba(255, 255, 255, 0.95);
-                backdrop-filter: blur(20px);
+                background: transparent;
                 border-radius: 25px;
                 padding: 50px;
-                box-shadow: 
-                    0 25px 50px -12px rgba(0, 0, 0, 0.25),
-                    0 0 0 1px rgba(255, 255, 255, 0.2);
                 max-width: 400px;
-                border: 1px solid rgba(255, 255, 255, 0.1);
                 transform: translateY(20px) scale(0.9);
                 animation: preloaderFadeIn 0.5s ease-out forwards;
             }

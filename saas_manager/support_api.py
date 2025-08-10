@@ -88,7 +88,7 @@ class ApiSupportTicket(db.Model):
     extra_data = db.Column(db.JSON)  # Additional context data
     
     # Relationships
-    user = db.relationship('SaasUser', backref='api_support_tickets')
+    user = db.relationship('SaasUser', backref='enhanced_support_tickets')
     tenant = db.relationship('Tenant', backref='api_support_tickets')
     messages = db.relationship('ApiTicketMessage', backref='api_ticket', cascade='all, delete-orphan')
     
@@ -138,7 +138,8 @@ class ApiTicketMessage(db.Model):
     attachments = db.Column(db.JSON)
     
     # Relationships
-    user = db.relationship('SaasUser', backref='api_ticket_messages')
+    user = db.relationship('SaasUser', backref='enhanced_ticket_messages')
+    ticket = db.relationship('ApiSupportTicket', backref='ticket_messages')
     
     def to_dict(self):
         """Convert message to dictionary"""

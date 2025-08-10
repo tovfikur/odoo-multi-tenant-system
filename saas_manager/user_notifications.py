@@ -56,7 +56,7 @@ class UserNotification(db.Model):
     expires_at = db.Column(db.DateTime)  # Expiration date for temporary notifications
     
     # Relationships
-    user = db.relationship('SaasUser', backref='notifications')
+    user = db.relationship('SaasUser', back_populates='notifications')
     
     def to_dict(self):
         """Convert notification to dictionary"""
