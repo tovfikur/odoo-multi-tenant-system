@@ -24,7 +24,8 @@
       "Bash(pkill:*)",
       "Bash(openssl req:*)",
       "Bash(mv:*)",
-      "Bash(sudo ls:*)"
+      "Bash(sudo ls:*)",
+      "Bash(./ssl-ultimate.sh:*)"
     ],
     "deny": []
   }
