@@ -449,7 +449,9 @@ async def create_database(db_name, username='admin', password='admin',  modules=
         if response.status_code != 200:
             logger.error(f"Failed to create database {db_name}: {response.status_code} - {response.text}")
             # Update tenant status to failed
-            BillingService._update_tenant_status_to_failed(db_name, f"Database creation failed: {response.status_code}", app)
+            # Import the function from billing module
+            from billing import _update_tenant_status_to_failed
+            _update_tenant_status_to_failed(db_name, f"Database creation failed: {response.status_code}", app)
             return False
         
         logger.info(f"Database {db_name} created successfully")
@@ -460,7 +462,9 @@ async def create_database(db_name, username='admin', password='admin',  modules=
         
         if not uid:
             logger.error(f"Authentication failed for database {db_name}")
-            BillingService._update_tenant_status_to_failed(db_name, "Authentication failed after database creation", app)
+            # Import the function from billing module
+            from billing import _update_tenant_status_to_failed
+            _update_tenant_status_to_failed(db_name, "Authentication failed after database creation", app)
             return False
         
         models = xmlrpc.client.ServerProxy(f"{os.environ.get('ODOO_URL', 'http://odoo_master:8069')}/xmlrpc/2/object")
@@ -693,13 +697,17 @@ async def create_database(db_name, username='admin', password='admin',  modules=
     except requests.exceptions.Timeout:
         logger.error(f"Database creation timed out for {db_name}")
         error_tracker.log_error(Exception("Database creation timeout"), {'database_name': db_name})
-        BillingService._update_tenant_status_to_failed(db_name, "Database creation timed out", app)
+        # Import the function from billing module
+        from billing import _update_tenant_status_to_failed
+        _update_tenant_status_to_failed(db_name, "Database creation timed out", app)
         return False
         
     except Exception as e:
         logger.error(f"Error creating database {db_name}: {str(e)}")
         error_tracker.log_error(e, {'database_name': db_name})
-        BillingService._update_tenant_status_to_failed(db_name, f"Database creation error: {str(e)}", app)
+        # Import the function from billing module
+        from billing import _update_tenant_status_to_failed
+        _update_tenant_status_to_failed(db_name, f"Database creation error: {str(e)}", app)
         return False
 
 
