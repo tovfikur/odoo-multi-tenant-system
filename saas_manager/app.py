@@ -3207,11 +3207,21 @@ def sso_login_page(token):
         # Construct tenant URL
         tenant_url = f"https://{sso_data['database']}.{request.headers.get('Host', 'khudroo.com')}"
         
+        # Create complete SSO data object for JavaScript
+        complete_sso_data = {
+            'tenant_url': tenant_url,
+            'database': sso_data['database'],
+            'username': sso_data['username'],
+            'password': sso_data['password'],
+            'token': token
+        }
+        
         # Render SSO page with auto-login form
         return render_template('sso_login.html', 
                              tenant=tenant,
                              tenant_url=tenant_url,
                              sso_data=sso_data,
+                             complete_sso_data_json=json.dumps(complete_sso_data),
                              token=token)
         
     except Exception as e:

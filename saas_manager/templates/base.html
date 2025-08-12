@@ -70,8 +70,10 @@
 
     {% if current_user.is_authenticated %}
     <script>
-      // Set authentication status for support widget
-      document.body.dataset.userAuthenticated = "true";
+      // Set authentication status for support widget when DOM is ready
+      document.addEventListener('DOMContentLoaded', function() {
+        document.body.dataset.userAuthenticated = "true";
+      });
     </script>
 
     <!-- Load support widget styles and scripts -->

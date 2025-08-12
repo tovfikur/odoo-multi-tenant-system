@@ -1,6 +1,7 @@
 import logging
 import hashlib
 import time
+import urllib.parse
 from odoo import http, api, SUPERUSER_ID
 from odoo.http import request
 from odoo.exceptions import AccessDenied
@@ -62,9 +63,46 @@ class SSOController(http.Controller):
         SSO login page that accepts credentials via GET parameters and logs in
         """
         try:
-            username = kwargs.get('username') or kwargs.get('login')
-            password = kwargs.get('password')
-            database = kwargs.get('database') or kwargs.get('db')
+            # Parse query string manually to handle passwords with & symbols
+            query_string = request.httprequest.query_string.decode('utf-8')
+            _logger.info(f"SSO login query string: {query_string}")
+            _logger.info(f"SSO login request method: {request.httprequest.method}")
+            _logger.info(f"SSO login kwargs: {kwargs}")
+            _logger.info(f"SSO login request args: {request.httprequest.args}")
+            
+            # Parse parameters more carefully
+            parsed_params = {}
+            if query_string:
+                # Split by & but be careful about password content
+                parts = query_string.split('&')
+                current_key = None
+                current_value = ""
+                
+                for part in parts:
+                    if '=' in part and not current_key:
+                        key, value = part.split('=', 1)
+                        parsed_params[key] = urllib.parse.unquote_plus(value)
+                        if key == 'password':
+                            current_key = key
+                            current_value = parsed_params[key]
+                    elif current_key == 'password' and 'database=' not in part:
+                        # This is likely part of the password
+                        current_value += '&' + part
+                        parsed_params[current_key] = current_value
+                    elif '=' in part:
+                        current_key = None
+                        key, value = part.split('=', 1)
+                        parsed_params[key] = urllib.parse.unquote_plus(value)
+                    elif current_key == 'password':
+                        current_value += '&' + part
+                        parsed_params[current_key] = current_value
+            
+            # Extract credentials with fallback to kwargs
+            username = parsed_params.get('username') or kwargs.get('username') or kwargs.get('login')
+            password = parsed_params.get('password') or kwargs.get('password')
+            database = parsed_params.get('database') or kwargs.get('database') or kwargs.get('db')
+            
+            _logger.info(f"SSO login parsed - Username: {username}, Database: {database}, Password present: {bool(password)}")
             
             if username and password and database:
                 _logger.info(f"SSO direct login attempt for {username} on {database}")

@@ -35,7 +35,7 @@
         <div class="card-footer text-center border-0" style="background: var(--bg-tertiary); border-radius: 0 0 16px 16px;">
             <small class="text-muted">
                 If you are not redirected automatically, 
-                <a href="{{ tenant_url }}" id="manualLink" class="text-primary">click here</a>
+                <a href="#" id="manualLink" class="text-primary">click here to continue</a>
             </small>
         </div>
     </div>
@@ -43,13 +43,7 @@
 
 <!-- SSO data for JavaScript -->
 <script type="application/json" id="ssoData">
-{
-    "tenant_url": "{{ tenant_url }}",
-    "database": "{{ sso_data.database }}",
-    "username": "{{ sso_data.username }}",
-    "password": "{{ sso_data.password }}",
-    "token": "{{ token }}"
-}
+{{ complete_sso_data_json | safe }}
 </script>
 {% endblock %}
 
@@ -88,15 +82,48 @@ document.addEventListener('DOMContentLoaded', function() {
         progressBar.style.width = '100%';
         statusText.textContent = 'Redirecting to {{ tenant.name }}...';
         
-        // Use proxy login approach
-        window.location.href = '/sso/proxy/' + ssoData.token;
+        // Direct SSO login - bypass the proxy loading screen
+        // Note: Password might already contain encoded characters, so we need to be careful with encoding
+        console.log('SSO Data:', ssoData);
+        console.log('Raw password:', ssoData.password);
+        
+        // Encode password properly for URL  
+        function safeEncodeURIComponent(str) {
+            if (!str) return '';
+            
+            console.log('Encoding password for URL:', str);
+            const encoded = encodeURIComponent(str);
+            console.log('Encoded result:', encoded);
+            return encoded;
+        }
+        
+        // Debug: Show credentials before redirect (remove in production!)
+        console.log('=== SSO DEBUG INFO ===');
+        console.log('Tenant URL:', ssoData.tenant_url);
+        console.log('Database:', ssoData.database);  
+        console.log('Username:', ssoData.username);
+        console.log('Password:', ssoData.password);
+        console.log('Password length:', ssoData.password ? ssoData.password.length : 'undefined');
+        console.log('Password type:', typeof ssoData.password);
+        console.log('======================')
+        
+        const redirectUrl = `${ssoData.tenant_url}/sso/login?username=${encodeURIComponent(ssoData.username)}&password=${safeEncodeURIComponent(ssoData.password)}&database=${encodeURIComponent(ssoData.database)}`;
+        console.log('Redirect URL:', redirectUrl);
+        window.location.href = redirectUrl;
         
     }, 3000);
     
-    // Update manual link to use proxy login
+    // Update manual link to use direct SSO login
     manualLink.addEventListener('click', function(e) {
         e.preventDefault();
-        window.location.href = '/sso/proxy/' + ssoData.token;
+        console.log('Manual link - SSO Data:', ssoData);
+        
+        // Use the same safe encoding function (defined above)
+        // No need to redefine it here
+        
+        const redirectUrl = `${ssoData.tenant_url}/sso/login?username=${encodeURIComponent(ssoData.username)}&password=${safeEncodeURIComponent(ssoData.password)}&database=${encodeURIComponent(ssoData.database)}`;
+        console.log('Manual link - Redirect URL:', redirectUrl);
+        window.location.href = redirectUrl;
     });
 });
 </script>

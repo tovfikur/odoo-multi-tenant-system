@@ -944,14 +944,77 @@ const planData = {{ plans|tojson }};
 
 // Auto-refresh status every 30 seconds
 setInterval(function() {
-    $.get('/api/tenant/{{ tenant.id }}/status')
-        .done(function(data) {
-            // Update status badge
-            const statusBadge = $('.badge:contains("{{ tenant.status.title() }}")');
-            statusBadge.removeClass('bg-success bg-warning bg-danger');
-            statusBadge.addClass('bg-' + (data.status === 'active' ? 'success' : 'warning'));
-            statusBadge.text(data.status.charAt(0).toUpperCase() + data.status.slice(1));
-        });
+    $.ajax({
+        url: '/api/tenant/{{ tenant.id }}/status',
+        method: 'GET',
+        dataType: 'json',
+        timeout: 10000,
+        success: function(data) {
+            // Update status badge with proper type checking and error handling
+            try {
+                console.log('Received tenant status data:', data);
+                
+                // Check if we actually got JSON data
+                if (typeof data === 'string') {
+                    console.warn('Received string instead of JSON, possible authentication issue');
+                    return;
+                }
+                
+                const statusBadge = $('.badge:contains("{{ tenant.status.title() }}")');
+                statusBadge.removeClass('bg-success bg-warning bg-danger');
+                
+                // Ensure data.status is a string before calling charAt
+                let status = 'unknown';
+                if (data && data.status) {
+                    if (typeof data.status === 'string' && data.status.trim()) {
+                        status = data.status.trim();
+                    } else if (typeof data.status === 'object') {
+                        // Handle case where status is an object
+                        console.log('Status is an object:', data.status);
+                        
+                        // Try common object properties that might contain the actual status
+                        if (data.status.value) {
+                            status = String(data.status.value);
+                        } else if (data.status.status) {
+                            status = String(data.status.status);
+                        } else if (data.status.name) {
+                            status = String(data.status.name);
+                        } else if (data.status.text) {
+                            status = String(data.status.text);
+                        } else {
+                            // If none of the common properties exist, show the first enumerable property
+                            const keys = Object.keys(data.status);
+                            if (keys.length > 0) {
+                                status = String(data.status[keys[0]]);
+                                console.log(`Using first property '${keys[0]}':`, status);
+                            } else {
+                                status = 'unknown';
+                            }
+                        }
+                    } else {
+                        // Convert other types (number, boolean, etc.) to string
+                        status = String(data.status);
+                    }
+                }
+                
+                console.log('Processed status:', status);
+                statusBadge.addClass('bg-' + (status === 'active' ? 'success' : 'warning'));
+                statusBadge.text(status.charAt(0).toUpperCase() + status.slice(1));
+            } catch (error) {
+                console.error('Error updating status badge:', error);
+                console.log('Data received:', data);
+            }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            console.error('Failed to fetch tenant status:', textStatus, errorThrown);
+            console.log('Response text:', jqXHR.responseText?.substring(0, 200));
+            
+            // Check if we got redirected to login
+            if (jqXHR.responseText && jqXHR.responseText.includes('login')) {
+                console.warn('Authentication issue - got redirected to login page');
+            }
+        }
+    });
 }, 30000);
 
 // Handle plan selection changes
