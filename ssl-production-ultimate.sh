@@ -377,15 +377,40 @@ setup_docker_certificates() {
     mkdir -p ssl/letsencrypt/archive/$DOMAIN
     mkdir -p ssl/certbot/www
     
-    # Copy certificates to Docker-accessible location
-    $SUDO cp /etc/letsencrypt/live/$DOMAIN/*.pem ssl/letsencrypt/live/$DOMAIN/
-    $SUDO cp -r /etc/letsencrypt/archive/$DOMAIN/* ssl/letsencrypt/archive/$DOMAIN/ 2>/dev/null || true
-    
-    # Set proper permissions
-    $SUDO chown -R $USER:$USER ssl/letsencrypt/ 2>/dev/null || true
-    chmod -R 755 ssl/letsencrypt/
-    
-    log "SUCCESS" "Certificates copied to Docker volumes"
+    # Check if certificates exist in Docker certbot volume first
+    if [[ -f "./ssl/certbot/conf/live/$DOMAIN/fullchain.pem" ]]; then
+        log "SUCCESS" "Certificates found in Docker certbot volume"
+        
+        # Copy from certbot volume to letsencrypt volume for nginx
+        cp "./ssl/certbot/conf/live/$DOMAIN/fullchain.pem" "ssl/letsencrypt/live/$DOMAIN/"
+        cp "./ssl/certbot/conf/live/$DOMAIN/privkey.pem" "ssl/letsencrypt/live/$DOMAIN/"
+        cp "./ssl/certbot/conf/live/$DOMAIN/chain.pem" "ssl/letsencrypt/live/$DOMAIN/" 2>/dev/null || true
+        cp "./ssl/certbot/conf/live/$DOMAIN/cert.pem" "ssl/letsencrypt/live/$DOMAIN/" 2>/dev/null || true
+        
+        # Set proper permissions
+        chmod -R 755 ssl/letsencrypt/
+        
+        log "SUCCESS" "Certificates configured for Docker containers"
+        
+    # Check if certificates exist on host system (certbot was run directly on host)
+    elif [[ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]]; then
+        log "INFO" "Certificates found on host system, copying to Docker volumes"
+        
+        # Copy from host system to Docker accessible location
+        $SUDO cp "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" "ssl/letsencrypt/live/$DOMAIN/"
+        $SUDO cp "/etc/letsencrypt/live/$DOMAIN/privkey.pem" "ssl/letsencrypt/live/$DOMAIN/"
+        $SUDO cp "/etc/letsencrypt/live/$DOMAIN/chain.pem" "ssl/letsencrypt/live/$DOMAIN/" 2>/dev/null || true
+        $SUDO cp "/etc/letsencrypt/live/$DOMAIN/cert.pem" "ssl/letsencrypt/live/$DOMAIN/" 2>/dev/null || true
+        
+        # Set proper permissions
+        $SUDO chown -R $USER:$USER ssl/letsencrypt/ 2>/dev/null || true
+        chmod -R 755 ssl/letsencrypt/
+        
+        log "SUCCESS" "Certificates copied from host system to Docker volumes"
+        
+    else
+        error_exit "No certificates found in Docker volume or host system at /etc/letsencrypt/live/$DOMAIN/"
+    fi
 }
 
 # Create comprehensive nginx SSL configuration
@@ -1018,8 +1043,11 @@ docker stop nginx >> "$LOG_FILE" 2>&1
 if sudo certbot renew --quiet --no-random-sleep-on-renew; then
     echo "$(date): Certificate renewal successful" >> "$LOG_FILE"
     
-    # Copy renewed certificates
-    sudo cp /etc/letsencrypt/live/$DOMAIN/*.pem ssl/letsencrypt/live/$DOMAIN/
+    # Copy renewed certificates (from Docker certbot volume)
+    cp ./ssl/certbot/conf/live/$DOMAIN/fullchain.pem ssl/letsencrypt/live/$DOMAIN/
+    cp ./ssl/certbot/conf/live/$DOMAIN/privkey.pem ssl/letsencrypt/live/$DOMAIN/
+    cp ./ssl/certbot/conf/live/$DOMAIN/chain.pem ssl/letsencrypt/live/$DOMAIN/ 2>/dev/null || true
+    cp ./ssl/certbot/conf/live/$DOMAIN/cert.pem ssl/letsencrypt/live/$DOMAIN/ 2>/dev/null || true
     sudo chown -R $USER:$USER ssl/letsencrypt/
     
     # Start nginx

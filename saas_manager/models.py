@@ -487,14 +487,39 @@ class BillingCycle(db.Model):
     
     @property
     def days_remaining(self):
-        if self.cycle_end:
-            delta = self.cycle_end - datetime.utcnow()
-            return max(0, delta.days)
-        return 0
+        if not self.cycle_end:
+            return 0
+            
+        # Ensure consistent datetime comparison (same fix as is_expired)
+        current_time = datetime.utcnow()
+        cycle_end_time = self.cycle_end
+        
+        # If cycle_end has timezone info, convert to naive UTC
+        if hasattr(cycle_end_time, 'tzinfo') and cycle_end_time.tzinfo is not None:
+            cycle_end_time = cycle_end_time.replace(tzinfo=None)
+            
+        delta = cycle_end_time - current_time
+        return max(0, delta.days)
     
     @property
     def is_expired(self):
-        return self.hours_used >= self.total_hours_allowed or datetime.utcnow() > self.cycle_end
+        # Check hours usage first
+        if self.hours_used >= self.total_hours_allowed:
+            return True
+        
+        # Check time expiry - handle None cycle_end and ensure proper comparison
+        if not self.cycle_end:
+            return True
+            
+        # Ensure both datetimes are timezone-naive for comparison
+        current_time = datetime.utcnow()
+        cycle_end_time = self.cycle_end
+        
+        # If cycle_end has timezone info, convert to naive UTC
+        if hasattr(cycle_end_time, 'tzinfo') and cycle_end_time.tzinfo is not None:
+            cycle_end_time = cycle_end_time.replace(tzinfo=None)
+            
+        return current_time > cycle_end_time
     
     @property
     def should_send_reminder(self):

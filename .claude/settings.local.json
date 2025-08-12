@@ -25,7 +25,18 @@
       "Bash(openssl req:*)",
       "Bash(mv:*)",
       "Bash(sudo ls:*)",
-      "Bash(./ssl-ultimate.sh:*)"
+      "Bash(./ssl-ultimate.sh:*)",
+      "Bash(openssl x509:*)",
+      "Bash(./ssl-production-ultimate.sh:*)",
+      "Bash(./ssl-continue.sh)",
+      "Bash(./ssl-staging.sh:*)",
+      "Bash(./ssl-fix-staging.sh:*)",
+      "Bash(sudo chown:*)",
+      "Bash(./ssl-quick-setup.sh:*)",
+      "Bash(docker cp:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }

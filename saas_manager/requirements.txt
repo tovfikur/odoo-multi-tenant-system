@@ -38,3 +38,4 @@ flask-limiter
 Pillow
 paramiko
 email-validator
+beautifulsoup4

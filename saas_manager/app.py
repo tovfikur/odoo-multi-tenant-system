@@ -19,6 +19,8 @@ import traceback
 import xmlrpc.client
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+import secrets
+import base64
 from functools import wraps
 
 # Third-party imports
@@ -639,6 +641,13 @@ async def create_database(db_name, username='admin', password='admin',  modules=
                     db.session.commit()
                     logger.info(f"Updated tenant {tenant.id} status to active after successful database creation")
                     
+                    # Invalidate cache to ensure frontend shows updated status immediately
+                    try:
+                        invalidate_tenant_cache(tenant.id)
+                        logger.info(f"Invalidated cache for tenant {tenant.id} after status change")
+                    except Exception as cache_error:
+                        logger.warning(f"Failed to invalidate cache for tenant {tenant.id}: {cache_error}")
+                    
                     # Create billing cycle immediately for newly activated tenant
                     try:
                         billing_service = BillingService()
@@ -1069,6 +1078,37 @@ def reset_password(token):
 def dashboard():
     try:
         user_tenants = cache_manager.get_user_tenants(current_user.id)
+        
+        # Enhance tenants with billing information
+        enhanced_tenants = []
+        from billing_service import BillingService
+        billing_service = BillingService()
+        
+        for tenant_data in user_tenants:
+            # Get billing information for each tenant
+            billing_info = billing_service.get_tenant_billing_info(tenant_data['id'])
+            
+            # Add billing information to tenant data
+            if billing_info and billing_info.get('status') != 'no_active_cycle':
+                tenant_data.update({
+                    'billing_info': billing_info,
+                    'is_expired': billing_info.get('is_expired', False),
+                    'days_remaining': billing_info.get('days_remaining', 0),
+                    'hours_remaining': billing_info.get('hours_remaining', 0),
+                    'requires_payment': billing_info.get('requires_payment', False)
+                })
+            else:
+                # No active billing cycle
+                tenant_data.update({
+                    'billing_info': None,
+                    'is_expired': True,
+                    'days_remaining': 0,
+                    'hours_remaining': 0,
+                    'requires_payment': True
+                })
+            
+            enhanced_tenants.append(tenant_data)
+        
         stats = {}
         
         # Check for pending registration
@@ -1105,7 +1145,7 @@ def dashboard():
         ]
             
         return render_template('dashboard.html', 
-                             tenants=user_tenants, 
+                             tenants=enhanced_tenants, 
                              stats=stats,
                              plans=plans_data,
                              pending_registration=pending_registration)
@@ -1248,6 +1288,11 @@ def manage_tenant(tenant_id):
             for plan in plans
         ]
         
+        # Get billing information
+        from billing_service import BillingService
+        billing_service = BillingService()
+        billing_info = billing_service.get_tenant_billing_info(tenant_id)
+        
         return render_template('manage_tenant.html', 
                       tenant=tenant, 
                       modules=modules, 
@@ -1255,7 +1300,8 @@ def manage_tenant(tenant_id):
                       uptime=uptime, 
                       odoo_user=odoo_user-1,
                       plans=plans_data,
-                      tenant_id=tenant_id)
+                      tenant_id=tenant_id,
+                      billing_info=billing_info)
     except Exception as e:
         error_tracker.log_error(e, {'tenant_id': tenant_id, 'user_id': current_user.id})
         flash('Error accessing tenant. Please try again.', 'error')
@@ -1734,7 +1780,14 @@ def tenant_status(tenant_id):
         tenant_user = TenantUser.query.filter_by(tenant_id=tenant_id, user_id=current_user.id).first()
         if not tenant_user and not current_user.is_admin:
             return jsonify({'error': 'Access denied'}), 403
-        return jsonify({
+        
+        # Get billing information
+        from billing_service import BillingService
+        billing_service = BillingService()
+        billing_info = billing_service.get_tenant_billing_info(tenant_id)
+        
+        # Prepare response data with billing information
+        response_data = {
             'success': True,
             'id': tenant.id,
             'name': tenant.name,
@@ -1742,8 +1795,39 @@ def tenant_status(tenant_id):
             'status': tenant.status,
             'is_active': tenant.is_active,
             'plan': tenant.plan,
-            'created_at': tenant.created_at.isoformat() if tenant.created_at else None
-        })
+            'created_at': tenant.created_at.isoformat() if tenant.created_at else None,
+            'timestamp': datetime.utcnow().isoformat()  # Force cache invalidation
+        }
+        
+        # Add billing information if available
+        if billing_info and billing_info.get('status') != 'no_active_cycle':
+            response_data.update({
+                'hours_used': billing_info.get('hours_used', 0),
+                'hours_remaining': billing_info.get('hours_remaining', 0),
+                'days_remaining': billing_info.get('days_remaining', 0),
+                'total_hours_allowed': billing_info.get('total_hours_allowed', 360),
+                'billing_status': billing_info.get('status', 'unknown'),
+                'is_expired': billing_info.get('is_expired', False),
+                'requires_payment': billing_info.get('requires_payment', False)
+            })
+        else:
+            # No active billing cycle - set defaults
+            response_data.update({
+                'hours_used': 0,
+                'hours_remaining': 360,
+                'days_remaining': 30,
+                'total_hours_allowed': 360,
+                'billing_status': 'no_active_cycle',
+                'is_expired': True,  # No billing cycle means expired
+                'requires_payment': True
+            })
+        
+        # Create response with cache-busting headers
+        response = jsonify(response_data)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
     except Exception as e:
         error_tracker.log_error(e, {'tenant_id': tenant_id, 'user_id': current_user.id})
         return jsonify({'error': 'Internal server error'}), 500
@@ -3004,6 +3088,435 @@ def format_tenant_status(status):
         'inactive': ('secondary', 'Inactive')
     }
     return status_mapping.get(status, ('info', status.title()))
+
+# SSO (Single Sign-On) endpoint for tenant login
+@app.route('/sso/tenant/<int:tenant_id>')
+@login_required
+@track_errors('sso_tenant_login')
+def sso_tenant_login(tenant_id):
+    """Generate secure login link and redirect to tenant Odoo instance"""
+    try:
+        # Verify user has access to this tenant
+        tenant_user = TenantUser.query.filter_by(tenant_id=tenant_id, user_id=current_user.id).first()
+        if not tenant_user and not current_user.is_admin:
+            flash('Access denied to this tenant.', 'error')
+            return redirect(url_for('dashboard'))
+        
+        # Get tenant information
+        tenant = Tenant.query.get_or_404(tenant_id)
+        
+        if not tenant.is_active or tenant.status != 'active':
+            flash('Tenant is not active. Cannot access inactive tenant.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        # Generate secure token for SSO
+        sso_token = secrets.token_urlsafe(32)
+        
+        # Store SSO token in Redis with expiration (5 minutes)
+        sso_data = {
+            'user_id': current_user.id,
+            'tenant_id': tenant_id,
+            'username': tenant.admin_username,
+            'password': tenant.get_admin_password(),
+            'database': tenant.database_name,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        # Cache the SSO token
+        redis_client.setex(f"sso_token:{sso_token}", 300, json.dumps(sso_data))  # 5 minutes
+        
+        # Create SSO page URL that will handle the auto-login
+        sso_url = url_for('sso_login_page', token=sso_token)
+        
+        logger.info(f"SSO login initiated for user {current_user.id} to tenant {tenant_id}")
+        
+        # Redirect to SSO login page
+        return redirect(sso_url)
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'tenant_id': tenant_id, 'user_id': current_user.id})
+        flash('Error initiating SSO login. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
+
+# SSO validation endpoint (called by Odoo workers via nginx)
+@app.route('/api/sso/validate/<token>')
+@track_errors('sso_validate')
+def sso_validate(token):
+    """Validate SSO token and return login credentials"""
+    try:
+        # Get SSO data from Redis
+        sso_data_json = redis_client.get(f"sso_token:{token}")
+        if not sso_data_json:
+            return jsonify({'error': 'Invalid or expired SSO token'}), 401
+        
+        sso_data = json.loads(sso_data_json)
+        
+        # Validate token age (additional security)
+        token_time = datetime.fromisoformat(sso_data['timestamp'])
+        if (datetime.utcnow() - token_time).total_seconds() > 300:  # 5 minutes
+            redis_client.delete(f"sso_token:{token}")
+            return jsonify({'error': 'SSO token expired'}), 401
+        
+        # Return credentials for auto-login
+        response_data = {
+            'database': sso_data['database'],
+            'username': sso_data['username'],
+            'password': sso_data['password'],
+            'user_id': sso_data['user_id'],
+            'tenant_id': sso_data['tenant_id']
+        }
+        
+        # Delete token after use (single use)
+        redis_client.delete(f"sso_token:{token}")
+        
+        logger.info(f"SSO token validated for user {sso_data['user_id']} to tenant {sso_data['tenant_id']}")
+        
+        return jsonify(response_data)
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'token': token})
+        return jsonify({'error': 'SSO validation failed'}), 500
+
+# SSO login page that performs auto-login to Odoo
+@app.route('/sso/login/<token>')
+@track_errors('sso_login_page')
+def sso_login_page(token):
+    """Display SSO login page that auto-logs into Odoo tenant"""
+    try:
+        # Get SSO data from Redis
+        sso_data_json = redis_client.get(f"sso_token:{token}")
+        if not sso_data_json:
+            flash('SSO session expired. Please try again.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        sso_data = json.loads(sso_data_json)
+        
+        # Validate token age
+        token_time = datetime.fromisoformat(sso_data['timestamp'])
+        if (datetime.utcnow() - token_time).total_seconds() > 300:  # 5 minutes
+            redis_client.delete(f"sso_token:{token}")
+            flash('SSO session expired. Please try again.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        # Get tenant info for display
+        tenant = Tenant.query.get(sso_data['tenant_id'])
+        if not tenant:
+            flash('Tenant not found.', 'error')
+            return redirect(url_for('dashboard'))
+        
+        # Construct tenant URL
+        tenant_url = f"https://{sso_data['database']}.{request.headers.get('Host', 'khudroo.com')}"
+        
+        # Render SSO page with auto-login form
+        return render_template('sso_login.html', 
+                             tenant=tenant,
+                             tenant_url=tenant_url,
+                             sso_data=sso_data,
+                             token=token)
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'token': token})
+        flash('SSO login failed. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
+
+# SSO proxy login - handles the actual login to Odoo and redirects with session
+@app.route('/sso/proxy/<token>')
+@track_errors('sso_proxy_login')
+def sso_proxy_login(token):
+    """Proxy login to Odoo and redirect with session cookie"""
+    try:
+        # Get SSO data from Redis
+        sso_data_json = redis_client.get(f"sso_token:{token}")
+        if not sso_data_json:
+            flash('SSO session expired. Please try again.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        sso_data = json.loads(sso_data_json)
+        
+        # Validate token age
+        token_time = datetime.fromisoformat(sso_data['timestamp'])
+        if (datetime.utcnow() - token_time).total_seconds() > 300:  # 5 minutes
+            redis_client.delete(f"sso_token:{token}")
+            flash('SSO session expired. Please try again.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        # Delete token (single use)
+        redis_client.delete(f"sso_token:{token}")
+        
+        tenant_url = f"https://{sso_data['database']}.{request.headers.get('Host', 'khudroo.com')}"
+        login_url = f"{tenant_url}/web/login"
+        
+        logger.info(f"SSO proxy login attempt for user {sso_data['user_id']} to tenant {sso_data['tenant_id']}")
+        
+        # Try server-side authentication using direct Odoo worker access
+        # Since nginx routes tenant subdomains to workers but doesn't set database context,
+        # we'll use direct worker access with explicit database parameter
+        try:
+            # Get a worker URL directly (bypassing nginx for authentication)
+            worker_url = "http://odoo_worker1:8069"  # Use internal Docker network
+            worker_login_url = f"{worker_url}/web/login"
+            
+            # Create a session to maintain cookies
+            session = requests.Session()
+            
+            logger.info(f"Attempting direct authentication to Odoo worker for database {sso_data['database']}")
+            
+            # First, get the login page to extract any CSRF tokens
+            logger.info(f"Getting login page from {worker_login_url}")
+            login_page_response = session.get(worker_login_url, timeout=10)
+            
+            if login_page_response.status_code != 200:
+                logger.warning(f"Failed to get login page: {login_page_response.status_code}")
+                raise Exception(f"Login page request failed: {login_page_response.status_code}")
+            
+            # Parse the login form to get any hidden fields/CSRF tokens
+            from bs4 import BeautifulSoup
+            soup = BeautifulSoup(login_page_response.content, 'html.parser')
+            login_form = soup.find('form', {'class': 'oe_login_form'})
+            
+            form_data = {
+                'login': sso_data['username'],
+                'password': sso_data['password'],
+                'db': sso_data['database']
+            }
+            
+            # Extract any hidden fields from the form
+            if login_form:
+                for hidden_input in login_form.find_all('input', {'type': 'hidden'}):
+                    name = hidden_input.get('name')
+                    value = hidden_input.get('value', '')
+                    if name:
+                        form_data[name] = value
+                        logger.info(f"Adding hidden field: {name}={value}")
+            
+            logger.info(f"Attempting login with data: {list(form_data.keys())}")
+            
+            # Attempt login to worker directly
+            login_response = session.post(
+                worker_login_url,
+                data=form_data,
+                timeout=15,
+                allow_redirects=False
+            )
+            
+            logger.info(f"Login response status: {login_response.status_code}")
+            logger.info(f"Login response headers: {dict(login_response.headers)}")
+            
+            # Check for successful login (usually a redirect to /web)
+            if login_response.status_code in [302, 303] and 'Location' in login_response.headers:
+                location = login_response.headers['Location']
+                logger.info(f"Login successful, redirecting to: {location}")
+                
+                # Extract session cookies
+                session_cookies = login_response.cookies
+                logger.info(f"Received cookies: {[cookie.name for cookie in session_cookies]}")
+                
+                # Create HTML that redirects to tenant URL with manual cookie setup
+                tenant_redirect_url = f"{tenant_url}/web"
+                
+                # Create HTML page that instructs browser to go to tenant with session
+                redirect_html = f'''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Authentication Successful</title>
+    <script>
+        // Since we authenticated against internal worker, we need to redirect
+        // to the tenant subdomain which nginx will route correctly
+        setTimeout(function() {{
+            window.location.href = '{tenant_redirect_url}';
+        }}, 2000);
+    </script>
+    <style>
+        body {{
+            font-family: Inter, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            text-align: center;
+        }}
+        .spinner {{
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }}
+        @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
+        .success {{
+            color: #4CAF50;
+            font-size: 1.2em;
+            margin: 20px 0;
+        }}
+    </style>
+</head>
+<body>
+    <div>
+        <div class="spinner"></div>
+        <h2>Authentication Successful!</h2>
+        <div class="success">
+            <i>✓ Logged in as {sso_data['username']}</i>
+        </div>
+        <p>Redirecting to your {sso_data['database']} panel...</p>
+        <p><a href="{tenant_redirect_url}" style="color: white;">Click here if not redirected automatically</a></p>
+    </div>
+</body>
+</html>'''
+                return redirect_html
+                
+            elif login_response.status_code == 200:
+                # Check if still on login page (authentication failed)
+                if 'oe_login_form' in login_response.text or 'Wrong login/password' in login_response.text:
+                    logger.warning("Authentication failed - wrong credentials")
+                    raise Exception("Invalid username or password")
+                else:
+                    # Successful login without redirect - go to main web interface
+                    redirect_url = f"{tenant_url}/web"
+                    logger.info(f"Login successful without redirect, going to: {redirect_url}")
+                    return redirect(redirect_url)
+            else:
+                logger.warning(f"Unexpected response: {login_response.status_code} - {login_response.text[:500]}")
+                raise Exception(f"Login failed with status {login_response.status_code}")
+        
+        except requests.RequestException as e:
+            logger.error(f"Network error during SSO login: {e}")
+            raise Exception(f"Network error: {str(e)}")
+        except Exception as e:
+            logger.error(f"SSO authentication error: {e}")
+            
+            # Fallback: redirect to login page with prefilled credentials
+            fallback_html = f'''
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Redirecting to {sso_data['database']}</title>
+    <meta http-equiv="refresh" content="3;url={tenant_url}/web/login">
+    <style>
+        body {{
+            font-family: Inter, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            color: white;
+            text-align: center;
+        }}
+        .container {{
+            max-width: 500px;
+            padding: 40px;
+        }}
+        .credentials {{
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            backdrop-filter: blur(10px);
+        }}
+        .credential-item {{
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+            font-family: monospace;
+        }}
+        .spinner {{
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top: 4px solid white;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }}
+        @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
+        .error {{
+            background: rgba(255,0,0,0.1);
+            border: 1px solid rgba(255,0,0,0.3);
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }}
+        .btn {{
+            display: inline-block;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px;
+            transition: background 0.3s;
+        }}
+        .btn:hover {{
+            background: rgba(255,255,255,0.3);
+        }}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <h2>Opening {sso_data['database']}</h2>
+        
+        <div class="error">
+            <i>Auto-login failed, redirecting to login page...</i>
+        </div>
+        
+        <div class="credentials">
+            <h4>Your Login Credentials:</h4>
+            <div class="credential-item">
+                <strong>Username:</strong> {sso_data['username']}
+            </div>
+            <div class="credential-item">
+                <strong>Database:</strong> {sso_data['database']}
+            </div>
+            <p style="font-size: 0.9em; opacity: 0.8;">Enter your password to continue</p>
+        </div>
+        
+        <p>You will be redirected to the login page in 3 seconds...</p>
+        <a href="{tenant_url}/web/login" class="btn">Click Here to Login Now</a>
+    </div>
+    
+    <script>
+        // Auto-redirect after 3 seconds
+        setTimeout(function() {{
+            window.location.href = '{tenant_url}/web/login?login={sso_data['username']}&db={sso_data['database']}';
+        }}, 3000);
+    </script>
+</body>
+</html>'''
+            return fallback_html
+        
+    except Exception as e:
+        error_tracker.log_error(e, {'token': token})
+        flash('SSO proxy login failed. Please try again.', 'error')
+        return redirect(url_for('dashboard'))
+
+def _generate_cookie_js(cookies, database):
+    """Generate JavaScript to set cookies in the browser"""
+    js_lines = []
+    domain = f"{database}.khudroo.com"
+    
+    for cookie in cookies:
+        # Create document.cookie statement for each cookie
+        cookie_value = f"{cookie.name}={cookie.value}"
+        cookie_attrs = [f"domain={domain}", "path=/"]
+        
+        if cookie.secure:
+            cookie_attrs.append("secure")
+        if hasattr(cookie, 'httponly') and cookie.httponly:
+            cookie_attrs.append("httponly")
+            
+        cookie_str = cookie_value + "; " + "; ".join(cookie_attrs)
+        js_lines.append(f'document.cookie = "{cookie_str}";')
+    
+    return "\n        ".join(js_lines)
 
 # Add error handler for payment-related errors
 @app.errorhandler(404)

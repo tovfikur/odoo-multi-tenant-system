@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Accessing {{ tenant.name }} - Khudroo{% endblock %}
+
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-lg border-0" style="max-width: 500px; width: 100%; border-radius: 16px;">
+        <div class="card-header text-center border-0" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); border-radius: 16px 16px 0 0; padding: 2rem;">
+            <div class="mb-3">
+                <div class="spinner-border text-white" role="status" style="width: 3rem; height: 3rem;">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            </div>
+            <h3 class="text-white fw-bold mb-2">Accessing {{ tenant.name }}</h3>
+            <p class="text-white-50 mb-0">Please wait while we log you in...</p>
+        </div>
+        
+        <div class="card-body p-4 text-center">
+            <div class="mb-4">
+                <div class="progress mb-3" style="height: 8px; border-radius: 10px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" 
+                         role="progressbar" 
+                         style="width: 0%; border-radius: 10px;"
+                         id="progressBar">
+                    </div>
+                </div>
+                <p class="text-muted mb-0" id="statusText">Preparing secure connection...</p>
+            </div>
+            
+            <div class="d-flex align-items-center justify-content-center">
+                <i class="fas fa-shield-alt text-success me-2"></i>
+                <small class="text-muted">Secure Single Sign-On</small>
+            </div>
+        </div>
+        
+        <div class="card-footer text-center border-0" style="background: var(--bg-tertiary); border-radius: 0 0 16px 16px;">
+            <small class="text-muted">
+                If you are not redirected automatically, 
+                <a href="{{ tenant_url }}" id="manualLink" class="text-primary">click here</a>
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- SSO data for JavaScript -->
+<script type="application/json" id="ssoData">
+{
+    "tenant_url": "{{ tenant_url }}",
+    "database": "{{ sso_data.database }}",
+    "username": "{{ sso_data.username }}",
+    "password": "{{ sso_data.password }}",
+    "token": "{{ token }}"
+}
+</script>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const progressBar = document.getElementById('progressBar');
+    const statusText = document.getElementById('statusText');
+    const autoLoginForm = document.getElementById('autoLoginForm');
+    const manualLink = document.getElementById('manualLink');
+    
+    let progress = 0;
+    
+    // Animate progress bar
+    const progressInterval = setInterval(() => {
+        progress += Math.random() * 15;
+        if (progress > 90) progress = 90;
+        
+        progressBar.style.width = progress + '%';
+        
+        if (progress < 30) {
+            statusText.textContent = 'Verifying credentials...';
+        } else if (progress < 60) {
+            statusText.textContent = 'Connecting to {{ tenant.name }}...';
+        } else {
+            statusText.textContent = 'Almost ready...';
+        }
+    }, 200);
+    
+    // Get SSO data
+    const ssoData = JSON.parse(document.getElementById('ssoData').textContent);
+    
+    // Auto-redirect after 3 seconds
+    setTimeout(() => {
+        clearInterval(progressInterval);
+        progressBar.style.width = '100%';
+        statusText.textContent = 'Redirecting to {{ tenant.name }}...';
+        
+        // Use proxy login approach
+        window.location.href = '/sso/proxy/' + ssoData.token;
+        
+    }, 3000);
+    
+    // Update manual link to use proxy login
+    manualLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        window.location.href = '/sso/proxy/' + ssoData.token;
+    });
+});
+</script>
+{% endblock %}

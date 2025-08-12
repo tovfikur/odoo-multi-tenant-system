@@ -674,6 +674,28 @@ class BillingService:
             flash('Error processing payment cancellation.', 'error')
             return redirect(url_for('dashboard'))
 
+# Standalone function to update tenant status to failed
+@track_errors('update_tenant_status_to_failed')
+def _update_tenant_status_to_failed(db_name, error_message, app=None):
+    """Update tenant status to failed when database creation fails"""
+    try:
+        from models import Tenant
+        from flask import current_app
+        app_to_use = app if app else current_app
+        
+        # Create application context for background thread
+        with app_to_use.app_context():
+            tenant = Tenant.query.filter_by(database_name=db_name).first()
+            if tenant:
+                tenant.status = 'failed'
+                db.session.commit()
+                logger.error(f"Updated tenant {tenant.id} status to failed: {error_message}")
+            else:
+                logger.error(f"Could not find tenant with database_name {db_name} to update to failed status")
+    except Exception as e:
+        logger.error(f"Failed to update tenant status to failed: {e}")
+        error_tracker.log_error(e, {'database_name': db_name, 'error_message': error_message})
+
 def register_billing_routes(app, csrf=None):
     """Register billing-related routes with the Flask app"""
     @app.route('/billing/<int:tenant_id>/pay', methods=['POST'])
@@ -859,25 +881,3 @@ def register_billing_routes(app, csrf=None):
                 'data': {k: '[REDACTED]' if k == 'store_passwd' else v for k, v in request.form.to_dict().items()}
             })
             return jsonify({'status': 'error', 'message': 'IPN processing failed'}), 500
-    
-    @staticmethod
-    @track_errors('update_tenant_status_to_failed')
-    def _update_tenant_status_to_failed(db_name, error_message, app=None):
-        """Update tenant status to failed when database creation fails"""
-        try:
-            from models import Tenant
-            from flask import current_app
-            app_to_use = app if app else current_app
-            
-            # Create application context for background thread
-            with app_to_use.app_context():
-                tenant = Tenant.query.filter_by(database_name=db_name).first()
-                if tenant:
-                    tenant.status = 'failed'
-                    db.session.commit()
-                    logger.error(f"Updated tenant {tenant.id} status to failed: {error_message}")
-                else:
-                    logger.error(f"Could not find tenant with database_name {db_name} to update to failed status")
-        except Exception as e:
-            logger.error(f"Failed to update tenant status to failed: {e}")
-            error_tracker.log_error(e, {'database_name': db_name, 'error_message': error_message})

@@ -1,0 +1,73 @@
+[2025-08-11 01:42:53] [INFO] Lock acquired (PID: 22637)
+[2025-08-11 01:42:53] [INFO] Script started with arguments: domain=khudroo.com, email=admin@khudroo.com, debug=false, force=false, skip-tests=false
+[2025-08-11 01:42:53] [INFO] === Automated SSL Setup for Odoo Multi-Tenant System ===
+[2025-08-11 01:42:53] [INFO] Domain: khudroo.com
+[2025-08-11 01:42:53] [INFO] Email: admin@khudroo.com
+[2025-08-11 01:42:53] [INFO] Working Directory: /home/kendroo/odoo-multi-tenant-system
+[2025-08-11 01:42:53] [INFO] Log File: /home/kendroo/odoo-multi-tenant-system/ssl/logs/ssl-setup.log
+[2025-08-11 01:42:53] [INFO] 
+[2025-08-11 01:42:53] [INFO] STEP 1: Performing system checks...
+[2025-08-11 01:42:54] [INFO] SUCCESS: System checks passed
+[2025-08-11 01:42:54] [INFO] STEP 2: Setting up directories and permissions...
+[2025-08-11 01:42:54] [INFO] SUCCESS: Directories setup completed
+[2025-08-11 01:42:54] [INFO] STEP 3: Managing Docker containers...
+[2025-08-11 01:42:55] [INFO] Restarting containers to apply new configurations...
+[2025-08-11 01:43:06] [INFO] SUCCESS: Docker containers are ready
+[2025-08-11 01:43:06] [INFO] STEP 4: Testing local connectivity...
+[2025-08-11 01:43:06] [WARN] Nginx not responding locally
+[2025-08-11 01:43:06] [INFO] Nginx container is running, checking logs...
+[2025-08-11 01:43:07] [ERROR] Script failed with exit code 1
+[2025-08-11 01:43:07] [INFO] Check the log file for details: /home/kendroo/odoo-multi-tenant-system/ssl/logs/ssl-setup.log
+[2025-08-11 01:43:07] [INFO] Common solutions:
+[2025-08-11 01:43:07] [INFO] 1. Ensure domain DNS points to this server
+[2025-08-11 01:43:07] [INFO] 2. Check firewall allows ports 80 and 443
+[2025-08-11 01:43:07] [INFO] 3. Verify Docker containers are running
+[2025-08-11 01:43:07] [INFO] 4. Run with --debug for verbose output
+2025-08-11 11:53:55 - \033[0;34mChecking prerequisites...\033[0m
+2025-08-11 11:53:55 - \033[0;32mUsing Docker network: odoo-multi-tenant-system_odoo_network\033[0m
+2025-08-11 11:53:55 - \033[0;32m✓ Prerequisites check completed\033[0m
+2025-08-11 11:53:55 - \033[0;34mCreating SSL directories...\033[0m
+2025-08-11 11:53:55 - \033[0;32m✓ SSL directories created\033[0m
+2025-08-11 11:53:55 - \033[0;32m✓ DH parameters already exist\033[0m
+2025-08-11 11:53:55 - \033[0;34mChecking for existing certificates...\033[0m
+2025-08-11 11:53:59 - \033[1;33mNo existing certificates found\033[0m
+2025-08-11 11:53:59 - \033[0;34mRequesting new Let's Encrypt certificate...\033[0m
+2025-08-11 11:54:04 - \033[1;33mRequesting wildcard certificate for *.khudroo.com\033[0m
+2025-08-11 11:54:04 - \033[1;33mYou will need to add DNS TXT records when prompted\033[0m
+2025-08-11 11:59:29 - \033[0;32m✓ Wildcard certificate obtained\033[0m
+2025-08-11 11:59:29 - \033[0;34mCreating nginx SSL configuration...\033[0m
+2025-08-11 11:59:29 - \033[0;32m✓ Disabled: fix-ssl.conf\033[0m
+2025-08-11 11:59:29 - \033[0;32m✓ Disabled: localhost-ssl.conf\033[0m
+2025-08-11 11:59:29 - \033[0;32m✓ Disabled: production-ssl.conf\033[0m
+2025-08-11 11:59:29 - \033[0;32m✓ Disabled: ssl.conf\033[0m
+2025-08-11 11:59:29 - \033[0;32m✓ SSL configuration created: complete-ssl.conf\033[0m
+2025-08-11 11:59:29 - \033[0;34mUpdating nginx.conf with rate limiting...\033[0m
+2025-08-11 11:59:29 - \033[0;32m✓ Added rate limiting to nginx.conf\033[0m
+2025-08-11 11:59:29 - \033[0;34mSetting up automatic certificate renewal...\033[0m
+2025-08-11 11:59:29 - \033[0;32m✓ Auto-renewal cron job configured (runs twice daily)\033[0m
+2025-08-11 11:59:29 - \033[0;34mTesting SSL configuration...\033[0m
+2025-08-11 11:59:30 - \033[0;31m✗ Nginx configuration test failed\033[0m
+2025-08-11 11:59:30 - Nginx logs:
+2025-08-11 11:59:30 - \033[0;31mSSL configuration test failed. Please check the logs.\033[0m
+2025-08-11 12:21:49 - \033[0;34mChecking prerequisites...\033[0m
+2025-08-11 12:21:49 - \033[0;32mUsing Docker network: odoo-multi-tenant-system_odoo_network\033[0m
+2025-08-11 12:21:49 - \033[0;32m✓ Prerequisites check completed\033[0m
+2025-08-11 12:21:49 - \033[0;34mCreating SSL directories...\033[0m
+2025-08-11 12:21:49 - \033[0;32m✓ SSL directories created\033[0m
+2025-08-11 12:21:49 - \033[0;32m✓ DH parameters already exist\033[0m
+2025-08-11 12:21:49 - \033[0;34mChecking for existing certificates...\033[0m
+2025-08-11 12:21:52 - \033[1;33mNo existing certificates found\033[0m
+2025-08-11 12:21:52 - \033[0;34mRequesting new Let's Encrypt certificate...\033[0m
+2025-08-11 12:21:56 - \033[1;33mRequesting wildcard certificate for *.khudroo.com\033[0m
+2025-08-11 12:21:56 - \033[1;33mYou will need to add DNS TXT records when prompted\033[0m
+2025-08-11 12:23:28 - \033[0;32m✓ Wildcard certificate obtained\033[0m
+2025-08-11 12:23:28 - \033[0;34mCreating nginx SSL configuration...\033[0m
+2025-08-11 12:23:28 - \033[0;32m✓ Disabled: complete-ssl.conf\033[0m
+2025-08-11 12:23:28 - \033[0;32m✓ SSL configuration created: complete-ssl.conf\033[0m
+2025-08-11 12:23:28 - \033[0;34mUpdating nginx.conf with rate limiting...\033[0m
+2025-08-11 12:23:28 - \033[0;34mSetting up automatic certificate renewal...\033[0m
+2025-08-11 12:23:28 - \033[0;32m✓ Auto-renewal cron job configured (runs twice daily)\033[0m
+2025-08-11 12:23:28 - \033[0;34mTesting SSL configuration...\033[0m
+2025-08-11 12:23:28 - \033[0;31m✗ Nginx configuration test failed\033[0m
+2025-08-11 12:23:28 - Nginx logs:
+2025-08-11 12:23:29 - \033[0;31mSSL configuration test failed. Please check the logs.\033[0m

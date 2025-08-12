@@ -463,17 +463,27 @@ document
 
 const links = document.querySelectorAll(".tenant-link");
 
-const host = window.location.hostname; // e.g. "localhost"
-const port = window.location.port; // e.g. "5000"
-const protocol = window.location.protocol; // "http:" or "https:"
-
 links.forEach((link) => {
-  const tenantDb = link.dataset.tenantDb;
-  const subdomain = tenantDb + "." + host;
-  const fullHost = port ? `${subdomain}:${port}` : subdomain;
-  const url = `${protocol}//${fullHost}`;
-
-  link.href = url;
+  // Check if this link has a tenant ID for SSO
+  const tenantId = link.dataset.tenantId;
+  
+  if (tenantId) {
+    // Use SSO endpoint for authenticated users
+    link.href = `/sso/tenant/${tenantId}`;
+    link.removeAttribute('target'); // Don't open in new tab for SSO
+  } else {
+    // Fallback to direct tenant URL for legacy links
+    const tenantDb = link.dataset.tenantDb;
+    if (tenantDb) {
+      const host = window.location.hostname;
+      const port = window.location.port;
+      const protocol = window.location.protocol;
+      const subdomain = tenantDb + "." + host;
+      const fullHost = port ? `${subdomain}:${port}` : subdomain;
+      const url = `${protocol}//${fullHost}`;
+      link.href = url;
+    }
+  }
 });
 
 document.body.innerHTML = document.body.innerHTML.replace(

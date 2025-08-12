@@ -1,0 +1,46 @@
+2025-08-11 15:11:29 [STEP] [Step 1/12] Checking system prerequisites and requirements
+2025-08-11 15:11:29 [WARNING] This script requires sudo access for certificate operations
+2025-08-11 15:11:29 [INFO] You may be prompted for your password
+2025-08-11 15:11:29 [SUCCESS] Domain khudroo.com resolves to: 192.168.50.2
+2025-08-11 15:11:29 [SUCCESS] All prerequisites check passed
+2025-08-11 15:11:29 [STEP] [Step 2/12] Setting up Certbot SSL certificate client
+2025-08-11 15:11:29 [SUCCESS] Certbot already available
+certbot 4.2.0
+2025-08-11 15:11:30 [STEP] [Step 3/12] Backing up existing configurations
+2025-08-11 15:11:30 [SUCCESS] Nginx SSL configurations backed up to ./ssl/backup/20250811-151129
+2025-08-11 15:11:30 [SUCCESS] Docker Compose configuration backed up
+2025-08-11 15:11:30 [STEP] [Step 4/12] Performing complete Docker cleanup to fix container issues
+2025-08-11 15:11:30 [INFO] Stopping all services...
+2025-08-11 15:11:41 [INFO] Stopping all running containers...
+2025-08-11 15:11:41 [INFO] Removing all containers...
+2025-08-11 15:11:41 [INFO] Removing unused images and networks...
+Deleted build cache objects:
+8d9l57wyhdd4u4s7pb3vlhclb
+n9hy2gkwazt96r82y3gaoymhx
+3slddlzjy2dmfbkze168tf6wx
+4g3pmsebeadm5v6i0plcl5bnq
+ykbeujz4sibp2fr5o6k6fbba0
+mmgyjtmr0zr0z6jklk690m6se
+
+Total reclaimed space: 4.686MB
+2025-08-11 15:11:42 [INFO] Removing volumes (keeping data volumes)...
+Total reclaimed space: 0B
+2025-08-11 15:11:42 [INFO] Restarting Docker daemon...
+2025-08-11 15:11:57 [SUCCESS] Docker cleanup completed
+2025-08-11 15:11:57 [STEP] [Step 5/12] Setting up DH parameters for perfect forward secrecy
+2025-08-11 15:11:57 [SUCCESS] DH parameters already exist
+2025-08-11 15:11:57 [STEP] [Step 6/12] Preparing system for certificate request
+2025-08-11 15:11:57 [SUCCESS] Port 80 is available for certificate validation
+2025-08-11 15:11:57 [STEP] [Step 7/12] Requesting SSL certificate from Let's Encrypt
+2025-08-11 15:12:03 [INFO] Requesting wildcard certificate for *.khudroo.com
+2025-08-11 15:12:03 [WARNING] Wildcard certificates require DNS validation
+2025-08-11 15:12:03 [INFO] You will need to add TXT records to your DNS settings
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+2025-08-11 15:13:01 [SUCCESS] Wildcard certificate obtained successfully!
+2025-08-11 15:13:01 [INFO] Certificate Information:
+2025-08-11 15:13:01 [INFO] subject=CN = khudroo.com
+2025-08-11 15:13:01 [INFO] issuer=C = US, O = Let's Encrypt, CN = E6
+2025-08-11 15:13:01 [INFO] notBefore=Aug 11 08:14:29 2025 GMT
+2025-08-11 15:13:01 [INFO] notAfter=Nov  9 08:14:28 2025 GMT
+2025-08-11 15:13:01 [INFO] Domains covered by this certificate:
+2025-08-11 15:13:01 [STEP] [Step 8/12] Setting up certificates for Docker containers

@@ -203,7 +203,9 @@
                   <div class="flex-grow-1">
                     <div class="fw-semibold mb-1" style="color: var(--text-secondary); font-size: 0.9rem;">Subdomain</div>
                     <div>
-                      <a data-tenant-db="{{tenant.database_name}}" target="_blank" 
+                      <a data-tenant-db="{{tenant.database_name}}" 
+                         data-tenant-id="{{ tenant.id }}"
+                         target="_blank" 
                          class="text-decoration-none tenant-link fw-bold" 
                          style="color: var(--primary); font-size: 1rem;">
                         {{tenant.database_name}}.<domain>
@@ -434,7 +436,11 @@
             <div class="d-grid gap-3">
                 <!-- Open Tenant -->
                 {% if tenant.is_active %}
-                <a data-tenant-db="kdoo_{{ tenant.subdomain }}" target="_blank" class="btn btn-primary db-action-btn tenant-link" style="border-radius: 12px; padding: 1rem; font-weight: 500;">
+                <a data-tenant-db="kdoo_{{ tenant.subdomain }}" 
+                   data-tenant-id="{{ tenant.id }}"
+                   target="_blank" 
+                   class="btn btn-primary db-action-btn tenant-link" 
+                   style="border-radius: 12px; padding: 1rem; font-weight: 500;">
                     <i class="fas fa-external-link-alt me-2"></i>Open Tenant
                 </a>
                 {% else %}
@@ -522,26 +528,21 @@
         </div>
         
         <div class="card-body p-4">
-            <!-- Loading State -->
-            <div class="billing-loading text-center py-3">
-                <div class="spinner-border text-primary mb-2" role="status" style="width: 2rem; height: 2rem;">
-                    <span class="visually-hidden">Loading...</span>
-                </div>
-                <p class="text-muted mb-0">Loading billing information...</p>
-            </div>
+            <!-- Server-side billing information -->
+            {% if billing_info and billing_info.get('status') != 'no_active_cycle' and not billing_info.get('is_expired', False) %}
             
             <!-- Active Billing State -->
-            <div class="billing-active d-none">
+            <div class="billing-active">
                 <div class="row mb-3">
                     <div class="col-6">
                         <div class="text-center">
-                            <div class="billing-hours-display fw-bold" style="font-size: 2rem; color: var(--primary);">0</div>
+                            <div class="billing-hours-display fw-bold" style="font-size: 2rem; color: var(--primary);">{{ billing_info.get('hours_used', 0)|round(1) }}</div>
                             <small class="text-muted">Hours Used</small>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="text-center">
-                            <div class="billing-days-display fw-bold" style="font-size: 2rem; color: var(--success);">30</div>
+                            <div class="billing-days-display fw-bold" style="font-size: 2rem; color: var(--success);">{{ billing_info.get('days_remaining', 30) }}</div>
                             <small class="text-muted">Days Remaining</small>
                         </div>
                     </div>
@@ -551,11 +552,12 @@
                 <div class="mb-3">
                     <div class="d-flex justify-content-between align-items-center mb-2">
                         <small class="fw-semibold" style="color: var(--text-primary);">Billing Cycle Progress</small>
-                        <small class="billing-percentage text-muted">0%</small>
+                        {% set usage_percent = ((billing_info.get('hours_used', 0) / billing_info.get('total_hours_allowed', 360)) * 100)|round(1) %}
+                        <small class="billing-percentage text-muted">{{ usage_percent }}%</small>
                     </div>
                     <div class="progress" style="height: 12px; border-radius: 10px; background-color: #e9ecef;">
-                        <div class="progress-bar billing-progress-bar" 
-                             style="border-radius: 10px; transition: all 0.5s ease;" 
+                        <div class="progress-bar billing-progress-bar bg-{% if usage_percent > 80 %}danger{% elif usage_percent > 60 %}warning{% else %}success{% endif %}" 
+                             style="border-radius: 10px; width: {{ usage_percent }}%;" 
                              role="progressbar" 
                              aria-valuemin="0" 
                              aria-valuemax="100">
@@ -570,16 +572,16 @@
                             <div class="row text-center">
                                 <div class="col-4">
                                     <div class="billing-cycle-start text-muted small">Started</div>
-                                    <div class="fw-semibold small">-</div>
+                                    <div class="fw-semibold small">{{ billing_info.get('cycle_start').strftime('%b %d') if billing_info.get('cycle_start') else '-' }}</div>
                                 </div>
                                 <div class="col-4">
                                     <div class="billing-cycle-end text-muted small">Ends</div>
-                                    <div class="fw-semibold small">-</div>
+                                    <div class="fw-semibold small">{{ billing_info.get('cycle_end').strftime('%b %d') if billing_info.get('cycle_end') else '-' }}</div>
                                 </div>
                                 <div class="col-4">
                                     <div class="billing-status-text text-muted small">Status</div>
                                     <div class="fw-semibold small">
-                                        <span class="badge bg-success billing-status-badge">Active</span>
+                                        <span class="badge bg-success billing-status-badge">{{ billing_info.get('status', 'Active').title() }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -587,9 +589,10 @@
                     </div>
                 </div>
             </div>
+            {% else %}
             
             <!-- Expired Billing State -->
-            <div class="billing-expired d-none">
+            <div class="billing-expired">
                 <div class="text-center py-3">
                     <div class="mb-3">
                         <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem;"></i>
@@ -613,20 +616,7 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- Error State -->
-            <div class="billing-error d-none">
-                <div class="text-center py-3">
-                    <div class="mb-3">
-                        <i class="fas fa-exclamation-circle text-warning" style="font-size: 2.5rem;"></i>
-                    </div>
-                    <h6 class="text-warning mb-2">Unable to Load Billing Info</h6>
-                    <p class="text-muted mb-3">Please refresh the page or contact support if the issue persists.</p>
-                    <button class="btn btn-outline-primary btn-sm" onclick="loadTenantBillingInfo()">
-                        <i class="fas fa-sync-alt me-1"></i>Retry
-                    </button>
-                </div>
-            </div>
+            {% endif %}
         </div>
     </div>
     
@@ -1374,218 +1364,27 @@ function submitRestoreForm() {
     document.getElementById('restoreForm').submit();
 }
 
-// Billing Status Management
-let billingUpdateInterval;
-
-// Load billing information on page load
+// Simplified billing status management (server-side rendered)
 document.addEventListener('DOMContentLoaded', function() {
-    loadTenantBillingInfo();
-    
-    // Set up auto-refresh every 30 seconds
-    billingUpdateInterval = setInterval(loadTenantBillingInfo, 30000);
-});
-
-// Function to load tenant billing information
-function loadTenantBillingInfo() {
-    const tenantId = {{ tenant.id }};
-    
-    fetch(`/api/tenant/${tenantId}/status`)
-        .then(response => response.json())
-        .then(data => {
-            updateBillingDisplay(data);
-        })
-        .catch(error => {
-            console.error('Error loading billing info:', error);
-            showBillingError();
-        });
-}
-
-// Function to update billing display
-function updateBillingDisplay(data) {
+    // Set header color based on billing status
     const billingCard = document.getElementById('billing-status-card');
-    const loadingDiv = billingCard.querySelector('.billing-loading');
-    const activeDiv = billingCard.querySelector('.billing-active');
-    const expiredDiv = billingCard.querySelector('.billing-expired');
-    const errorDiv = billingCard.querySelector('.billing-error');
-    const notificationBadge = billingCard.querySelector('.billing-notification-badge');
-    
-    // Hide all states first
-    loadingDiv.classList.add('d-none');
-    activeDiv.classList.add('d-none');
-    expiredDiv.classList.add('d-none');
-    errorDiv.classList.add('d-none');
-    
-    if (!data.is_active || data.status === 'billing_expired' || data.status === 'failed') {
-        // Show expired state
-        expiredDiv.classList.remove('d-none');
-        notificationBadge.classList.remove('d-none');
-        
-        // Update header color to danger
-        const header = billingCard.querySelector('.card-header');
-        header.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
-        
-    } else {
-        // Show active state
-        activeDiv.classList.remove('d-none');
-        notificationBadge.classList.add('d-none');
-        
-        // Simulate billing data based on tenant status
-        const hoursUsed = getBillingHours(data);
-        const daysRemaining = getBillingDays(data);
-        const usagePercent = (hoursUsed / 360) * 100;
-        
-        // Update displays
-        updateBillingNumbers(hoursUsed, daysRemaining, usagePercent);
-        updateProgressBar(usagePercent);
-        updateBillingDetails(data);
-        
-        // Update header color based on usage
-        updateHeaderColor(usagePercent);
-    }
-}
-
-// Function to calculate billing hours based on tenant status
-function getBillingHours(data) {
-    const now = new Date();
-    const created = new Date(data.created_at);
-    const daysSinceCreated = Math.floor((now - created) / (1000 * 60 * 60 * 24));
-    
-    if (data.status === 'active') {
-        return Math.min(daysSinceCreated * 12, 360); // 12 hours per day, max 360
-    } else if (data.status === 'creating') {
-        return Math.min(daysSinceCreated * 2, 50); // Lower usage while creating
-    } else {
-        return Math.min(daysSinceCreated * 5, 100); // Minimal usage for pending
-    }
-}
-
-// Function to calculate remaining days
-function getBillingDays(data) {
-    const hoursUsed = getBillingHours(data);
-    const hoursRemaining = Math.max(0, 360 - hoursUsed);
-    return Math.ceil(hoursRemaining / 12);
-}
-
-// Function to update billing numbers
-function updateBillingNumbers(hoursUsed, daysRemaining, usagePercent) {
-    const hoursDisplay = document.querySelector('.billing-hours-display');
-    const daysDisplay = document.querySelector('.billing-days-display');
-    const percentageDisplay = document.querySelector('.billing-percentage');
-    
-    // Animate number changes
-    animateNumber(hoursDisplay, hoursUsed.toFixed(1));
-    animateNumber(daysDisplay, daysRemaining);
-    percentageDisplay.textContent = usagePercent.toFixed(1) + '%';
-}
-
-// Function to update progress bar
-function updateProgressBar(usagePercent) {
-    const progressBar = document.querySelector('.billing-progress-bar');
-    
-    // Set width with animation
-    progressBar.style.width = Math.min(usagePercent, 100) + '%';
-    
-    // Set color based on usage
-    progressBar.className = 'progress-bar billing-progress-bar';
-    if (usagePercent > 80) {
-        progressBar.classList.add('bg-danger');
-    } else if (usagePercent > 60) {
-        progressBar.classList.add('bg-warning');
-    } else {
-        progressBar.classList.add('bg-success');
-    }
-}
-
-// Function to update billing details
-function updateBillingDetails(data) {
-    const createdDate = new Date(data.created_at);
-    const endDate = new Date(createdDate);
-    endDate.setDate(endDate.getDate() + 30); // 30 days cycle
-    
-    // Update cycle dates
-    document.querySelector('.billing-cycle-start').nextElementSibling.textContent = 
-        createdDate.toLocaleDateString();
-    document.querySelector('.billing-cycle-end').nextElementSibling.textContent = 
-        endDate.toLocaleDateString();
-    
-    // Update status badge
-    const statusBadge = document.querySelector('.billing-status-badge');
-    statusBadge.className = 'badge billing-status-badge';
-    
-    if (data.status === 'active') {
-        statusBadge.classList.add('bg-success');
-        statusBadge.textContent = 'Active';
-    } else if (data.status === 'creating') {
-        statusBadge.classList.add('bg-info');
-        statusBadge.textContent = 'Creating';
-    } else {
-        statusBadge.classList.add('bg-warning');
-        statusBadge.textContent = 'Pending';
-    }
-}
-
-// Function to update header color based on usage
-function updateHeaderColor(usagePercent) {
-    const header = document.querySelector('#billing-status-card .card-header');
-    
-    if (usagePercent > 80) {
-        header.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
-    } else if (usagePercent > 60) {
-        header.style.background = 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)';
-    } else {
-        header.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
-    }
-}
-
-// Function to animate number changes
-function animateNumber(element, targetValue) {
-    const currentValue = parseFloat(element.textContent) || 0;
-    const target = parseFloat(targetValue);
-    const duration = 1000; // 1 second
-    const steps = 60; // 60 FPS
-    const increment = (target - currentValue) / steps;
-    
-    let current = currentValue;
-    let step = 0;
-    
-    const timer = setInterval(() => {
-        step++;
-        current += increment;
-        
-        if (step >= steps) {
-            current = target;
-            clearInterval(timer);
-        }
-        
-        element.textContent = current.toFixed(1);
-    }, duration / steps);
-}
-
-// Function to show billing error
-function showBillingError() {
-    const billingCard = document.getElementById('billing-status-card');
-    const loadingDiv = billingCard.querySelector('.billing-loading');
-    const activeDiv = billingCard.querySelector('.billing-active');
-    const expiredDiv = billingCard.querySelector('.billing-expired');
-    const errorDiv = billingCard.querySelector('.billing-error');
-    
-    // Hide all states and show error
-    loadingDiv.classList.add('d-none');
-    activeDiv.classList.add('d-none');
-    expiredDiv.classList.add('d-none');
-    errorDiv.classList.remove('d-none');
-    
-    // Update header color to warning
+    const isExpired = {{ 'true' if not billing_info or billing_info.get('is_expired', False) else 'false' }};
     const header = billingCard.querySelector('.card-header');
-    header.style.background = 'linear-gradient(135deg, #6c757d 0%, #5a6268 100%)';
-}
-
-// Clean up interval when page unloads
-window.addEventListener('beforeunload', function() {
-    if (billingUpdateInterval) {
-        clearInterval(billingUpdateInterval);
+    
+    if (isExpired) {
+        header.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+    } else {
+        const usagePercent = {{ ((billing_info.get('hours_used', 0) / billing_info.get('total_hours_allowed', 360)) * 100)|round(1) if billing_info else 0 }};
+        if (usagePercent > 80) {
+            header.style.background = 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)';
+        } else if (usagePercent > 60) {
+            header.style.background = 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)';
+        } else {
+            header.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+        }
     }
 });
+
 
 </script>
 {% endblock %}

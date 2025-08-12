@@ -1,0 +1,256 @@
+version: "3.8"
+
+services:
+  # PostgreSQL Database Server
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo_master
+      POSTGRES_PASSWORD: secure_password_123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-script/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - odoo_network
+    restart: unless-stopped
+    command: postgres -c max_connections=200 -c shared_buffers=256MB -c log_statement=all -c shared_preload_libraries=pg_stat_statements
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo_master -d postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for session management and caching
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    networks:
+      - odoo_network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Nginx Load Balancer / Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/conf.d:/etc/nginx/conf.d
+      - ./nginx/letsencrypt.conf:/etc/nginx/letsencrypt.conf
+      - ./ssl:/etc/nginx/ssl
+      - ./ssl/localhost.crt:/etc/nginx/ssl/localhost.crt
+      - ./ssl/localhost.key:/etc/nginx/ssl/localhost.key
+      - ./nginx/errors/:/usr/share/nginx/html/errors/
+      # Let's Encrypt SSL certificates
+      - ./ssl/certbot/conf:/etc/letsencrypt
+      - ./ssl/certbot/www:/var/www/certbot
+    networks:
+      - odoo_network
+    depends_on:
+      saas_manager:
+        condition: service_healthy
+      odoo_master:
+        condition: service_healthy
+      odoo_worker1:
+        condition: service_healthy
+      odoo_worker2:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # SaaS Management Service
+  saas_manager:
+    build:
+      context: ./saas_manager
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URL=postgresql://odoo_master:secure_password_123@postgres:5432/saas_manager
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - ODOO_MASTER_URL=http://odoo_master:8069
+      - ODOO_MASTER_DB=${ODOO_MASTER_DB}
+      - ODOO_MASTER_USERNAME=${ODOO_MASTER_USERNAME}
+      - ODOO_MASTER_PASSWORD=${ODOO_MASTER_PASSWORD}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=odoo_master
+      - POSTGRES_PASSWORD=secure_password_123
+    ports:
+      - "8000:8000"
+    networks:
+      - odoo_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./saas_manager/logs:/app/logs
+      - ./saas_manager/logs/saas_manager.log:/app/logs/saas_manager.log
+      - odoo_filestore:/opt/odoo/filestore
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./nginx/conf.d:/host-nginx/conf.d
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Odoo Master Instance (for tenant management)
+  odoo_master:
+    image: odoo:17.0
+    environment:
+      - HOST=postgres
+      - USER=odoo_master
+      - PASSWORD=secure_password_123
+      - POSTGRES_DB=odoo_master
+    ports:
+      - "8069:8069"
+    networks:
+      - odoo_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - odoo_master_data:/var/lib/odoo
+      - odoo_master_logs:/var/log/odoo
+      - ./odoo_master/addons:/mnt/extra-addons
+      - ./shared_addons:/mnt/shared-addons
+      - odoo_filestore:/opt/odoo/filestore
+      - ./odoo_master/config/odoo.conf:/etc/odoo/odoo.conf
+      - ./branding:/opt/odoo/branding
+      - ./branding/img/favicon.ico:/usr/lib/python3/dist-packages/odoo/addons/web/static/img/favicon.ico
+    restart: unless-stopped
+    command: >
+      bash -c "
+        sleep 10 &&
+        odoo -c /etc/odoo/odoo.conf -d odoo_master -i base --stop-after-init &&
+        odoo -c /etc/odoo/odoo.conf --logfile=/var/log/odoo/odoo-master.log
+        odoo -c /etc/odoo/odoo.conf
+      "
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8069/web/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # Odoo Worker Instances (horizontally scalable)
+  odoo_worker1:
+    image: odoo:17.0
+    environment:
+      - HOST=postgres
+      - USER=odoo_master
+      - PASSWORD=secure_password_123
+    networks:
+      - odoo_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - odoo_filestore:/var/lib/odoo
+      - odoo_worker_logs:/var/log/odoo
+      - ./odoo_workers/addons:/mnt/extra-addons
+      - ./shared_addons:/mnt/shared-addons
+      - ./odoo_workers/config/odoo.conf:/etc/odoo/odoo.conf
+      - ./branding:/opt/odoo/branding
+      - ./branding/img/favicon.ico:/usr/lib/python3/dist-packages/odoo/addons/web/static/img/favicon.ico
+    restart: unless-stopped
+    command: odoo -c /etc/odoo/odoo.conf --logfile=/var/log/odoo/odoo-worker1.log
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8069/web/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  odoo_worker2:
+    image: odoo:17.0
+    environment:
+      - HOST=postgres
+      - USER=odoo_master
+      - PASSWORD=secure_password_123
+    networks:
+      - odoo_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - odoo_filestore:/var/lib/odoo
+      - odoo_worker_logs:/var/log/odoo
+      - ./odoo_workers/addons:/mnt/extra-addons
+      - ./shared_addons:/mnt/shared-addons
+      - ./odoo_workers/config/odoo.conf:/etc/odoo/odoo.conf
+      - ./branding:/opt/odoo/branding
+      - ./branding/img/favicon.ico:/usr/lib/python3/dist-packages/odoo/addons/web/static/img/favicon.ico
+    restart: unless-stopped
+    command: odoo -c /etc/odoo/odoo.conf --logfile=/var/log/odoo/odoo-worker2.log
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8069/web/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # DR Backup Panel
+  backup_panel:
+    build:
+      context: ./dr-backups/backup_panel
+      dockerfile: Dockerfile
+    environment:
+      - SECRET_KEY=${BACKUP_PANEL_SECRET_KEY:-backup-panel-secret-key-change-me}
+      - DR_CONFIG_PATH=/app/config/dr-config.env
+    ports:
+      - "5000:5000"
+    networks:
+      - odoo_network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./dr-backups:/app/dr-backups:ro
+      - ./dr-backups/backup_panel:/app
+      - ./dr-backups/config:/app/config:ro
+      - backup_panel_data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - odoo_filestore:/opt/odoo/filestore
+      - .:/app/project:ro
+      - ./nginx:/app/nginx:ro
+      - ./ssl:/app/ssl:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/system/status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  odoo_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  odoo_master_data:
+    driver: local
+  odoo_master_logs:
+    driver: local
+  odoo_worker_logs:
+    driver: local
+  odoo_filestore:
+    driver: local
+  backup_panel_data:
+    driver: local

@@ -1,0 +1,22 @@
+2025-08-11 14:28:25 - \033[0;36m[Step 1/15] Checking system prerequisites\033[0m
+2025-08-11 14:28:26 - \033[1;33m⚠️  Warning: Domain khudroo.com may not point to this server (IP: 45.114.91.80)\033[0m
+2025-08-11 14:28:26 - \033[1;33m   Domain resolves to: 192.168.50.2\033[0m
+2025-08-11 14:28:26 - \033[1;33m   Continue only if using staging certificates or testing locally\033[0m
+2025-08-11 14:28:28 - \033[0;32m✅ Prerequisites check completed\033[0m
+2025-08-11 14:28:28 - \033[0;36m[Step 2/15] Setting up SSL directory structure\033[0m
+2025-08-11 14:28:28 - \033[0;32m✅ Directory structure created\033[0m
+2025-08-11 14:28:28 - \033[0;36m[Step 3/15] Backing up existing SSL configurations\033[0m
+2025-08-11 14:28:28 - \033[0;32m✅ No existing SSL configurations to backup\033[0m
+2025-08-11 14:28:28 - \033[0;36m[Step 4/15] Generating DH parameters for perfect forward secrecy\033[0m
+2025-08-11 14:28:28 - \033[0;32m✅ DH parameters already exist\033[0m
+2025-08-11 14:28:28 - \033[0;36m[Step 5/15] Cleaning up conflicting SSL configurations\033[0m
+2025-08-11 14:28:28 - \033[0;32m✅ No conflicting SSL configurations found\033[0m
+2025-08-11 14:28:28 - \033[0;36m[Step 6/15] Checking for existing Let's Encrypt certificates\033[0m
+2025-08-11 14:28:28 - \033[1;33m⚠️  No existing certificates found\033[0m
+2025-08-11 14:28:28 - \033[0;36m[Step 7/15] Requesting SSL certificate\033[0m
+2025-08-11 14:28:28 - \033[0;34m🤔 Certificate Options:\033[0m
+2025-08-11 14:28:28 - \033[0;34m   1. 🌟 Wildcard certificate (*.khudroo.com) - Covers all subdomains\033[0m
+2025-08-11 14:28:28 - \033[0;34m   2. 🔐 Standard certificate (khudroo.com + www.khudroo.com)\033[0m
+2025-08-11 14:28:28 - \033[0;34m   3. 🧪 Staging certificate (for testing)\033[0m
+2025-08-11 14:28:45 - \033[0;34m🌟 Requesting wildcard certificate for *.khudroo.com\033[0m
+2025-08-11 14:28:45 - \033[0;34m🚀 Starting nginx for ACME challenges...\033[0m

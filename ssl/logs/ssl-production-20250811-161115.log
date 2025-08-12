@@ -1,0 +1,33 @@
+2025-08-11 16:11:15 [STEP] [Step 1/12] Checking system prerequisites and requirements
+2025-08-11 16:11:16 [SUCCESS] Domain khudroo.com resolves to: 192.168.50.2
+2025-08-11 16:11:16 [SUCCESS] All prerequisites check passed
+2025-08-11 16:11:16 [STEP] [Step 2/12] Setting up Certbot SSL certificate client
+2025-08-11 16:11:16 [SUCCESS] Certbot already available
+certbot 4.2.0
+2025-08-11 16:11:16 [STEP] [Step 3/12] Backing up existing configurations
+2025-08-11 16:11:16 [SUCCESS] Nginx SSL configurations backed up to ./ssl/backup/20250811-161115
+2025-08-11 16:11:16 [SUCCESS] Docker Compose configuration backed up
+2025-08-11 16:11:16 [STEP] [Step 4/12] Performing complete Docker cleanup to fix container issues
+2025-08-11 16:11:16 [INFO] Stopping all services...
+2025-08-11 16:11:28 [INFO] Stopping all running containers...
+2025-08-11 16:11:28 [INFO] Removing all containers...
+2025-08-11 16:11:28 [INFO] Removing unused images and networks...
+Total reclaimed space: 0B
+2025-08-11 16:11:29 [INFO] Removing volumes (keeping data volumes)...
+Total reclaimed space: 0B
+2025-08-11 16:11:29 [INFO] Restarting Docker daemon...
+2025-08-11 16:11:35 [SUCCESS] Docker cleanup completed
+2025-08-11 16:11:35 [STEP] [Step 5/12] Setting up DH parameters for perfect forward secrecy
+2025-08-11 16:11:35 [SUCCESS] DH parameters already exist
+2025-08-11 16:11:35 [STEP] [Step 6/12] Preparing system for certificate request
+2025-08-11 16:11:35 [SUCCESS] Port 80 is available for certificate validation
+2025-08-11 16:11:35 [STEP] [Step 7/12] Requesting SSL certificate from Let's Encrypt
+2025-08-11 16:12:54 [INFO] Requesting wildcard certificate for *.khudroo.com
+2025-08-11 16:12:54 [WARNING] Wildcard certificates require DNS validation
+2025-08-11 16:12:54 [INFO] You will need to add TXT records to your DNS settings
+Saving debug log to /var/log/letsencrypt/letsencrypt.log
+An unexpected error occurred:
+too many certificates (5) already issued for this exact set of identifiers in the last 168h0m0s, retry after 2025-08-12 16:09:04 UTC: see https://letsencrypt.org/docs/rate-limits/#new-certificates-per-exact-set-of-identifiers
+Ask for help or search for solutions at https://community.letsencrypt.org. See the logfile /var/log/letsencrypt/letsencrypt.log or re-run Certbot with -v for more details.
+2025-08-11 16:12:56 [ERROR] Failed to obtain wildcard certificate
+2025-08-11 16:12:56 [ERROR] Check full logs at: ./ssl/logs/ssl-production-20250811-161115.log
