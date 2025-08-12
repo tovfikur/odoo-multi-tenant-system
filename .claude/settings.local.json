@@ -36,7 +36,14 @@
       "Bash(docker cp:*)",
       "Bash(grep:*)",
       "Bash(find:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(docker run:*)",
+      "Bash(-v /home/kendroo/odoo-multi-tenant-system/shared_addons:/mnt/shared-addons )",
+      "Bash(-e POSTGRES_USER=odoo_master )",
+      "Bash(-e POSTGRES_PASSWORD=secure_password_123 )",
+      "Bash(-e POSTGRES_HOST=postgres )",
+      "Bash(odoo:*)",
+      "Bash(docker start:*)"
     ],
     "deny": []
   }

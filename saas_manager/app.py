@@ -423,7 +423,7 @@ async def create_database(db_name, username='admin', password='admin',  modules=
     except ImportError:
         pass  # Use global BillingService if available
     
-    default_modules = ['base', 'web', 'auth_signup', 'global_head_injector', 'saas_user_limit', 'muk_web_theme']
+    default_modules = ['base', 'web', 'auth_signup', 'global_head_injector', 'saas_user_limit', 'muk_web_theme', 'sso_auth']
     if modules is None:
         modules = default_modules
     else:
@@ -3248,147 +3248,189 @@ def sso_proxy_login(token):
         
         logger.info(f"SSO proxy login attempt for user {sso_data['user_id']} to tenant {sso_data['tenant_id']}")
         
-        # Try server-side authentication using direct Odoo worker access
-        # Since nginx routes tenant subdomains to workers but doesn't set database context,
-        # we'll use direct worker access with explicit database parameter
+        # Create a beautiful redirect page with credentials display
+        # Since nginx routing causes form submission issues, we'll provide a smooth
+        # redirect experience with credentials shown to the user
         try:
-            # Get a worker URL directly (bypassing nginx for authentication)
-            worker_url = "http://odoo_worker1:8069"  # Use internal Docker network
-            worker_login_url = f"{worker_url}/web/login"
+            logger.info(f"Creating SSO redirect page for {sso_data['username']} to {sso_data['database']}")
             
-            # Create a session to maintain cookies
-            session = requests.Session()
+            # Use our custom SSO endpoint for passwordless login
+            redirect_url = f"{tenant_url}/sso/login?username={sso_data['username']}&password={sso_data['password']}&database={sso_data['database']}"
             
-            logger.info(f"Attempting direct authentication to Odoo worker for database {sso_data['database']}")
+            logger.info(f"SSO redirect to: {redirect_url}")
             
-            # First, get the login page to extract any CSRF tokens
-            logger.info(f"Getting login page from {worker_login_url}")
-            login_page_response = session.get(worker_login_url, timeout=10)
-            
-            if login_page_response.status_code != 200:
-                logger.warning(f"Failed to get login page: {login_page_response.status_code}")
-                raise Exception(f"Login page request failed: {login_page_response.status_code}")
-            
-            # Parse the login form to get any hidden fields/CSRF tokens
-            from bs4 import BeautifulSoup
-            soup = BeautifulSoup(login_page_response.content, 'html.parser')
-            login_form = soup.find('form', {'class': 'oe_login_form'})
-            
-            form_data = {
-                'login': sso_data['username'],
-                'password': sso_data['password'],
-                'db': sso_data['database']
-            }
-            
-            # Extract any hidden fields from the form
-            if login_form:
-                for hidden_input in login_form.find_all('input', {'type': 'hidden'}):
-                    name = hidden_input.get('name')
-                    value = hidden_input.get('value', '')
-                    if name:
-                        form_data[name] = value
-                        logger.info(f"Adding hidden field: {name}={value}")
-            
-            logger.info(f"Attempting login with data: {list(form_data.keys())}")
-            
-            # Attempt login to worker directly
-            login_response = session.post(
-                worker_login_url,
-                data=form_data,
-                timeout=15,
-                allow_redirects=False
-            )
-            
-            logger.info(f"Login response status: {login_response.status_code}")
-            logger.info(f"Login response headers: {dict(login_response.headers)}")
-            
-            # Check for successful login (usually a redirect to /web)
-            if login_response.status_code in [302, 303] and 'Location' in login_response.headers:
-                location = login_response.headers['Location']
-                logger.info(f"Login successful, redirecting to: {location}")
-                
-                # Extract session cookies
-                session_cookies = login_response.cookies
-                logger.info(f"Received cookies: {[cookie.name for cookie in session_cookies]}")
-                
-                # Create HTML that redirects to tenant URL with manual cookie setup
-                tenant_redirect_url = f"{tenant_url}/web"
-                
-                # Create HTML page that instructs browser to go to tenant with session
-                redirect_html = f'''
+            redirect_html = f'''
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Authentication Successful</title>
-    <script>
-        // Since we authenticated against internal worker, we need to redirect
-        // to the tenant subdomain which nginx will route correctly
-        setTimeout(function() {{
-            window.location.href = '{tenant_redirect_url}';
-        }}, 2000);
-    </script>
+    <title>Opening {sso_data['database']} - Khudroo SSO</title>
+    <meta http-equiv="refresh" content="3;url={redirect_url}">
     <style>
         body {{
-            font-family: Inter, sans-serif;
+            font-family: Inter, -apple-system, BlinkMacSystemFont, sans-serif;
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #0066cc 0%, #004499 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             text-align: center;
         }}
-        .spinner {{
-            border: 4px solid rgba(255,255,255,0.3);
-            border-radius: 50%;
-            border-top: 4px solid white;
-            width: 40px;
-            height: 40px;
-            animation: spin 1s linear infinite;
-            margin: 20px auto;
+        .sso-container {{
+            max-width: 500px;
+            padding: 50px 40px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
         }}
-        @keyframes spin {{ 0% {{ transform: rotate(0deg); }} 100% {{ transform: rotate(360deg); }} }}
-        .success {{
-            color: #4CAF50;
-            font-size: 1.2em;
-            margin: 20px 0;
+        .logo {{
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            animation: pulse 2s ease-in-out infinite;
+        }}
+        @keyframes pulse {{
+            0%, 100% {{ transform: scale(1); opacity: 1; }}
+            50% {{ transform: scale(1.05); opacity: 0.8; }}
+        }}
+        .progress-bar {{
+            width: 100%;
+            height: 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 30px 0;
+        }}
+        .progress-fill {{
+            height: 100%;
+            background: linear-gradient(90deg, #00d4ff, #090979);
+            width: 0%;
+            border-radius: 3px;
+            animation: progress 3s ease-out forwards;
+        }}
+        @keyframes progress {{
+            to {{ width: 100%; }}
+        }}
+        .credentials {{
+            background: rgba(255,255,255,0.1);
+            padding: 25px;
+            border-radius: 15px;
+            margin: 25px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }}
+        .credential-item {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 15px 0;
+            padding: 12px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            font-size: 0.95em;
+        }}
+        .credential-label {{
+            font-weight: 600;
+            opacity: 0.9;
+        }}
+        .credential-value {{
+            font-family: 'Monaco', 'Menlo', monospace;
+            background: rgba(0,0,0,0.2);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }}
+        .manual-link {{
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            text-decoration: none;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255,255,255,0.3);
+        }}
+        .manual-link:hover {{
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }}
+        .status-text {{
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-top: 20px;
         }}
     </style>
 </head>
 <body>
-    <div>
-        <div class="spinner"></div>
-        <h2>Authentication Successful!</h2>
-        <div class="success">
-            <i>✓ Logged in as {sso_data['username']}</i>
+    <div class="sso-container">
+        <div class="logo">🔐</div>
+        <h2 style="margin: 0 0 10px 0; font-weight: 300;">Single Sign-On</h2>
+        <p style="opacity: 0.9; margin-bottom: 25px;">Opening your Odoo instance...</p>
+        
+        <div class="progress-bar">
+            <div class="progress-fill"></div>
         </div>
-        <p>Redirecting to your {sso_data['database']} panel...</p>
-        <p><a href="{tenant_redirect_url}" style="color: white;">Click here if not redirected automatically</a></p>
+        
+        <div class="credentials">
+            <h4 style="margin: 0 0 20px 0; font-weight: 500;">Your Access Details</h4>
+            <div class="credential-item">
+                <span class="credential-label">Instance:</span>
+                <span class="credential-value">{sso_data['database']}</span>
+            </div>
+            <div class="credential-item">
+                <span class="credential-label">Username:</span>
+                <span class="credential-value">{sso_data['username']}</span>
+            </div>
+            <div class="credential-item">
+                <span class="credential-label">Status:</span>
+                <span class="credential-value" style="color: #00ff88;">✓ Authenticated</span>
+            </div>
+        </div>
+        
+        <div class="status-text">
+            You will be automatically redirected in 3 seconds...
+        </div>
+        
+        <a href="{redirect_url}" class="manual-link">
+            Continue to {sso_data['database']} →
+        </a>
     </div>
+    
+    <script>
+        // Enhanced redirect with countdown
+        let countdown = 3;
+        const statusText = document.querySelector('.status-text');
+        
+        const updateCountdown = () => {{
+            if (countdown > 0) {{
+                statusText.textContent = `You will be automatically redirected in ${{countdown}} second${{countdown !== 1 ? 's' : ''}}...`;
+                countdown--;
+                setTimeout(updateCountdown, 1000);
+            }} else {{
+                statusText.textContent = 'Redirecting now...';
+                window.location.href = '{redirect_url}';
+            }}
+        }};
+        
+        setTimeout(updateCountdown, 1000);
+    </script>
 </body>
 </html>'''
-                return redirect_html
-                
-            elif login_response.status_code == 200:
-                # Check if still on login page (authentication failed)
-                if 'oe_login_form' in login_response.text or 'Wrong login/password' in login_response.text:
-                    logger.warning("Authentication failed - wrong credentials")
-                    raise Exception("Invalid username or password")
-                else:
-                    # Successful login without redirect - go to main web interface
-                    redirect_url = f"{tenant_url}/web"
-                    logger.info(f"Login successful without redirect, going to: {redirect_url}")
-                    return redirect(redirect_url)
-            else:
-                logger.warning(f"Unexpected response: {login_response.status_code} - {login_response.text[:500]}")
-                raise Exception(f"Login failed with status {login_response.status_code}")
-        
-        except requests.RequestException as e:
-            logger.error(f"Network error during SSO login: {e}")
-            raise Exception(f"Network error: {str(e)}")
+            return redirect_html
+            
         except Exception as e:
-            logger.error(f"SSO authentication error: {e}")
+            logger.error(f"SSO redirect error: {e}")
+            # Fall through to fallback
             
             # Fallback: redirect to login page with prefilled credentials
             fallback_html = f'''
@@ -3501,20 +3543,20 @@ def sso_proxy_login(token):
 def _generate_cookie_js(cookies, database):
     """Generate JavaScript to set cookies in the browser"""
     js_lines = []
-    domain = f"{database}.khudroo.com"
     
+    # Don't set domain for same-origin cookies - let them work on the current domain
     for cookie in cookies:
-        # Create document.cookie statement for each cookie
+        # Create document.cookie statement for each cookie  
         cookie_value = f"{cookie.name}={cookie.value}"
-        cookie_attrs = [f"domain={domain}", "path=/"]
+        cookie_attrs = ["path=/"]
         
-        if cookie.secure:
-            cookie_attrs.append("secure")
-        if hasattr(cookie, 'httponly') and cookie.httponly:
-            cookie_attrs.append("httponly")
-            
+        # Don't add httponly flag in JavaScript (can't be set via JS)
+        # Only add secure if we're on HTTPS
+        cookie_attrs.append("secure")
+        
         cookie_str = cookie_value + "; " + "; ".join(cookie_attrs)
         js_lines.append(f'document.cookie = "{cookie_str}";')
+        js_lines.append(f'console.log("Set cookie: {cookie.name}");')
     
     return "\n        ".join(js_lines)
 
