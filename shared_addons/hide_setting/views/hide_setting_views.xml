@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Hide Setting Configuration Form View -->
+    <record id="view_hide_setting_config_form" model="ir.ui.view">
+        <field name="name">hide.setting.config.form</field>
+        <field name="model">hide.setting.config</field>
+        <field name="arch" type="xml">
+            <form string="Hide Setting Configuration">
+                <sheet>
+                    <group>
+                        <field name="is_active"/>
+                        <field name="activated_by" readonly="1"/>
+                        <field name="activation_date" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Hide Setting Configuration Tree View -->
+    <record id="view_hide_setting_config_tree" model="ir.ui.view">
+        <field name="name">hide.setting.config.tree</field>
+        <field name="model">hide.setting.config</field>
+        <field name="arch" type="xml">
+            <tree string="Hide Setting Configuration">
+                <field name="is_active"/>
+                <field name="activated_by"/>
+                <field name="activation_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Hide Setting Configuration Action -->
+    <record id="action_hide_setting_config" model="ir.actions.act_window">
+        <field name="name">Hide Settings Configuration</field>
+        <field name="res_model">hide.setting.config</field>
+        <field name="view_mode">tree,form</field>
+        <field name="target">current</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Configure hide settings functionality
+            </p>
+            <p>
+                This configuration controls whether the Settings menu is hidden from the UI.
+                When enabled, settings will only be accessible through API calls.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item (only visible to system administrators) -->
+    <menuitem id="menu_hide_setting_config"
+              name="Hide Settings Config"
+              parent="base.menu_administration"
+              action="action_hide_setting_config"
+              groups="base.group_system"
+              sequence="100"/>
+</odoo>
