@@ -43,7 +43,16 @@
       "Bash(-e POSTGRES_PASSWORD=secure_password_123 )",
       "Bash(-e POSTGRES_HOST=postgres )",
       "Bash(odoo:*)",
-      "Bash(docker start:*)"
+      "Bash(docker start:*)",
+      "Bash(true)",
+      "Bash(docker stats:*)",
+      "Bash(pip3 install:*)",
+      "Bash(node:*)",
+      "Bash(docker stop:*)",
+      "Bash(git add:*)",
+      "Bash(git remote get-url:*)",
+      "Bash(git push:*)",
+      "Bash(docker inspect:*)"
     ],
     "deny": []
   }
