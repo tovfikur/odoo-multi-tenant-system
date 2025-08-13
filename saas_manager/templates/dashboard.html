@@ -315,6 +315,39 @@
 
 {% block extra_css %}
 <style>
+/* Status update visual indicators */
+.panel-card.update-error {
+  box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+  border-color: rgba(220, 53, 69, 0.5);
+}
+
+.status-change-animation {
+  animation: statusPulse 0.6s ease-out;
+}
+
+@keyframes statusPulse {
+  0% { 
+    transform: scale(1); 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+  50% { 
+    transform: scale(1.03); 
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+  }
+  100% { 
+    transform: scale(1); 
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  }
+}
+
+.creating-pulse {
+  animation: createPulse 2s infinite;
+}
+
+@keyframes createPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
 /* Enhanced status badges */
 .badge-sm {
   font-size: 0.7rem;
@@ -365,21 +398,71 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Auto-refresh panel status and billing every 30 seconds
-setInterval(function() {
+// Dynamic refresh intervals based on tenant status
+let refreshIntervals = new Map();
+
+function scheduleRefresh(card, tenantId, interval = 30000) {
+  // Clear existing interval if any
+  if (refreshIntervals.has(tenantId)) {
+    clearInterval(refreshIntervals.get(tenantId));
+  }
+  
+  // Set new interval
+  const intervalId = setInterval(function() {
+    updateTenantStatus(tenantId, card);
+    
+    // Update billing info
+    const billingDiv = card.querySelector('.billing-progress');
+    if (billingDiv) {
+      loadBillingInfo(tenantId, billingDiv);
+    }
+  }, interval);
+  
+  refreshIntervals.set(tenantId, intervalId);
+}
+
+// Initialize refresh schedules for all tenant cards
+function initializeRefreshSchedules() {
   document.querySelectorAll(".panel-card").forEach(function(card) {
     const tenantId = getTenantIdFromCard(card);
     if (tenantId) {
-      updateTenantStatus(tenantId, card);
+      // Get current status from badge to determine refresh frequency
+      const statusBadge = card.querySelector('.badge');
+      const statusText = statusBadge ? statusBadge.textContent.toLowerCase() : '';
       
-      // Update billing info
-      const billingDiv = card.querySelector('.billing-progress');
-      if (billingDiv) {
-        loadBillingInfo(tenantId, billingDiv);
+      let interval;
+      if (statusText.includes('creating') || statusText.includes('pending')) {
+        interval = 5000; // Check every 5 seconds for creating/pending
+      } else if (statusText.includes('failed') || statusText.includes('error')) {
+        interval = 15000; // Check every 15 seconds for failed
+      } else {
+        interval = 30000; // Default 30 seconds for stable states
       }
+      
+      scheduleRefresh(card, tenantId, interval);
     }
   });
-}, 30000);
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', initializeRefreshSchedules);
+
+// Debug function to manually test status updates (can be called from browser console)
+window.testStatusUpdate = function(tenantId, status, isActive) {
+  console.log(`Manually testing status update: tenant=${tenantId}, status=${status}, active=${isActive}`);
+  const cards = document.querySelectorAll('.panel-card');
+  
+  for (let card of cards) {
+    const cardTenantId = getTenantIdFromCard(card);
+    if (cardTenantId == tenantId) {
+      console.log(`Found card for tenant ${tenantId}, updating...`);
+      updateStatusBadges(card, status, isActive);
+      updateActionButtons(card, status, isActive);
+      return;
+    }
+  }
+  console.warn(`No card found for tenant ${tenantId}`);
+};
 
 // Function to load billing information
 function loadBillingInfo(tenantId, billingDiv) {
@@ -524,63 +607,202 @@ function getTenantIdFromCard(card) {
 
 // Function to update tenant status
 function updateTenantStatus(tenantId, card) {
-  fetch(`/api/tenant/${tenantId}/status`)
-    .then(response => response.json())
+  // Add cache-busting parameter for real-time updates
+  const timestamp = new Date().getTime();
+  
+  fetch(`/api/tenant/${tenantId}/status?_=${timestamp}`, {
+    cache: 'no-cache',
+    headers: {
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache'
+    }
+  })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    })
     .then(data => {
       if (data.success) {
+        // Check if status actually changed
+        const currentBadge = card.querySelector('.badge');
+        const currentStatus = currentBadge ? currentBadge.textContent.toLowerCase() : '';
+        const newStatus = data.status.toLowerCase();
+        
+        // If status changed, show brief animation
+        if (currentStatus !== newStatus && !currentStatus.includes(newStatus)) {
+          card.style.transition = 'transform 0.2s ease';
+          card.style.transform = 'scale(1.02)';
+          setTimeout(() => {
+            card.style.transform = 'scale(1)';
+          }, 200);
+        }
+        
         updateStatusBadges(card, data.status, data.is_active);
         updateActionButtons(card, data.status, data.is_active);
+        
+        // Add success indicator for completed creations
+        if (data.status === 'active' && currentStatus.includes('creating')) {
+          showStatusChangeNotification(card, 'Tenant successfully created!', 'success');
+        } else if (data.status === 'failed' && currentStatus.includes('creating')) {
+          showStatusChangeNotification(card, 'Tenant creation failed!', 'error');
+        }
+      } else {
+        handleStatusUpdateError(tenantId, card, data.message || 'Unknown error');
       }
     })
     .catch(error => {
-      console.log('Status update failed for tenant', tenantId, error);
+      console.error('Status update failed for tenant', tenantId, error);
+      handleStatusUpdateError(tenantId, card, error.message);
     });
+}
+
+// Function to show status change notifications
+function showStatusChangeNotification(card, message, type) {
+  const notification = document.createElement('div');
+  notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-absolute`;
+  notification.style.cssText = `
+    top: 10px;
+    right: 10px;
+    z-index: 1050;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    min-width: 200px;
+  `;
+  notification.innerHTML = `
+    ${message}
+    <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
+  `;
+  
+  card.style.position = 'relative';
+  card.appendChild(notification);
+  
+  // Auto-remove after 5 seconds
+  setTimeout(() => {
+    if (notification.parentNode) {
+      notification.remove();
+    }
+  }, 5000);
+}
+
+// Function to handle status update errors
+function handleStatusUpdateError(tenantId, card, errorMessage) {
+  console.error(`Status update error for tenant ${tenantId}:`, errorMessage);
+  
+  // Mark card as having update issues (optional visual indicator)
+  card.classList.add('update-error');
+  setTimeout(() => {
+    card.classList.remove('update-error');
+  }, 3000);
 }
 
 // Function to update status badges
 function updateStatusBadges(card, dbStatus, isActive) {
   const badges = card.querySelectorAll('.badge');
+  const tenantId = getTenantIdFromCard(card);
+  
+  console.log(`Updating tenant ${tenantId}: status=${dbStatus}, active=${isActive}, badges found=${badges.length}`);
   
   if (badges.length >= 2) {
-    const dbBadge = badges[0]; // Database status badge
-    const tenantBadge = badges[1]; // Tenant status badge
+    const dbBadge = badges[0]; // Database status badge (first badge)
+    const tenantBadge = badges[1]; // Panel status badge (second badge)
     
-    // Update database status badge
+    // Determine new refresh interval based on status
+    let newInterval;
+    if (dbStatus === 'creating' || dbStatus === 'pending') {
+      newInterval = 5000; // Fast refresh for creating/pending
+    } else if (dbStatus === 'failed' || dbStatus === 'error') {
+      newInterval = 15000; // Medium refresh for failed states
+    } else {
+      newInterval = 30000; // Slow refresh for stable states
+    }
+    
+    // Reschedule refresh with new interval
+    scheduleRefresh(card, tenantId, newInterval);
+    console.log(`Tenant ${tenantId} status: ${dbStatus} - refresh interval: ${newInterval}ms`);
+    
+    // Remove any existing animation classes
+    dbBadge.classList.remove('creating-pulse', 'pulse-animation');
+    card.classList.remove('creating-pulse');
+    
+    // Update database status badge (first badge)
     dbBadge.className = 'badge badge-sm';
-    const statusIcon = dbBadge.querySelector('i');
+    let statusIcon = dbBadge.querySelector('i');
     
     if (dbStatus === 'active') {
       dbBadge.classList.add('bg-success');
-      statusIcon.className = 'fas fa-database me-1';
+      if (statusIcon) {
+        statusIcon.className = 'fas fa-database me-1';
+      } else {
+        // Create icon if it doesn't exist
+        statusIcon = document.createElement('i');
+        statusIcon.className = 'fas fa-database me-1';
+        dbBadge.insertBefore(statusIcon, dbBadge.firstChild);
+      }
       dbBadge.classList.add('pulse-animation');
     } else if (dbStatus === 'creating') {
-      dbBadge.classList.add('bg-info');
-      statusIcon.className = 'fas fa-cog fa-spin me-1';
+      dbBadge.classList.add('bg-info', 'creating-pulse');
+      if (statusIcon) {
+        statusIcon.className = 'fas fa-cog fa-spin me-1';
+      } else {
+        statusIcon = document.createElement('i');
+        statusIcon.className = 'fas fa-cog fa-spin me-1';
+        dbBadge.insertBefore(statusIcon, dbBadge.firstChild);
+      }
+      // Add pulsing effect to the entire card for creating status
+      card.classList.add('creating-pulse');
     } else if (dbStatus === 'pending') {
       dbBadge.classList.add('bg-warning');
-      statusIcon.className = 'fas fa-clock me-1';
+      if (statusIcon) {
+        statusIcon.className = 'fas fa-clock me-1';
+      } else {
+        statusIcon = document.createElement('i');
+        statusIcon.className = 'fas fa-clock me-1';
+        dbBadge.insertBefore(statusIcon, dbBadge.firstChild);
+      }
     } else if (dbStatus === 'failed') {
       dbBadge.classList.add('bg-danger');
-      statusIcon.className = 'fas fa-exclamation-triangle me-1';
+      if (statusIcon) {
+        statusIcon.className = 'fas fa-exclamation-triangle me-1';
+      } else {
+        statusIcon = document.createElement('i');
+        statusIcon.className = 'fas fa-exclamation-triangle me-1';
+        dbBadge.insertBefore(statusIcon, dbBadge.firstChild);
+      }
     } else {
       dbBadge.classList.add('bg-secondary');
-      statusIcon.className = 'fas fa-question me-1';
+      if (statusIcon) {
+        statusIcon.className = 'fas fa-question me-1';
+      } else {
+        statusIcon = document.createElement('i');
+        statusIcon.className = 'fas fa-question me-1';
+        dbBadge.insertBefore(statusIcon, dbBadge.firstChild);
+      }
     }
     
-    // Update badge text
-    const statusText = dbBadge.childNodes[dbBadge.childNodes.length - 1];
-    if (statusText && statusText.nodeType === Node.TEXT_NODE) {
-      statusText.textContent = ' ' + dbStatus.charAt(0).toUpperCase() + dbStatus.slice(1);
-    }
+    // Update badge text - clear and rebuild
+    dbBadge.innerHTML = '';
+    dbBadge.appendChild(statusIcon);
+    dbBadge.appendChild(document.createTextNode(' ' + dbStatus.charAt(0).toUpperCase() + dbStatus.slice(1)));
     
-    // Update tenant status badge
+    // Update tenant status badge (second badge - Online/Offline)
     tenantBadge.className = `badge badge-sm ${isActive ? 'bg-success' : 'bg-secondary'}`;
-    const tenantIcon = tenantBadge.querySelector('i');
-    tenantIcon.className = 'fas fa-power-off me-1';
-    const tenantText = tenantBadge.childNodes[tenantBadge.childNodes.length - 1];
-    if (tenantText && tenantText.nodeType === Node.TEXT_NODE) {
-      tenantText.textContent = ' ' + (isActive ? 'Online' : 'Offline');
+    let tenantIcon = tenantBadge.querySelector('i');
+    if (!tenantIcon) {
+      tenantIcon = document.createElement('i');
+      tenantBadge.insertBefore(tenantIcon, tenantBadge.firstChild);
     }
+    tenantIcon.className = 'fas fa-power-off me-1';
+    
+    // Update tenant badge text
+    tenantBadge.innerHTML = '';
+    tenantBadge.appendChild(tenantIcon);
+    tenantBadge.appendChild(document.createTextNode(' ' + (isActive ? 'Online' : 'Offline')));
+    
+    console.log(`Updated badges for tenant ${tenantId}: DB status=${dbStatus}, Panel status=${isActive ? 'Online' : 'Offline'}`);
+  } else {
+    console.warn(`Tenant ${tenantId}: Expected 2 badges but found ${badges.length}`);
   }
 }
 
