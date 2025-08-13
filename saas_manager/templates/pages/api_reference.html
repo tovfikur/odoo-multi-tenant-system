@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}API Reference - Khudroo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">API Reference</h1>
+        <p class="lead text-muted">Complete API documentation for developers</p>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="list-group">
+                <a href="#authentication" class="list-group-item list-group-item-action">Authentication</a>
+                <a href="#tenants" class="list-group-item list-group-item-action">Tenants</a>
+                <a href="#users" class="list-group-item list-group-item-action">Users</a>
+                <a href="#billing" class="list-group-item list-group-item-action">Billing</a>
+                <a href="#webhooks" class="list-group-item list-group-item-action">Webhooks</a>
+            </div>
+        </div>
+        <div class="col-lg-9">
+            <div id="authentication">
+                <h3>Authentication</h3>
+                <p>All API requests require authentication using API keys or OAuth 2.0.</p>
+                <pre class="bg-light p-3"><code>Authorization: Bearer YOUR_API_KEY</code></pre>
+            </div>
+            
+            <div id="tenants" class="mt-5">
+                <h3>Tenants API</h3>
+                <h5>GET /api/tenants</h5>
+                <p>List all tenants for the authenticated user.</p>
+                <pre class="bg-light p-3"><code>{
+  "tenants": [
+    {
+      "id": 1,
+      "name": "My Company",
+      "subdomain": "mycompany",
+      "status": "active"
+    }
+  ]
+}</code></pre>
+            </div>
+
+            <div class="mt-5">
+                <h3>Need More Details?</h3>
+                <p>For complete API documentation with interactive examples, visit our developer portal.</p>
+                <a href="#" class="btn btn-primary">Developer Portal</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

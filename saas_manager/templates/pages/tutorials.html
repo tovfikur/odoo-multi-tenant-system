@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Tutorials - Khudroo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">Tutorials</h1>
+        <p class="lead text-muted">Step-by-step guides to help you succeed</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-play-circle fa-2x text-primary me-3"></i>
+                        <div>
+                            <h4 class="card-title mb-0">Getting Started</h4>
+                            <small class="text-muted">5 minutes</small>
+                        </div>
+                    </div>
+                    <p class="card-text">Learn how to create your first Odoo instance and configure basic settings.</p>
+                    <a href="#" class="btn btn-primary">Watch Tutorial</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-play-circle fa-2x text-primary me-3"></i>
+                        <div>
+                            <h4 class="card-title mb-0">User Management</h4>
+                            <small class="text-muted">8 minutes</small>
+                        </div>
+                    </div>
+                    <p class="card-text">Add users, set permissions, and manage access to your Odoo instance.</p>
+                    <a href="#" class="btn btn-primary">Watch Tutorial</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-play-circle fa-2x text-primary me-3"></i>
+                        <div>
+                            <h4 class="card-title mb-0">App Installation</h4>
+                            <small class="text-muted">6 minutes</small>
+                        </div>
+                    </div>
+                    <p class="card-text">Install and configure Odoo apps to extend your instance functionality.</p>
+                    <a href="#" class="btn btn-primary">Watch Tutorial</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-play-circle fa-2x text-primary me-3"></i>
+                        <div>
+                            <h4 class="card-title mb-0">Backup & Restore</h4>
+                            <small class="text-muted">10 minutes</small>
+                        </div>
+                    </div>
+                    <p class="card-text">Learn how to backup your data and restore from backups when needed.</p>
+                    <a href="#" class="btn btn-primary">Watch Tutorial</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mt-5">
+        <h3 class="mb-4">Want More Tutorials?</h3>
+        <p class="mb-4">Subscribe to our YouTube channel for the latest video tutorials.</p>
+        <a href="#" class="btn btn-primary me-3">Subscribe on YouTube</a>
+        <a href="/documentation" class="btn btn-outline-primary">Browse Documentation</a>
+    </div>
+</div>
+{% endblock %}

@@ -902,7 +902,8 @@ def serve_manifest():
 @app.route('/')
 @track_errors('index_route')
 def index():
-    return render_template('index.html')
+    """Homepage with CMS integration"""
+    return render_template('index_cms.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 @track_errors('login_route')
@@ -4148,12 +4149,378 @@ def now():
     """Make current datetime available to all templates"""
     return datetime.utcnow()
 
-# Or alternatively, you can add it to the template context processor
+# Static content pages
+@app.route('/pricing')
+def pricing():
+    """Pricing page"""
+    return render_template('pages/pricing.html')
+
+@app.route('/security')
+def security():
+    """Security page"""
+    return render_template('pages/security.html')
+
+@app.route('/enterprise')
+def enterprise():
+    """Enterprise page"""
+    return render_template('pages/enterprise.html')
+
+@app.route('/careers')
+def careers():
+    """Careers page"""
+    return render_template('pages/careers.html')
+
+@app.route('/blog')
+def blog():
+    """Blog page"""
+    return render_template('pages/blog.html')
+
+@app.route('/press')
+def press():
+    """Press page"""
+    return render_template('pages/press.html')
+
+@app.route('/documentation')
+def documentation():
+    """Documentation page"""
+    return render_template('pages/documentation.html')
+
+@app.route('/api-reference')
+def api_reference():
+    """API Reference page"""
+    return render_template('pages/api_reference.html')
+
+@app.route('/tutorials')
+def tutorials():
+    """Tutorials page"""
+    return render_template('pages/tutorials.html')
+
+@app.route('/community')
+def community():
+    """Community page"""
+    return render_template('pages/community.html')
+
+@app.route('/help-center')
+def help_center():
+    """Help Center page"""
+    return render_template('pages/help_center.html')
+
+@app.route('/status')
+def status_page():
+    """Status page"""
+    return render_template('pages/status.html')
+
+@app.route('/terms')
+def service_terms():
+    """Service Terms page"""
+    return render_template('pages/terms.html')
+
+@app.route('/contact')
+def contact():
+    """Contact page"""
+    return render_template('pages/contact.html')
+
+
+# Template context processors
 @app.context_processor
 def inject_now():
     """Inject current datetime into all template contexts"""
     return {'now': datetime.utcnow()}
 
+@app.context_processor
+def inject_cms():
+    """Inject CMS helper into all template contexts"""
+    from cms_helper import cms_helper
+    return {'cms': cms_helper}
+
+# Content Admin Routes
+@app.route('/admin/content')
+@login_required
+def admin_content():
+    """Content Manager Dashboard"""
+    if not current_user.is_admin:
+        return render_template('error.html', 
+                             error_code=403, 
+                             error_message="Admin access required"), 403
+    return render_template('admin/content_manager.html')
+
+@app.route('/admin/pages')
+@login_required
+def admin_pages():
+    """Page Manager"""
+    if not current_user.is_admin:
+        return render_template('error.html', 
+                             error_code=403, 
+                             error_message="Admin access required"), 403
+    return render_template('admin/page_manager.html')
+
+@app.route('/admin/media')
+@login_required
+def admin_media():
+    """Media Manager"""
+    if not current_user.is_admin:
+        return render_template('error.html', 
+                             error_code=403, 
+                             error_message="Admin access required"), 403
+    return render_template('admin/media_manager.html')
+
+@app.route('/admin/settings')
+@login_required
+def admin_settings():
+    """Site Settings"""
+    if not current_user.is_admin:
+        return render_template('error.html', 
+                             error_code=403, 
+                             error_message="Admin access required"), 403
+    return render_template('admin/site_settings.html')
+
+# CMS API Endpoints
+from cms_service_simple import simple_cms_service
+
+# Working CMS Routes
+
+@app.route('/api/cms/content', methods=['GET'])
+@login_required
+def cms_get_content():
+    """Get content blocks - admin only"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    try:
+        category = request.args.get('category')
+        content_blocks = simple_cms_service.get_content_blocks(category)
+        return jsonify({'success': True, 'content_blocks': content_blocks})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/content', methods=['POST'])
+@csrf.exempt
+@login_required
+def cms_create_content():
+    """Create content blocks - admin only"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    try:
+        data = request.get_json()
+        content_block = simple_cms_service.create_content_block(data, user_id=1)
+        return jsonify({'success': True, 'content_block': content_block, 'content_id': content_block['id']})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/content/<int:content_id>', methods=['GET'])
+@login_required
+def cms_get_content_by_id(content_id):
+    """Get single content block - admin only"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    try:
+        content_block = simple_cms_service.get_content_by_id(content_id)
+        if content_block:
+            return jsonify({'success': True, 'content_block': content_block})
+        return jsonify({'success': False, 'message': 'Content block not found'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/content/<int:content_id>', methods=['PUT'])
+@csrf.exempt
+@login_required
+def cms_update_content(content_id):
+    """Update content blocks - admin only"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    try:
+        data = request.get_json()
+        content_block = simple_cms_service.update_content_block(content_id, data, user_id=1)
+        if content_block:
+            return jsonify({'success': True, 'content_block': content_block})
+        return jsonify({'success': False, 'message': 'Content block not found'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/content/<int:content_id>', methods=['DELETE'])
+@csrf.exempt
+@login_required
+def cms_delete_content(content_id):
+    """Delete content blocks - admin only"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    try:
+        success = simple_cms_service.delete_content_block(content_id)
+        if success:
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'message': 'Content block not found or cannot be deleted'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Content Management API
+@app.route('/api/cms/content', methods=['GET'])
+def api_get_content():
+    """Get content blocks - simplified without auth for now"""    
+    try:
+        category = request.args.get('category')
+        content_blocks = simple_cms_service.get_content_blocks(category)
+        return jsonify({'success': True, 'content_blocks': content_blocks})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/content/<int:content_id>', methods=['GET'])
+def api_get_content_block(content_id):
+    """Get single content block"""
+    try:
+        content_block = simple_cms_service.get_content_by_id(content_id)
+        if content_block:
+            return jsonify({'success': True, 'content_block': content_block})
+        return jsonify({'success': False, 'message': 'Content block not found'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/content', methods=['POST'])
+def api_create_content():
+    """Create content block"""
+    try:
+        data = request.get_json()
+        content_block = simple_cms_service.create_content_block(data, user_id=1)  # Use admin user ID
+        return jsonify({'success': True, 'content_block': content_block})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/content/<int:content_id>', methods=['PUT'])
+def api_update_content(content_id):
+    """Update content block"""
+    try:
+        data = request.get_json()
+        content_block = simple_cms_service.update_content_block(content_id, data, user_id=1)
+        if content_block:
+            return jsonify({'success': True, 'content_block': content_block})
+        return jsonify({'success': False, 'message': 'Content block not found'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/content/<int:content_id>', methods=['DELETE'])
+def api_delete_content(content_id):
+    """Delete content block"""
+    try:
+        success = simple_cms_service.delete_content_block(content_id)
+        if success:
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'message': 'Content block not found or cannot be deleted'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Pages API
+@app.route('/api/cms/pages', methods=['GET'])
+def api_get_pages():
+    """Get pages"""
+    try:
+        status = request.args.get('status')
+        pages = simple_cms_service.get_pages(status)
+        return jsonify({'success': True, 'pages': pages})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/pages', methods=['POST'])
+def api_create_page():
+    """Create page"""
+    try:
+        data = request.get_json()
+        page = simple_cms_service.create_page(data, user_id=1)
+        return jsonify({'success': True, 'page': page})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/pages/<int:page_id>', methods=['PUT'])
+@login_required
+def api_update_page(page_id):
+    """Update page"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    
+    try:
+        data = request.get_json()
+        page = cms_service.update_page(page_id, data)
+        if page:
+            return jsonify({'success': True, 'page': page})
+        return jsonify({'success': False, 'message': 'Page not found'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/pages/<int:page_id>', methods=['DELETE'])
+@login_required
+def api_delete_page(page_id):
+    """Delete page"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    
+    try:
+        success = cms_service.delete_page(page_id)
+        if success:
+            return jsonify({'success': True})
+        return jsonify({'success': False, 'message': 'Page not found'}), 404
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Media API
+@app.route('/api/cms/media', methods=['GET'])
+@login_required
+def api_get_media():
+    """Get media files"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    
+    try:
+        folder = request.args.get('folder')
+        file_type = request.args.get('type')
+        media_files = cms_service.get_media_files(folder, file_type)
+        return jsonify({'success': True, 'media_files': media_files})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/media/upload', methods=['POST'])
+@login_required
+def api_upload_media():
+    """Upload media file"""
+    if not current_user.is_admin:
+        return jsonify({'success': False, 'message': 'Admin access required'}), 403
+    
+    try:
+        if 'file' not in request.files:
+            return jsonify({'success': False, 'message': 'No file provided'}), 400
+        
+        file = request.files['file']
+        title = request.form.get('title')
+        alt_text = request.form.get('alt_text')
+        folder = request.form.get('folder', '/')
+        
+        media = cms_service.upload_media(file, title, alt_text, folder)
+        return jsonify({'success': True, 'media': media})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+# Settings API
+@app.route('/api/cms/settings', methods=['GET'])
+def api_get_settings():
+    """Get site settings"""
+    try:
+        category = request.args.get('category')
+        settings = simple_cms_service.get_settings(category)
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/cms/settings', methods=['POST'])
+def api_update_settings():
+    """Update site settings"""
+    try:
+        data = request.get_json()
+        settings = []
+        for key, value in data.items():
+            if isinstance(value, dict):
+                setting = simple_cms_service.update_setting(key, value.get('value'), value.get('type', 'string'), user_id=1)
+            else:
+                setting = simple_cms_service.update_setting(key, value, 'string', user_id=1)
+            settings.append(setting)
+        return jsonify({'success': True, 'settings': settings})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 
 if __name__ == '__main__':

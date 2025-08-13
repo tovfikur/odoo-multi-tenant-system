@@ -4,16 +4,16 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#1a73e8" />
-    <title>Khudroo - Transform Your Business Today</title>
+    <title>{{ cms.get_setting('site_name', 'Khudroo') }} - {{ cms.get_setting('site_tagline', 'Transform Your Business Today') }}</title>
 
     <!-- SEO Meta Tags -->
     <meta
       name="description"
-      content="Launch your complete business management solution in minutes. Scale effortlessly with our cloud-native Khudroo platform trusted by 50,000+ companies worldwide."
+      content="{{ cms.get_content('meta_description', 'Launch your complete business management solution in minutes. Scale effortlessly with our cloud-native Khudroo platform trusted by 50,000+ companies worldwide.') }}"
     />
     <meta
       name="keywords"
-      content="Khudroo, SaaS, Cloud ERP, Business Management, Enterprise Software, Digital Transformation"
+      content="{{ cms.get_content('meta_keywords', 'Khudroo, SaaS, Cloud ERP, Business Management, Enterprise Software, Digital Transformation') }}"
     />
 
     <!-- Preload Critical Resources -->
@@ -58,15 +58,46 @@
       rel="stylesheet"
     />
 
-    <!-- Page-specific Styles -->
+    <!-- CMS Admin Link for authenticated users -->
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <style>
+      .cms-admin-float {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        background: rgba(0, 123, 255, 0.9);
+        border-radius: 50px;
+        padding: 10px 15px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+      .cms-admin-float a {
+        color: white;
+        text-decoration: none;
+        font-size: 14px;
+      }
+      .cms-admin-float:hover {
+        background: rgba(0, 123, 255, 1);
+      }
+    </style>
+    {% endif %}
   </head>
   <body>
+    <!-- CMS Admin Access for authenticated admin users -->
+    {% if current_user.is_authenticated and current_user.is_admin %}
+    <div class="cms-admin-float">
+      <a href="/admin/content" title="Content Management">
+        <i class="fas fa-cog me-1"></i>CMS
+      </a>
+    </div>
+    {% endif %}
+
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-modern" id="mainNavbar">
       <div class="container">
         <a class="navbar-brand-modern" href="#home">
           <img src="{{ url_for('static', filename='img/kdoo-logo.png') }}" alt="Khudroo" class="logo-modern" style="width: 40px; height: 40px; object-fit: contain;" />
-          <span>Khudroo</span>
+          <span>{{ cms.get_setting('site_name', 'Khudroo') }}</span>
         </a>
 
         <button
@@ -111,21 +142,19 @@
         <div class="row align-items-center">
           <div class="col-lg-6 hero-content">
             <h1 class="hero-title">
-              সময়, শ্রম ও টাকার সঠিক ব্যবহার শুরু হোক এখানেই
+              {{ cms.get_content('hero_title', 'সময়, শ্রম ও টাকার সঠিক ব্যবহার শুরু হোক এখানেই') }}
             </h1>
             <p class="hero-subtitle">
-              Launch your complete business management solution in minutes.
-              Scale effortlessly with our cloud-native platform trusted by
-              50,000+ companies worldwide.
+              {{ cms.get_content('hero_subtitle', 'Launch your complete business management solution in minutes. Scale effortlessly with our cloud-native platform trusted by 50,000+ companies worldwide.') }}
             </p>
             <div class="hero-cta">
               <a href="/register" class="btn-hero-primary">
                 <i class="fas fa-rocket me-2"></i>
-                Start Free Trial
+                {{ cms.get_content('hero_button_primary', 'Start Free Trial') }}
               </a>
               <a href="#features" class="btn-hero-secondary">
                 <i class="fas fa-play me-2"></i>
-                Watch Demo
+                {{ cms.get_content('hero_button_secondary', 'Watch Demo') }}
               </a>
             </div>
           </div>
@@ -137,16 +166,16 @@
                 <div class="preview-dot"></div>
               </div>
               <div class="preview-metric">
-                <div class="metric-value">$2.4M</div>
-                <div class="metric-label">Monthly Revenue</div>
+                <div class="metric-value">{{ cms.get_content('hero_metric_1_value', '$2.4M') }}</div>
+                <div class="metric-label">{{ cms.get_content('hero_metric_1_label', 'Monthly Revenue') }}</div>
               </div>
               <div class="preview-metric">
-                <div class="metric-value">15,847</div>
-                <div class="metric-label">Active Users</div>
+                <div class="metric-value">{{ cms.get_content('hero_metric_2_value', '15,847') }}</div>
+                <div class="metric-label">{{ cms.get_content('hero_metric_2_label', 'Active Users') }}</div>
               </div>
               <div class="preview-metric">
-                <div class="metric-value">99.9%</div>
-                <div class="metric-label">Uptime</div>
+                <div class="metric-value">{{ cms.get_content('hero_metric_3_value', '99.9%') }}</div>
+                <div class="metric-label">{{ cms.get_content('hero_metric_3_label', 'Uptime') }}</div>
               </div>
             </div>
           </div>
@@ -158,10 +187,9 @@
     <section class="features-modern scroll-reveal" id="features">
       <div class="container">
         <div class="section-header">
-          <h2 class="section-title">Why Choose Our Platform?</h2>
+          <h2 class="section-title">{{ cms.get_content('features_title', 'Why Choose Our Platform?') }}</h2>
           <p class="section-subtitle">
-            Experience the power of enterprise-grade Odoo with our modern,
-            scalable, and secure SaaS platform
+            {{ cms.get_content('features_subtitle', 'Experience the power of enterprise-grade Odoo with our modern, scalable, and secure SaaS platform') }}
           </p>
         </div>
 
@@ -170,10 +198,9 @@
             <div class="feature-icon-modern icon-gradient-1">
               <i class="fas fa-bolt"></i>
             </div>
-            <h3 class="feature-title">Lightning Fast</h3>
+            <h3 class="feature-title">{{ cms.get_content('feature_speed_title', 'Lightning Fast') }}</h3>
             <p class="feature-description">
-              Deploy in under 5 minutes with our optimized infrastructure and
-              automatic scaling capabilities.
+              {{ cms.get_content('feature_speed_description', 'Deploy in under 5 minutes with our optimized infrastructure and automatic scaling capabilities.') }}
             </p>
           </div>
 
@@ -181,10 +208,9 @@
             <div class="feature-icon-modern icon-gradient-2">
               <i class="fas fa-shield-alt"></i>
             </div>
-            <h3 class="feature-title">Enterprise Security</h3>
+            <h3 class="feature-title">{{ cms.get_content('feature_security_title', 'Enterprise Security') }}</h3>
             <p class="feature-description">
-              Bank-level security with automated backups, SSL encryption, and
-              compliance certifications.
+              {{ cms.get_content('feature_security_description', 'Bank-level security with automated backups, SSL encryption, and compliance certifications.') }}
             </p>
           </div>
 
@@ -192,10 +218,9 @@
             <div class="feature-icon-modern icon-gradient-3">
               <i class="fas fa-chart-line"></i>
             </div>
-            <h3 class="feature-title">Smart Analytics</h3>
+            <h3 class="feature-title">{{ cms.get_content('feature_analytics_title', 'Smart Analytics') }}</h3>
             <p class="feature-description">
-              Advanced reporting and real-time insights to drive data-driven
-              business decisions.
+              {{ cms.get_content('feature_analytics_description', 'Advanced reporting and real-time insights to drive data-driven business decisions.') }}
             </p>
           </div>
 
@@ -203,10 +228,9 @@
             <div class="feature-icon-modern icon-gradient-4">
               <i class="fas fa-users"></i>
             </div>
-            <h3 class="feature-title">24/7 Support</h3>
+            <h3 class="feature-title">{{ cms.get_content('feature_support_title', '24/7 Support') }}</h3>
             <p class="feature-description">
-              Expert support team available around the clock to help you succeed
-              with dedicated assistance.
+              {{ cms.get_content('feature_support_description', 'Expert support team available around the clock to help you succeed with dedicated assistance.') }}
             </p>
           </div>
 
@@ -214,10 +238,9 @@
             <div class="feature-icon-modern icon-gradient-1">
               <i class="fas fa-cloud"></i>
             </div>
-            <h3 class="feature-title">Cloud Native</h3>
+            <h3 class="feature-title">{{ cms.get_content('feature_cloud_title', 'Cloud Native') }}</h3>
             <p class="feature-description">
-              Built for the cloud from ground up with automatic updates and
-              seamless scalability.
+              {{ cms.get_content('feature_cloud_description', 'Built for the cloud from ground up with automatic updates and seamless scalability.') }}
             </p>
           </div>
 
@@ -225,10 +248,9 @@
             <div class="feature-icon-modern icon-gradient-2">
               <i class="fas fa-mobile-alt"></i>
             </div>
-            <h3 class="feature-title">Mobile Ready</h3>
+            <h3 class="feature-title">{{ cms.get_content('feature_mobile_title', 'Mobile Ready') }}</h3>
             <p class="feature-description">
-              Access your business data anywhere, anytime with our responsive
-              mobile-first design.
+              {{ cms.get_content('feature_mobile_description', 'Access your business data anywhere, anytime with our responsive mobile-first design.') }}
             </p>
           </div>
         </div>
@@ -240,20 +262,20 @@
       <div class="container">
         <div class="stats-grid">
           <div class="stat-item">
-            <div class="stat-number" data-target="50000">0</div>
-            <div class="stat-label">Active Companies</div>
+            <div class="stat-number" data-target="{{ cms.get_content('stat_companies_value', '50000') }}">0</div>
+            <div class="stat-label">{{ cms.get_content('stat_companies_label', 'Active Companies') }}</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number" data-target="99.9">0</div>
-            <div class="stat-label">% Uptime SLA</div>
+            <div class="stat-number" data-target="{{ cms.get_content('stat_uptime_value', '99.9') }}">0</div>
+            <div class="stat-label">{{ cms.get_content('stat_uptime_label', '% Uptime SLA') }}</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number" data-target="45">0</div>
-            <div class="stat-label">Countries Served</div>
+            <div class="stat-number" data-target="{{ cms.get_content('stat_countries_value', '45') }}">0</div>
+            <div class="stat-label">{{ cms.get_content('stat_countries_label', 'Countries Served') }}</div>
           </div>
           <div class="stat-item">
-            <div class="stat-number" data-target="3">0</div>
-            <div class="stat-label">Minutes to Deploy</div>
+            <div class="stat-number" data-target="{{ cms.get_content('stat_deploy_value', '3') }}">0</div>
+            <div class="stat-label">{{ cms.get_content('stat_deploy_label', 'Minutes to Deploy') }}</div>
           </div>
         </div>
       </div>
@@ -263,25 +285,24 @@
     <section class="cta-modern scroll-reveal" id="contact">
       <div class="container">
         <div class="cta-container">
-          <h2 class="cta-title">Ready to Transform Your Business?</h2>
+          <h2 class="cta-title">{{ cms.get_content('cta_title', 'Ready to Transform Your Business?') }}</h2>
           <p class="cta-description">
-            Join over 50,000 companies already using our platform. Start your
-            free trial today and experience the difference.
+            {{ cms.get_content('cta_description', 'Join over 50,000 companies already using our platform. Start your free trial today and experience the difference.') }}
           </p>
           <div class="cta-buttons">
             <a href="/register" class="btn-hero-primary">
               <i class="fas fa-rocket me-2"></i>
-              Start Free 14-Day Trial
+              {{ cms.get_content('cta_button_primary', 'Start Free 14-Day Trial') }}
             </a>
-            <a href="mailto:sales@odoo-saas.com" class="btn-hero-secondary">
+            <a href="mailto:{{ cms.get_setting('contact_email', 'sales@odoo-saas.com') }}" class="btn-hero-secondary">
               <i class="fas fa-envelope me-2"></i>
-              Contact Sales
+              {{ cms.get_content('cta_button_secondary', 'Contact Sales') }}
             </a>
           </div>
           <div class="mt-4">
             <small style="color: var(--text-muted)">
               <i class="fas fa-shield-alt me-1"></i>
-              No credit card required • Cancel anytime • 24/7 support
+              {{ cms.get_content('cta_disclaimer', 'No credit card required • Cancel anytime • 24/7 support') }}
             </small>
           </div>
         </div>
@@ -296,11 +317,10 @@
             <div class="col-lg-4 col-md-6 mb-4">
               <div class="footer-brand">
                 <img src="{{ url_for('static', filename='img/kdoo-logo.png') }}" alt="Khudroo" class="logo-modern" style="width: 35px; height: 35px; object-fit: contain;" />
-                <span>Khudroo</span>
+                <span>{{ cms.get_setting('site_name', 'Khudroo') }}</span>
               </div>
               <p class="footer-description">
-                Empowering businesses worldwide with enterprise-grade Odoo
-                solutions. Scalable, secure, and designed for growth.
+                {{ cms.get_content('footer_description', 'Empowering businesses worldwide with enterprise-grade Odoo solutions. Scalable, secure, and designed for growth.') }}
               </p>
             </div>
             <div class="col-lg-2 col-md-6 mb-4">
@@ -345,7 +365,7 @@
           <div
             class="d-flex justify-content-between align-items-center flex-wrap"
           >
-            <div>© 2024 Khudroo. All rights reserved.</div>
+            <div>© {{ cms.get_setting('copyright_year', '2024') }} {{ cms.get_setting('site_name', 'Khudroo') }}. All rights reserved.</div>
             <div class="d-flex gap-3">
               <a href="#" class="footer-link">Privacy Policy</a>
               <a href="#" class="footer-link">Terms of Service</a>

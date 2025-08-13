@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Documentation - Khudroo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">Documentation</h1>
+        <p class="lead text-muted">Everything you need to get started and succeed with Khudroo</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="fas fa-rocket fa-2x text-primary mb-3"></i>
+                    <h4 class="card-title">Getting Started</h4>
+                    <p class="card-text">Quick start guide to set up your first Odoo instance</p>
+                    <ul class="list-unstyled small">
+                        <li><a href="#" class="text-decoration-none">Account Setup</a></li>
+                        <li><a href="#" class="text-decoration-none">Creating Your First Tenant</a></li>
+                        <li><a href="#" class="text-decoration-none">User Management</a></li>
+                        <li><a href="#" class="text-decoration-none">Basic Configuration</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="fas fa-cogs fa-2x text-primary mb-3"></i>
+                    <h4 class="card-title">Administration</h4>
+                    <p class="card-text">Learn how to manage and configure your Odoo instances</p>
+                    <ul class="list-unstyled small">
+                        <li><a href="#" class="text-decoration-none">Tenant Management</a></li>
+                        <li><a href="#" class="text-decoration-none">App Installation</a></li>
+                        <li><a href="#" class="text-decoration-none">Backup & Restore</a></li>
+                        <li><a href="#" class="text-decoration-none">Security Settings</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="fas fa-code fa-2x text-primary mb-3"></i>
+                    <h4 class="card-title">API Reference</h4>
+                    <p class="card-text">Complete API documentation for developers</p>
+                    <ul class="list-unstyled small">
+                        <li><a href="/api-reference" class="text-decoration-none">REST API</a></li>
+                        <li><a href="#" class="text-decoration-none">Authentication</a></li>
+                        <li><a href="#" class="text-decoration-none">Webhooks</a></li>
+                        <li><a href="#" class="text-decoration-none">SDK & Libraries</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="fas fa-puzzle-piece fa-2x text-primary mb-3"></i>
+                    <h4 class="card-title">Integrations</h4>
+                    <p class="card-text">Connect Odoo with your existing tools and services</p>
+                    <ul class="list-unstyled small">
+                        <li><a href="#" class="text-decoration-none">SSO Integration</a></li>
+                        <li><a href="#" class="text-decoration-none">Third-party Apps</a></li>
+                        <li><a href="#" class="text-decoration-none">Data Import/Export</a></li>
+                        <li><a href="#" class="text-decoration-none">Custom Modules</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="fas fa-question-circle fa-2x text-primary mb-3"></i>
+                    <h4 class="card-title">Troubleshooting</h4>
+                    <p class="card-text">Common issues and their solutions</p>
+                    <ul class="list-unstyled small">
+                        <li><a href="#" class="text-decoration-none">Login Issues</a></li>
+                        <li><a href="#" class="text-decoration-none">Performance Optimization</a></li>
+                        <li><a href="#" class="text-decoration-none">Common Errors</a></li>
+                        <li><a href="/help-center" class="text-decoration-none">Help Center</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <i class="fas fa-graduation-cap fa-2x text-primary mb-3"></i>
+                    <h4 class="card-title">Tutorials</h4>
+                    <p class="card-text">Step-by-step guides and video tutorials</p>
+                    <ul class="list-unstyled small">
+                        <li><a href="/tutorials" class="text-decoration-none">Video Tutorials</a></li>
+                        <li><a href="#" class="text-decoration-none">Best Practices</a></li>
+                        <li><a href="#" class="text-decoration-none">Use Cases</a></li>
+                        <li><a href="#" class="text-decoration-none">Advanced Topics</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <h3 class="mb-4">Need More Help?</h3>
+            <p class="mb-4">Can't find what you're looking for? Our support team is here to help.</p>
+            <div class="d-flex justify-content-center gap-3">
+                <a href="/help-center" class="btn btn-primary">Visit Help Center</a>
+                <a href="/contact" class="btn btn-outline-primary">Contact Support</a>
+                <a href="/community" class="btn btn-outline-secondary">Join Community</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

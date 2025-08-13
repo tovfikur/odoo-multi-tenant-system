@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Blog - Khudroo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">Blog</h1>
+        <p class="lead text-muted">Latest news, updates, and insights</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <article class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Introducing Khudroo 2.0</h2>
+                    <p class="text-muted small">December 15, 2024 • Product Updates</p>
+                    <p class="card-text">We're excited to announce the release of Khudroo 2.0 with enhanced performance, new features, and improved user experience...</p>
+                    <a href="#" class="btn btn-primary">Read More</a>
+                </div>
+            </article>
+
+            <article class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Best Practices for Odoo Implementation</h2>
+                    <p class="text-muted small">December 10, 2024 • Tutorials</p>
+                    <p class="card-text">Learn the key strategies and best practices for successfully implementing Odoo in your organization...</p>
+                    <a href="#" class="btn btn-primary">Read More</a>
+                </div>
+            </article>
+
+            <article class="card mb-4">
+                <div class="card-body">
+                    <h2 class="card-title">Security in Multi-Tenant Environments</h2>
+                    <p class="text-muted small">December 5, 2024 • Security</p>
+                    <p class="card-text">Understanding the importance of security in multi-tenant SaaS applications and how we ensure your data is protected...</p>
+                    <a href="#" class="btn btn-primary">Read More</a>
+                </div>
+            </article>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Categories</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-decoration-none">Product Updates</a></li>
+                        <li><a href="#" class="text-decoration-none">Tutorials</a></li>
+                        <li><a href="#" class="text-decoration-none">Security</a></li>
+                        <li><a href="#" class="text-decoration-none">Best Practices</a></li>
+                        <li><a href="#" class="text-decoration-none">Company News</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Subscribe to Our Newsletter</h5>
+                    <p class="card-text small">Get the latest updates delivered to your inbox.</p>
+                    <div class="input-group">
+                        <input type="email" class="form-control" placeholder="Your email">
+                        <button class="btn btn-primary">Subscribe</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

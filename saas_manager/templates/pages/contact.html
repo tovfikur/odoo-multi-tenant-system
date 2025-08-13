@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Us - Khudroo{% endblock %}
+
+{% block content %}
+<div class="container py-5" id="contact">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">Get in Touch</h1>
+        <p class="lead text-muted">We'd love to hear from you. Send us a message and we'll respond as soon as possible.</p>
+    </div>
+
+    <div class="row g-5">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">Send us a Message</h3>
+                    <form>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="firstName" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="firstName" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="lastName" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="lastName" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="company" class="form-label">Company</label>
+                                <input type="text" class="form-control" id="company">
+                            </div>
+                            <div class="col-12">
+                                <label for="subject" class="form-label">Subject</label>
+                                <select class="form-select" id="subject" required>
+                                    <option value="">Choose a subject...</option>
+                                    <option value="sales">Sales Inquiry</option>
+                                    <option value="support">Technical Support</option>
+                                    <option value="billing">Billing Question</option>
+                                    <option value="partnership">Partnership</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label for="message" class="form-label">Message</label>
+                                <textarea class="form-control" id="message" rows="5" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="subscribe">
+                                    <label class="form-check-label" for="subscribe">
+                                        Subscribe to our newsletter for updates and news
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-body p-4">
+                    <h3 class="card-title mb-4">Contact Information</h3>
+                    
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-envelope text-primary fa-lg me-3"></i>
+                        <div>
+                            <h6 class="mb-0">Email</h6>
+                            <a href="mailto:hello@khudroo.com" class="text-muted">hello@khudroo.com</a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-phone text-primary fa-lg me-3"></i>
+                        <div>
+                            <h6 class="mb-0">Phone</h6>
+                            <a href="tel:+1234567890" class="text-muted">+1 (234) 567-890</a>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-4">
+                        <i class="fas fa-map-marker-alt text-primary fa-lg me-3"></i>
+                        <div>
+                            <h6 class="mb-0">Address</h6>
+                            <p class="text-muted mb-0">123 Business Street<br>Tech City, TC 12345</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h5 class="mb-3">Business Hours</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Monday - Friday</span>
+                        <span class="text-muted">9:00 AM - 6:00 PM</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Saturday</span>
+                        <span class="text-muted">10:00 AM - 4:00 PM</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>Sunday</span>
+                        <span class="text-muted">Closed</span>
+                    </div>
+
+                    <hr>
+
+                    <h5 class="mb-3">Follow Us</h5>
+                    <div class="d-flex gap-2">
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            <i class="fab fa-linkedin"></i>
+                        </a>
+                        <a href="#" class="btn btn-outline-primary btn-sm">
+                            <i class="fab fa-github"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <h3 class="text-center mb-4">Frequently Asked Questions</h3>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>How quickly do you respond to inquiries?</h6>
+                            <p class="text-muted">We typically respond within 24 hours during business days.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Do you offer phone support?</h6>
+                            <p class="text-muted">Yes, phone support is available for Professional and Enterprise customers.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Can I schedule a demo?</h6>
+                            <p class="text-muted">Absolutely! Contact our sales team to schedule a personalized demo.</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Do you provide implementation services?</h6>
+                            <p class="text-muted">Yes, we offer professional services to help with implementation and customization.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Security - Khudroo{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">Enterprise-Grade Security</h1>
+        <p class="lead text-muted">Your data security is our top priority</p>
+    </div>
+
+    <div class="row g-5">
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-shield-alt text-primary fa-2x me-3"></i>
+                        <h3 class="card-title mb-0">Data Protection</h3>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>AES-256 encryption at rest</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>TLS 1.3 encryption in transit</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Regular security audits</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>GDPR & CCPA compliant</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-key text-primary fa-2x me-3"></i>
+                        <h3 class="card-title mb-0">Access Control</h3>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Multi-factor authentication</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Role-based permissions</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>SSO integration</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Session management</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-server text-primary fa-2x me-3"></i>
+                        <h3 class="card-title mb-0">Infrastructure</h3>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>ISO 27001 certified data centers</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>99.9% uptime guarantee</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>DDoS protection</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Automated backups</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="fas fa-eye text-primary fa-2x me-3"></i>
+                        <h3 class="card-title mb-0">Monitoring</h3>
+                    </div>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>24/7 security monitoring</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Audit logs</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Intrusion detection</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Vulnerability scanning</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <div class="card bg-light">
+                <div class="card-body py-5">
+                    <h3 class="mb-4">Compliance Certifications</h3>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="badge bg-primary fs-6 p-3">SOC 2 Type II</div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="badge bg-primary fs-6 p-3">ISO 27001</div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="badge bg-primary fs-6 p-3">GDPR Ready</div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="badge bg-primary fs-6 p-3">HIPAA Compliant</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12 text-center">
+            <h3 class="mb-4">Have Security Questions?</h3>
+            <p class="mb-4">Our security team is here to help answer any questions about our security measures.</p>
+            <a href="/contact" class="btn btn-primary btn-lg">Contact Security Team</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

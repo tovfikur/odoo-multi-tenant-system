@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+
+{% block title %}Site Settings - {{ super() }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="card shadow-sm">
+        <div class="card-header bg-warning text-dark">
+          <h3 class="card-title mb-0">
+            <i class="fas fa-cogs me-2"></i>Site Settings
+          </h3>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <!-- General Settings -->
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="fas fa-globe me-2"></i>General Settings</h5>
+                </div>
+                <div class="card-body">
+                  <form>
+                    <div class="mb-3">
+                      <label for="siteName" class="form-label">Site Name</label>
+                      <input type="text" class="form-control" id="siteName" value="Khudroo SaaS Platform">
+                    </div>
+                    <div class="mb-3">
+                      <label for="siteTagline" class="form-label">Site Tagline</label>
+                      <input type="text" class="form-control" id="siteTagline" value="Your Business, Simplified">
+                    </div>
+                    <div class="mb-3">
+                      <label for="siteDescription" class="form-label">Site Description</label>
+                      <textarea class="form-control" id="siteDescription" rows="3">Multi-tenant SaaS platform for businesses</textarea>
+                    </div>
+                    <div class="mb-3">
+                      <label for="adminEmail" class="form-label">Admin Email</label>
+                      <input type="email" class="form-control" id="adminEmail" value="admin@khudroo.com">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save General Settings</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Theme Settings -->
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="fas fa-palette me-2"></i>Theme Settings</h5>
+                </div>
+                <div class="card-body">
+                  <form>
+                    <div class="mb-3">
+                      <label for="primaryColor" class="form-label">Primary Color</label>
+                      <input type="color" class="form-control form-control-color" id="primaryColor" value="#2563eb">
+                    </div>
+                    <div class="mb-3">
+                      <label for="secondaryColor" class="form-label">Secondary Color</label>
+                      <input type="color" class="form-control form-control-color" id="secondaryColor" value="#7c3aed">
+                    </div>
+                    <div class="mb-3">
+                      <label for="fontFamily" class="form-label">Font Family</label>
+                      <select class="form-select" id="fontFamily">
+                        <option value="inter">Inter</option>
+                        <option value="roboto">Roboto</option>
+                        <option value="opensans">Open Sans</option>
+                        <option value="lato">Lato</option>
+                      </select>
+                    </div>
+                    <div class="form-check mb-3">
+                      <input class="form-check-input" type="checkbox" id="darkMode">
+                      <label class="form-check-label" for="darkMode">
+                        Enable Dark Mode
+                      </label>
+                    </div>
+                    <button type="submit" class="btn btn-success">Save Theme Settings</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Contact Information -->
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="fas fa-address-book me-2"></i>Contact Information</h5>
+                </div>
+                <div class="card-body">
+                  <form>
+                    <div class="mb-3">
+                      <label for="companyName" class="form-label">Company Name</label>
+                      <input type="text" class="form-control" id="companyName" value="Khudroo Technologies">
+                    </div>
+                    <div class="mb-3">
+                      <label for="phoneNumber" class="form-label">Phone Number</label>
+                      <input type="tel" class="form-control" id="phoneNumber" value="+1 (555) 123-4567">
+                    </div>
+                    <div class="mb-3">
+                      <label for="address" class="form-label">Address</label>
+                      <textarea class="form-control" id="address" rows="3">123 Business St, Suite 100
+Tech City, TC 12345</textarea>
+                    </div>
+                    <button type="submit" class="btn btn-info">Save Contact Info</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- Social Media -->
+            <div class="col-md-6">
+              <div class="card mb-4">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="fas fa-share-alt me-2"></i>Social Media</h5>
+                </div>
+                <div class="card-body">
+                  <form>
+                    <div class="mb-3">
+                      <label for="facebookUrl" class="form-label">Facebook URL</label>
+                      <input type="url" class="form-control" id="facebookUrl" placeholder="https://facebook.com/yourpage">
+                    </div>
+                    <div class="mb-3">
+                      <label for="twitterUrl" class="form-label">Twitter URL</label>
+                      <input type="url" class="form-control" id="twitterUrl" placeholder="https://twitter.com/youraccount">
+                    </div>
+                    <div class="mb-3">
+                      <label for="linkedinUrl" class="form-label">LinkedIn URL</label>
+                      <input type="url" class="form-control" id="linkedinUrl" placeholder="https://linkedin.com/company/yourcompany">
+                    </div>
+                    <div class="mb-3">
+                      <label for="instagramUrl" class="form-label">Instagram URL</label>
+                      <input type="url" class="form-control" id="instagramUrl" placeholder="https://instagram.com/youraccount">
+                    </div>
+                    <button type="submit" class="btn btn-warning">Save Social Media</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+
+            <!-- SEO Settings -->
+            <div class="col-md-12">
+              <div class="card">
+                <div class="card-header">
+                  <h5 class="mb-0"><i class="fas fa-search-plus me-2"></i>SEO Settings</h5>
+                </div>
+                <div class="card-body">
+                  <form>
+                    <div class="row">
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="metaTitle" class="form-label">Meta Title</label>
+                          <input type="text" class="form-control" id="metaTitle" value="Khudroo SaaS Platform - Your Business Simplified">
+                        </div>
+                        <div class="mb-3">
+                          <label for="metaKeywords" class="form-label">Meta Keywords</label>
+                          <input type="text" class="form-control" id="metaKeywords" value="saas, platform, business, technology">
+                        </div>
+                      </div>
+                      <div class="col-md-6">
+                        <div class="mb-3">
+                          <label for="metaDescription" class="form-label">Meta Description</label>
+                          <textarea class="form-control" id="metaDescription" rows="3">Powerful SaaS platform designed to simplify your business operations with multi-tenant architecture.</textarea>
+                        </div>
+                        <div class="mb-3">
+                          <label for="googleAnalytics" class="form-label">Google Analytics ID</label>
+                          <input type="text" class="form-control" id="googleAnalytics" placeholder="GA-XXXXXXXXX-X">
+                        </div>
+                      </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Save SEO Settings</button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

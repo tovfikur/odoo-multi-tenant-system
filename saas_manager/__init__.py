@@ -253,10 +253,10 @@ class SaaSManagerInitializer:
     
     def create_admin_user(self, db, SaasUser):
         """Create or update admin user with proper password hash"""
-        logger.info("Creating/updating admin user...")
+        logger.info("Creating/updating admin users...")
         
         try:
-            # Check if admin user exists
+            # Create/update main admin user
             admin = SaasUser.query.filter_by(username=self.admin_config['username']).first()
             
             # Generate proper password hash
@@ -280,6 +280,28 @@ class SaaSManagerInitializer:
                 db.session.add(admin)
                 logger.info(f"Created new admin user: {self.admin_config['username']}")
             
+            # Create/update content admin user
+            content_admin = SaasUser.query.filter_by(username='content_admin').first()
+            content_password_hash = generate_password_hash('ContentAdmin123!')
+            
+            if content_admin:
+                # Update existing content admin user
+                content_admin.password_hash = content_password_hash
+                content_admin.email = 'content_admin@saas-manager.com'
+                content_admin.is_admin = True
+                logger.info("Updated existing content admin user: content_admin")
+            else:
+                # Create new content admin user
+                content_admin = SaasUser(
+                    username='content_admin',
+                    email='content_admin@saas-manager.com',
+                    password_hash=content_password_hash,
+                    is_admin=True,
+                    created_at=datetime.utcnow()
+                )
+                db.session.add(content_admin)
+                logger.info("Created new content admin user: content_admin")
+            
             # Verify password hash format
             if not password_hash.startswith(('pbkdf2:', 'scrypt:', 'argon2:')):
                 logger.warning(f"Password hash format may be invalid: {password_hash[:20]}...")
@@ -287,7 +309,7 @@ class SaaSManagerInitializer:
                 logger.info("Password hash format verified successfully")
                 
         except Exception as e:
-            logger.error(f"Failed to create/update admin user: {e}")
+            logger.error(f"Failed to create/update admin users: {e}")
             raise
     
     def verify_admin_login(self):
