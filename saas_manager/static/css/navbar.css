@@ -120,24 +120,7 @@
   opacity: 1;
 }
 
-/* Current page indicator - Teal accent */
-.nav-link-unified.current-page::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 20px;
-  height: 2px;
-  background: linear-gradient(90deg, var(--secondary), var(--secondary-light));
-  border-radius: 1px;
-  animation: expandDot 0.3s ease-out;
-}
-
-@keyframes expandDot {
-  from { width: 0; opacity: 0; }
-  to { width: 20px; opacity: 1; }
-}
+/* Current page indicator removed */
 
 /* Action Buttons - Brand Gradient */
 .navbar-actions {
@@ -330,11 +313,22 @@
   overflow: hidden;
 }
 
-.navbar-user-dropdown:hover .user-dropdown-menu,
-.navbar-user-dropdown.active .user-dropdown-menu {
-  opacity: 1;
-  visibility: visible;
-  transform: translateY(0);
+/* Desktop: hover behavior */
+@media (min-width: 992px) {
+  .navbar-user-dropdown:hover .user-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
+}
+
+/* Mobile: click behavior */
+@media (max-width: 991.98px) {
+  .navbar-user-dropdown.active .user-dropdown-menu {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+  }
 }
 
 .user-dropdown-item {
@@ -392,12 +386,20 @@
 @media (max-width: 991.98px) {
   .navbar-unified {
     padding: 0.75rem 0;
+    /* Reset overflow for mobile */
+    overflow: hidden;
   }
   
   .navbar-unified .container,
   .navbar-unified .container-fluid {
     padding-left: 1rem;
     padding-right: 1rem;
+    /* Reset overflow for mobile */
+    overflow-x: hidden;
+    overflow-y: visible;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .navbar-brand-unified {
@@ -417,6 +419,13 @@
     padding: 1rem;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-primary);
+    /* Reset overflow for mobile */
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: 70vh;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
 
   .navbar-nav-unified {
@@ -433,28 +442,41 @@
   .navbar-actions {
     flex-direction: column;
     width: calc(100% - 10rem);
+    max-width: 100%;
     margin: 0 !important;
-    padding: 1rem 0 0.5rem 0;
+    margin-left: 0px;
+    padding: 1rem 0.5rem 0.5rem 0.5rem;
     border-top: 1px solid var(--border-primary);
     justify-content: center;
+    align-items: stretch;
     gap: 8px;
     box-sizing: border-box;
+    overflow: hidden;
   }
 
   .btn-navbar-primary,
   .btn-navbar-secondary {
     width: 100%;
-    max-width: none;
+    max-width: 100%;
+    min-width: 0;
     margin: 0;
     justify-content: center;
-    padding: 0.5rem 1rem;
+    padding: 0.5rem 0.75rem;
     font-size: 0.85rem;
     box-sizing: border-box;
+    /* Ensure buttons fit mobile screen */
+    flex-shrink: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* User dropdown mobile adjustments */
   .navbar-user-dropdown {
     width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   .user-avatar {
@@ -483,9 +505,28 @@
     top: 1rem;
     left: 0;
     right: 0;
-    margin: 0 auto;
-    max-width: 250px;
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
     box-shadow: var(--shadow-lg);
+    /* Mobile specific z-index */
+    z-index: 1040 !important;
+    /* Prevent horizontal overflow */
+    box-sizing: border-box;
+  }
+
+  /* Reset z-index for mobile dropdowns to avoid issues */
+  .dropdown-menu {
+    z-index: 1040 !important;
+    position: relative;
+    margin-top: 0.5rem;
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    /* Prevent horizontal overflow */
+    left: 0 !important;
+    right: 0 !important;
   }
 }
 
@@ -576,15 +617,6 @@ body {
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-lg);
   z-index: 9999 !important;
-}
-
-/* Ensure navbar container doesn't clip dropdowns */
-.navbar-collapse {
-  overflow: visible !important;
-}
-
-.container, .container-fluid {
-  overflow: visible !important;
 }
 
 .dropdown-item {
