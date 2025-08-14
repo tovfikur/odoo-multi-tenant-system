@@ -1,104 +1,18 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1a73e8" />
-    <title>Khudroo - Transform Your Business Today</title>
+{% extends "base_public.html" %}
 
-    <!-- SEO Meta Tags -->
-    <meta
-      name="description"
-      content="Launch your complete business management solution in minutes. Scale effortlessly with our cloud-native Khudroo platform trusted by 50,000+ companies worldwide."
-    />
-    <meta
-      name="keywords"
-      content="Khudroo, SaaS, Cloud ERP, Business Management, Enterprise Software, Digital Transformation"
-    />
+{% block title %}Khudroo - Transform Your Business Today{% endblock %}
 
-    <!-- Preload Critical Resources -->
-    <link
-      rel="preload"
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-      as="style"
-    />
-    <link
-      rel="preload"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
-      as="style"
-    />
+{% block head %}
+<!-- Page-specific Styles -->
+<style>
+  /* Homepage specific styles */
+  .hero-modern {
+    padding-top: 2rem;
+  }
+</style>
+{% endblock %}
 
-    <!-- External Dependencies -->
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Atma:wght@300;400;500;600;700&family=Caveat+Brush&family=Flamenco:wght@300;400&family=Itim&family=Just+Another+Hand&family=Knewave&family=Noto+Sans+Bengali:wght@100..900&display=swap"
-      rel="stylesheet"
-    />
-
-    <!-- Core Styles -->
-    <link
-      href="{{ url_for('static', filename='css/style.css') }}"
-      rel="stylesheet"
-    />
-    <link
-      href="{{ url_for('static', filename='css/index.css') }}"
-      rel="stylesheet"
-    />
-
-    <!-- Page-specific Styles -->
-  </head>
-  <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-modern" id="mainNavbar">
-      <div class="container">
-        <a class="navbar-brand-modern" href="#home">
-          <img src="{{ url_for('static', filename='img/kdoo-logo.png') }}" alt="Khudroo" class="logo-modern" style="width: 40px; height: 40px; object-fit: contain;" />
-          <span>Khudroo</span>
-        </a>
-
-        <button
-          class="navbar-toggler"
-          type="button"
-          data-bs-toggle="collapse"
-          data-bs-target="#navbarNav"
-        >
-          <span class="navbar-toggler-icon"></span>
-        </button>
-
-        <div class="collapse navbar-collapse" id="navbarNav">
-          <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-              <a class="nav-link-modern" href="#features">Features</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link-modern" href="#stats">About</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link-modern" href="#contact">Contact</a>
-            </li>
-          </ul>
-
-          <div class="d-flex gap-2">
-            <a href="/login" class="btn btn-outline-primary">Sign In</a>
-            <a href="/register" class="btn btn-primary">Get Started</a>
-          </div>
-        </div>
-      </div>
-    </nav>
-
+{% block content %}
     <!-- Hero Section -->
     <section class="hero-modern" id="home">
       <div class="floating-elements">
@@ -111,7 +25,7 @@
         <div class="row align-items-center">
           <div class="col-lg-6 hero-content">
             <h1 class="hero-title">
-              সময়, শ্রম ও টাকার সঠিক ব্যবহার শুরু হোক এখানেই
+              সময়, শ্রম ও টাকার সঠিক ব্যবহার শুরু হোক এখানেই
             </h1>
             <p class="hero-subtitle">
               Launch your complete business management solution in minutes.
@@ -260,7 +174,7 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="cta-modern scroll-reveal" id="contact">
+    <section class="cta-modern scroll-reveal" id="cta">
       <div class="container">
         <div class="cta-container">
           <h2 class="cta-title">Ready to Transform Your Business?</h2>
@@ -287,78 +201,8 @@
         </div>
       </div>
     </section>
+{% endblock %}
 
-    <!-- Footer -->
-    <footer class="footer-modern">
-      <div class="container">
-        <div class="footer-content">
-          <div class="row">
-            <div class="col-lg-4 col-md-6 mb-4">
-              <div class="footer-brand">
-                <img src="{{ url_for('static', filename='img/kdoo-logo.png') }}" alt="Khudroo" class="logo-modern" style="width: 35px; height: 35px; object-fit: contain;" />
-                <span>Khudroo</span>
-              </div>
-              <p class="footer-description">
-                Empowering businesses worldwide with enterprise-grade Odoo
-                solutions. Scalable, secure, and designed for growth.
-              </p>
-            </div>
-            <div class="col-lg-2 col-md-6 mb-4">
-              <div class="footer-section">
-                <h5>Product</h5>
-                <a href="#features" class="footer-link">Features</a>
-                <a href="/pricing" class="footer-link">Pricing</a>
-                <a href="/security" class="footer-link">Security</a>
-                <a href="/enterprise" class="footer-link">Enterprise</a>
-              </div>
-            </div>
-            <div class="col-lg-2 col-md-6 mb-4">
-              <div class="footer-section">
-                <h5>Company</h5>
-                <a href="#stats" class="footer-link">About Us</a>
-                <a href="/careers" class="footer-link">Careers</a>
-                <a href="/blog" class="footer-link">Blog</a>
-                <a href="/press" class="footer-link">Press</a>
-              </div>
-            </div>
-            <div class="col-lg-2 col-md-6 mb-4">
-              <div class="footer-section">
-                <h5>Resources</h5>
-                <a href="/documentation" class="footer-link">Documentation</a>
-                <a href="/api-reference" class="footer-link">API Reference</a>
-                <a href="/tutorials" class="footer-link">Tutorials</a>
-                <a href="/community" class="footer-link">Community</a>
-              </div>
-            </div>
-            <div class="col-lg-2 col-md-6 mb-4">
-              <div class="footer-section">
-                <h5>Support</h5>
-                <a href="/help-center" class="footer-link">Help Center</a>
-                <a href="/contact" class="footer-link">Contact Us</a>
-                <a href="/status" class="footer-link">Status Page</a>
-                <a href="/terms" class="footer-link">Service Terms</a>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="footer-bottom">
-          <div
-            class="d-flex justify-content-between align-items-center flex-wrap"
-          >
-            <div>© 2024 Khudroo. All rights reserved.</div>
-            <div class="d-flex gap-3">
-              <a href="#" class="footer-link">Privacy Policy</a>
-              <a href="#" class="footer-link">Terms of Service</a>
-              <a href="#" class="footer-link">Cookie Policy</a>
-            </div>
-          </div>
-        </div>
-      </div>
-    </footer>
-
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
-    <script src="{{ url_for('static', filename='js/style.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/index.js') }}"></script>
-  </body>
-</html>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}

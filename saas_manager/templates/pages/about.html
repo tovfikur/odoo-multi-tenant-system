@@ -1,0 +1,108 @@
+{% extends "base_public.html" %}
+
+{% block title %}About Us - Khudroo{% endblock %}
+
+{% block content %}
+<div class="container py-5" id="about">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-primary">About Khudroo</h1>
+        <p class="lead text-muted">Empowering businesses worldwide with enterprise-grade solutions</p>
+    </div>
+
+    <!-- Company Stats -->
+    <section class="stats-modern mb-5">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-number">50,000+</div>
+                    <div class="stat-label">Active Companies</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">99.9%</div>
+                    <div class="stat-label">Uptime SLA</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">45</div>
+                    <div class="stat-label">Countries Served</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">3</div>
+                    <div class="stat-label">Minutes to Deploy</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="row g-5">
+        <div class="col-lg-6">
+            <h2 class="h3 mb-4">Our Mission</h2>
+            <p class="text-muted mb-4">
+                We believe that every business, regardless of size, deserves access to enterprise-grade software solutions. 
+                Our mission is to democratize business technology by providing powerful, scalable, and affordable ERP solutions 
+                that help companies streamline their operations and accelerate growth.
+            </p>
+            <p class="text-muted">
+                Since our founding, we've been committed to delivering exceptional value through innovative technology, 
+                outstanding customer service, and a deep understanding of business needs across various industries.
+            </p>
+        </div>
+        <div class="col-lg-6">
+            <h2 class="h3 mb-4">Why Choose Us</h2>
+            <div class="row g-3">
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-bolt text-primary me-3 mt-1"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Lightning Fast Deployment</h5>
+                            <p class="text-muted mb-0">Get your ERP system up and running in under 5 minutes with our automated deployment process.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-shield-alt text-primary me-3 mt-1"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Enterprise Security</h5>
+                            <p class="text-muted mb-0">Bank-level security with automated backups, SSL encryption, and compliance certifications.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="d-flex align-items-start">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-users text-primary me-3 mt-1"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">24/7 Expert Support</h5>
+                            <p class="text-muted mb-0">Our dedicated support team is available around the clock to help you succeed.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card border-0 bg-light">
+                <div class="card-body text-center p-5">
+                    <h3 class="mb-3">Ready to Transform Your Business?</h3>
+                    <p class="text-muted mb-4">Join over 50,000 companies already using our platform. Start your free trial today.</p>
+                    <div class="d-flex gap-3 justify-content-center">
+                        <a href="/register" class="btn btn-primary">
+                            <i class="fas fa-rocket me-2"></i>Start Free Trial
+                        </a>
+                        <a href="/contact" class="btn btn-outline-primary">
+                            <i class="fas fa-envelope me-2"></i>Contact Sales
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

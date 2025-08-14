@@ -55,6 +55,7 @@
       "Bash(docker inspect:*)",
       "Bash(cp:*)"
     ],
-    "deny": []
+    "deny": [],
+    "defaultMode": "acceptEdits"
   }
 }

@@ -1,0 +1,563 @@
+/* ===== BRAND-ALIGNED UNIFIED NAVBAR STYLES ===== */
+/* Khudroo Jewel + Neutral Brand Colors */
+
+.navbar-unified {
+  --navbar-pulse: 0;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-primary);
+  padding: 1rem 0;
+  transition: var(--transition-base);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1030;
+  box-shadow: var(--shadow-sm);
+  /* Subtle brand pulse effect */
+  filter: brightness(calc(1 + var(--navbar-pulse) * 0.05));
+}
+
+.navbar-unified.scrolled {
+  background: rgba(255, 255, 255, 0.98) !important;
+  box-shadow: var(--shadow-md);
+  padding: 0.75rem 0;
+}
+
+/* Dark Mode Navbar */
+@media (prefers-color-scheme: dark) {
+  .navbar-unified {
+    background: rgba(30, 33, 40, 0.95) !important;
+    border-bottom: 1px solid var(--border-primary);
+  }
+
+  .navbar-unified.scrolled {
+    background: rgba(30, 33, 40, 0.98) !important;
+  }
+}
+
+/* Brand Styling - Azure Primary */
+.navbar-brand-unified {
+  color: var(--primary) !important;
+  font-weight: 700;
+  font-size: 1.5rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: var(--transition-base);
+  position: relative;
+}
+
+.navbar-brand-unified:hover {
+  color: var(--primary-light) !important;
+  transform: translateY(-1px);
+}
+
+.logo-unified {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--border-radius);
+  object-fit: contain;
+  transition: var(--transition-base);
+  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.15);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  padding: 2px;
+}
+
+.navbar-brand-unified:hover .logo-unified {
+  transform: scale(1.05) rotate(5deg);
+  box-shadow: 0 8px 25px rgba(26, 115, 232, 0.3);
+}
+
+/* Navigation Links - Brand Colors */
+.navbar-nav-unified {
+  gap: 0.5rem;
+}
+
+.nav-link-unified {
+  color: var(--text-secondary) !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+  padding: 0.75rem 1.25rem !important;
+  border-radius: 25px;
+  transition: var(--transition-base);
+  position: relative;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link-unified:hover {
+  color: var(--primary) !important;
+  background: rgba(26, 115, 232, 0.08);
+  transform: translateY(-1px);
+}
+
+/* Teal accent for active state */
+.nav-link-unified.active,
+.nav-link-unified.current-page {
+  color: var(--secondary) !important;
+  background: linear-gradient(135deg, 
+    rgba(0, 191, 165, 0.1), 
+    rgba(0, 191, 165, 0.05));
+  font-weight: 600;
+  box-shadow: inset 0 1px 0 rgba(0, 191, 165, 0.2);
+}
+
+.nav-link-unified i {
+  font-size: 0.9rem;
+  opacity: 0.8;
+  transition: var(--transition-fast);
+}
+
+.nav-link-unified:hover i,
+.nav-link-unified.active i {
+  opacity: 1;
+}
+
+/* Current page indicator - Teal accent */
+.nav-link-unified.current-page::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--secondary), var(--secondary-light));
+  border-radius: 1px;
+  animation: expandDot 0.3s ease-out;
+}
+
+@keyframes expandDot {
+  from { width: 0; opacity: 0; }
+  to { width: 20px; opacity: 1; }
+}
+
+/* Action Buttons - Brand Gradient */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Enhanced Layout Styles */
+.navbar-nav-unified.mx-auto {
+  /* Center the navigation items */
+  justify-content: center;
+  flex-wrap: nowrap;
+  flex-grow: 1;
+}
+
+.navbar-actions.ms-auto {
+  /* Push auth buttons to the right */
+  margin-left: auto !important;
+  flex-shrink: 0;
+  min-width: fit-content;
+}
+
+/* Ensure proper navbar layout balance */
+.navbar-collapse {
+  display: flex;
+  align-items: center;
+}
+
+/* Desktop layout optimization */
+@media (min-width: 992px) {
+  .navbar-brand-unified {
+    flex-shrink: 0;
+    margin-right: 2rem;
+  }
+  
+  .navbar-nav-unified {
+    max-width: 60%;
+  }
+  
+  .navbar-actions {
+    min-width: 200px;
+    justify-content: flex-end;
+  }
+}
+
+/* Primary Button - Azure to Teal Gradient */
+.btn-navbar-primary {
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  border: none;
+  color: white;
+  padding: 0.625rem 1.5rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: var(--transition-base);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 15px rgba(26, 115, 232, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-navbar-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--secondary), var(--accent));
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.btn-navbar-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(26, 115, 232, 0.4);
+  color: white;
+}
+
+.btn-navbar-primary:hover::before {
+  left: 0;
+}
+
+/* Secondary Button - Coral Accent */
+.btn-navbar-secondary {
+  background: transparent;
+  border: 2px solid var(--border-primary);
+  color: var(--text-secondary);
+  padding: 0.5rem 1.25rem;
+  border-radius: 25px;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: var(--transition-base);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-navbar-secondary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.btn-navbar-secondary:hover {
+  border-color: var(--accent);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 15px rgba(255, 111, 97, 0.3);
+}
+
+.btn-navbar-secondary:hover::before {
+  left: 0;
+}
+
+/* User Dropdown - Violet Support Color */
+.navbar-user-dropdown {
+  position: relative;
+}
+
+.user-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--support), var(--support-light));
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transition-base);
+  border: 2px solid transparent;
+  box-shadow: 0 2px 8px rgba(155, 81, 224, 0.2);
+}
+
+.user-avatar:hover {
+  border-color: var(--support);
+  transform: scale(1.05);
+  box-shadow: 0 4px 15px rgba(155, 81, 224, 0.4);
+}
+
+.user-dropdown-menu {
+  position: absolute;
+  top: 120%;
+  right: 0;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-xl);
+  border: 1px solid var(--border-primary);
+  min-width: 200px;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: var(--transition-base);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.navbar-user-dropdown:hover .user-dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.user-dropdown-item {
+  color: var(--text-secondary);
+  padding: 0.75rem 1.25rem;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  transition: var(--transition-fast);
+  border-bottom: 1px solid var(--border-primary);
+  position: relative;
+  overflow: hidden;
+}
+
+.user-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.user-dropdown-item::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, 
+    rgba(26, 115, 232, 0.05), 
+    rgba(0, 191, 165, 0.05));
+  transition: left 0.3s ease;
+  z-index: -1;
+}
+
+.user-dropdown-item:hover {
+  color: var(--primary);
+  padding-left: 1.5rem;
+}
+
+.user-dropdown-item:hover::before {
+  left: 0;
+}
+
+.user-dropdown-item i {
+  width: 16px;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  color: var(--support);
+}
+
+.user-dropdown-item:hover i {
+  opacity: 1;
+}
+
+/* Mobile Styles */
+@media (max-width: 991.98px) {
+  .navbar-unified {
+    padding: 0.75rem 0;
+  }
+
+  .navbar-brand-unified {
+    font-size: 1.3rem;
+    margin-right: auto; /* Keep logo to the left on mobile */
+  }
+
+  .logo-unified {
+    width: 36px;
+    height: 36px;
+  }
+
+  .navbar-collapse {
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+    margin-top: 1rem;
+    padding: 1rem;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-primary);
+  }
+
+  .navbar-nav-unified {
+    flex-direction: column;
+    gap: 0.5rem;
+    margin: 0 !important; /* Reset centering on mobile */
+  }
+
+  .nav-link-unified {
+    justify-content: flex-start;
+    border-radius: var(--border-radius-sm);
+  }
+
+  .navbar-actions {
+    flex-direction: column;
+    width: 100%;
+    margin: 1rem 0 0 0 !important; /* Reset auto margin on mobile */
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-primary);
+  }
+
+  .btn-navbar-primary,
+  .btn-navbar-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* User dropdown mobile adjustments */
+  .navbar-user-dropdown {
+    width: 100%;
+  }
+
+  .user-avatar {
+    margin: 0 auto;
+  }
+}
+
+/* Navbar Toggler - Brand Colors */
+.navbar-toggler {
+  border: none;
+  padding: 0.5rem;
+  border-radius: var(--border-radius-sm);
+  transition: var(--transition-base);
+  background: rgba(26, 115, 232, 0.05);
+}
+
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(26, 115, 232, 0.25);
+}
+
+.navbar-toggler:hover {
+  background: rgba(26, 115, 232, 0.1);
+}
+
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2826, 115, 232, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='m4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+/* Dark mode toggler */
+@media (prefers-color-scheme: dark) {
+  .navbar-toggler-icon {
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%2876, 156, 255, 0.8%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='m4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+  }
+}
+
+/* Scroll Effect */
+body {
+  padding-top: 80px;
+}
+
+.navbar-unified.scrolled ~ body {
+  padding-top: 70px;
+}
+
+/* Notification Badge - Coral Accent */
+.notification-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-light));
+  color: white;
+  border-radius: 50%;
+  width: 18px;
+  height: 18px;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(255, 111, 97, 0.4);
+  animation: notificationPulse 2s infinite;
+}
+
+@keyframes notificationPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+/* Loading States */
+.btn-navbar-primary.loading,
+.btn-navbar-secondary.loading {
+  opacity: 0.7;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn-navbar-primary.loading::before,
+.btn-navbar-secondary.loading::before {
+  display: none;
+}
+
+/* Accessibility */
+.nav-link-unified:focus {
+  outline: 2px solid var(--primary) !important;
+  outline-offset: 2px !important;
+}
+
+/* Dropdown Menu Improvements */
+.dropdown-menu {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-lg);
+}
+
+.dropdown-item {
+  color: var(--text-secondary);
+  transition: var(--transition-fast);
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(135deg, 
+    rgba(26, 115, 232, 0.05), 
+    rgba(0, 191, 165, 0.05));
+  color: var(--primary);
+}
+
+/* Brand Philosophy: Modern, Professional, Trustworthy */
+.navbar-unified {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* Smooth micro-interactions for premium feel */
+.nav-link-unified,
+.btn-navbar-primary,
+.btn-navbar-secondary,
+.user-avatar {
+  will-change: transform;
+}
+
+/* Focus ring for keyboard navigation */
+.navbar-unified *:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--border-radius-sm);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .navbar-unified {
+    border-bottom-width: 2px;
+  }
+  
+  .nav-link-unified {
+    font-weight: 600;
+  }
+  
+  .btn-navbar-primary,
+  .btn-navbar-secondary {
+    border-width: 2px;
+  }
+}

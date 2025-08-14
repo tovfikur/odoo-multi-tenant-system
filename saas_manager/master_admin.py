@@ -276,7 +276,7 @@ def create_plan():
             name=data['name'],
             price=float(data['price']),
             max_users=int(data['max_users']),
-            storage_limit=int(data['storage_limit']),
+            storage_limit=int(data['storage_limit']) if data['storage_limit'] is not None else None,
             features=data.get('features', []),
             modules=data.get('modules', []),
             is_active=data.get('is_active', True)
@@ -316,7 +316,8 @@ def update_plan(plan_id):
         plan.name = data.get('name', plan.name)
         plan.price = float(data.get('price', plan.price))
         plan.max_users = int(data.get('max_users', plan.max_users))
-        plan.storage_limit = int(data.get('storage_limit', plan.storage_limit))
+        storage_limit_value = data.get('storage_limit', plan.storage_limit)
+        plan.storage_limit = int(storage_limit_value) if storage_limit_value is not None else None
         plan.features = data.get('features', plan.features)
         plan.modules = data.get('modules', plan.modules)
         plan.is_active = data.get('is_active', plan.is_active)
@@ -1800,7 +1801,8 @@ def edit_plan(plan_id):
         plan.name = data.get('name', plan.name)
         plan.price = float(data.get('price', plan.price))
         plan.max_users = int(data.get('max_users', plan.max_users))
-        plan.storage_limit = int(data.get('storage_limit', plan.storage_limit))
+        storage_limit_value = data.get('storage_limit', plan.storage_limit)
+        plan.storage_limit = int(storage_limit_value) if storage_limit_value is not None else None
         plan.features = data.get('features', plan.features)
         plan.modules = data.get('modules', plan.modules)
         plan.is_active = data.get('is_active', plan.is_active)
