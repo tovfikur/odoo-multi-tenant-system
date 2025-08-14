@@ -50,6 +50,8 @@ def panel_billing_info(tenant_id):
 def initiate_payment(tenant_id):
     """Initiate payment for panel renewal"""
     try:
+        logger.info(f"Starting payment initiation for tenant {tenant_id}")
+        
         # Check access
         if not current_user.is_admin:
             tenant_user = TenantUser.query.filter_by(
@@ -58,32 +60,51 @@ def initiate_payment(tenant_id):
             ).first()
             if not tenant_user:
                 flash('Access denied', 'error')
-                return redirect(url_for('main.dashboard'))
+                return redirect(url_for('dashboard'))
+        
+        logger.info(f"Access check passed for tenant {tenant_id}")
         
         tenant = Tenant.query.get(tenant_id)
         if not tenant:
             flash('Panel not found', 'error')
-            return redirect(url_for('main.dashboard'))
+            return redirect(url_for('dashboard'))
         
-        billing_info = get_billing_service().get_tenant_billing_info(tenant_id)
+        logger.info(f"Tenant found: {tenant.name}")
+        
+        # Try to get billing info with error handling
+        billing_info = None
+        try:
+            billing_service = get_billing_service()
+            logger.info(f"Got billing service: {billing_service}")
+            billing_info = billing_service.get_tenant_billing_info(tenant_id)
+            logger.info(f"Got billing info: {billing_info}")
+        except Exception as billing_error:
+            logger.error(f"Error getting billing info: {str(billing_error)}")
+            # Continue with None billing_info - the template should handle this
+            billing_info = {
+                'tenant_name': tenant.name,
+                'status': 'no_billing_data',
+                'requires_payment': True
+            }
         
         # Get payment amount from plan or default
         amount = 50.00  # Default amount, you can make this configurable
         
+        logger.info(f"Rendering payment template for tenant {tenant_id}")
         return render_template('billing/payment.html', 
                              tenant=tenant, 
                              billing_info=billing_info,
                              amount=amount)
         
     except Exception as e:
-        logger.error(f"Error initiating payment: {str(e)}")
+        logger.error(f"Error initiating payment: {str(e)}", exc_info=True)
         flash('Error initiating payment', 'error')
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('dashboard'))
 
 @billing_bp.route('/panel/<int:tenant_id>/payment/process', methods=['POST'])
 @login_required
 def process_payment(tenant_id):
-    """Process payment submission"""
+    """Initiate payment with SSLCommerz"""
     try:
         # Check access
         if not current_user.is_admin:
@@ -92,38 +113,38 @@ def process_payment(tenant_id):
                 tenant_id=tenant_id
             ).first()
             if not tenant_user:
-                return jsonify({'error': 'Access denied'}), 403
+                flash('Access denied', 'error')
+                return redirect(url_for('dashboard'))
         
         # Get form data
         amount = float(request.form.get('amount', 50.00))
-        payment_method = request.form.get('payment_method', 'stripe')
         
-        # Generate unique payment ID
-        import uuid
-        payment_id = f"pay_{uuid.uuid4().hex[:16]}"
+        logger.info(f"Processing payment for tenant {tenant_id}, user {current_user.id}, amount {amount}")
         
-        payment_data = {
-            'payment_id': payment_id,
-            'amount': amount,
-            'currency': 'USD',
-            'method': payment_method,
-            'transaction_id': f"txn_{uuid.uuid4().hex[:12]}",
-            'response': {
-                'status': 'success',
-                'gateway': payment_method,
-                'processed_at': datetime.utcnow().isoformat()
-            }
-        }
+        # Import the BillingService from billing.py that has SSLCommerz integration
+        try:
+            from billing import BillingService
+            logger.info("Successfully imported BillingService from billing.py")
+        except ImportError as import_error:
+            logger.error(f"Failed to import BillingService: {import_error}")
+            flash('Payment service unavailable. Please try again later.', 'error')
+            return redirect(url_for('billing.initiate_payment', tenant_id=tenant_id))
         
-        # Process the payment
-        payment = get_billing_service().process_payment(tenant_id, payment_data)
+        # Initiate SSLCommerz payment
+        logger.info(f"Calling initiate_renewal_payment with tenant_id={tenant_id}, user_id={current_user.id}, amount={amount}")
+        payment_url = BillingService.initiate_renewal_payment(tenant_id, current_user.id, amount)
+        logger.info(f"Got payment URL: {payment_url}")
         
-        flash('Payment processed successfully! Your panel has been reactivated.', 'success')
-        return redirect(url_for('main.dashboard'))
+        if payment_url:
+            logger.info(f"Redirecting user to SSLCommerz payment gateway: {payment_url}")
+            return redirect(payment_url)
+        else:
+            flash('Failed to initiate payment. Please try again.', 'error')
+            return redirect(url_for('billing.initiate_payment', tenant_id=tenant_id))
         
     except Exception as e:
-        logger.error(f"Error processing payment: {str(e)}")
-        flash('Payment processing failed. Please try again.', 'error')
+        logger.error(f"Error initiating payment: {str(e)}", exc_info=True)
+        flash('Payment initiation failed. Please try again.', 'error')
         return redirect(url_for('billing.initiate_payment', tenant_id=tenant_id))
 
 @billing_bp.route('/panel/<int:tenant_id>/payment/callback', methods=['POST'])
@@ -227,7 +248,7 @@ def admin_billing_logs():
     """Admin panel for viewing billing logs"""
     if not current_user.is_admin:
         flash('Access denied', 'error')
-        return redirect(url_for('main.dashboard'))
+        return redirect(url_for('dashboard'))
     
     try:
         # Get filter parameters

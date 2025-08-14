@@ -372,6 +372,90 @@ class BillingService:
             raise
 
     @staticmethod
+    def initiate_renewal_payment(tenant_id, user_id, amount):
+        """Initiate renewal payment for an existing tenant"""
+        try:
+            tenant = Tenant.query.get_or_404(tenant_id)
+            user = SaasUser.query.get_or_404(user_id)
+
+            transaction_id = f"RENEWAL-{uuid.uuid4().hex[:16]}"
+            domain = os.environ.get('DOMAIN', 'khudroo.com')
+            protocol = request.scheme
+            success_url = f"{protocol}://{domain}{url_for('renewal_payment_success', tenant_id=tenant_id)}"
+            fail_url = f"{protocol}://{domain}{url_for('renewal_payment_fail', tenant_id=tenant_id)}"
+            cancel_url = f"{protocol}://{domain}{url_for('renewal_payment_cancel', tenant_id=tenant_id)}"
+            ipn_url = f"{protocol}://{domain}/billing/renewal/ipn"
+
+            # Prepare SSLCommerz payment request
+            payload = {
+                'store_id': SSLCOMMERZ_STORE_ID,
+                'store_passwd': SSLCOMMERZ_STORE_PASSWORD,
+                'total_amount': str(Decimal(str(amount))),
+                'currency': 'BDT',
+                'tran_id': transaction_id,
+                'success_url': success_url,
+                'fail_url': fail_url,
+                'cancel_url': cancel_url,
+                'ipn_url': ipn_url,
+                'emi_option': 0,
+                'cus_name': user.username,
+                'cus_email': user.email,
+                'cus_add1': 'Bangladesh',
+                'cus_add2': '',
+                'cus_city': 'N/A',
+                'cus_postcode': 'N/A',
+                'cus_country': 'Bangladesh',
+                'cus_phone': 'N/A',
+                'shipping_method': 'NO',
+                'product_name': f"Panel Renewal - {tenant.name}",
+                'product_category': 'SaaS-renewal',
+                'product_profile': 'general',
+                'num_of_item': 1,
+                'value_a': 'renewal',
+                'value_b': str(user_id),
+                'value_c': '30days',
+                'value_d': transaction_id
+            }
+
+            logger.info(f"Initiating renewal payment for tenant {tenant_id}, transaction {transaction_id}")
+            headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+            BillingService._log_sslcommerz_request('POST', SSLCOMMERZ_SESSION_API, headers, payload)
+
+            response = requests.post(SSLCOMMERZ_SESSION_API, data=payload, headers=headers, timeout=30)
+            BillingService._log_sslcommerz_response(response)
+            response_data = response.json()
+
+            if response.status_code != 200 or response_data.get('status') != 'SUCCESS':
+                logger.error(f"Renewal payment initiation failed: {response_data.get('failedreason', 'Unknown error')}")
+                return None
+
+            # Store transaction in database
+            transaction = PaymentTransaction(
+                transaction_id=transaction_id,
+                validation_id=response_data.get('val_id'),
+                tenant_id=tenant_id,
+                user_id=user_id,
+                amount=amount,
+                status='PENDING',
+                response_data=str(response_data)[:2000]
+            )
+            db.session.add(transaction)
+            db.session.commit()
+
+            logger.info(f"Renewal payment initiated successfully for transaction {transaction_id}")
+            return response_data.get('GatewayPageURL')
+
+        except Exception as e:
+            db.session.rollback()
+            error_tracker.log_error(e, {
+                'tenant_id': tenant_id,
+                'user_id': user_id,
+                'amount': amount,
+                'function': 'initiate_renewal_payment'
+            })
+            return None
+
+    @staticmethod
     @track_errors('validate_payment')
     def validate_payment(transaction_id, tenant_id, validation_id=None):
         """Validate payment status with SSLCommerz"""

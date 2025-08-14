@@ -190,6 +190,8 @@ body {
   color: var(--text-primary);
   background-color: var(--bg-secondary);
   min-height: 100vh;
+  overflow-x: hidden;
+  max-width: 100vw;
 }
 
 /* Typography */
@@ -1776,6 +1778,35 @@ footer a:hover {
   transform: translateY(-1px);
 }
 
+/* Footer Links Responsive */
+.footer-link {
+  color: var(--text-muted);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: var(--transition-fast);
+  white-space: nowrap;
+  font-size: 0.9rem;
+}
+
+.footer-link:hover {
+  color: var(--primary);
+  transform: translateY(-1px);
+}
+
+/* Mobile footer adjustments */
+@media (max-width: 576px) {
+  .footer-link {
+    font-size: 0.85rem;
+    gap: 0.25rem;
+  }
+  
+  .footer-link i {
+    font-size: 1.1rem;
+  }
+}
+
 .footer-logo {
   width: 48px;
   height: 48px;
@@ -1929,6 +1960,54 @@ footer a:hover {
   body {
     background: white !important;
     color: black !important;
+  }
+}
+
+/* Prevent horizontal scrolling globally */
+* {
+  max-width: 100%;
+}
+
+.container, .container-fluid {
+  overflow-x: hidden;
+}
+
+/* Fix for wide tables */
+.table-responsive {
+  overflow-x: auto;
+}
+
+/* Fix for wide pre/code blocks */
+pre, code {
+  overflow-x: auto;
+  word-wrap: break-word;
+}
+
+/* Fix for wide images */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Fix for Bootstrap row negative margins */
+.row {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+/* Responsive padding adjustments */
+@media (max-width: 576px) {
+  .container, .container-fluid {
+    padding-left: 15px;
+    padding-right: 15px;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
   }
 }
 

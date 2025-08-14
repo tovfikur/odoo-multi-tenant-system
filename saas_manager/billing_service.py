@@ -346,6 +346,92 @@ class BillingService:
             logger.error(f"Error processing payment: {str(e)}")
             db.session.rollback()
             raise
+
+    def process_renewal_payment(self, tenant_id, payment_data):
+        """Process renewal payment and extend billing cycle by 30 days"""
+        try:
+            tenant = Tenant.query.get(tenant_id)
+            if not tenant:
+                raise ValueError(f"Tenant {tenant_id} not found")
+            
+            # Get active or latest billing cycle
+            active_cycle = BillingCycle.query.filter_by(
+                tenant_id=tenant_id,
+                status='active'
+            ).first()
+            
+            # If no active cycle, get the most recent one (even if expired)
+            if not active_cycle:
+                active_cycle = BillingCycle.query.filter_by(
+                    tenant_id=tenant_id
+                ).order_by(BillingCycle.created_at.desc()).first()
+            
+            # Create payment record
+            payment = PaymentHistory(
+                tenant_id=tenant_id,
+                billing_cycle_id=active_cycle.id if active_cycle else None,
+                payment_id=payment_data.get('payment_id'),
+                amount=payment_data.get('amount'),
+                currency=payment_data.get('currency', 'BDT'),
+                payment_method='sslcommerz',
+                status='completed',
+                gateway_transaction_id=payment_data.get('transaction_id'),
+                gateway_response=payment_data.get('response'),
+                paid_at=datetime.utcnow()
+            )
+            
+            db.session.add(payment)
+            
+            # Reactivate tenant if needed
+            tenant.is_active = True
+            tenant.status = 'active'
+            
+            # Extend or create billing cycle
+            if active_cycle:
+                # Extend existing cycle by 30 days
+                logger.info(f"Extending billing cycle for tenant {tenant_id} by 30 days")
+                
+                # If the cycle is expired, start from current date
+                if active_cycle.cycle_end < datetime.utcnow():
+                    active_cycle.cycle_end = datetime.utcnow() + timedelta(days=30)
+                    active_cycle.cycle_start = datetime.utcnow()
+                else:
+                    # If still active, extend from current end date
+                    active_cycle.cycle_end = active_cycle.cycle_end + timedelta(days=30)
+                
+                active_cycle.status = 'active'
+                # Reset or extend hours allowed (30 days * 12 hours = 360 hours)
+                active_cycle.total_hours_allowed += 360
+                
+                # Update payment to link with extended cycle
+                payment.billing_cycle_id = active_cycle.id
+            else:
+                # No existing cycle, create new 30-day cycle
+                logger.info(f"Creating new 30-day billing cycle for tenant {tenant_id}")
+                new_cycle = BillingCycle(
+                    tenant_id=tenant_id,
+                    cycle_start=datetime.utcnow(),
+                    cycle_end=datetime.utcnow() + timedelta(days=30),
+                    total_hours_allowed=360,
+                    hours_used=0.0,
+                    status='active'
+                )
+                
+                db.session.add(new_cycle)
+                db.session.flush()  # Get the ID
+                
+                # Update payment to link with new cycle
+                payment.billing_cycle_id = new_cycle.id
+            
+            db.session.commit()
+            
+            logger.info(f"Processed renewal payment and extended billing cycle for tenant {tenant.name}")
+            return payment
+            
+        except Exception as e:
+            logger.error(f"Error processing renewal payment: {str(e)}")
+            db.session.rollback()
+            raise
     
     def _update_billing_tickets(self, tenant_id, cycle_id):
         """Update billing-related tickets with payment confirmation"""

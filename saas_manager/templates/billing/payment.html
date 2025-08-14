@@ -61,7 +61,7 @@
                     <p class="mb-0">{{ tenant.name }}</p>
                 </div>
                 <div class="col-md-4 text-end">
-                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-light">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-light">
                         <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
                     </a>
                 </div>
@@ -80,7 +80,7 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="billing-info">
-                                    {% if billing_info %}
+                                    {% if billing_info and billing_info.hours_used is defined and billing_info.total_hours_allowed is defined %}
                                     <div class="row">
                                         <div class="col-6">
                                             <strong>Hours Used:</strong><br>
@@ -88,7 +88,7 @@
                                         </div>
                                         <div class="col-6">
                                             <strong>Days Remaining:</strong><br>
-                                            <span class="text-warning fs-4">{{ billing_info.days_remaining }}</span> days
+                                            <span class="text-warning fs-4">{{ billing_info.days_remaining|default('N/A') }}</span> days
                                         </div>
                                     </div>
                                     
@@ -117,18 +117,18 @@
                                     <svg width="120" height="120">
                                         <circle stroke="#e9ecef" stroke-width="8" fill="transparent" r="45" cx="60" cy="60"/>
                                         <circle class="progress-ring-circle" 
-                                                stroke="{% if billing_info and billing_info.hours_used / billing_info.total_hours_allowed > 0.8 %}#dc3545{% elif billing_info and billing_info.hours_used / billing_info.total_hours_allowed > 0.6 %}#ffc107{% else %}#28a745{% endif %}" 
+                                                stroke="{% if billing_info and billing_info.hours_used is defined and billing_info.total_hours_allowed is defined and billing_info.hours_used / billing_info.total_hours_allowed > 0.8 %}#dc3545{% elif billing_info and billing_info.hours_used is defined and billing_info.total_hours_allowed is defined and billing_info.hours_used / billing_info.total_hours_allowed > 0.6 %}#ffc107{% else %}#28a745{% endif %}" 
                                                 stroke-width="8" 
                                                 fill="transparent" 
                                                 r="45" 
                                                 cx="60" 
                                                 cy="60"
-                                                style="stroke-dashoffset: {{ 283 - (283 * (billing_info.hours_used / billing_info.total_hours_allowed if billing_info else 1)) }}"/>
+                                                style="stroke-dashoffset: {{ 283 - (283 * ((billing_info.hours_used / billing_info.total_hours_allowed) if (billing_info and billing_info.hours_used is defined and billing_info.total_hours_allowed is defined) else 1)) }}"/>
                                     </svg>
                                 </div>
                                 <p class="mt-2 mb-0">
                                     <strong>
-                                        {% if billing_info %}
+                                        {% if billing_info and billing_info.hours_used is defined and billing_info.total_hours_allowed is defined %}
                                             {{ "%.1f"|format((billing_info.hours_used / billing_info.total_hours_allowed * 100)) }}%
                                         {% else %}
                                             100%
@@ -272,13 +272,8 @@
                 payButton.disabled = true;
                 payButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Payment...';
                 
-                // In a real implementation, you would integrate with your payment gateway here
-                // For demo purposes, we'll just show the processing state
-                
-                setTimeout(() => {
-                    payButton.disabled = false;
-                    payButton.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Now & Activate Panel';
-                }, 3000);
+                // Let the form submit naturally to the billing route
+                // The form will redirect to SSLCommerz payment gateway
             });
         });
     </script>

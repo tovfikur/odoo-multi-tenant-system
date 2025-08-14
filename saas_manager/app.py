@@ -2694,6 +2694,113 @@ def payment_webhook():
         return jsonify({'error': 'Webhook processing failed'}), 500
 
 
+# Renewal payment callback routes
+@app.route('/renewal/payment/success/<int:tenant_id>')
+@track_errors('renewal_payment_success_route')
+def renewal_payment_success(tenant_id):
+    """Handle successful renewal payment callback from SSLCommerz"""
+    try:
+        transaction_id = request.args.get('tran_id')
+        validation_id = request.args.get('val_id')
+        
+        if not transaction_id:
+            flash('Invalid payment transaction. Please contact support.', 'error')
+            return redirect(url_for('dashboard'))
+        
+        # Import and handle renewal payment
+        from billing_service import BillingService
+        billing_service = BillingService()
+        
+        # Create payment data for renewal processing
+        payment_data = {
+            'payment_id': transaction_id,
+            'amount': request.args.get('amount', 50),
+            'currency': 'BDT',
+            'transaction_id': transaction_id,
+            'response': {
+                'validation_id': validation_id,
+                'status': 'success',
+                'gateway': 'sslcommerz'
+            }
+        }
+        
+        # Process renewal payment (extends billing cycle by 30 days)
+        payment = billing_service.process_renewal_payment(tenant_id, payment_data)
+        
+        flash('Payment successful! Your panel has been renewed for 30 days.', 'success')
+        return redirect(url_for('dashboard'))
+        
+    except Exception as e:
+        logger.error(f"Error processing renewal payment success: {str(e)}", exc_info=True)
+        flash('Payment completed but there was an issue processing the renewal. Please contact support.', 'warning')
+        return redirect(url_for('dashboard'))
+
+@app.route('/renewal/payment/fail/<int:tenant_id>')
+def renewal_payment_fail(tenant_id):
+    """Handle failed renewal payment callback"""
+    flash('Payment failed. Please try again or contact support.', 'error')
+    return redirect(url_for('billing.initiate_payment', tenant_id=tenant_id))
+
+@app.route('/renewal/payment/cancel/<int:tenant_id>')
+def renewal_payment_cancel(tenant_id):
+    """Handle cancelled renewal payment callback"""
+    flash('Payment was cancelled.', 'info')
+    return redirect(url_for('billing.initiate_payment', tenant_id=tenant_id))
+
+@app.route('/billing/renewal/ipn', methods=['POST'])
+@track_errors('renewal_payment_ipn')
+def renewal_payment_ipn():
+    """Handle SSLCommerz IPN (Instant Payment Notification) for renewal payments"""
+    try:
+        ipn_data = request.form.to_dict()
+        transaction_id = ipn_data.get('tran_id')
+        validation_id = ipn_data.get('val_id')
+        status = ipn_data.get('status')
+        
+        if not transaction_id:
+            logger.error("IPN received without transaction ID")
+            return "INVALID", 400
+        
+        logger.info(f"Renewal payment IPN received for transaction {transaction_id}, status: {status}")
+        
+        if status == 'VALID':
+            # Find the payment transaction
+            from models import PaymentTransaction
+            transaction = PaymentTransaction.query.filter_by(
+                transaction_id=transaction_id
+            ).first()
+            
+            if transaction and transaction.status == 'PENDING':
+                # Process the renewal payment
+                from billing_service import BillingService
+                billing_service = BillingService()
+                
+                payment_data = {
+                    'payment_id': transaction_id,
+                    'amount': transaction.amount,
+                    'currency': 'BDT',
+                    'transaction_id': transaction_id,
+                    'response': {
+                        'validation_id': validation_id,
+                        'status': 'success',
+                        'gateway': 'sslcommerz'
+                    }
+                }
+                
+                billing_service.process_renewal_payment(transaction.tenant_id, payment_data)
+                
+                # Update transaction status
+                transaction.status = 'COMPLETED'
+                db.session.commit()
+                
+                logger.info(f"Renewal payment processed successfully via IPN for transaction {transaction_id}")
+        
+        return "VERIFIED", 200
+        
+    except Exception as e:
+        logger.error(f"Error processing renewal payment IPN: {str(e)}", exc_info=True)
+        return "ERROR", 500
+
 
 # Add this API endpoint for real-time subdomain validation
 

@@ -296,34 +296,34 @@
             </div>
           </div>
           <div class="col-md-6">
-            <div class="d-flex justify-content-md-end gap-4">
-              <a href="#" class="text-decoration-none" data-tooltip="Get Help">
+            <div class="d-flex justify-content-center justify-content-md-end gap-2 gap-md-4 flex-wrap">
+              <a href="#" class="text-decoration-none footer-link" data-tooltip="Get Help">
                 <i class="fas fa-question-circle"></i>
-                <span>Help</span>
+                <span class="d-none d-sm-inline">Help</span>
               </a>
               <a
                 href="#"
-                class="text-decoration-none"
+                class="text-decoration-none footer-link"
                 data-tooltip="View Documentation"
               >
                 <i class="fas fa-book"></i>
-                <span>Documentation</span>
+                <span class="d-none d-sm-inline">Documentation</span>
               </a>
               <a
                 href="#"
-                class="text-decoration-none"
+                class="text-decoration-none footer-link"
                 data-tooltip="Contact Support"
               >
                 <i class="fas fa-envelope"></i>
-                <span>Support</span>
+                <span class="d-none d-sm-inline">Support</span>
               </a>
               <a
                 href="#"
-                class="text-decoration-none"
+                class="text-decoration-none footer-link"
                 data-tooltip="System Status"
               >
                 <i class="fas fa-heart pulse-animation text-success"></i>
-                <span>Status</span>
+                <span class="d-none d-sm-inline">Status</span>
               </a>
             </div>
           </div>
@@ -487,6 +487,47 @@
               if (navbarCollapse.classList.contains("show")) {
                 navbarToggler.click();
               }
+            }
+          });
+        }
+
+        // Mobile user dropdown functionality
+        const userDropdown = document.querySelector(".navbar-user-dropdown");
+        const userAvatar = document.querySelector(".user-avatar");
+        
+        if (userDropdown && userAvatar) {
+          // Add click handler for mobile/touch devices
+          userAvatar.addEventListener("click", function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            // Check if this is a touch device or mobile
+            const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
+            
+            if (isMobile) {
+              userDropdown.classList.toggle("active");
+            }
+          });
+
+          // Close dropdown when clicking outside
+          document.addEventListener("click", function(e) {
+            if (!userDropdown.contains(e.target)) {
+              userDropdown.classList.remove("active");
+            }
+          });
+
+          // Close dropdown when clicking on a menu item
+          const dropdownItems = document.querySelectorAll(".user-dropdown-item");
+          dropdownItems.forEach(item => {
+            item.addEventListener("click", function() {
+              userDropdown.classList.remove("active");
+            });
+          });
+
+          // Handle window resize - remove active class on desktop
+          window.addEventListener("resize", function() {
+            if (window.innerWidth > 768) {
+              userDropdown.classList.remove("active");
             }
           });
         }
