@@ -17,6 +17,8 @@
   box-shadow: var(--shadow-sm);
   /* Subtle brand pulse effect */
   filter: brightness(calc(1 + var(--navbar-pulse) * 0.05));
+  /* Prevent dropdown overflow issues */
+  overflow: visible !important;
 }
 
 .navbar-unified.scrolled {
@@ -180,6 +182,25 @@
     min-width: 200px;
     justify-content: flex-end;
   }
+  
+  /* Ensure dropdown visibility on desktop */
+  .navbar-unified {
+    overflow: visible !important;
+  }
+  
+  .navbar-collapse {
+    overflow: visible !important;
+  }
+  
+  .container, .container-fluid {
+    overflow: visible !important;
+  }
+  
+  /* Extra high z-index for desktop dropdowns */
+  .dropdown-menu,
+  .user-dropdown-menu {
+    z-index: 10000 !important;
+  }
 }
 
 /* Primary Button - Azure to Teal Gradient */
@@ -305,7 +326,7 @@
   visibility: hidden;
   transform: translateY(-10px);
   transition: var(--transition-base);
-  z-index: 1000;
+  z-index: 9999 !important;
   overflow: hidden;
 }
 
@@ -554,6 +575,16 @@ body {
   border: 1px solid var(--border-primary);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-lg);
+  z-index: 9999 !important;
+}
+
+/* Ensure navbar container doesn't clip dropdowns */
+.navbar-collapse {
+  overflow: visible !important;
+}
+
+.container, .container-fluid {
+  overflow: visible !important;
 }
 
 .dropdown-item {
