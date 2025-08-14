@@ -54,7 +54,8 @@
       "Bash(git push:*)",
       "Bash(docker inspect:*)",
       "Bash(cp:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(git fetch:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"
