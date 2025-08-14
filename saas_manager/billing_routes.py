@@ -10,6 +10,13 @@ import logging
 billing_bp = Blueprint('billing', __name__, url_prefix='/billing')
 logger = logging.getLogger(__name__)
 
+# Simple test route to verify billing routes are working
+@billing_bp.route('/test')
+def test_billing():
+    """Test route to verify billing blueprint is working"""
+    logger.info("=== BILLING TEST ROUTE HIT ===")
+    return "Billing routes are working! This is a test endpoint."
+
 # Initialize billing service lazily to avoid import-time issues
 billing_service = None
 
@@ -50,7 +57,18 @@ def panel_billing_info(tenant_id):
 def initiate_payment(tenant_id):
     """Initiate payment for panel renewal"""
     try:
+        logger.info(f"=== PAYMENT FORM GET REQUEST ===")
         logger.info(f"Starting payment initiation for tenant {tenant_id}")
+        logger.info(f"User: {current_user.id if current_user else 'None'}")
+        logger.info(f"Session before form render: {dict(request.__dict__.get('session', {}))}")
+        
+        # Test CSRF token generation immediately
+        try:
+            from flask_wtf.csrf import generate_csrf
+            test_csrf = generate_csrf()
+            logger.info(f"Test CSRF token generated: {test_csrf}")
+        except Exception as csrf_err:
+            logger.error(f"CSRF generation failed: {csrf_err}")
         
         # Check access
         if not current_user.is_admin:
@@ -91,6 +109,18 @@ def initiate_payment(tenant_id):
         amount = 50.00  # Default amount, you can make this configurable
         
         logger.info(f"Rendering payment template for tenant {tenant_id}")
+        
+        # Debug: Test CSRF token generation
+        try:
+            from flask_wtf.csrf import generate_csrf
+            csrf_debug_token = generate_csrf()
+            logger.info(f"=== PAYMENT FORM RENDER DEBUG ===")
+            logger.info(f"Generated CSRF token for form: {csrf_debug_token}")
+            logger.info(f"Session data: {dict(request.__class__.__dict__.get('session', {}))}")
+            logger.info(f"=== END PAYMENT FORM RENDER DEBUG ===")
+        except Exception as e:
+            logger.error(f"Failed to generate CSRF token during template render: {e}")
+        
         return render_template('billing/payment.html', 
                              tenant=tenant, 
                              billing_info=billing_info,
@@ -105,6 +135,11 @@ def initiate_payment(tenant_id):
 @login_required
 def process_payment(tenant_id):
     """Initiate payment with SSLCommerz"""
+    # Temporary debug: print form data to see if CSRF token is present
+    logger.info(f"Form data received: {dict(request.form)}")
+    logger.info(f"CSRF token in form: {'csrf_token' in request.form}")
+    if 'csrf_token' in request.form:
+        logger.info(f"CSRF token value: {request.form['csrf_token']}")
     try:
         # Check access
         if not current_user.is_admin:

@@ -53,7 +53,8 @@
       "Bash(git remote get-url:*)",
       "Bash(git push:*)",
       "Bash(docker inspect:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(rg:*)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

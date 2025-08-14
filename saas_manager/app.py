@@ -118,7 +118,10 @@ app.register_blueprint(system_admin_bp)
 app.register_blueprint(support_bp)
 app.register_blueprint(support_admin_bp)
 app.register_blueprint(billing_bp)
+logger.info("✅ Billing blueprint registered successfully")
+logger.info(f"Billing blueprint routes: {[str(rule) for rule in app.url_map.iter_rules() if 'billing' in str(rule)]}")
 register_unified_billing_routes(app, csrf)
+logger.info("✅ Unified billing routes registered successfully")
 
 # Register API routes (after all imports are available)
 try:
@@ -182,14 +185,69 @@ def csrf_token():
     from flask_wtf.csrf import generate_csrf
     return generate_csrf()
 
+# Debug middleware to track all requests
+@app.before_request
+def log_request_debug():
+    """Debug logging for all requests"""
+    # Log ALL billing/payment related requests, not just payment ones
+    if (request.endpoint and ('payment' in str(request.endpoint) or 'billing' in str(request.endpoint))) or \
+       (request.path and ('/billing/' in request.path or '/payment' in request.path)):
+        logger.info(f"=== COMPLETE REQUEST DEBUG ===")
+        logger.info(f"Endpoint: {request.endpoint}")
+        logger.info(f"Method: {request.method}")
+        logger.info(f"URL: {request.url}")
+        logger.info(f"Path: {request.path}")
+        logger.info(f"User-Agent: {request.headers.get('User-Agent', 'None')[:100]}")
+        logger.info(f"Referrer: {request.headers.get('Referer', 'None')}")
+        logger.info(f"Current user: {current_user.id if current_user and hasattr(current_user, 'id') else 'Anonymous'}")
+        
+        # Log all headers for payment requests
+        if request.method == 'POST':
+            logger.info(f"All Headers: {dict(request.headers)}")
+            logger.info(f"Form data: {dict(request.form)}")
+            logger.info(f"Raw data: {request.get_data(as_text=True)[:500]}")
+            logger.info(f"Content-Type: {request.content_type}")
+            logger.info(f"CSRF token present: {'csrf_token' in request.form}")
+            if 'csrf_token' in request.form:
+                logger.info(f"CSRF token value: '{request.form['csrf_token']}'")
+        
+        # Also log session info
+        from flask import session
+        logger.info(f"Session keys: {list(session.keys())}")
+        logger.info(f"Session CSRF: {session.get('csrf_token', 'NOT_FOUND')}")
+        
+        # Try to generate a fresh CSRF token for comparison
+        try:
+            from flask_wtf.csrf import generate_csrf
+            fresh_token = generate_csrf()
+            logger.info(f"Fresh CSRF token: {fresh_token}")
+        except Exception as e:
+            logger.error(f"Failed to generate fresh CSRF token: {e}")
+        
+        logger.info(f"=== END COMPLETE REQUEST DEBUG ===")
+
 # CSRF error handler
-@app.errorhandler(400)
+@app.errorhandler(400) 
 def csrf_error(reason):
-    """Handle CSRF token errors"""
-    if str(reason).startswith('400 Bad Request: The CSRF token'):
-        flash('Security token expired. Please try again.', 'error')
-        return redirect(request.referrer or url_for('index'))
-    return reason
+    """Handle CSRF validation errors with detailed logging"""
+    logger.error(f"=== CSRF ERROR DEBUG ===")
+    logger.error(f"Error reason: {reason}")
+    logger.error(f"Request method: {request.method}")
+    logger.error(f"Request URL: {request.url}")
+    logger.error(f"Request endpoint: {request.endpoint}")
+    if request.method == 'POST':
+        logger.error(f"Form data received: {dict(request.form)}")
+        logger.error(f"CSRF token in form: {'csrf_token' in request.form}")
+        if 'csrf_token' in request.form:
+            logger.error(f"CSRF token value: {request.form['csrf_token']}")
+    
+    from flask import session
+    logger.error(f"Session data: {dict(session)}")
+    logger.error(f"=== END CSRF ERROR DEBUG ===")
+    
+    # Redirect back with error message
+    flash('Security token validation failed. Please try again.', 'error')
+    return redirect(request.referrer or url_for('dashboard'))
 
 # Initialize Odoo manager and other services
 odoo = OdooDatabaseManager(odoo_url="http://odoo_master:8069", master_pwd=os.environ.get('ODOO_MASTER_PASSWORD', 'admin123'))
@@ -1270,10 +1328,17 @@ def manage_tenant(tenant_id):
         except Exception as e:
             logger.warning(f"Could not check database status for {tenant.database_name}: {e}")
         
-        modules = odoo.get_installed_applications_count(tenant.database_name, tenant.admin_username, tenant.get_admin_password())
-        storage_usage = odoo.get_database_storage_usage(tenant.database_name)['total_size_human']
-        uptime = odoo.get_tenant_uptime(tenant.database_name)['uptime_human']
-        odoo_user = odoo.get_users_count(tenant.database_name, tenant.admin_username, tenant.get_admin_password())['total_users']
+        # Handle pending tenants without databases
+        if tenant.status == 'pending':
+            modules = 0
+            storage_usage = '0 B'
+            uptime = 'N/A'
+            odoo_user = 0
+        else:
+            modules = odoo.get_installed_applications_count(tenant.database_name, tenant.admin_username, tenant.get_admin_password())
+            storage_usage = odoo.get_database_storage_usage(tenant.database_name)['total_size_human']
+            uptime = odoo.get_tenant_uptime(tenant.database_name)['uptime_human']
+            odoo_user = odoo.get_users_count(tenant.database_name, tenant.admin_username, tenant.get_admin_password())['total_users']
         
         # Get available subscription plans for the edit modal
         plans = SubscriptionPlan.query.filter_by(is_active=True).all()

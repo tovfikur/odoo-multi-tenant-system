@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel Payment - {{ tenant.name }}</title>
+    <title>Panel Payment - {{ tenant.name }} - DEBUG VERSION</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -147,6 +147,11 @@
                         <h5 class="card-title mb-4"><i class="fas fa-payment me-2"></i>Renew Panel Subscription</h5>
                         
                         <form action="{{ url_for('billing.process_payment', tenant_id=tenant.id) }}" method="POST" id="paymentForm">
+                            <!-- Debug: Show CSRF token visibly for testing -->
+                            <div style="background: yellow; padding: 10px; margin: 10px 0;">
+                                <strong>DEBUG - CSRF Token:</strong> {{ csrf_token() }}
+                            </div>
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                             <div class="row mb-4">
                                 <div class="col-md-6">
                                     <label class="form-label">Renewal Period</label>
@@ -246,12 +251,48 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            console.log('=== PAYMENT FORM DOM LOADED ===');
+            alert('DEBUG: Payment form loaded - check console for logs');
+            console.log('Current URL:', window.location.href);
+            console.log('Document title:', document.title);
+            
+            // Check if payment form exists
+            const paymentForm = document.getElementById('paymentForm');
+            if (paymentForm) {
+                console.log('Payment form found:', paymentForm);
+                console.log('Form action:', paymentForm.action);
+                console.log('Form method:', paymentForm.method);
+                
+                // Check all form elements
+                const allInputs = paymentForm.querySelectorAll('input, select, textarea');
+                console.log(`Total form elements: ${allInputs.length}`);
+                allInputs.forEach((input, index) => {
+                    console.log(`Input ${index}: name="${input.name}", type="${input.type}", value="${input.value}"`);
+                });
+                
+                // Specifically check for CSRF token
+                const csrfInput = paymentForm.querySelector('input[name="csrf_token"]');
+                if (csrfInput) {
+                    console.log('CSRF token input found!');
+                    console.log('CSRF token value:', csrfInput.value);
+                    console.log('CSRF token type:', csrfInput.type);
+                } else {
+                    console.error('ERROR: CSRF token input NOT FOUND!');
+                }
+            } else {
+                console.error('ERROR: Payment form NOT FOUND!');
+            }
+            
             // Payment method selection
             const paymentMethods = document.querySelectorAll('.payment-method[data-method]');
             const selectedMethodInput = document.getElementById('selectedPaymentMethod');
             
+            console.log(`Payment methods found: ${paymentMethods.length}`);
+            console.log('Selected method input:', selectedMethodInput);
+            
             paymentMethods.forEach(method => {
                 method.addEventListener('click', function() {
+                    console.log('Payment method clicked:', this.dataset.method);
                     // Remove active class from all methods
                     paymentMethods.forEach(m => m.classList.remove('active'));
                     
@@ -260,21 +301,73 @@
                     
                     // Update hidden input
                     selectedMethodInput.value = this.dataset.method;
+                    console.log('Updated selected method to:', selectedMethodInput.value);
                 });
             });
             
-            // Form submission
-            const paymentForm = document.getElementById('paymentForm');
+            // Form submission (use existing paymentForm variable)
             const payButton = document.getElementById('payButton');
             
-            paymentForm.addEventListener('submit', function(e) {
-                // Prevent double submission
-                payButton.disabled = true;
-                payButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Payment...';
-                
-                // Let the form submit naturally to the billing route
-                // The form will redirect to SSLCommerz payment gateway
-            });
+            if (paymentForm && payButton) {
+                console.log('Setting up form submission handler...');
+                paymentForm.addEventListener('submit', function(e) {
+                    console.log('=== FORM SUBMIT EVENT TRIGGERED ===');
+                    console.log('Event:', e);
+                    console.log('Form being submitted:', this);
+                    console.log('Submit timestamp:', new Date().toISOString());
+                    
+                    // Debug logging
+                    console.log('=== PAYMENT FORM SUBMISSION DEBUG ===');
+                    console.log('Form action:', this.action);
+                    console.log('Form method:', this.method);
+                    console.log('Form target:', this.target);
+                    console.log('Form encoding:', this.enctype);
+                    
+                    // Log all form data
+                    const formData = new FormData(this);
+                    console.log('Form data entries:');
+                    let hasCSRF = false;
+                    for (let [key, value] of formData.entries()) {
+                        console.log(`  ${key}: "${value}"`);
+                        if (key === 'csrf_token') {
+                            hasCSRF = true;
+                        }
+                    }
+                    
+                    // Double-check CSRF token
+                    const csrfInput = this.querySelector('input[name="csrf_token"]');
+                    console.log('CSRF input element:', csrfInput);
+                    if (csrfInput) {
+                        console.log('CSRF token found in DOM:', csrfInput.value);
+                        console.log('CSRF input attributes:', {
+                            name: csrfInput.name,
+                            value: csrfInput.value,
+                            type: csrfInput.type,
+                            disabled: csrfInput.disabled,
+                            form: csrfInput.form
+                        });
+                    } else {
+                        console.error('ERROR: CSRF token input NOT FOUND in DOM!');
+                    }
+                    
+                    console.log('CSRF token in FormData:', hasCSRF);
+                    
+                    // Prevent double submission
+                    if (payButton) {
+                        payButton.disabled = true;
+                        payButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processing Payment...';
+                    }
+                    
+                    console.log('=== ALLOWING FORM TO SUBMIT NATURALLY ===');
+                    // Let the form submit naturally to the billing route
+                    // The form will redirect to SSLCommerz payment gateway
+                });
+                console.log('Form submission handler set up successfully');
+            } else {
+                console.error('ERROR: Could not set up form submission - form or button missing');
+                console.log('PaymentForm:', paymentForm);
+                console.log('PayButton:', payButton);
+            }
         });
     </script>
 </body>

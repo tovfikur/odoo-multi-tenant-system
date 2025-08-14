@@ -997,7 +997,7 @@ class OdooDatabaseManager:
         """Calculate Docker volume overhead for this database."""
         try:
             # Get volume information using Docker API
-            client = docker.from_env()
+            client = get_docker_client()
             
             # Get odoo_filestore volume info
             try:
