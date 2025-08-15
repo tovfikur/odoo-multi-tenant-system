@@ -170,30 +170,32 @@
                                 
                                 <div class="col-md-6">
                                     <label class="form-label">Payment Method</label>
-                                    <div class="payment-method" data-method="stripe">
+                                    <div class="payment-method active" data-method="sslcommerz">
                                         <div class="d-flex align-items-center">
-                                            <i class="fab fa-cc-stripe fa-2x text-primary me-3"></i>
+                                            <i class="fas fa-credit-card fa-2x text-success me-3"></i>
                                             <div>
-                                                <h6 class="mb-0">Credit Card</h6>
-                                                <small class="text-muted">Secure payment via Stripe</small>
+                                                <h6 class="mb-0">SSLCommerz</h6>
+                                                <small class="text-muted">Secure payment via SSLCommerz Gateway</small>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <div class="payment-method" data-method="paypal">
-                                        <div class="d-flex align-items-center">
-                                            <i class="fab fa-paypal fa-2x text-warning me-3"></i>
-                                            <div>
-                                                <h6 class="mb-0">PayPal</h6>
-                                                <small class="text-muted">Pay with PayPal account</small>
-                                            </div>
+                                    <div class="alert alert-info mt-3 mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Supported Methods:</strong> Visa, MasterCard, American Express, bKash, Nagad, Rocket, and all major Bangladeshi payment methods
+                                        <div class="mt-2">
+                                            <span class="badge bg-primary me-1">Visa</span>
+                                            <span class="badge bg-primary me-1">MasterCard</span>
+                                            <span class="badge bg-success me-1">bKash</span>
+                                            <span class="badge bg-warning me-1">Nagad</span>
+                                            <span class="badge bg-info me-1">Rocket</span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                             
                             <input type="hidden" name="amount" value="{{ amount }}">
-                            <input type="hidden" name="payment_method" value="stripe" id="selectedPaymentMethod">
+                            <input type="hidden" name="payment_method" value="sslcommerz" id="selectedPaymentMethod">
                             
                             <div class="row">
                                 <div class="col-md-6">
@@ -230,15 +232,15 @@
                             </div>
                             
                             <div class="text-center mt-4">
-                                <button type="submit" class="btn btn-primary btn-lg px-5" id="payButton">
-                                    <i class="fas fa-lock me-2"></i>Pay Now & Activate Panel
+                                <button type="submit" class="btn btn-success btn-lg px-5" id="payButton">
+                                    <i class="fas fa-lock me-2"></i>Pay with SSLCommerz
                                 </button>
                             </div>
                             
                             <p class="text-center mt-3 mb-0">
                                 <small class="text-muted">
                                     <i class="fas fa-shield-alt me-1"></i>
-                                    Your payment is secured with 256-bit SSL encryption
+                                    Your payment is secured by SSLCommerz with 256-bit SSL encryption
                                 </small>
                             </p>
                         </form>
@@ -302,6 +304,16 @@
                     // Update hidden input
                     selectedMethodInput.value = this.dataset.method;
                     console.log('Updated selected method to:', selectedMethodInput.value);
+                    
+                    // Update button text based on method
+                    const payButton = document.getElementById('payButton');
+                    if (payButton) {
+                        if (this.dataset.method === 'sslcommerz') {
+                            payButton.innerHTML = '<i class="fas fa-lock me-2"></i>Pay with SSLCommerz';
+                        } else {
+                            payButton.innerHTML = '<i class="fas fa-lock me-2"></i>Pay Now & Activate Panel';
+                        }
+                    }
                 });
             });
             

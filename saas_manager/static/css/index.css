@@ -40,6 +40,12 @@
   box-sizing: border-box;
 }
 
+html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
 body {
   font-family: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   line-height: 1.6;
@@ -47,6 +53,31 @@ body {
   background: var(--bg-secondary);
   overflow-x: hidden;
   scroll-behavior: smooth;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Create a content wrapper that pushes footer down */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* All content before footer should grow */
+body > *:not(.footer-modern):not(script):not(style) {
+  flex: 1 0 auto;
+}
+
+/* Specific flex settings for main sections */
+.hero-modern,
+.features-modern, 
+.stats-modern,
+.cta-modern {
+  flex: 1 0 auto;
 }
 
 /* Navigation Enhancement */
@@ -60,6 +91,7 @@ body {
   width: 100%;
   z-index: 1030;
   transition: all 0.3s var(--ease-out-cubic);
+  flex-shrink: 0;
 }
 
 .navbar-modern.scrolled {
@@ -676,8 +708,11 @@ body {
 .footer-modern {
   background: var(--text-primary);
   color: rgba(255, 255, 255, 0.8);
-  padding: 3rem 0 2rem;
+  padding: 3rem 0 0;
   position: relative;
+  margin-bottom: 0;
+  flex-shrink: 0;
+  margin-top: auto;
 }
 
 .footer-content {
@@ -726,6 +761,8 @@ body {
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
+  padding: 1.5rem 0;
+  margin: 0;
 }
 
 /* Animations */

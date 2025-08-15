@@ -2231,3 +2231,407 @@ img {
   max-width: 500px;
   width: 90%;
 }
+
+/* ===== UNIVERSAL CTA FIXES FOR DARK MODE ===== */
+
+/* Universal fix for any bg-light cards that might be CTA sections */
+.card.bg-light,
+.bg-light .card-body,
+.card.bg-light .card-body {
+  /* Check if this is likely a CTA section by looking for common patterns */
+  background: var(--bg-primary, #ffffff) !important;
+  border: 1px solid var(--border-color, rgba(0, 0, 0, 0.1)) !important;
+  color: var(--text-color, inherit) !important;
+  transition: all 0.3s ease !important;
+}
+
+/* Dark mode: Override bg-light completely */
+[data-theme="dark"] .card.bg-light,
+[data-theme="dark"] .bg-light .card-body,
+[data-theme="dark"] .card.bg-light .card-body {
+  background: linear-gradient(135deg, 
+    rgba(26, 115, 232, 0.8) 0%, 
+    rgba(0, 191, 165, 0.8) 50%, 
+    rgba(155, 81, 224, 0.8) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  color: white !important;
+  border-radius: 24px !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  position: relative !important;
+  overflow: hidden !important;
+}
+
+/* Light mode: Give bg-light cards a subtle modern look */
+[data-theme="light"] .card.bg-light,
+[data-theme="light"] .bg-light .card-body,
+[data-theme="light"] .card.bg-light .card-body,
+.card.bg-light,
+.bg-light .card-body {
+  background: linear-gradient(135deg, 
+    rgba(255, 255, 255, 0.9) 0%, 
+    rgba(248, 250, 252, 0.95) 100%) !important;
+  border: 1px solid rgba(26, 115, 232, 0.1) !important;
+  box-shadow: 0 8px 32px rgba(26, 115, 232, 0.1) !important;
+  border-radius: 16px !important;
+}
+
+/* Better approach: Override bg-light for cards containing CTA-like content */
+.card.bg-light:has([href*="register"]),
+.card.bg-light:has([href*="contact"]),
+.card.bg-light:has([href*="trial"]),
+.card.bg-light:has(.btn-primary),
+.card.bg-light:has(.btn-outline-primary),
+section[id*="cta"] .card.bg-light,
+.card.bg-light.animate-in {
+  background: linear-gradient(135deg, 
+    var(--primary) 0%, 
+    var(--secondary) 50%, 
+    var(--support) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  position: relative !important;
+}
+
+/* Dark mode adaptation for bg-light override */
+[data-theme="dark"] .card.bg-light:has(h3:contains("Ready to Transform")),
+[data-theme="dark"] .card.bg-light[class*="transform"],
+[data-theme="dark"] .card.bg-light .card-body:has(h3:contains("Ready to Transform")) {
+  background: linear-gradient(135deg, 
+    rgba(26, 115, 232, 0.8) 0%, 
+    rgba(0, 191, 165, 0.8) 50%, 
+    rgba(155, 81, 224, 0.8) 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+}
+
+/* Fix text colors in overridden cards */
+.card.bg-light h3:contains("Ready to Transform"),
+.card.bg-light .card-body h3,
+.card.bg-light .card-body h2,
+.card.bg-light .card-body h1 {
+  color: white !important;
+  font-weight: 700 !important;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3) !important;
+}
+
+.card.bg-light .text-muted,
+.card.bg-light .card-body p {
+  color: rgba(255, 255, 255, 0.9) !important;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Fix buttons in overridden cards */
+.card.bg-light .btn-primary {
+  background: rgba(255, 255, 255, 0.95) !important;
+  color: var(--primary) !important;
+  border: none !important;
+  box-shadow: 0 8px 32px rgba(255, 255, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.card.bg-light .btn-primary:hover {
+  background: white !important;
+  transform: translateY(-4px) scale(1.05) !important;
+  box-shadow: 0 12px 48px rgba(255, 255, 255, 0.4), 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+.card.bg-light .btn-outline-primary {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.1) !important;
+}
+
+.card.bg-light .btn-outline-primary:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-4px) scale(1.05) !important;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Add background pattern to overridden cards */
+.card.bg-light:has(h3:contains("Ready to Transform"))::before,
+.card.bg-light[class*="transform"]::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  animation: float 6s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.card.bg-light .card-body {
+  position: relative;
+  z-index: 2;
+}
+
+/* ===== BEAUTIFUL CTA SECTION ===== */
+
+.cta-card-modern {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  margin: 3rem 0;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.cta-card-modern.animate-in {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
+
+.cta-content {
+  position: relative;
+  background: linear-gradient(135deg, 
+    var(--primary) 0%, 
+    var(--secondary) 50%, 
+    var(--support) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Dark mode adaptation */
+[data-theme="dark"] .cta-content {
+  background: linear-gradient(135deg, 
+    rgba(26, 115, 232, 0.8) 0%, 
+    rgba(0, 191, 165, 0.8) 50%, 
+    rgba(155, 81, 224, 0.8) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.cta-bg-pattern {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0%, transparent 50%);
+  animation: float 6s ease-in-out infinite;
+}
+
+.cta-glow {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  right: -50%;
+  bottom: -50%;
+  background: radial-gradient(circle, 
+    rgba(255, 255, 255, 0.1) 0%, 
+    transparent 70%);
+  animation: pulse 4s ease-in-out infinite;
+}
+
+.cta-title {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+
+.cta-subtitle {
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.9);
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.2);
+  max-width: 600px;
+  margin: 0 auto 2rem;
+  line-height: 1.5;
+}
+
+/* Beautiful CTA Buttons */
+.btn-cta-primary,
+.btn-cta-secondary {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 2rem;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.btn-cta-primary {
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--primary);
+  box-shadow: 
+    0 8px 32px rgba(255, 255, 255, 0.3),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.btn-cta-secondary {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.1),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1);
+}
+
+/* Dark mode button adaptations */
+[data-theme="dark"] .btn-cta-primary {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--primary-dark);
+}
+
+[data-theme="dark"] .btn-cta-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-cta-primary:hover,
+.btn-cta-secondary:hover {
+  transform: translateY(-4px) scale(1.05);
+  text-decoration: none;
+}
+
+.btn-cta-primary:hover {
+  background: white;
+  color: var(--primary-dark);
+  box-shadow: 
+    0 12px 48px rgba(255, 255, 255, 0.4),
+    0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+.btn-cta-secondary:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.5);
+  box-shadow: 
+    0 12px 48px rgba(0, 0, 0, 0.15),
+    inset 0 2px 4px rgba(255, 255, 255, 0.2);
+}
+
+.btn-icon {
+  font-size: 1.2rem;
+  transition: transform 0.3s ease;
+}
+
+.btn-cta-primary:hover .btn-icon,
+.btn-cta-secondary:hover .btn-icon {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.btn-text {
+  font-weight: 600;
+  letter-spacing: 0.025em;
+}
+
+/* Ripple effect */
+.btn-ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn-cta-primary:active .btn-ripple,
+.btn-cta-secondary:active .btn-ripple {
+  width: 300px;
+  height: 300px;
+}
+
+/* Feature badges */
+.cta-features {
+  margin-top: 2rem;
+}
+
+.feature-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 30px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.feature-badge:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+.feature-badge i {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 1rem;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(2deg); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.3; transform: scale(1); }
+  50% { opacity: 0.6; transform: scale(1.1); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .cta-title {
+    font-size: 2rem;
+  }
+  
+  .cta-subtitle {
+    font-size: 1.1rem;
+  }
+  
+  .btn-cta-primary,
+  .btn-cta-secondary {
+    padding: 0.875rem 1.5rem;
+    font-size: 1rem;
+    gap: 0.5rem;
+  }
+  
+  .feature-badge {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .d-flex.gap-3.justify-content-center {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem !important;
+  }
+  
+  .btn-cta-primary,
+  .btn-cta-secondary {
+    width: 100%;
+    max-width: 280px;
+    justify-content: center;
+  }
+}

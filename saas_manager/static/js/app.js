@@ -490,3 +490,262 @@ document.body.innerHTML = document.body.innerHTML.replace(
   /<domain>/g,
   window.location.host
 );
+
+// ===== BEAUTIFUL CTA ANIMATIONS =====
+
+// Intersection Observer for CTA animations
+const observeCTAAnimations = () => {
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('animate-in');
+        
+        // Animate feature badges with stagger
+        const featureBadges = entry.target.querySelectorAll('.feature-badge');
+        featureBadges.forEach((badge, index) => {
+          setTimeout(() => {
+            badge.style.opacity = '0';
+            badge.style.transform = 'translateY(20px)';
+            badge.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
+            
+            requestAnimationFrame(() => {
+              badge.style.opacity = '1';
+              badge.style.transform = 'translateY(0)';
+            });
+          }, index * 150);
+        });
+        
+        observer.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.3,
+    rootMargin: '-50px'
+  });
+
+  const ctaCards = document.querySelectorAll('.cta-card-modern');
+  ctaCards.forEach(card => observer.observe(card));
+};
+
+// Enhanced button interactions
+const initCTAButtonEffects = () => {
+  const ctaButtons = document.querySelectorAll('.btn-cta-primary, .btn-cta-secondary');
+  
+  ctaButtons.forEach(button => {
+    // Add click ripple effect
+    button.addEventListener('click', function(e) {
+      const ripple = this.querySelector('.btn-ripple');
+      if (ripple) {
+        ripple.style.width = '0';
+        ripple.style.height = '0';
+        
+        setTimeout(() => {
+          ripple.style.width = '300px';
+          ripple.style.height = '300px';
+        }, 10);
+        
+        setTimeout(() => {
+          ripple.style.width = '0';
+          ripple.style.height = '0';
+        }, 600);
+      }
+    });
+    
+    // Add hover sound effect (optional - can be disabled)
+    button.addEventListener('mouseenter', function() {
+      // Subtle vibration on mobile devices
+      if ('vibrate' in navigator) {
+        navigator.vibrate(50);
+      }
+    });
+  });
+};
+
+// Fix white CTA sections for dark mode compatibility
+const fixWhiteCTASections = () => {
+  // Find all bg-light cards that might be CTA sections
+  const potentialCTACards = document.querySelectorAll('.card.bg-light, .bg-light');
+  
+  potentialCTACards.forEach(card => {
+    const cardBody = card.querySelector('.card-body') || card;
+    
+    // Check if this card contains CTA-like content
+    const hasCTAContent = (
+      cardBody.textContent.includes('Ready to Transform') ||
+      cardBody.textContent.includes('Start Free Trial') ||
+      cardBody.textContent.includes('Contact Sales') ||
+      cardBody.querySelector('[href*="register"]') ||
+      cardBody.querySelector('[href*="contact"]') ||
+      cardBody.querySelector('[href*="trial"]') ||
+      cardBody.querySelector('.btn-primary') ||
+      cardBody.querySelector('.btn-outline-primary')
+    );
+    
+    if (hasCTAContent) {
+      console.log('🎨 Found CTA section, applying beautiful styles...');
+      
+      // Remove the problematic bg-light class
+      card.classList.remove('bg-light');
+      
+      // Add our beautiful CTA class
+      card.classList.add('cta-card-beautiful');
+      
+      // Apply styles immediately for better UX
+      card.style.background = 'linear-gradient(135deg, var(--primary) 0%, var(--secondary) 50%, var(--support) 100%)';
+      card.style.border = '1px solid rgba(255, 255, 255, 0.1)';
+      card.style.borderRadius = '24px';
+      card.style.color = 'white';
+      card.style.position = 'relative';
+      card.style.overflow = 'hidden';
+      
+      // Check for dark mode
+      const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark' || 
+                        document.body.classList.contains('dark-mode');
+      
+      if (isDarkMode) {
+        card.style.background = 'linear-gradient(135deg, rgba(26, 115, 232, 0.8) 0%, rgba(0, 191, 165, 0.8) 50%, rgba(155, 81, 224, 0.8) 100%)';
+        card.style.backdropFilter = 'blur(20px)';
+        card.style.webkitBackdropFilter = 'blur(20px)';
+      }
+      
+      // Fix text colors
+      const headings = cardBody.querySelectorAll('h1, h2, h3, h4, h5, h6');
+      headings.forEach(heading => {
+        heading.style.color = 'white';
+        heading.style.fontWeight = '700';
+        heading.style.textShadow = '0 2px 20px rgba(0, 0, 0, 0.3)';
+      });
+      
+      const paragraphs = cardBody.querySelectorAll('p, .text-muted');
+      paragraphs.forEach(p => {
+        p.style.color = 'rgba(255, 255, 255, 0.9)';
+        p.style.textShadow = '0 1px 10px rgba(0, 0, 0, 0.2)';
+      });
+      
+      // Fix button styles
+      const primaryBtns = cardBody.querySelectorAll('.btn-primary');
+      primaryBtns.forEach(btn => {
+        btn.style.background = 'rgba(255, 255, 255, 0.95)';
+        btn.style.color = 'var(--primary)';
+        btn.style.border = 'none';
+        btn.style.boxShadow = '0 8px 32px rgba(255, 255, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.1)';
+        btn.style.transition = 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        btn.style.borderRadius = '50px';
+        btn.style.fontWeight = '600';
+        
+        btn.addEventListener('mouseenter', () => {
+          btn.style.background = 'white';
+          btn.style.transform = 'translateY(-4px) scale(1.05)';
+          btn.style.boxShadow = '0 12px 48px rgba(255, 255, 255, 0.4), 0 8px 24px rgba(0, 0, 0, 0.15)';
+        });
+        
+        btn.addEventListener('mouseleave', () => {
+          btn.style.background = 'rgba(255, 255, 255, 0.95)';
+          btn.style.transform = 'translateY(0) scale(1)';
+          btn.style.boxShadow = '0 8px 32px rgba(255, 255, 255, 0.3), 0 4px 16px rgba(0, 0, 0, 0.1)';
+        });
+      });
+      
+      const outlineBtns = cardBody.querySelectorAll('.btn-outline-primary');
+      outlineBtns.forEach(btn => {
+        btn.style.background = 'rgba(255, 255, 255, 0.1)';
+        btn.style.color = 'white';
+        btn.style.border = '2px solid rgba(255, 255, 255, 0.3)';
+        btn.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.1)';
+        btn.style.borderRadius = '50px';
+        btn.style.fontWeight = '600';
+        
+        btn.addEventListener('mouseenter', () => {
+          btn.style.background = 'rgba(255, 255, 255, 0.2)';
+          btn.style.borderColor = 'rgba(255, 255, 255, 0.5)';
+          btn.style.transform = 'translateY(-4px) scale(1.05)';
+          btn.style.boxShadow = '0 12px 48px rgba(0, 0, 0, 0.15), inset 0 2px 4px rgba(255, 255, 255, 0.2)';
+        });
+        
+        btn.addEventListener('mouseleave', () => {
+          btn.style.background = 'rgba(255, 255, 255, 0.1)';
+          btn.style.borderColor = 'rgba(255, 255, 255, 0.3)';
+          btn.style.transform = 'translateY(0) scale(1)';
+          btn.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 2px rgba(255, 255, 255, 0.1)';
+        });
+      });
+      
+      // Add floating animation background
+      const bgPattern = document.createElement('div');
+      bgPattern.style.position = 'absolute';
+      bgPattern.style.top = '0';
+      bgPattern.style.left = '0';
+      bgPattern.style.right = '0';
+      bgPattern.style.bottom = '0';
+      bgPattern.style.backgroundImage = `
+        radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.05) 0%, transparent 50%)
+      `;
+      bgPattern.style.animation = 'float 6s ease-in-out infinite';
+      bgPattern.style.pointerEvents = 'none';
+      bgPattern.style.zIndex = '1';
+      
+      card.insertBefore(bgPattern, card.firstChild);
+      
+      // Ensure content is above background
+      if (cardBody) {
+        cardBody.style.position = 'relative';
+        cardBody.style.zIndex = '2';
+      }
+      
+      console.log('✅ CTA section successfully beautified!');
+    }
+  });
+};
+
+// Watch for theme changes and reapply fixes
+const watchThemeChanges = () => {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && 
+          (mutation.attributeName === 'data-theme' || 
+           mutation.attributeName === 'class')) {
+        setTimeout(fixWhiteCTASections, 100);
+      }
+    });
+  });
+  
+  observer.observe(document.documentElement, { 
+    attributes: true, 
+    attributeFilter: ['data-theme', 'class'] 
+  });
+  
+  observer.observe(document.body, { 
+    attributes: true, 
+    attributeFilter: ['class'] 
+  });
+};
+
+// Initialize all CTA effects when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+  observeCTAAnimations();
+  initCTAButtonEffects();
+  
+  // Fix any white CTA sections
+  setTimeout(fixWhiteCTASections, 500); // Small delay to ensure all CSS is loaded
+  
+  // Watch for theme changes
+  watchThemeChanges();
+  
+  console.log('🎨 CTA beautification system initialized');
+});
+
+// Add smooth scroll for CTA buttons if they link to anchors
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('.btn-cta-primary, .btn-cta-secondary');
+  if (link && link.getAttribute('href').startsWith('#')) {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) {
+      target.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }
+  }
+});

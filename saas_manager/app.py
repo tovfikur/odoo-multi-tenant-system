@@ -2812,13 +2812,20 @@ def payment_webhook():
 
 
 # Renewal payment callback routes
-@app.route('/renewal/payment/success/<int:tenant_id>')
+@app.route('/renewal/payment/success/<int:tenant_id>', methods=['GET', 'POST'])
+@csrf.exempt
 @track_errors('renewal_payment_success_route')
 def renewal_payment_success(tenant_id):
     """Handle successful renewal payment callback from SSLCommerz"""
     try:
-        transaction_id = request.args.get('tran_id')
-        validation_id = request.args.get('val_id')
+        # Handle both GET and POST data from SSLCommerz
+        transaction_id = request.args.get('tran_id') or request.form.get('tran_id')
+        validation_id = request.args.get('val_id') or request.form.get('val_id')
+        amount = request.args.get('amount') or request.form.get('amount', '50.00')
+        
+        logger.info(f"Renewal payment success callback - tenant_id: {tenant_id}, tran_id: {transaction_id}, val_id: {validation_id}")
+        logger.info(f"GET params: {dict(request.args)}")
+        logger.info(f"POST form: {dict(request.form)}")
         
         if not transaction_id:
             flash('Invalid payment transaction. Please contact support.', 'error')
@@ -2831,7 +2838,7 @@ def renewal_payment_success(tenant_id):
         # Create payment data for renewal processing
         payment_data = {
             'payment_id': transaction_id,
-            'amount': request.args.get('amount', 50),
+            'amount': float(amount),
             'currency': 'BDT',
             'transaction_id': transaction_id,
             'response': {
@@ -2842,7 +2849,11 @@ def renewal_payment_success(tenant_id):
         }
         
         # Process renewal payment (extends billing cycle by 30 days)
+        logger.info(f"Processing renewal payment via SUCCESS callback: {payment_data}")
         payment = billing_service.process_renewal_payment(tenant_id, payment_data)
+        
+        if payment:
+            logger.info(f"Renewal payment processed successfully via SUCCESS callback for tenant {tenant_id}")
         
         flash('Payment successful! Your panel has been renewed for 30 days.', 'success')
         return redirect(url_for('dashboard'))
@@ -2852,19 +2863,22 @@ def renewal_payment_success(tenant_id):
         flash('Payment completed but there was an issue processing the renewal. Please contact support.', 'warning')
         return redirect(url_for('dashboard'))
 
-@app.route('/renewal/payment/fail/<int:tenant_id>')
+@app.route('/renewal/payment/fail/<int:tenant_id>', methods=['GET', 'POST'])
+@csrf.exempt
 def renewal_payment_fail(tenant_id):
     """Handle failed renewal payment callback"""
     flash('Payment failed. Please try again or contact support.', 'error')
     return redirect(url_for('billing.initiate_payment', tenant_id=tenant_id))
 
-@app.route('/renewal/payment/cancel/<int:tenant_id>')
+@app.route('/renewal/payment/cancel/<int:tenant_id>', methods=['GET', 'POST'])
+@csrf.exempt
 def renewal_payment_cancel(tenant_id):
     """Handle cancelled renewal payment callback"""
     flash('Payment was cancelled.', 'info')
     return redirect(url_for('billing.initiate_payment', tenant_id=tenant_id))
 
 @app.route('/billing/renewal/ipn', methods=['POST'])
+@csrf.exempt
 @track_errors('renewal_payment_ipn')
 def renewal_payment_ipn():
     """Handle SSLCommerz IPN (Instant Payment Notification) for renewal payments"""
@@ -2904,13 +2918,17 @@ def renewal_payment_ipn():
                     }
                 }
                 
-                billing_service.process_renewal_payment(transaction.tenant_id, payment_data)
+                logger.info(f"Processing renewal payment via IPN callback: {payment_data}")
+                payment = billing_service.process_renewal_payment(transaction.tenant_id, payment_data)
                 
                 # Update transaction status
                 transaction.status = 'COMPLETED'
                 db.session.commit()
                 
-                logger.info(f"Renewal payment processed successfully via IPN for transaction {transaction_id}")
+                if payment:
+                    logger.info(f"Renewal payment processed successfully via IPN callback for transaction {transaction_id}")
+                else:
+                    logger.warning(f"Payment processing returned None via IPN callback for transaction {transaction_id}")
         
         return "VERIFIED", 200
         

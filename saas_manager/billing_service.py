@@ -354,6 +354,24 @@ class BillingService:
             if not tenant:
                 raise ValueError(f"Tenant {tenant_id} not found")
             
+            payment_id = payment_data.get('payment_id')
+            if not payment_id:
+                raise ValueError("Payment ID is required")
+            
+            # Check if payment with this ID already exists (idempotent processing)
+            existing_payment = PaymentHistory.query.filter_by(payment_id=payment_id).first()
+            if existing_payment:
+                logger.info(f"Payment {payment_id} already processed for tenant {tenant_id}. Skipping duplicate processing.")
+                
+                # Ensure tenant is reactivated if needed (in case IPN didn't complete fully)
+                if not tenant.is_active or tenant.status != 'active':
+                    logger.info(f"Reactivating tenant {tenant_id} from duplicate payment callback")
+                    tenant.is_active = True
+                    tenant.status = 'active'
+                    db.session.commit()
+                
+                return existing_payment
+            
             # Get active or latest billing cycle
             active_cycle = BillingCycle.query.filter_by(
                 tenant_id=tenant_id,
@@ -370,7 +388,7 @@ class BillingService:
             payment = PaymentHistory(
                 tenant_id=tenant_id,
                 billing_cycle_id=active_cycle.id if active_cycle else None,
-                payment_id=payment_data.get('payment_id'),
+                payment_id=payment_id,
                 amount=payment_data.get('amount'),
                 currency=payment_data.get('currency', 'BDT'),
                 payment_method='sslcommerz',
