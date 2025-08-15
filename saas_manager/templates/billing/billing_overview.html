@@ -60,11 +60,190 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
     color: #0d6efd !important;
   }
 
+  /* 🎨 ENHANCED MAIN CONTENT ROW SECTION */
+  
+  /* Beautiful Panel Cards */
+  .panel-card {
+    background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%);
+    border-radius: 20px !important;
+    border: none !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .panel-card:hover::before {
+    opacity: 1;
+  }
+
+  .panel-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 48px rgba(102, 126, 234, 0.12);
+  }
+
+  /* Enhanced Status Indicators */
+  .status-indicator-enhanced {
+    position: relative;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 24px rgba(var(--status-shadow), 0.3) !important;
+  }
+
+  .status-indicator-enhanced::after {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    opacity: 0;
+    animation: statusRing 2s infinite;
+  }
+
+  @keyframes statusRing {
+    0% { opacity: 0; transform: scale(1); }
+    50% { opacity: 0.3; transform: scale(1.1); }
+    100% { opacity: 0; transform: scale(1.2); }
+  }
+
+  /* Enhanced Progress Bars */
+  .usage-progress-enhanced {
+    height: 12px;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.05);
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .usage-progress-enhanced .progress-bar {
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(90deg, var(--progress-start), var(--progress-end)) !important;
+  }
+
+  .usage-progress-enhanced .progress-bar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: progressShine 2s infinite;
+  }
+
+  @keyframes progressShine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  /* Enhanced Panel Info */
+  .panel-title {
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 700;
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Enhanced Badges */
+  .badge-enhanced {
+    border-radius: 20px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .badge-enhanced::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: badgeShine 3s infinite;
+  }
+
+  @keyframes badgeShine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  /* Enhanced Action Buttons */
+  .action-btn-enhanced {
+    border-radius: 12px !important;
+    padding: 0.5rem 1rem !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .action-btn-enhanced:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Section Header Enhancement */
+  .section-header-enhanced {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+  }
+
+  /* CSS Variables for Dynamic Colors */
+  .status-active { --status-shadow: 40, 167, 69; }
+  .status-warning { --status-shadow: 255, 193, 7; }
+  .status-expired { --status-shadow: 220, 53, 69; }
+  .status-info { --status-shadow: 13, 202, 240; }
+  .status-secondary { --status-shadow: 108, 117, 125; }
+
+  .progress-success { --progress-start: #10b981; --progress-end: #059669; }
+  .progress-warning { --progress-start: #f59e0b; --progress-end: #d97706; }
+  .progress-danger { --progress-start: #ef4444; --progress-end: #dc2626; }
+
   /* Dark mode compatibility */
   @media (prefers-color-scheme: dark) {
     .card {
       background-color: var(--bs-dark) !important;
       border: 1px solid rgba(255, 255, 255, 0.125) !important;
+    }
+
+    .panel-card {
+      background: linear-gradient(145deg, #1a202c 0%, #2d3748 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    }
+
+    .section-header-enhanced {
+      background: linear-gradient(145deg, #2d3748 0%, #4a5568 100%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.1) !important;
     }
 
     .next-billing-info {
@@ -349,99 +528,104 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
     </div>
     {% endif %} {% endif %}
 
-    <!-- Main Content -->
+    <!-- 🎨 ENHANCED MAIN CONTENT ROW SECTION -->
     <div class="row">
-      <!-- Panels Section -->
+      <!-- Enhanced Panels Section -->
       <div class="col-xl-8 col-lg-7">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <div class="d-flex align-items-center">
-            <div class="bg-primary bg-opacity-10 rounded-2 p-2 me-3">
-              <i class="fas fa-server text-primary"></i>
+        <div class="section-header-enhanced">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+              <div class="bg-primary bg-opacity-15 rounded-3 p-3 me-3">
+                <i class="fas fa-server text-primary fs-5"></i>
+              </div>
+              <div>
+                <h4 class="mb-1 fw-bold text-primary">Your Panels</h4>
+                <p class="mb-0 text-muted small">Manage your active tenant instances</p>
+              </div>
             </div>
-            <h4 class="mb-0 fw-bold">Your Panels</h4>
-          </div>
-          <div class="d-flex gap-2">
-            <button class="btn btn-outline-primary btn-sm">
-              <i class="fas fa-th-large me-1"></i>Grid View
-            </button>
-            <button class="btn btn-primary btn-sm">
-              <i class="fas fa-sync me-1"></i>Refresh
-            </button>
+            <div class="d-flex gap-2">
+              <button class="btn btn-outline-primary btn-sm action-btn-enhanced">
+                <i class="fas fa-th-large me-1"></i>Grid View
+              </button>
+              <button class="btn btn-primary btn-sm action-btn-enhanced">
+                <i class="fas fa-sync me-1"></i>Refresh
+              </button>
+            </div>
           </div>
         </div>
 
-        <div class="row g-3">
+        <div class="row g-4">
           {% for tenant in tenants %}
           <div class="col-12">
-            <div class="card border-0 shadow-sm">
+            <div class="panel-card">
               <div class="card-body p-4">
                 <div class="row align-items-center">
-                  <!-- Panel Info -->
+                  <!-- Enhanced Panel Info -->
                   <div class="col-lg-5">
                     <div class="d-flex align-items-center">
-                      <div class="me-3">
+                      <div class="me-4">
                         {% if tenant.billing_status == 'active' %}
                         <div
-                          class="bg-success rounded-circle d-flex align-items-center justify-content-center billing-status-active"
-                          style="width: 40px; height: 40px"
+                          class="bg-success rounded-circle d-flex align-items-center justify-content-center billing-status-active status-indicator-enhanced status-active"
+                          style="width: 48px; height: 48px"
                           title="Active billing cycle"
                         >
-                          <i class="fas fa-check text-white"></i>
+                          <i class="fas fa-check text-white fs-5"></i>
                         </div>
                         {% elif tenant.billing_status == 'expiring_soon' %}
                         <div
-                          class="bg-warning rounded-circle d-flex align-items-center justify-content-center billing-status-warning"
-                          style="width: 40px; height: 40px"
+                          class="bg-warning rounded-circle d-flex align-items-center justify-content-center billing-status-warning status-indicator-enhanced status-warning"
+                          style="width: 48px; height: 48px"
                           title="Expires soon"
                         >
-                          <i class="fas fa-clock text-white"></i>
+                          <i class="fas fa-clock text-white fs-5"></i>
                         </div>
                         {% elif tenant.billing_status == 'expired' %}
                         <div
-                          class="bg-danger rounded-circle d-flex align-items-center justify-content-center billing-status-expired"
-                          style="width: 40px; height: 40px"
+                          class="bg-danger rounded-circle d-flex align-items-center justify-content-center billing-status-expired status-indicator-enhanced status-expired"
+                          style="width: 48px; height: 48px"
                           title="Billing expired"
                         >
-                          <i class="fas fa-times text-white"></i>
+                          <i class="fas fa-times text-white fs-5"></i>
                         </div>
                         {% elif tenant.billing_status == 'pending' %}
                         <div
-                          class="bg-info rounded-circle d-flex align-items-center justify-content-center"
-                          style="width: 40px; height: 40px"
+                          class="bg-info rounded-circle d-flex align-items-center justify-content-center status-indicator-enhanced status-info"
+                          style="width: 48px; height: 48px"
                           title="Billing cycle initializing"
                         >
-                          <i class="fas fa-sync fa-spin text-white"></i>
+                          <i class="fas fa-sync fa-spin text-white fs-5"></i>
                         </div>
                         {% else %}
                         <div
-                          class="bg-secondary rounded-circle d-flex align-items-center justify-content-center"
-                          style="width: 40px; height: 40px"
+                          class="bg-secondary rounded-circle d-flex align-items-center justify-content-center status-indicator-enhanced status-secondary"
+                          style="width: 48px; height: 48px"
                           title="Unknown status"
                         >
-                          <i class="fas fa-question text-white"></i>
+                          <i class="fas fa-question text-white fs-5"></i>
                         </div>
                         {% endif %}
                       </div>
                       <div>
-                        <h6 class="mb-1 fw-bold">{{ tenant.name }}</h6>
-                        <small class="text-muted">
-                          <i class="fas fa-globe me-1"></i>
+                        <h5 class="panel-title">{{ tenant.name }}</h5>
+                        <div class="d-flex align-items-center mb-3">
+                          <i class="fas fa-globe me-2 text-primary"></i>
                           <a
                             href="{{ tenant.domain_url }}"
                             target="_blank"
-                            class="text-decoration-none text-muted domain-link"
+                            class="text-decoration-none text-muted domain-link fw-medium"
                           >
                             {{ tenant.subdomain }}.{{ request.host }}
                           </a>
-                        </small>
-                        <div class="mt-1">
+                        </div>
+                        <div class="d-flex gap-2 flex-wrap">
                           <span
-                            class="badge bg-{{ tenant.billing_status_class }} bg-opacity-25 text-{{ tenant.billing_status_class }}"
+                            class="badge badge-enhanced bg-{{ tenant.billing_status_class }} bg-opacity-15 text-{{ tenant.billing_status_class }}"
                           >
                             {{ tenant.billing_status_label }}
                           </span>
                           <span
-                            class="badge bg-info bg-opacity-25 text-info ms-1"
+                            class="badge badge-enhanced bg-info bg-opacity-15 text-info"
                           >
                             {% if tenant.plan and tenant.plan.strip() %} {{
                             tenant.plan.title() }} Plan {% else %} Standard Plan
@@ -452,7 +636,7 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
                     </div>
                   </div>
 
-                  <!-- Usage Progress -->
+                  <!-- Enhanced Usage Progress -->
                   <div class="col-lg-4">
                     <div class="text-center">
                       {% if tenant.billing_info and
@@ -462,9 +646,10 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
                       tenant.billing_info.get('total_hours_allowed', 360) %} {%
                       set usage_percent = (hours_used / total_hours * 100) if
                       total_hours > 0 else 0 %} {% set progress_class =
-                      'bg-success' if usage_percent < 70 else 'bg-warning' if
-                      usage_percent < 90 else 'bg-danger' %}
-                      <div class="progress mb-2" style="height: 8px">
+                      'progress-success' if usage_percent < 70 else 'progress-warning' if
+                      usage_percent < 90 else 'progress-danger' %}
+                      
+                      <div class="usage-progress-enhanced mb-3">
                         <div
                           class="progress-bar {{ progress_class }}"
                           role="progressbar"
@@ -472,55 +657,60 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
                           title="{{ usage_percent|round(1) }}% used"
                         ></div>
                       </div>
-                      <div class="d-flex justify-content-between">
-                        <small class="text-muted">
-                          <i class="fas fa-clock me-1"></i>
-                          {% if tenant.billing_info.get('days_remaining', 0) > 0
-                          %} {{ tenant.billing_info.get('days_remaining') }}d
-                          left {% elif
-                          tenant.billing_info.get('hours_remaining', 0) > 0 %}
-                          {{ tenant.billing_info.get('hours_remaining')|round(0)
-                          }}h left {% else %} Expired {% endif %}
-                        </small>
-                        <small class="text-muted"
-                          >{{ hours_used|round(1) }}h/{{ total_hours }}h</small
-                        >
+                      
+                      <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-start">
+                          <div class="bg-primary bg-opacity-10 rounded-pill px-3 py-2 d-inline-block">
+                            <small class="text-primary fw-semibold">
+                              <i class="fas fa-clock me-1"></i>
+                              {% if tenant.billing_info.get('days_remaining', 0) > 0
+                              %} {{ tenant.billing_info.get('days_remaining') }}d left
+                              {% elif tenant.billing_info.get('hours_remaining', 0) > 0 %}
+                              {{ tenant.billing_info.get('hours_remaining')|round(0) }}h left
+                              {% else %} Expired {% endif %}
+                            </small>
+                          </div>
+                        </div>
+                        <div class="text-end">
+                          <small class="text-muted fw-bold">{{ hours_used|round(1) }}h / {{ total_hours }}h</small>
+                          <div class="text-muted" style="font-size: 0.75rem;">{{ usage_percent|round(1) }}% used</div>
+                        </div>
                       </div>
                       {% else %}
-                      <div class="progress mb-2" style="height: 8px">
+                      <div class="usage-progress-enhanced mb-3">
                         <div
                           class="progress-bar bg-secondary"
                           role="progressbar"
                           style="width: 0%"
                         ></div>
                       </div>
-                      <div class="d-flex justify-content-between">
-                        <small class="text-muted">
-                          <i class="fas fa-question-circle me-1"></i>No billing
-                          data
-                        </small>
-                        <small class="text-muted">-/-</small>
+                      <div class="d-flex justify-content-center">
+                        <div class="bg-secondary bg-opacity-10 rounded-pill px-3 py-2">
+                          <small class="text-muted fw-semibold">
+                            <i class="fas fa-question-circle me-1"></i>No billing data
+                          </small>
+                        </div>
                       </div>
                       {% endif %}
                     </div>
                   </div>
 
-                  <!-- Actions -->
+                  <!-- Enhanced Actions -->
                   <div class="col-lg-3">
-                    <div class="d-flex gap-2 justify-content-lg-end">
+                    <div class="d-flex gap-2 justify-content-lg-end flex-wrap">
                       <a
                         href="{{ url_for('manage_tenant', tenant_id=tenant.id) }}"
-                        class="btn btn-outline-primary btn-sm flex-fill flex-lg-grow-0"
+                        class="btn btn-outline-primary btn-sm action-btn-enhanced flex-fill flex-lg-grow-0"
                         title="Manage tenant settings"
                       >
-                        <i class="fas fa-cog me-1"></i>
+                        <i class="fas fa-cog me-1"></i>Manage
                       </a>
                       {% if tenant.billing_status == 'expired' or
                       (tenant.billing_info and
                       tenant.billing_info.get('requires_payment')) %}
                       <a
                         href="{{ url_for('billing.initiate_payment', tenant_id=tenant.id) }}"
-                        class="btn btn-warning btn-sm flex-fill flex-lg-grow-0"
+                        class="btn btn-warning btn-sm action-btn-enhanced flex-fill flex-lg-grow-0"
                         title="Renew billing cycle"
                       >
                         <i class="fas fa-credit-card me-1"></i>Pay Now
@@ -528,14 +718,14 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
                       {% elif tenant.billing_status == 'expiring_soon' %}
                       <a
                         href="{{ url_for('billing.initiate_payment', tenant_id=tenant.id) }}"
-                        class="btn btn-outline-warning btn-sm flex-fill flex-lg-grow-0"
+                        class="btn btn-outline-warning btn-sm action-btn-enhanced flex-fill flex-lg-grow-0"
                         title="Renew early"
                       >
                         <i class="fas fa-credit-card me-1"></i>Renew
                       </a>
                       {% elif tenant.billing_status == 'pending' %}
                       <button
-                        class="btn btn-outline-info btn-sm flex-fill flex-lg-grow-0"
+                        class="btn btn-outline-info btn-sm action-btn-enhanced flex-fill flex-lg-grow-0"
                         disabled
                         title="Billing cycle is being initialized"
                       >
@@ -546,10 +736,10 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
                       <a
                         href="{{ tenant.domain_url }}"
                         target="_blank"
-                        class="btn btn-success btn-sm flex-fill flex-lg-grow-0"
+                        class="btn btn-success btn-sm action-btn-enhanced flex-fill flex-lg-grow-0"
                         title="Open panel in new tab"
                       >
-                        <i class="fas fa-external-link-alt me-1"></i>
+                        <i class="fas fa-external-link-alt me-1"></i>Open
                       </a>
                       {% endif %}
                     </div>
@@ -560,7 +750,7 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
           </div>
           {% endfor %} {% if not tenants %}
           <div class="col-12">
-            <div class="card border-0 shadow-sm">
+            <div class="panel-card">
               <div class="card-body text-center py-5">
                 <div
                   class="bg-primary bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center mb-4"
@@ -574,7 +764,7 @@ current_user.company_name or 'Khudroo' }}{% endblock %} {% block extra_head %}
                 </p>
                 <a
                   href="{{ url_for('dashboard') }}"
-                  class="btn btn-primary px-4"
+                  class="btn btn-primary px-4 action-btn-enhanced"
                 >
                   <i class="fas fa-plus me-2"></i>Create Panel
                 </a>

@@ -229,6 +229,19 @@
                     <span class="d-md-none">Pay</span>
                   </button>
                 </form>
+                
+                <!-- Early Renewal button (shown 15 days before expiration) -->
+                {% if tenant.can_renew_early %}
+                <form action="{{ url_for('billing.process_payment', tenant_id=tenant.id) }}" method="POST" class="early-renew-btn">
+                  {{ csrf_token() }}
+                  <input type="hidden" name="amount" value="50.00">
+                  <button type="submit" class="btn btn-primary btn-sm w-100" title="Renew early - extends your current package by 30 days">
+                    <i class="fas fa-credit-card me-1"></i>
+                    <span class="d-none d-md-inline">Renew Early</span>
+                    <span class="d-md-none">Renew</span>
+                  </button>
+                </form>
+                {% endif %}
               </div>
             </div>
           </div>
@@ -563,15 +576,26 @@ function updatePaymentButton(tenantId, data) {
   
   const manageBtn = panelActions.querySelector('.default-manage-btn');
   const payBtn = panelActions.querySelector('.pay-to-renew-btn');
+  const earlyRenewBtn = panelActions.querySelector('.early-renew-btn');
   
   if (!data.is_active || data.status === 'billing_expired' || data.status === 'failed') {
-    // Show payment button, hide manage button
+    // Show payment button, hide manage button and early renew button
     manageBtn.classList.add('d-none');
     payBtn.classList.remove('d-none');
+    if (earlyRenewBtn) earlyRenewBtn.classList.add('d-none');
   } else {
     // Show manage button, hide payment button
     manageBtn.classList.remove('d-none');
     payBtn.classList.add('d-none');
+    
+    // Show/hide early renewal button based on billing info
+    if (earlyRenewBtn) {
+      if (data.can_renew_early) {
+        earlyRenewBtn.classList.remove('d-none');
+      } else {
+        earlyRenewBtn.classList.add('d-none');
+      }
+    }
   }
 }
 

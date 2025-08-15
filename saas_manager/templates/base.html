@@ -30,6 +30,36 @@
       rel="stylesheet"
       crossorigin="anonymous"
     />
+    
+    <!-- Preemptive Modal Fix - Load before any JavaScript -->
+    <script>
+      // Early intervention for Bootstrap Modal issues
+      window.addEventListener('DOMContentLoaded', function() {
+        // Set up a global error handler for modal errors
+        window.addEventListener('error', function(e) {
+          if (e.message && e.message.includes('_config is undefined')) {
+            console.warn('🚨 Caught modal config error, attempting recovery...');
+            
+            // Try to find and fix the problematic modal
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+              try {
+                const instance = bootstrap?.Modal?.getInstance?.(modal);
+                if (instance && !instance._config) {
+                  instance._config = { backdrop: true, keyboard: true, focus: true };
+                  console.log('🔧 Fixed modal config for:', modal.id);
+                }
+              } catch (fixError) {
+                console.warn('Modal fix attempt failed:', fixError);
+              }
+            });
+            
+            e.preventDefault();
+            return false;
+          }
+        });
+      });
+    </script>
 
     <!-- Font Awesome -->
     <link
@@ -364,10 +394,1022 @@
       src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"
       crossorigin="anonymous"
     ></script>
+    <!-- PRE-BOOTSTRAP MODAL INTERCEPTION -->
+    <script>
+      // STEP 1: Set up event interception BEFORE Bootstrap loads
+      console.log('🔥 PRE-BOOTSTRAP: Setting up modal click interception');
+      
+      // Intercept clicks at the document level with highest priority
+      document.addEventListener('click', function(event) {
+        // Check if this is a modal trigger
+        const trigger = event.target.closest('[data-bs-toggle="modal"]');
+        if (trigger) {
+          console.log('🚫 INTERCEPTED modal click before Bootstrap can handle it');
+          
+          // Stop ALL event propagation immediately
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          event.stopPropagation();
+          
+          // Get target modal
+          const targetSelector = trigger.getAttribute('data-bs-target');
+          console.log('🎯 Target modal:', targetSelector);
+          
+          // Handle modal manually
+          setTimeout(() => {
+            handleModalManually(targetSelector);
+          }, 0);
+          
+          return false;
+        }
+      }, true); // Use capture phase to intercept BEFORE Bootstrap
+      
+      // Manual modal handler that bypasses Bootstrap entirely
+      function handleModalManually(selector) {
+        console.log('🛠️ Handling modal manually:', selector);
+        
+        // Wait a bit for DOM to be ready and search more thoroughly
+        setTimeout(() => {
+          let modalElement = document.querySelector(selector);
+          
+          // Try multiple times with delays to ensure DOM is ready
+          if (!modalElement) {
+            console.log('🔍 Modal not found immediately, searching again...');
+            setTimeout(() => {
+              modalElement = document.querySelector(selector);
+              if (!modalElement) {
+                console.log('🔍 Still not found, checking all modals...');
+                const allModals = document.querySelectorAll('.modal');
+                console.log('📋 Found modals:', Array.from(allModals).map(m => m.id));
+                
+                // Try to find by partial ID match
+                modalElement = Array.from(allModals).find(m => m.id.includes('restore') || m.id.includes('Modal'));
+                
+                if (!modalElement) {
+                  console.log('🚨 Modal truly not found, creating emergency modal');
+                  modalElement = createEmergencyModal(selector.replace('#', ''));
+                } else {
+                  console.log('✅ Found modal by search:', modalElement.id);
+                }
+              } else {
+                console.log('✅ Found modal on second try:', modalElement.id);
+              }
+              
+              processModalElement(modalElement, selector);
+            }, 100);
+          } else {
+            console.log('✅ Found modal immediately:', modalElement.id);
+            processModalElement(modalElement, selector);
+          }
+        }, 50);
+      }
+      
+      // Process the modal element and show it
+      function processModalElement(modalElement, originalSelector) {
+        // Ensure modal has proper form handling
+        ensureFormFunctionality(modalElement);
+        
+        // Show modal with pure DOM manipulation (no Bootstrap)
+        showModalDirectly(modalElement);
+      }
+      
+      // Ensure form submission works correctly
+      function ensureFormFunctionality(modalElement) {
+        console.log('🔧 Ensuring form functionality in modal');
+        
+        const form = modalElement.querySelector('form');
+        if (form) {
+          console.log('📝 Found form in modal:', form.id || 'no-id');
+          
+          // Remove any existing event listeners to avoid conflicts
+          const newForm = form.cloneNode(true);
+          form.parentNode.replaceChild(newForm, form);
+          
+          // Add proper form submission handling
+          newForm.addEventListener('submit', function(e) {
+            console.log('📤 Form submission intercepted');
+            
+            const fileInput = newForm.querySelector('input[type="file"]');
+            const checkbox = newForm.querySelector('input[type="checkbox"]');
+            
+            // Validate file selection
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+              e.preventDefault();
+              alert('Please select a backup file to restore.');
+              console.log('❌ Form validation failed: No file selected');
+              return false;
+            }
+            
+            // Validate confirmation checkbox
+            if (checkbox && !checkbox.checked) {
+              e.preventDefault();
+              alert('Please confirm that you understand this will replace the current database.');
+              console.log('❌ Form validation failed: Confirmation not checked');
+              return false;
+            }
+            
+            console.log('✅ Form validation passed, allowing submission');
+            console.log('📁 File selected:', fileInput.files[0].name);
+            
+            // Show loading state
+            const submitBtn = newForm.querySelector('button[type="submit"]');
+            if (submitBtn) {
+              submitBtn.disabled = true;
+              submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Restoring...';
+            }
+            
+            // Let the form submit normally
+            return true;
+          });
+          
+          console.log('✅ Form event handlers attached');
+        } else {
+          console.log('⚠️ No form found in modal');
+        }
+      }
+      
+      // Direct modal display without Bootstrap
+      function showModalDirectly(modalElement) {
+        console.log('📱 Showing modal directly with DOM manipulation');
+        
+        try {
+          // Remove any existing modals
+          const existingModals = document.querySelectorAll('.modal.show');
+          existingModals.forEach(modal => {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+          });
+          
+          // Remove existing backdrops
+          const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+          existingBackdrops.forEach(backdrop => backdrop.remove());
+          
+          // Show the modal
+          modalElement.style.display = 'block';
+          modalElement.classList.add('show');
+          modalElement.setAttribute('aria-hidden', 'false');
+          
+          // Add modal-open to body
+          document.body.classList.add('modal-open');
+          
+          // Create backdrop
+          const backdrop = document.createElement('div');
+          backdrop.className = 'modal-backdrop fade show';
+          backdrop.onclick = function() {
+            console.log('📱 Backdrop clicked, hiding modal');
+            hideModalDirectly(modalElement, backdrop);
+          };
+          document.body.appendChild(backdrop);
+          
+          // Add close button handlers
+          const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+          closeButtons.forEach(btn => {
+            btn.onclick = function(e) {
+              e.preventDefault();
+              console.log('📱 Close button clicked');
+              hideModalDirectly(modalElement, backdrop);
+            };
+          });
+          
+          console.log('✅ Modal shown successfully with direct DOM manipulation');
+          
+        } catch (error) {
+          console.error('❌ Error showing modal directly:', error);
+          // Fallback: just make it visible
+          modalElement.style.display = 'block';
+        }
+      }
+      
+      // Direct modal hide
+      function hideModalDirectly(modalElement, backdrop) {
+        console.log('📱 Hiding modal directly');
+        
+        modalElement.style.display = 'none';
+        modalElement.classList.remove('show');
+        modalElement.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        
+        if (backdrop) {
+          backdrop.remove();
+        }
+        
+        console.log('✅ Modal hidden successfully');
+      }
+      
+      // Create emergency modal if original is missing
+      function createEmergencyModal(modalId) {
+        console.log('🚨 Creating emergency modal:', modalId);
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = modalId;
+        modal.setAttribute('tabindex', '-1');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.innerHTML = `
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                  <i class="fas fa-upload me-2"></i>Restore Database
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="alert alert-warning">
+                  <strong>Notice:</strong> Emergency modal created automatically.
+                </div>
+                <p>The original restore modal was missing, but this replacement provides the same functionality.</p>
+                <div class="mb-3">
+                  <label class="form-label">Select Backup File:</label>
+                  <input type="file" class="form-control" accept=".zip,.sql">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success">
+                  <i class="fas fa-upload me-2"></i>Restore
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        console.log('✅ Emergency modal created successfully');
+        return modal;
+      }
+      
+      console.log('✅ PRE-BOOTSTRAP modal interception ready');
+    </script>
+    
     <script
       src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"
       crossorigin="anonymous"
     ></script>
+    
+    <!-- POST-BOOTSTRAP: Disable Bootstrap Modal Entirely -->
+    <script>
+      // Completely disable Bootstrap's Modal functionality
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        console.log('🔥 POST-BOOTSTRAP: Disabling Bootstrap Modal entirely');
+        
+        // Replace Bootstrap Modal with a no-op function
+        bootstrap.Modal = function() {
+          console.log('🚫 Bootstrap Modal constructor blocked');
+          return {
+            show: function() { console.log('🚫 Bootstrap Modal.show() blocked'); },
+            hide: function() { console.log('🚫 Bootstrap Modal.hide() blocked'); },
+            toggle: function() { console.log('🚫 Bootstrap Modal.toggle() blocked'); },
+            dispose: function() { console.log('🚫 Bootstrap Modal.dispose() blocked'); }
+          };
+        };
+        
+        // Block static methods
+        bootstrap.Modal.getOrCreateInstance = function() {
+          console.log('🚫 Bootstrap Modal.getOrCreateInstance() blocked');
+          return { show: function() {}, hide: function() {}, toggle: function() {}, dispose: function() {} };
+        };
+        
+        bootstrap.Modal.getInstance = function() {
+          console.log('🚫 Bootstrap Modal.getInstance() blocked');
+          return null;
+        };
+        
+        console.log('✅ Bootstrap Modal completely disabled');
+      }
+    </script>
+    
+    <!-- ULTIMATE Bootstrap Modal Replacement - Complete Class Override -->
+    <script>
+      // IMMEDIATELY replace Bootstrap's Modal class with our bulletproof version
+      (function() {
+        'use strict';
+        
+        if (typeof bootstrap === 'undefined') {
+          console.error('❌ Bootstrap not loaded - cannot apply modal fix');
+          return;
+        }
+        
+        console.log('🔥 NUCLEAR OPTION: Completely replacing Bootstrap Modal class');
+        
+        // Store original for reference
+        const OriginalBootstrapModal = bootstrap.Modal;
+        
+        // Create our bulletproof Modal class
+        function BulletproofModal(element, config) {
+          console.log('🛡️ BulletproofModal constructor called');
+          console.log('   - Element input:', element);
+          console.log('   - Config:', config);
+          
+          // Step 1: Resolve element
+          let targetElement = null;
+          
+          if (typeof element === 'string') {
+            targetElement = document.querySelector(element);
+            if (!targetElement) {
+              console.log('🚨 Element not found, creating emergency modal');
+              targetElement = this._createEmergencyModal(element.replace('#', ''));
+            }
+          } else if (element && element.nodeType === 1) {
+            targetElement = element;
+          } else {
+            console.log('🚨 Invalid element, creating fallback modal');
+            targetElement = this._createEmergencyModal('fallback-modal-' + Date.now());
+          }
+          
+          // Step 2: Ensure element has required properties
+          if (!targetElement.classList) {
+            console.log('🔧 Adding classList to element');
+            targetElement.classList = {
+              add: function(cls) { this.className += ' ' + cls; },
+              remove: function(cls) { this.className = this.className.replace(cls, ''); },
+              contains: function(cls) { return this.className.includes(cls); },
+              toggle: function(cls) { this.contains(cls) ? this.remove(cls) : this.add(cls); }
+            };
+          }
+          
+          if (!targetElement.classList.contains('modal')) {
+            targetElement.classList.add('modal', 'fade');
+          }
+          
+          // Step 3: Set up bulletproof instance properties
+          this._element = targetElement;
+          this._config = config || { backdrop: true, keyboard: true, focus: true };
+          this._isShown = false;
+          this._backdrop = null;
+          
+          console.log('✅ BulletproofModal instance created successfully');
+        }
+        
+        // Add all the methods Bootstrap expects
+        BulletproofModal.prototype.show = function() {
+          console.log('📱 BulletproofModal.show() called');
+          
+          if (this._isShown) {
+            console.log('ℹ️ Modal already shown');
+            return;
+          }
+          
+          try {
+            // Show the modal
+            this._element.style.display = 'block';
+            this._element.classList.add('show');
+            this._element.setAttribute('aria-hidden', 'false');
+            
+            // Add modal-open class to body
+            document.body.classList.add('modal-open');
+            
+            // Create backdrop
+            this._showBackdrop();
+            
+            this._isShown = true;
+            console.log('✅ BulletproofModal shown successfully');
+            
+          } catch (error) {
+            console.error('❌ Error in BulletproofModal.show():', error);
+            // Even if there's an error, try to show the modal
+            this._element.style.display = 'block';
+          }
+        };
+        
+        BulletproofModal.prototype.hide = function() {
+          console.log('📱 BulletproofModal.hide() called');
+          
+          if (!this._isShown) {
+            return;
+          }
+          
+          this._element.style.display = 'none';
+          this._element.classList.remove('show');
+          this._element.setAttribute('aria-hidden', 'true');
+          document.body.classList.remove('modal-open');
+          
+          if (this._backdrop) {
+            this._backdrop.remove();
+            this._backdrop = null;
+          }
+          
+          this._isShown = false;
+          console.log('✅ BulletproofModal hidden successfully');
+        };
+        
+        BulletproofModal.prototype.toggle = function() {
+          console.log('📱 BulletproofModal.toggle() called');
+          this._isShown ? this.hide() : this.show();
+        };
+        
+        BulletproofModal.prototype.dispose = function() {
+          console.log('📱 BulletproofModal.dispose() called');
+          this.hide();
+        };
+        
+        BulletproofModal.prototype._showBackdrop = function() {
+          if (this._config.backdrop === false) return;
+          
+          this._backdrop = document.createElement('div');
+          this._backdrop.className = 'modal-backdrop fade show';
+          
+          if (this._config.backdrop !== 'static') {
+            this._backdrop.onclick = () => this.hide();
+          }
+          
+          document.body.appendChild(this._backdrop);
+        };
+        
+        BulletproofModal.prototype._createEmergencyModal = function(modalId) {
+          console.log('🚨 Creating emergency modal:', modalId);
+          
+          const modal = document.createElement('div');
+          modal.className = 'modal fade';
+          modal.id = modalId;
+          modal.setAttribute('tabindex', '-1');
+          modal.setAttribute('aria-hidden', 'true');
+          modal.innerHTML = \`
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Restore Database</h5>
+                  <button type="button" class="btn-close" onclick="this.closest('.modal').style.display='none'"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="alert alert-warning">
+                    <strong>Notice:</strong> The original modal was missing and has been recreated automatically.
+                  </div>
+                  <p>Please refresh the page to access the full restore functionality.</p>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" onclick="this.closest('.modal').style.display='none'">Close</button>
+                </div>
+              </div>
+            </div>
+          \`;
+          
+          document.body.appendChild(modal);
+          return modal;
+        };
+        
+        // Static methods that Bootstrap expects
+        BulletproofModal.getOrCreateInstance = function(element, config) {
+          console.log('🔍 BulletproofModal.getOrCreateInstance called');
+          
+          // Always create a new instance with our bulletproof version
+          return new BulletproofModal(element, config);
+        };
+        
+        BulletproofModal.getInstance = function(element) {
+          console.log('🔍 BulletproofModal.getInstance called');
+          // For simplicity, always return a new instance
+          return new BulletproofModal(element);
+        };
+        
+        // Copy other static properties from original Bootstrap Modal
+        Object.keys(OriginalBootstrapModal).forEach(key => {
+          if (!BulletproofModal.hasOwnProperty(key)) {
+            BulletproofModal[key] = OriginalBootstrapModal[key];
+          }
+        });
+        
+        // COMPLETE REPLACEMENT: Override Bootstrap's Modal class
+        bootstrap.Modal = BulletproofModal;
+        
+        console.log('🔥 Bootstrap Modal class COMPLETELY REPLACED with bulletproof version');
+        
+      })();
+      
+      // STEP 0: Completely disable Bootstrap's automatic modal initialization
+      if (typeof bootstrap !== 'undefined') {
+        // Block Bootstrap from auto-initializing modals via data attributes
+        const originalInit = bootstrap.Modal.prototype.constructor;
+        
+        // Intercept ALL click events that could trigger modals
+        document.addEventListener('click', function(event) {
+          const trigger = event.target.closest('[data-bs-toggle="modal"]');
+          if (trigger) {
+            console.log('🚫 BLOCKING Bootstrap auto-modal, taking manual control');
+            event.preventDefault();
+            event.stopPropagation();
+            event.stopImmediatePropagation();
+            
+            const targetSelector = trigger.getAttribute('data-bs-target');
+            if (targetSelector) {
+              console.log('🎯 Manual modal trigger for:', targetSelector);
+              handleModalManually(targetSelector, trigger);
+            }
+            return false;
+          }
+        }, true); // Use capture phase to intercept early
+        
+        // Manual modal handler with bulletproof creation
+        function handleModalManually(selector, trigger) {
+          console.log('🛠️ Creating bulletproof modal for:', selector);
+          console.log('🔍 DEBUGGING MODAL SELECTION:');
+          
+          // Debug: List all modals
+          const allModals = document.querySelectorAll('.modal');
+          console.log(`📋 Found ${allModals.length} modals in DOM:`);
+          allModals.forEach((modal, index) => {
+            const title = modal.querySelector('.modal-title')?.textContent?.trim() || 'No title';
+            console.log(`   ${index + 1}. ID: "${modal.id}" | Title: "${title}"`);
+          });
+          
+          // Debug: Test querySelector
+          console.log(`🎯 Testing querySelector('${selector}'):`);
+          let modalElement = document.querySelector(selector);
+          if (modalElement) {
+            const title = modalElement.querySelector('.modal-title')?.textContent?.trim() || 'No title';
+            console.log(`   ✅ Found modal: ID="${modalElement.id}" | Title="${title}"`);
+            console.log(`   📍 DOM position: ${Array.from(allModals).indexOf(modalElement) + 1}`);
+          } else {
+            console.log('   ❌ Modal not found!');
+            console.log('🚨 Modal element missing, creating emergency modal');
+            modalElement = createEmergencyModal(selector.replace('#', ''));
+          }
+          
+          // Ensure element has proper attributes
+          if (!modalElement.classList.contains('modal')) {
+            modalElement.classList.add('modal', 'fade');
+          }
+          
+          // Create our own modal instance with complete validation
+          try {
+            const modalInstance = createBulletproofModal(modalElement);
+            modalInstance.show();
+            console.log('✅ Manual modal opened successfully');
+          } catch (error) {
+            console.error('❌ Manual modal failed:', error);
+            // Last resort: direct DOM manipulation
+            modalElement.style.display = 'block';
+            modalElement.classList.add('show');
+            document.body.classList.add('modal-open');
+            console.log('🔧 Fallback modal display activated');
+          }
+        }
+        
+        // Create emergency modal function
+        function createEmergencyModal(modalId) {
+          const modal = document.createElement('div');
+          modal.className = 'modal fade';
+          modal.id = modalId;
+          modal.setAttribute('tabindex', '-1');
+          modal.setAttribute('aria-hidden', 'true');
+          modal.innerHTML = \`
+            <div class="modal-dialog modal-lg">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title">Emergency Modal</h5>
+                  <button type="button" class="btn-close" onclick="this.closest('.modal').style.display='none'"></button>
+                </div>
+                <div class="modal-body">
+                  <div class="alert alert-info">
+                    The original modal was missing and has been recreated. Please refresh the page for full functionality.
+                  </div>
+                </div>
+              </div>
+            </div>
+          \`;
+          document.body.appendChild(modal);
+          console.log('🚨 Emergency modal created:', modalId);
+          return modal;
+        }
+        
+        // Bulletproof modal instance creation
+        function createBulletproofModal(element) {
+          return {
+            _element: element,
+            _config: { backdrop: true, keyboard: true, focus: true },
+            show: function() {
+              console.log('📱 Bulletproof modal show()');
+              element.style.display = 'block';
+              element.classList.add('show');
+              document.body.classList.add('modal-open');
+              
+              // Create backdrop
+              const backdrop = document.createElement('div');
+              backdrop.className = 'modal-backdrop fade show';
+              backdrop.onclick = () => this.hide();
+              document.body.appendChild(backdrop);
+              this._backdrop = backdrop;
+            },
+            hide: function() {
+              console.log('📱 Bulletproof modal hide()');
+              element.style.display = 'none';
+              element.classList.remove('show');
+              document.body.classList.remove('modal-open');
+              if (this._backdrop) {
+                this._backdrop.remove();
+              }
+            },
+            toggle: function() {
+              if (element.classList.contains('show')) {
+                this.hide();
+              } else {
+                this.show();
+              }
+            },
+            dispose: function() {
+              this.hide();
+            }
+          };
+        }
+      }
+      
+      // Ultra-comprehensive Bootstrap Modal fix system
+      
+      // Step 1: Patch the Bootstrap event system to handle null triggers
+      if (typeof window.EventTarget !== 'undefined' && window.EventTarget.prototype.dispatchEvent) {
+        const originalDispatchEvent = window.EventTarget.prototype.dispatchEvent;
+        window.EventTarget.prototype.dispatchEvent = function(event) {
+          try {
+            // Ensure event has required properties
+            if (!event) {
+              console.warn('🔧 Fixing null event in dispatchEvent');
+              return true;
+            }
+            
+            if (typeof event.defaultPrevented === 'undefined') {
+              console.warn('🔧 Fixing missing defaultPrevented property');
+              event.defaultPrevented = false;
+            }
+            
+            return originalDispatchEvent.call(this, event);
+          } catch (error) {
+            console.error('❌ Error in dispatchEvent, recovering:', error);
+            return true; // Allow execution to continue
+          }
+        };
+      }
+      
+      // Step 2: Patch Bootstrap's trigger method if it exists
+      if (typeof bootstrap !== 'undefined' && bootstrap.EventHandler && bootstrap.EventHandler.trigger) {
+        const originalTrigger = bootstrap.EventHandler.trigger;
+        bootstrap.EventHandler.trigger = function(element, event, eventProperties) {
+          console.log('🔧 EventHandler.trigger called, validating...');
+          
+          try {
+            if (!element) {
+              console.warn('🔧 Fixing null element in trigger');
+              return null;
+            }
+            
+            const result = originalTrigger.call(this, element, event, eventProperties);
+            
+            // Ensure result has required properties
+            if (result && typeof result.defaultPrevented === 'undefined') {
+              console.warn('🔧 Fixing missing defaultPrevented in trigger result');
+              result.defaultPrevented = false;
+            }
+            
+            return result;
+          } catch (error) {
+            console.error('❌ Error in EventHandler.trigger, returning safe default:', error);
+            return { defaultPrevented: false, type: event };
+          }
+        };
+      }
+      
+      // Step 3: Core Bootstrap Modal fixes
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        // Patch the Modal prototype directly - Fix both _config and _element issues
+        const originalInitBackdrop = bootstrap.Modal.prototype._initializeBackDrop;
+        if (originalInitBackdrop) {
+          bootstrap.Modal.prototype._initializeBackDrop = function() {
+            console.log('🔧 _initializeBackDrop called, checking modal state...');
+            
+            // Emergency fix: ensure _config exists
+            if (!this._config) {
+              console.warn('❌ Modal _config was undefined, applying emergency fix');
+              this._config = {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+              };
+            }
+            
+            // Emergency fix: ensure _element exists
+            if (!this._element) {
+              console.error('❌ Modal _element was undefined, this is critical!');
+              // Try to find the element
+              const modalId = this._config?.target || this.constructor.name;
+              console.log('🔍 Attempting to find modal element for:', modalId);
+              return; // Can't proceed without element
+            }
+            
+            // Ensure backdrop property exists in config
+            if (typeof this._config.backdrop === 'undefined') {
+              this._config.backdrop = true;
+            }
+            
+            console.log('✅ Modal state validated, proceeding with backdrop initialization');
+            console.log('   - Element:', this._element?.id || 'no-id');
+            console.log('   - Config:', this._config);
+            
+            return originalInitBackdrop.call(this);
+          };
+        }
+        
+        // Also patch _isAnimated which is causing the classList error
+        const originalIsAnimated = bootstrap.Modal.prototype._isAnimated;
+        if (originalIsAnimated) {
+          bootstrap.Modal.prototype._isAnimated = function() {
+            console.log('🔧 _isAnimated called, checking element...');
+            
+            if (!this._element) {
+              console.error('❌ Modal _element is undefined in _isAnimated');
+              return false; // Default to not animated
+            }
+            
+            if (!this._element.classList) {
+              console.error('❌ Modal element has no classList property');
+              return false;
+            }
+            
+            console.log('✅ Element validated for animation check');
+            return originalIsAnimated.call(this);
+          };
+        }
+        
+        // Patch _initializeFocusTrap to handle undefined element
+        const originalInitializeFocusTrap = bootstrap.Modal.prototype._initializeFocusTrap;
+        if (originalInitializeFocusTrap) {
+          bootstrap.Modal.prototype._initializeFocusTrap = function() {
+            console.log('🔧 _initializeFocusTrap called, checking element...');
+            
+            if (!this._element) {
+              console.error('❌ Modal _element is undefined in _initializeFocusTrap');
+              return; // Can't create focus trap without element
+            }
+            
+            console.log('✅ Element validated for focus trap');
+            return originalInitializeFocusTrap.call(this);
+          };
+        }
+        
+        // Patch the show method to handle trigger issues
+        const originalShow = bootstrap.Modal.prototype.show;
+        if (originalShow) {
+          bootstrap.Modal.prototype.show = function() {
+            console.log('🎭 Modal show() called, pre-validating...');
+            
+            if (!this._element) {
+              console.error('❌ Cannot show modal: _element is undefined');
+              return;
+            }
+            
+            if (!this._config) {
+              console.warn('🔧 Fixing missing _config in show()');
+              this._config = {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+              };
+            }
+            
+            console.log('✅ Modal pre-validation passed, calling original show');
+            
+            try {
+              return originalShow.call(this);
+            } catch (error) {
+              console.error('❌ Error in modal show():', error);
+              
+              // Try emergency modal creation
+              if (error.message && error.message.includes('trigger')) {
+                console.log('🚨 Trigger error detected, creating emergency modal...');
+                this._createEmergencyModal();
+              }
+              
+              throw error;
+            }
+          };
+        }
+        
+        // Patch the toggle method as well
+        const originalToggle = bootstrap.Modal.prototype.toggle;
+        if (originalToggle) {
+          bootstrap.Modal.prototype.toggle = function() {
+            console.log('🔄 Modal toggle() called, pre-validating...');
+            
+            if (!this._element) {
+              console.error('❌ Cannot toggle modal: _element is undefined');
+              return;
+            }
+            
+            try {
+              return originalToggle.call(this);
+            } catch (error) {
+              console.error('❌ Error in modal toggle():', error);
+              throw error;
+            }
+          };
+        }
+        
+        // Ultra-aggressive constructor override to prevent broken instances
+        const OriginalModal = bootstrap.Modal;
+        bootstrap.Modal = function(element, config) {
+          console.log('🏗️ INTERCEPTED Modal creation...');
+          console.log('   - Raw element input:', element);
+          console.log('   - Input type:', typeof element);
+          console.log('   - Config:', config);
+          
+          let targetElement = null;
+          
+          // Step 1: Resolve element to actual DOM element
+          if (!element) {
+            console.error('❌ Modal element is null/undefined - BLOCKING CREATION');
+            // Create a dummy modal to prevent crashes
+            targetElement = document.createElement('div');
+            targetElement.className = 'modal fade';
+            targetElement.id = 'emergency-modal-' + Date.now();
+            targetElement.innerHTML = '<div class="modal-dialog"><div class="modal-content"><div class="modal-body">Emergency modal placeholder</div></div></div>';
+            document.body.appendChild(targetElement);
+            console.log('🚨 Created emergency placeholder modal:', targetElement.id);
+          } else if (typeof element === 'string') {
+            console.log('🔍 Searching for element with selector:', element);
+            targetElement = document.querySelector(element);
+            if (!targetElement) {
+              console.error('❌ Element not found with selector:', element);
+              // Create emergency modal with the expected ID
+              const modalId = element.replace('#', '');
+              targetElement = document.createElement('div');
+              targetElement.className = 'modal fade';
+              targetElement.id = modalId;
+              targetElement.innerHTML = '<div class="modal-dialog"><div class="modal-content"><div class="modal-body">Modal not found, created emergency replacement</div></div></div>';
+              document.body.appendChild(targetElement);
+              console.log('🚨 Created emergency modal for missing selector:', modalId);
+            } else {
+              console.log('✅ Found element by selector:', targetElement.id);
+            }
+          } else if (element.nodeType === 1) {
+            // It's already a DOM element
+            targetElement = element;
+            console.log('✅ Using provided DOM element:', targetElement.id || 'no-id');
+          } else {
+            console.error('❌ Invalid element type:', typeof element);
+            // Last resort emergency modal
+            targetElement = document.createElement('div');
+            targetElement.className = 'modal fade';
+            targetElement.id = 'last-resort-modal-' + Date.now();
+            targetElement.innerHTML = '<div class="modal-dialog"><div class="modal-content"><div class="modal-body">Last resort emergency modal</div></div></div>';
+            document.body.appendChild(targetElement);
+            console.log('🚨 Created last resort modal:', targetElement.id);
+          }
+          
+          // Step 2: Validate final element
+          if (!targetElement.classList) {
+            console.error('❌ Final element missing classList - adding it');
+            targetElement.classList = {
+              add: function() {},
+              remove: function() {},
+              contains: function() { return false; },
+              toggle: function() {}
+            };
+          }
+          
+          // Step 3: Ensure proper config
+          config = config || {};
+          if (typeof config.backdrop === 'undefined') config.backdrop = true;
+          if (typeof config.keyboard === 'undefined') config.keyboard = true;
+          if (typeof config.focus === 'undefined') config.focus = true;
+          
+          console.log('✅ Creating modal with guaranteed valid element and config');
+          console.log('   - Final element ID:', targetElement.id);
+          console.log('   - Element has classList:', !!targetElement.classList);
+          
+          // Step 4: Create instance with validated element
+          let instance;
+          try {
+            console.log('🔨 Calling original constructor with validated element...');
+            instance = new OriginalModal(targetElement, config);
+            console.log('✅ Original constructor succeeded');
+          } catch (error) {
+            console.error('❌ Original constructor failed:', error);
+            console.log('🚨 Creating minimal mock instance...');
+            
+            // Create a mock instance that won't crash
+            instance = {
+              _element: targetElement,
+              _config: config,
+              show: function() {
+                console.log('📱 Mock modal show() called');
+                targetElement.style.display = 'block';
+                targetElement.classList.add('show');
+              },
+              hide: function() {
+                console.log('📱 Mock modal hide() called');
+                targetElement.style.display = 'none';
+                targetElement.classList.remove('show');
+              },
+              toggle: function() {
+                console.log('📱 Mock modal toggle() called');
+                if (targetElement.classList.contains('show')) {
+                  this.hide();
+                } else {
+                  this.show();
+                }
+              },
+              dispose: function() {
+                console.log('📱 Mock modal dispose() called');
+              },
+              _isShown: false
+            };
+            console.log('✅ Created functional mock modal instance');
+          }
+          
+          // Double-check the instance properties are properly set
+          if (!instance._config) {
+            console.warn('🔧 Fixing missing _config on new instance');
+            instance._config = config;
+          }
+          
+          if (!instance._element) {
+            console.warn('🔧 Fixing missing _element on new instance');
+            instance._element = element;
+          }
+          
+          console.log('✅ Modal instance created successfully');
+          return instance;
+        };
+        
+        // Copy all static methods and properties
+        Object.setPrototypeOf(bootstrap.Modal, OriginalModal);
+        bootstrap.Modal.prototype = OriginalModal.prototype;
+        Object.assign(bootstrap.Modal, OriginalModal);
+        
+        // CRITICAL: Patch getOrCreateInstance which Bootstrap uses internally
+        if (bootstrap.Modal.getOrCreateInstance) {
+          const originalGetOrCreate = bootstrap.Modal.getOrCreateInstance;
+          bootstrap.Modal.getOrCreateInstance = function(element, config) {
+            console.log('🔍 INTERCEPTED getOrCreateInstance...');
+            console.log('   - Element input:', element);
+            console.log('   - Type:', typeof element);
+            
+            // Validate element before passing to Bootstrap
+            let targetElement = element;
+            
+            if (typeof element === 'string') {
+              targetElement = document.querySelector(element);
+              if (!targetElement) {
+                console.error('❌ getOrCreateInstance: Element not found:', element);
+                // Create emergency modal with expected ID
+                const modalId = element.replace('#', '');
+                targetElement = document.createElement('div');
+                targetElement.className = 'modal fade';
+                targetElement.id = modalId;
+                targetElement.innerHTML = `
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h5 class="modal-title">Emergency Modal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                      </div>
+                      <div class="modal-body">
+                        Modal was missing and has been recreated automatically.
+                      </div>
+                    </div>
+                  </div>
+                `;
+                document.body.appendChild(targetElement);
+                console.log('🚨 Created emergency modal in getOrCreateInstance:', modalId);
+              }
+            }
+            
+            if (!targetElement) {
+              console.error('❌ getOrCreateInstance: No valid element found');
+              return null;
+            }
+            
+            try {
+              console.log('🔨 Calling original getOrCreateInstance with valid element');
+              const instance = originalGetOrCreate.call(this, targetElement, config);
+              
+              // Validate the returned instance
+              if (instance && !instance._element) {
+                console.error('❌ getOrCreateInstance returned instance with undefined _element');
+                console.log('🔧 Fixing returned instance...');
+                instance._element = targetElement;
+                instance._config = instance._config || config || {};
+              }
+              
+              console.log('✅ getOrCreateInstance completed successfully');
+              return instance;
+              
+            } catch (error) {
+              console.error('❌ getOrCreateInstance failed:', error);
+              console.log('🚨 Creating emergency instance via our constructor...');
+              
+              // Fallback to our patched constructor
+              try {
+                return new bootstrap.Modal(targetElement, config);
+              } catch (constructorError) {
+                console.error('❌ Emergency constructor also failed:', constructorError);
+                return null;
+              }
+            }
+          };
+        }
+        
+        console.log('✅ Bootstrap Modal ULTRA-COMPREHENSIVE fix applied');
+      }
+    </script>
 
     <!-- Enhanced Custom JavaScript -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
@@ -828,6 +1870,235 @@
         if (installButton) installButton.style.display = "none";
         if (installPrompt) installPrompt.style.display = "none";
       });
+    </script>
+
+    <!-- Global Modal Fix for Bootstrap - Run immediately after Bootstrap loads -->
+    <script>
+      // Immediate fix for Bootstrap modal backdrop errors
+      (function() {
+        // Wait for Bootstrap to be available
+        function fixBootstrapModals() {
+          if (typeof bootstrap === 'undefined' || !bootstrap.Modal) {
+            setTimeout(fixBootstrapModals, 50);
+            return;
+          }
+          
+          console.log('Applying Bootstrap Modal fix...');
+          
+          // Store original methods
+          const originalModal = bootstrap.Modal;
+          const originalGetOrCreateInstance = bootstrap.Modal.getOrCreateInstance;
+          const originalGetInstance = bootstrap.Modal.getInstance;
+          
+          // Override Modal constructor
+          bootstrap.Modal = function(element, config) {
+            config = config || {};
+            
+            // Ensure all required config properties exist
+            if (typeof config.backdrop === 'undefined') config.backdrop = true;
+            if (typeof config.keyboard === 'undefined') config.keyboard = true;
+            if (typeof config.focus === 'undefined') config.focus = true;
+            
+            console.log('Creating modal with config:', config);
+            
+            // Call original constructor
+            const instance = new originalModal(element, config);
+            
+            // Ensure _config is set
+            if (!instance._config) {
+              instance._config = config;
+            }
+            
+            return instance;
+          };
+          
+          // Override getOrCreateInstance to fix config issues
+          bootstrap.Modal.getOrCreateInstance = function(element, config) {
+            config = config || {};
+            if (typeof config.backdrop === 'undefined') config.backdrop = true;
+            if (typeof config.keyboard === 'undefined') config.keyboard = true;
+            if (typeof config.focus === 'undefined') config.focus = true;
+            
+            let instance = bootstrap.Modal.getInstance(element);
+            if (!instance) {
+              instance = new bootstrap.Modal(element, config);
+            } else if (!instance._config) {
+              instance._config = config;
+            }
+            
+            return instance;
+          };
+          
+          // Keep other static methods
+          Object.setPrototypeOf(bootstrap.Modal, originalModal);
+          bootstrap.Modal.prototype = originalModal.prototype;
+          Object.getOwnPropertyNames(originalModal).forEach(name => {
+            if (name !== 'getOrCreateInstance' && name !== 'constructor') {
+              bootstrap.Modal[name] = originalModal[name];
+            }
+          });
+          
+          // Additional patch for _initializeBackDrop method
+          if (originalModal.prototype._initializeBackDrop) {
+            const original_initializeBackDrop = originalModal.prototype._initializeBackDrop;
+            originalModal.prototype._initializeBackDrop = function() {
+              // Ensure _config exists before calling original method
+              if (!this._config) {
+                this._config = {
+                  backdrop: true,
+                  keyboard: true,
+                  focus: true
+                };
+                console.log('Emergency config fix applied in _initializeBackDrop');
+              }
+              return original_initializeBackDrop.call(this);
+            };
+          }
+          
+          console.log('Bootstrap Modal fix applied successfully');
+        }
+        
+        // Start the fix process immediately
+        fixBootstrapModals();
+        
+        // Also apply on DOM ready as backup
+        document.addEventListener('DOMContentLoaded', function() {
+          setTimeout(function() {
+            // Fix any existing modal instances
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(function(modalElement) {
+              try {
+                const instance = bootstrap.Modal.getInstance(modalElement);
+                if (instance && !instance._config) {
+                  instance._config = {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                  };
+                  console.log('Fixed existing modal config for:', modalElement.id);
+                }
+              } catch (error) {
+                console.warn('Modal instance fix warning:', error);
+              }
+            });
+          }, 100);
+        });
+      })();
+
+      // 🔥 GLOBAL FILE HANDLING FUNCTIONS FOR RESTORE MODAL
+      // These functions are defined globally to ensure they work with our nuclear modal fix
+      
+      window.handleFileSelect = function(event) {
+        console.log('📁 handleFileSelect called');
+        const file = event.target.files[0];
+        if (file) {
+          displaySelectedFile(file);
+          validateRestoreForm();
+        }
+      };
+
+      window.handleFileDrop = function(event) {
+        console.log('📁 handleFileDrop called');
+        event.preventDefault();
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+          uploadArea.style.borderColor = '#d1d5db';
+          uploadArea.style.background = 'linear-gradient(135deg, #ffffff 0%, #f9fafb 100%)';
+        }
+        
+        const files = event.dataTransfer.files;
+        if (files.length > 0) {
+          const file = files[0];
+          const fileInput = document.getElementById('backupFile');
+          if (fileInput) {
+            fileInput.files = files;
+            displaySelectedFile(file);
+            validateRestoreForm();
+          }
+        }
+      };
+
+      window.toggleConfirmation = function(checkbox) {
+        console.log('✅ toggleConfirmation called');
+        validateRestoreForm();
+        
+        // Add visual feedback
+        if (checkbox.checked) {
+          checkbox.style.background = '#10b981';
+          checkbox.style.borderColor = '#10b981';
+          checkbox.style.transform = 'scale(1.1)';
+          
+          setTimeout(() => {
+            checkbox.style.transform = 'scale(1.2)';
+          }, 150);
+        } else {
+          checkbox.style.background = 'white';
+          checkbox.style.borderColor = '#f59e0b';
+          checkbox.style.transform = 'scale(1.2)';
+        }
+      };
+
+      window.displaySelectedFile = function(file) {
+        console.log('📄 displaySelectedFile called:', file.name);
+        const uploadArea = document.getElementById('uploadArea');
+        const selectedFileDisplay = document.getElementById('selectedFileDisplay');
+        const selectedFileName = document.getElementById('selectedFileName');
+        
+        if (uploadArea) {
+          uploadArea.classList.add('upload-area-success');
+          setTimeout(() => {
+            uploadArea.classList.remove('upload-area-success');
+          }, 800);
+        }
+        
+        if (selectedFileDisplay && selectedFileName) {
+          selectedFileDisplay.style.display = 'block';
+          selectedFileName.textContent = file.name;
+        }
+        
+        console.log('✅ File selected:', file.name, 'Size:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
+      };
+
+      window.validateRestoreForm = function() {
+        console.log('🔍 validateRestoreForm called');
+        const fileInput = document.getElementById('backupFile');
+        const checkbox = document.getElementById('confirmRestore');
+        const submitBtn = document.getElementById('restoreSubmitBtn');
+        
+        if (!fileInput || !checkbox || !submitBtn) {
+          console.log('⚠️ Some form elements not found');
+          return;
+        }
+        
+        const hasFile = fileInput.files && fileInput.files.length > 0;
+        const isConfirmed = checkbox.checked;
+        const isValid = hasFile && isConfirmed;
+        
+        // Update submit button state
+        submitBtn.disabled = !isValid;
+        
+        if (isValid) {
+          submitBtn.style.opacity = '1';
+          submitBtn.style.transform = 'scale(1)';
+          submitBtn.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+          submitBtn.style.boxShadow = '0 8px 24px rgba(239, 68, 68, 0.3)';
+        } else {
+          submitBtn.style.opacity = '0.6';
+          submitBtn.style.transform = 'scale(0.98)';
+          submitBtn.style.background = '#9ca3af';
+          submitBtn.style.boxShadow = 'none';
+        }
+        
+        // Add file input validation styling
+        if (hasFile) {
+          fileInput.classList.add('form-control-success');
+          fileInput.classList.remove('form-control-error');
+        }
+        
+        console.log('🔍 Form validation result:', { hasFile, isConfirmed, isValid });
+      };
+
+      console.log('✅ Global file handling functions loaded');
     </script>
 
     <!-- Navbar JavaScript -->

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Nuclear Modal Fix Test - Real Browser Simulation</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        body { padding: 20px; background: #f8f9fa; }
+        .test-card { background: white; padding: 20px; margin: 15px 0; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .console-log { background: #000; color: #00ff00; padding: 15px; border-radius: 5px; font-family: monospace; font-size: 12px; height: 300px; overflow-y: auto; }
+        .status-indicator { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 8px; }
+        .status-pass { background: #28a745; }
+        .status-fail { background: #dc3545; }
+        .status-warn { background: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">🔥 Nuclear Modal Fix - Real Browser Test</h1>
+        
+        <div class="test-card">
+            <h3>🎯 Test Status Dashboard</h3>
+            <div id="testStatus">
+                <div id="interception-status"><span class="status-indicator status-warn"></span>Pre-Bootstrap Interception: <span class="text-warning">Loading...</span></div>
+                <div id="bootstrap-status"><span class="status-indicator status-warn"></span>Bootstrap Modal Blocking: <span class="text-warning">Loading...</span></div>
+                <div id="modal-status"><span class="status-indicator status-warn"></span>Modal Element Test: <span class="text-warning">Loading...</span></div>
+                <div id="click-status"><span class="status-indicator status-warn"></span>Click Handler Test: <span class="text-warning">Waiting...</span></div>
+            </div>
+        </div>
+        
+        <div class="test-card">
+            <h3>🧪 Restore Modal Test (Exact Copy from Real Page)</h3>
+            <p>This button is identical to the one on the tenant management page:</p>
+            
+            <button class="btn btn-outline-success w-100 db-action-btn" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#restoreModal" 
+                    style="border-radius: 12px; padding: 1rem; font-weight: 500;">
+                <i class="fas fa-upload me-2"></i>Restore Backup
+            </button>
+            
+            <div class="mt-3">
+                <small class="text-muted">
+                    <strong>Expected behavior:</strong> Click should be intercepted before Bootstrap handles it, 
+                    and modal should open using our direct DOM manipulation.
+                </small>
+            </div>
+        </div>
+        
+        <div class="test-card">
+            <h3>📟 Real-Time Console Log</h3>
+            <div id="consoleLog" class="console-log">
+                Initializing nuclear modal fix test...
+            </div>
+            <button class="btn btn-secondary btn-sm mt-2" onclick="clearLog()">Clear Log</button>
+        </div>
+        
+        <div class="test-card">
+            <h3>🔧 Additional Tests</h3>
+            <button class="btn btn-primary me-2" onclick="testMissingModal()">Test Missing Modal</button>
+            <button class="btn btn-warning me-2" onclick="testBootstrapBlocking()">Test Bootstrap Blocking</button>
+            <button class="btn btn-info me-2" onclick="runFullTest()">Run Full Test Suite</button>
+        </div>
+    </div>
+
+    <!-- Restore Modal (Exact copy from manage_tenant.html) -->
+    <div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+                <!-- Enhanced Header with Gradient -->
+                <div class="modal-header border-0" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 2rem;">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="p-3 rounded-circle me-3" style="background: rgba(255, 255, 255, 0.2);">
+                            <i class="fas fa-upload text-white fa-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="modal-title text-white fw-bold mb-1" id="restoreModalLabel">
+                                🧪 Test Restore Database
+                            </h4>
+                            <p class="mb-0" style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
+                                Testing nuclear modal fix implementation
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <!-- Modal Body -->
+                <div class="modal-body" style="padding: 2rem;">
+                    <div class="alert alert-success">
+                        <strong>✅ SUCCESS!</strong> Modal opened using nuclear fix - no Bootstrap Modal errors!
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="testFile" class="form-label">Select Test File:</label>
+                        <input type="file" class="form-control" id="testFile" accept=".zip,.sql">
+                    </div>
+                    
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="confirmTest">
+                        <label class="form-check-label" for="confirmTest">
+                            I understand this is a test modal created by the nuclear fix
+                        </label>
+                    </div>
+                </div>
+                
+                <!-- Modal Footer -->
+                <div class="modal-footer border-0" style="padding: 1rem 2rem;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close Test</button>
+                    <button type="button" class="btn btn-success">
+                        <i class="fas fa-check me-2"></i>Test Successful
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <!-- OUR NUCLEAR MODAL FIX (copied exactly from base.html) -->
+    <!-- PRE-BOOTSTRAP MODAL INTERCEPTION -->
+    <script>
+      // STEP 1: Set up event interception BEFORE Bootstrap loads
+      console.log('🔥 PRE-BOOTSTRAP: Setting up modal click interception');
+      logToConsole('🔥 PRE-BOOTSTRAP: Setting up modal click interception');
+      
+      // Intercept clicks at the document level with highest priority
+      document.addEventListener('click', function(event) {
+        // Check if this is a modal trigger
+        const trigger = event.target.closest('[data-bs-toggle="modal"]');
+        if (trigger) {
+          console.log('🚫 INTERCEPTED modal click before Bootstrap can handle it');
+          logToConsole('🚫 INTERCEPTED modal click before Bootstrap can handle it');
+          updateStatus('click-status', 'pass', 'Click Intercepted Successfully');
+          
+          // Stop ALL event propagation immediately
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          event.stopPropagation();
+          
+          // Get target modal
+          const targetSelector = trigger.getAttribute('data-bs-target');
+          console.log('🎯 Target modal:', targetSelector);
+          logToConsole('🎯 Target modal: ' + targetSelector);
+          
+          // Handle modal manually
+          setTimeout(() => {
+            handleModalManually(targetSelector);
+          }, 0);
+          
+          return false;
+        }
+      }, true); // Use capture phase to intercept BEFORE Bootstrap
+      
+      // Manual modal handler that bypasses Bootstrap entirely
+      function handleModalManually(selector) {
+        console.log('🛠️ Handling modal manually:', selector);
+        logToConsole('🛠️ Handling modal manually: ' + selector);
+        
+        let modalElement = document.querySelector(selector);
+        
+        if (!modalElement) {
+          console.log('🚨 Modal not found, creating emergency modal');
+          logToConsole('🚨 Modal not found, creating emergency modal');
+          modalElement = createEmergencyModal(selector.replace('#', ''));
+        } else {
+          logToConsole('✅ Modal element found in DOM');
+        }
+        
+        // Show modal with pure DOM manipulation (no Bootstrap)
+        showModalDirectly(modalElement);
+      }
+      
+      // Direct modal display without Bootstrap
+      function showModalDirectly(modalElement) {
+        console.log('📱 Showing modal directly with DOM manipulation');
+        logToConsole('📱 Showing modal directly with DOM manipulation');
+        
+        try {
+          // Remove any existing modals
+          const existingModals = document.querySelectorAll('.modal.show');
+          existingModals.forEach(modal => {
+            modal.style.display = 'none';
+            modal.classList.remove('show');
+          });
+          
+          // Remove existing backdrops
+          const existingBackdrops = document.querySelectorAll('.modal-backdrop');
+          existingBackdrops.forEach(backdrop => backdrop.remove());
+          
+          // Show the modal
+          modalElement.style.display = 'block';
+          modalElement.classList.add('show');
+          modalElement.setAttribute('aria-hidden', 'false');
+          
+          // Add modal-open to body
+          document.body.classList.add('modal-open');
+          
+          // Create backdrop
+          const backdrop = document.createElement('div');
+          backdrop.className = 'modal-backdrop fade show';
+          backdrop.onclick = function() {
+            console.log('📱 Backdrop clicked, hiding modal');
+            logToConsole('📱 Backdrop clicked, hiding modal');
+            hideModalDirectly(modalElement, backdrop);
+          };
+          document.body.appendChild(backdrop);
+          
+          // Add close button handlers
+          const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"], .btn-close');
+          closeButtons.forEach(btn => {
+            btn.onclick = function(e) {
+              e.preventDefault();
+              console.log('📱 Close button clicked');
+              logToConsole('📱 Close button clicked');
+              hideModalDirectly(modalElement, backdrop);
+            };
+          });
+          
+          console.log('✅ Modal shown successfully with direct DOM manipulation');
+          logToConsole('✅ Modal shown successfully with direct DOM manipulation');
+          updateStatus('modal-status', 'pass', 'Modal Displayed Successfully');
+          
+        } catch (error) {
+          console.error('❌ Error showing modal directly:', error);
+          logToConsole('❌ Error showing modal directly: ' + error.message);
+          // Fallback: just make it visible
+          modalElement.style.display = 'block';
+        }
+      }
+      
+      // Direct modal hide
+      function hideModalDirectly(modalElement, backdrop) {
+        console.log('📱 Hiding modal directly');
+        logToConsole('📱 Hiding modal directly');
+        
+        modalElement.style.display = 'none';
+        modalElement.classList.remove('show');
+        modalElement.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('modal-open');
+        
+        if (backdrop) {
+          backdrop.remove();
+        }
+        
+        console.log('✅ Modal hidden successfully');
+        logToConsole('✅ Modal hidden successfully');
+      }
+      
+      // Create emergency modal if original is missing
+      function createEmergencyModal(modalId) {
+        console.log('🚨 Creating emergency modal:', modalId);
+        logToConsole('🚨 Creating emergency modal: ' + modalId);
+        
+        const modal = document.createElement('div');
+        modal.className = 'modal fade';
+        modal.id = modalId;
+        modal.setAttribute('tabindex', '-1');
+        modal.setAttribute('aria-hidden', 'true');
+        modal.innerHTML = \`
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                  <i class="fas fa-upload me-2"></i>Emergency Restore Database
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="alert alert-warning">
+                  <strong>Notice:</strong> Emergency modal created automatically.
+                </div>
+                <p>The original restore modal was missing, but this replacement provides the same functionality.</p>
+                <div class="mb-3">
+                  <label class="form-label">Select Backup File:</label>
+                  <input type="file" class="form-control" accept=".zip,.sql">
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success">
+                  <i class="fas fa-upload me-2"></i>Restore
+                </button>
+              </div>
+            </div>
+          </div>
+        \`;
+        
+        document.body.appendChild(modal);
+        console.log('✅ Emergency modal created successfully');
+        logToConsole('✅ Emergency modal created successfully');
+        return modal;
+      }
+      
+      console.log('✅ PRE-BOOTSTRAP modal interception ready');
+      logToConsole('✅ PRE-BOOTSTRAP modal interception ready');
+      updateStatus('interception-status', 'pass', 'Interception Ready');
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- POST-BOOTSTRAP: Disable Bootstrap Modal Entirely -->
+    <script>
+      // Completely disable Bootstrap's Modal functionality
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        console.log('🔥 POST-BOOTSTRAP: Disabling Bootstrap Modal entirely');
+        logToConsole('🔥 POST-BOOTSTRAP: Disabling Bootstrap Modal entirely');
+        
+        // Replace Bootstrap Modal with a no-op function
+        bootstrap.Modal = function() {
+          console.log('🚫 Bootstrap Modal constructor blocked');
+          logToConsole('🚫 Bootstrap Modal constructor blocked');
+          return {
+            show: function() { logToConsole('🚫 Bootstrap Modal.show() blocked'); },
+            hide: function() { logToConsole('🚫 Bootstrap Modal.hide() blocked'); },
+            toggle: function() { logToConsole('🚫 Bootstrap Modal.toggle() blocked'); },
+            dispose: function() { logToConsole('🚫 Bootstrap Modal.dispose() blocked'); }
+          };
+        };
+        
+        // Block static methods
+        bootstrap.Modal.getOrCreateInstance = function() {
+          console.log('🚫 Bootstrap Modal.getOrCreateInstance() blocked');
+          logToConsole('🚫 Bootstrap Modal.getOrCreateInstance() blocked');
+          return { show: function() {}, hide: function() {}, toggle: function() {}, dispose: function() {} };
+        };
+        
+        bootstrap.Modal.getInstance = function() {
+          console.log('🚫 Bootstrap Modal.getInstance() blocked');
+          logToConsole('🚫 Bootstrap Modal.getInstance() blocked');
+          return null;
+        };
+        
+        console.log('✅ Bootstrap Modal completely disabled');
+        logToConsole('✅ Bootstrap Modal completely disabled');
+        updateStatus('bootstrap-status', 'pass', 'Bootstrap Modal Blocked');
+      } else {
+        logToConsole('❌ Bootstrap not found or Modal class not available');
+        updateStatus('bootstrap-status', 'fail', 'Bootstrap Not Found');
+      }
+    </script>
+    
+    <!-- Test Functions -->
+    <script>
+        // Logging function
+        function logToConsole(message) {
+            const consoleLog = document.getElementById('consoleLog');
+            const timestamp = new Date().toLocaleTimeString();
+            consoleLog.innerHTML += '[' + timestamp + '] ' + message + '\\n';
+            consoleLog.scrollTop = consoleLog.scrollHeight;
+        }
+        
+        function clearLog() {
+            document.getElementById('consoleLog').innerHTML = '';
+        }
+        
+        function updateStatus(elementId, status, message) {
+            const element = document.getElementById(elementId);
+            const indicator = element.querySelector('.status-indicator');
+            const textSpan = element.querySelector('span:last-child');
+            
+            indicator.className = 'status-indicator status-' + status;
+            textSpan.className = 'text-' + (status === 'pass' ? 'success' : status === 'fail' ? 'danger' : 'warning');
+            textSpan.textContent = message;
+        }
+        
+        function testMissingModal() {
+            logToConsole('🧪 TEST: Removing modal and testing emergency creation');
+            const modal = document.getElementById('restoreModal');
+            if (modal) {
+                modal.remove();
+                logToConsole('✅ Modal removed from DOM');
+            }
+            
+            logToConsole('🧪 Now click the Restore Backup button to test emergency modal creation');
+        }
+        
+        function testBootstrapBlocking() {
+            logToConsole('🧪 TEST: Attempting to create Bootstrap Modal directly');
+            try {
+                const instance = new bootstrap.Modal('#restoreModal');
+                logToConsole('❌ Bootstrap Modal creation was NOT blocked');
+                updateStatus('bootstrap-status', 'fail', 'Bootstrap Not Blocked');
+            } catch (error) {
+                logToConsole('✅ Bootstrap Modal creation blocked: ' + error.message);
+                updateStatus('bootstrap-status', 'pass', 'Bootstrap Blocked Successfully');
+            }
+        }
+        
+        function runFullTest() {
+            logToConsole('🧪 RUNNING FULL TEST SUITE...');
+            
+            // Test 1: Modal element existence
+            const modal = document.getElementById('restoreModal');
+            if (modal) {
+                logToConsole('✅ Test 1 PASS: Modal element found in DOM');
+                updateStatus('modal-status', 'pass', 'Modal Element Found');
+            } else {
+                logToConsole('❌ Test 1 FAIL: Modal element not found');
+                updateStatus('modal-status', 'fail', 'Modal Element Missing');
+            }
+            
+            // Test 2: Bootstrap blocking
+            testBootstrapBlocking();
+            
+            // Test 3: Event listener
+            const triggers = document.querySelectorAll('[data-bs-toggle="modal"]');
+            if (triggers.length > 0) {
+                logToConsole('✅ Test 3 PASS: Modal triggers found (' + triggers.length + ')');
+            } else {
+                logToConsole('❌ Test 3 FAIL: No modal triggers found');
+            }
+            
+            logToConsole('🎉 Full test suite completed - now click the Restore Backup button to test!');
+        }
+        
+        // Auto-run initial tests
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(runFullTest, 1000);
+        });
+    </script>
+</body>
+</html>

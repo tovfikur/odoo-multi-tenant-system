@@ -1154,7 +1154,8 @@ def dashboard():
                     'is_expired': billing_info.get('is_expired', False),
                     'days_remaining': billing_info.get('days_remaining', 0),
                     'hours_remaining': billing_info.get('hours_remaining', 0),
-                    'requires_payment': billing_info.get('requires_payment', False)
+                    'requires_payment': billing_info.get('requires_payment', False),
+                    'can_renew_early': billing_info.get('can_renew_early', False)
                 })
             else:
                 # No active billing cycle
@@ -1163,7 +1164,8 @@ def dashboard():
                     'is_expired': True,
                     'days_remaining': 0,
                     'hours_remaining': 0,
-                    'requires_payment': True
+                    'requires_payment': True,
+                    'can_renew_early': False
                 })
             
             enhanced_tenants.append(tenant_data)
@@ -2078,17 +2080,38 @@ def backup_tenant(tenant_id):
 @login_required
 @track_errors('restore_tenant_route')
 def restore_tenant(tenant_id):
+    logger.info(f"🔄 RESTORE REQUEST STARTED - Tenant ID: {tenant_id}")
+    logger.info(f"   - User: {current_user.username if current_user else 'Unknown'}")
+    logger.info(f"   - IP: {request.remote_addr}")
+    logger.info(f"   - User Agent: {request.headers.get('User-Agent', 'Unknown')}")
+    logger.info(f"   - Referrer: {request.referrer}")
+    
     tenant = Tenant.query.get_or_404(tenant_id)
+    logger.info(f"   - Tenant Name: {tenant.name}")
+    logger.info(f"   - Database Name: {tenant.database_name}")
+    logger.info(f"   - Tenant Status: {tenant.status}")
     
     try:
+        # Log form data
+        logger.info(f"📝 FORM DATA ANALYSIS:")
+        logger.info(f"   - Form keys: {list(request.form.keys())}")
+        logger.info(f"   - Files keys: {list(request.files.keys())}")
+        logger.info(f"   - CSRF token present: {'csrf_token' in request.form}")
+        
         # Check if file was uploaded
         if 'backup_file' not in request.files:
+            logger.error("❌ No backup_file in request.files")
             flash('No backup file selected', 'danger')
             return redirect(request.referrer)
         
         backup_file = request.files['backup_file']
+        logger.info(f"📁 FILE UPLOAD ANALYSIS:")
+        logger.info(f"   - Filename: {backup_file.filename}")
+        logger.info(f"   - Content Type: {backup_file.content_type}")
+        logger.info(f"   - Content Length: {backup_file.content_length}")
         
         if backup_file.filename == '' or not backup_file.filename.lower().endswith('.zip'):
+            logger.error(f"❌ Invalid file: '{backup_file.filename}'")
             flash('Please select a valid ZIP backup file', 'danger')
             return redirect(request.referrer)
         
@@ -2096,33 +2119,62 @@ def restore_tenant(tenant_id):
         import tempfile
         import os
         
+        logger.info("📦 Creating temporary file for backup...")
         with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as temp_file:
             backup_file.save(temp_file.name)
             temp_file_path = temp_file.name
+            
+        file_size = os.path.getsize(temp_file_path)
+        logger.info(f"   - Temp file path: {temp_file_path}")
+        logger.info(f"   - File size: {file_size} bytes ({file_size/1024/1024:.2f} MB)")
         
         try:
+            logger.info("🔄 Starting database restore process...")
+            
             # Deactivate database first if active
+            logger.info(f"🔍 Checking if database '{tenant.database_name}' is active...")
             if odoo.is_active(tenant.database_name):
+                logger.info("   - Database is active, deactivating...")
                 odoo.deactivate(tenant.database_name)
+                logger.info("   ✅ Database deactivated")
+            else:
+                logger.info("   - Database is not active")
             
             # Delete existing database
+            logger.info(f"🗑️ Deleting existing database '{tenant.database_name}'...")
             odoo.delete(tenant.database_name)
+            logger.info("   ✅ Database deleted")
             
             # Restore from backup
+            logger.info(f"🔄 Restoring database '{tenant.database_name}' from backup...")
             odoo.restore(temp_file_path, tenant.database_name)
+            logger.info("   ✅ Database restored successfully")
             
+            logger.info(f"🎉 RESTORE COMPLETED SUCCESSFULLY for tenant {tenant.name}")
             flash(f'Database {tenant.database_name} restored successfully', 'success')
+            
+        except Exception as restore_error:
+            logger.error(f"❌ RESTORE PROCESS FAILED: {str(restore_error)}")
+            logger.error(f"   - Error type: {type(restore_error).__name__}")
+            logger.error(f"   - Error details: {restore_error}", exc_info=True)
+            raise
             
         finally:
             # Clean up temporary file
+            logger.info("🧹 Cleaning up temporary file...")
             try:
                 os.unlink(temp_file_path)
-            except:
-                pass
+                logger.info("   ✅ Temporary file deleted")
+            except Exception as cleanup_error:
+                logger.warning(f"   ⚠️ Failed to delete temp file: {cleanup_error}")
     
     except Exception as e:
+        logger.error(f"❌ RESTORE ROUTE FAILED: {str(e)}")
+        logger.error(f"   - Error type: {type(e).__name__}")
+        logger.error(f"   - Full traceback:", exc_info=True)
         flash(f'Restore failed: {str(e)}', 'danger')
     
+    logger.info(f"🔚 RESTORE REQUEST COMPLETED - Redirecting to: {request.referrer}")
     return redirect(request.referrer)
 
 @app.route('/tenant/<int:tenant_id>/delete', methods=['POST'])
@@ -4397,6 +4449,27 @@ def contact():
     """Contact page"""
     return render_template('pages/contact.html')
 
+
+# Modal fix testing routes
+@app.route('/test-modal-fix')
+def test_modal_fix():
+    """Serve modal fix test page"""
+    try:
+        with open('/home/kendroo/odoo-multi-tenant-system/FRONTEND_TEST.html', 'r') as f:
+            content = f.read()
+        return content
+    except Exception as e:
+        return f"Error loading test page: {str(e)}", 500
+
+@app.route('/test-nuclear-modal')
+def test_nuclear_modal():
+    """Serve nuclear modal test page"""
+    try:
+        with open('/home/kendroo/odoo-multi-tenant-system/NUCLEAR_MODAL_TEST.html', 'r') as f:
+            content = f.read()
+        return content
+    except Exception as e:
+        return f"Error loading nuclear test page: {str(e)}", 500
 
 # Template context processors
 @app.context_processor

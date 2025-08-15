@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap Modal Fix Test</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Preemptive Modal Fix - Load before any JavaScript -->
+    <script>
+      // Early intervention for Bootstrap Modal issues
+      window.addEventListener('DOMContentLoaded', function() {
+        // Set up a global error handler for modal errors
+        window.addEventListener('error', function(e) {
+          if (e.message && e.message.includes('_config is undefined')) {
+            console.warn('🚨 Caught modal config error, attempting recovery...');
+            
+            // Try to find and fix the problematic modal
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+              try {
+                const instance = bootstrap?.Modal?.getInstance?.(modal);
+                if (instance && !instance._config) {
+                  instance._config = { backdrop: true, keyboard: true, focus: true };
+                  console.log('🔧 Fixed modal config for:', modal.id);
+                }
+              } catch (fixError) {
+                console.warn('Modal fix attempt failed:', fixError);
+              }
+            });
+            
+            e.preventDefault();
+            return false;
+          }
+        });
+      });
+    </script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Bootstrap Modal Fix Test</h1>
+        <p>This page tests the modal fixes for the Bootstrap config undefined error.</p>
+        
+        <!-- Test Button -->
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#testModal">
+            Open Test Modal
+        </button>
+        
+        <!-- Test Modal -->
+        <div class="modal fade" id="testModal" tabindex="-1" aria-labelledby="testModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="testModalLabel">Test Modal</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>If you can see this modal without JavaScript errors, the fix is working!</p>
+                        <p>Check the browser console for any error messages.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary">Test Action</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <h3>Test Results</h3>
+            <ul id="testResults">
+                <li>Loading...</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Immediate Bootstrap Modal Fix - Must run right after Bootstrap loads -->
+    <script>
+      // Critical fix for Bootstrap Modal config undefined error
+      if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        // Patch the Modal prototype directly
+        const originalInitBackdrop = bootstrap.Modal.prototype._initializeBackDrop;
+        if (originalInitBackdrop) {
+          bootstrap.Modal.prototype._initializeBackDrop = function() {
+            // Emergency fix: ensure _config exists
+            if (!this._config) {
+              console.warn('Modal _config was undefined, applying emergency fix');
+              this._config = {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+              };
+            }
+            // Ensure backdrop property exists in config
+            if (typeof this._config.backdrop === 'undefined') {
+              this._config.backdrop = true;
+            }
+            return originalInitBackdrop.call(this);
+          };
+        }
+        
+        // Also patch the constructor for future instances
+        const OriginalModal = bootstrap.Modal;
+        bootstrap.Modal = function(element, config) {
+          config = config || {};
+          if (typeof config.backdrop === 'undefined') config.backdrop = true;
+          if (typeof config.keyboard === 'undefined') config.keyboard = true;
+          if (typeof config.focus === 'undefined') config.focus = true;
+          
+          const instance = new OriginalModal(element, config);
+          
+          // Double-check the config is properly set
+          if (!instance._config) {
+            instance._config = config;
+          }
+          
+          return instance;
+        };
+        
+        // Copy all static methods and properties
+        Object.setPrototypeOf(bootstrap.Modal, OriginalModal);
+        bootstrap.Modal.prototype = OriginalModal.prototype;
+        Object.assign(bootstrap.Modal, OriginalModal);
+        
+        console.log('✅ Bootstrap Modal emergency fix applied');
+      }
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const results = document.getElementById('testResults');
+            results.innerHTML = '';
+            
+            function addResult(message, success = true) {
+                const li = document.createElement('li');
+                li.innerHTML = `${success ? '✅' : '❌'} ${message}`;
+                li.className = success ? 'text-success' : 'text-danger';
+                results.appendChild(li);
+            }
+            
+            // Test 1: Bootstrap loaded
+            if (typeof bootstrap !== 'undefined') {
+                addResult('Bootstrap is loaded');
+            } else {
+                addResult('Bootstrap is NOT loaded', false);
+            }
+            
+            // Test 2: Modal class exists
+            if (bootstrap && bootstrap.Modal) {
+                addResult('Bootstrap Modal class exists');
+            } else {
+                addResult('Bootstrap Modal class NOT found', false);
+            }
+            
+            // Test 3: Modal can be created
+            try {
+                const testModalEl = document.getElementById('testModal');
+                const testModal = new bootstrap.Modal(testModalEl);
+                addResult('Modal instance created successfully');
+                
+                // Test 4: Config exists
+                if (testModal._config) {
+                    addResult('Modal config exists');
+                    addResult(`Backdrop setting: ${testModal._config.backdrop}`);
+                } else {
+                    addResult('Modal config is undefined', false);
+                }
+            } catch (e) {
+                addResult(`Modal creation failed: ${e.message}`, false);
+            }
+            
+            // Test 5: Error handler test
+            let errorCaught = false;
+            window.addEventListener('error', function(e) {
+                if (e.message.includes('_config')) {
+                    errorCaught = true;
+                    addResult('Config error was caught by error handler');
+                }
+            });
+            
+            setTimeout(() => {
+                if (!errorCaught) {
+                    addResult('No config errors detected');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

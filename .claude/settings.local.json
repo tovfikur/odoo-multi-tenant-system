@@ -55,7 +55,10 @@
       "Bash(docker inspect:*)",
       "Bash(cp:*)",
       "Bash(rg:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(docker compose:*)",
+      "WebFetch(domain:khudroo.com)",
+      "WebFetch(domain:localhost)"
     ],
     "deny": [],
     "defaultMode": "acceptEdits"

@@ -388,19 +388,20 @@ class BillingService:
             
             # Extend or create billing cycle
             if active_cycle:
-                # Extend existing cycle by 30 days
-                logger.info(f"Extending billing cycle for tenant {tenant_id} by 30 days")
+                # Extend existing cycle by 30 days from current expiration date
+                logger.info(f"Extending billing cycle for tenant {tenant_id} by 30 days from current expiration")
                 
-                # If the cycle is expired, start from current date
-                if active_cycle.cycle_end < datetime.utcnow():
-                    active_cycle.cycle_end = datetime.utcnow() + timedelta(days=30)
-                    active_cycle.cycle_start = datetime.utcnow()
-                else:
-                    # If still active, extend from current end date
-                    active_cycle.cycle_end = active_cycle.cycle_end + timedelta(days=30)
+                # Always add 30 days to the current expiration date (not overwrite)
+                # This implements the early payment logic where if a tenant pays before
+                # package end date, the system adds 30 extra days to their current expiration
+                current_expiration = active_cycle.cycle_end
+                new_expiration = current_expiration + timedelta(days=30)
                 
+                logger.info(f"Current expiration: {current_expiration}, New expiration: {new_expiration}")
+                
+                active_cycle.cycle_end = new_expiration
                 active_cycle.status = 'active'
-                # Reset or extend hours allowed (30 days * 12 hours = 360 hours)
+                # Add hours for the additional 30 days (30 days * 12 hours = 360 hours)
                 active_cycle.total_hours_allowed += 360
                 
                 # Update payment to link with extended cycle
@@ -466,9 +467,13 @@ class BillingService:
                 return {
                     'tenant_name': tenant.name,
                     'status': 'no_active_cycle',
-                    'requires_payment': True
+                    'requires_payment': True,
+                    'can_renew_early': False
                 }
             
+            # Check if renewal button should be active (15 days before expiration)
+            can_renew_early = self._can_renew_early(active_cycle)
+
             return {
                 'tenant_name': tenant.name,
                 'cycle_start': active_cycle.cycle_start,
@@ -481,12 +486,41 @@ class BillingService:
                 'is_expired': active_cycle.is_expired,
                 'reminder_sent': active_cycle.reminder_sent,
                 'auto_deactivated': active_cycle.auto_deactivated,
-                'requires_payment': active_cycle.is_expired
+                'requires_payment': active_cycle.is_expired,
+                'can_renew_early': can_renew_early
             }
             
         except Exception as e:
             logger.error(f"Error getting billing info: {str(e)}")
             return None
+    
+    def _can_renew_early(self, billing_cycle):
+        """Check if the tenant can renew early (15 days before expiration)"""
+        try:
+            if not billing_cycle or not billing_cycle.cycle_end:
+                return False
+            
+            # Calculate days until expiration
+            current_time = datetime.utcnow()
+            cycle_end_time = billing_cycle.cycle_end
+            
+            # Ensure timezone-naive comparison
+            if hasattr(cycle_end_time, 'tzinfo') and cycle_end_time.tzinfo is not None:
+                cycle_end_time = cycle_end_time.replace(tzinfo=None)
+            
+            time_until_expiration = cycle_end_time - current_time
+            days_until_expiration = time_until_expiration.days
+            
+            # Handle partial days - if there are any hours left in the day, count it as a full day
+            if time_until_expiration.seconds > 0:
+                days_until_expiration += 1
+            
+            # Allow renewal if 15 days or less until expiration
+            return days_until_expiration <= 15
+            
+        except Exception as e:
+            logger.error(f"Error checking early renewal eligibility: {str(e)}")
+            return False
     
     def get_admin_billing_logs(self, tenant_id=None):
         """Get billing logs for admin panel"""

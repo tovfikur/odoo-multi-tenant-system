@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 Browser Debug Simulation - Modal Targeting Issue</title>
+    
+    <!-- EXACT CSS LOADING ORDER from production -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/css/bootstrap.min.css" rel="stylesheet">
+    
+    <style>
+        body { 
+            padding: 20px; 
+            background: #f8f9fa; 
+            font-family: 'Inter', sans-serif; 
+        }
+        .debug-panel { 
+            background: white; 
+            padding: 20px; 
+            margin: 15px 0; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .console-output { 
+            background: #000; 
+            color: #00ff00; 
+            padding: 15px; 
+            border-radius: 5px; 
+            font-family: 'Courier New', monospace; 
+            font-size: 11px; 
+            height: 400px; 
+            overflow-y: auto; 
+            white-space: pre-wrap; 
+        }
+        .modal-button {
+            margin: 5px;
+            padding: 10px 20px;
+        }
+        .modal-debug {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 5px 0;
+        }
+        .highlighted { 
+            background: yellow !important; 
+            border: 2px solid red !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">🔍 Browser Debug Simulation</h1>
+        <p class="lead">Debugging why "Restore Backup" opens restart modal instead of restore modal</p>
+        
+        <div class="debug-panel">
+            <h3>🎯 Test Buttons</h3>
+            
+            <!-- EXACT COPY of the restore backup button -->
+            <button class="btn btn-outline-success modal-button" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#restoreModal"
+                    id="restoreBackupBtn">
+                <i class="fas fa-upload me-2"></i>Restore Backup
+            </button>
+            
+            <!-- EXACT COPY of restart button for comparison -->
+            <button class="btn btn-outline-warning modal-button" 
+                    data-bs-toggle="modal" 
+                    data-bs-target="#restartModal"
+                    id="restartInstanceBtn">
+                <i class="fas fa-redo me-2"></i>Restart Instance
+            </button>
+            
+            <div class="mt-3">
+                <button class="btn btn-primary" onclick="debugModalTargeting()">🔍 Debug Modal Targeting</button>
+                <button class="btn btn-warning" onclick="simulateClick('restoreBackupBtn')">🖱️ Simulate Restore Click</button>
+                <button class="btn btn-secondary" onclick="simulateClick('restartInstanceBtn')">🖱️ Simulate Restart Click</button>
+                <button class="btn btn-info" onclick="highlightAllModals()">👁️ Highlight All Modals</button>
+            </div>
+        </div>
+        
+        <div class="debug-panel">
+            <h3>📊 Modal Detection Results</h3>
+            <div id="modalDetection">
+                <p>Click "Debug Modal Targeting" to analyze modal detection</p>
+            </div>
+        </div>
+        
+        <div class="debug-panel">
+            <h3>📱 Live Console Monitor</h3>
+            <div id="liveConsole" class="console-output">🔍 BROWSER DEBUG SIMULATION STARTING...
+Waiting for modal detection analysis...
+
+</div>
+            <button class="btn btn-secondary btn-sm mt-2" onclick="clearConsole()">Clear Console</button>
+        </div>
+    </div>
+
+    <!-- EXACT MODAL HTML from manage_tenant.html - RESTART MODAL (should be second) -->
+    <div class="modal fade" id="restartModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-redo me-2"></i>Restart Instance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to restart the tenant instance? This will cause a brief downtime.</p>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Warning:</strong> All active user sessions will be terminated.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning">Restart Instance</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXACT MODAL HTML from manage_tenant.html - RESTORE MODAL (should be target) -->
+    <div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content" style="border-radius: 16px; overflow: hidden;">
+                <div class="modal-header border-0" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%); padding: 2rem;">
+                    <div class="d-flex align-items-center w-100">
+                        <div class="p-3 rounded-circle me-3" style="background: rgba(255, 255, 255, 0.2);">
+                            <i class="fas fa-upload text-white fa-lg"></i>
+                        </div>
+                        <div>
+                            <h4 class="modal-title text-white fw-bold mb-1" id="restoreModalLabel">
+                                Restore Database
+                            </h4>
+                            <p class="mb-0" style="color: rgba(255, 255, 255, 0.8); font-size: 0.9rem;">
+                                Upload and restore from a backup file
+                            </p>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form method="POST" action="/tenant/8/restore" enctype="multipart/form-data" id="restoreForm">
+                        <input type="hidden" name="csrf_token" value="test-token">
+                        <div class="alert alert-warning">
+                            <strong>🧪 DEBUG MODE:</strong> This is a simulation - no actual restore will be performed.
+                        </div>
+                        <div class="mb-4">
+                            <label for="backupFile" class="form-label fw-bold">
+                                <i class="fas fa-file-archive text-primary me-2"></i>Select Backup File
+                            </label>
+                            <input type="file" class="form-control form-control-lg" id="backupFile" name="backup_file" accept=".zip,.sql,.gz" required>
+                        </div>
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="confirmRestore" required>
+                            <label class="form-check-label fw-bold text-danger" for="confirmRestore">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                I understand this will replace the current database
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer border-0 p-4">
+                    <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn btn-danger btn-lg" form="restoreForm">
+                        <i class="fas fa-upload me-2"></i>Restore Database
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    
+    <!-- OUR DEBUGGING SCRIPT -->
+    <script>
+        function logToConsole(message, type = 'info') {
+            const console_elem = document.getElementById('liveConsole');
+            const timestamp = new Date().toLocaleTimeString();
+            const typeIcon = type === 'error' ? '❌' : type === 'warn' ? '⚠️' : type === 'success' ? '✅' : 'ℹ️';
+            console_elem.innerHTML += `[${timestamp}] ${typeIcon} ${message}\n`;
+            console_elem.scrollTop = console_elem.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearConsole() {
+            document.getElementById('liveConsole').innerHTML = '🔍 Console cleared...\n';
+        }
+        
+        function debugModalTargeting() {
+            logToConsole('🔍 STARTING MODAL TARGETING DEBUG...', 'warn');
+            
+            // Step 1: Check all modals in DOM
+            const allModals = document.querySelectorAll('.modal');
+            logToConsole(`📋 Found ${allModals.length} modals in DOM:`);
+            
+            allModals.forEach((modal, index) => {
+                logToConsole(`   ${index + 1}. ID: "${modal.id}" | Classes: "${modal.className}"`);
+                logToConsole(`      - Position: ${getComputedStyle(modal).position}`);
+                logToConsole(`      - Z-index: ${getComputedStyle(modal).zIndex}`);
+                logToConsole(`      - Display: ${getComputedStyle(modal).display}`);
+            });
+            
+            // Step 2: Test querySelector behavior for each target
+            const targets = ['#restoreModal', '#restartModal'];
+            targets.forEach(target => {
+                logToConsole(`\n🎯 Testing querySelector for "${target}":`);
+                const element = document.querySelector(target);
+                if (element) {
+                    logToConsole(`   ✅ Found: ID="${element.id}", Tag="${element.tagName}"`);
+                    logToConsole(`   📍 Index in DOM: ${Array.from(allModals).indexOf(element) + 1}`);
+                    logToConsole(`   🏷️  Title: "${element.querySelector('.modal-title')?.textContent?.trim() || 'No title found'}"`);
+                } else {
+                    logToConsole(`   ❌ Not found!`, 'error');
+                }
+            });
+            
+            // Step 3: Test querySelectorAll to see order
+            logToConsole(`\n📋 Testing querySelectorAll('#restoreModal, #restartModal'):`);
+            const bothModals = document.querySelectorAll('#restoreModal, #restartModal');
+            bothModals.forEach((modal, index) => {
+                logToConsole(`   ${index + 1}. ID: "${modal.id}"`);
+            });
+            
+            // Step 4: Check button targets
+            logToConsole(`\n🔘 Checking button data-bs-target attributes:`);
+            const buttons = document.querySelectorAll('[data-bs-toggle="modal"]');
+            buttons.forEach(button => {
+                const target = button.getAttribute('data-bs-target');
+                const text = button.textContent.trim();
+                logToConsole(`   Button: "${text}" → Target: "${target}"`);
+            });
+            
+            // Update results panel
+            updateDetectionResults(allModals);
+            
+            logToConsole('✅ Modal targeting debug complete!', 'success');
+        }
+        
+        function updateDetectionResults(allModals) {
+            const panel = document.getElementById('modalDetection');
+            let html = '<h4>🔍 Detection Results:</h4>';
+            
+            allModals.forEach((modal, index) => {
+                const title = modal.querySelector('.modal-title')?.textContent?.trim() || 'No title';
+                const isFirst = document.querySelector(`#${modal.id}`) === modal;
+                
+                html += `
+                    <div class="modal-debug">
+                        <strong>Modal ${index + 1}: #${modal.id}</strong><br>
+                        Title: ${title}<br>
+                        querySelector result: ${isFirst ? '✅ First match' : '❌ Duplicate (hidden by first)'}<br>
+                        Position in DOM: ${index + 1}
+                    </div>
+                `;
+            });
+            
+            panel.innerHTML = html;
+        }
+        
+        function highlightAllModals() {
+            logToConsole('👁️ Highlighting all modals in DOM...', 'warn');
+            
+            // Remove existing highlights
+            document.querySelectorAll('.highlighted').forEach(el => {
+                el.classList.remove('highlighted');
+            });
+            
+            // Highlight all modals
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach((modal, index) => {
+                modal.classList.add('highlighted');
+                modal.style.position = 'relative';
+                modal.style.zIndex = (1000 + index).toString();
+                
+                // Add a label
+                const label = document.createElement('div');
+                label.innerHTML = `MODAL ${index + 1}: #${modal.id}`;
+                label.style.position = 'absolute';
+                label.style.top = '10px';
+                label.style.left = '10px';
+                label.style.background = 'red';
+                label.style.color = 'white';
+                label.style.padding = '5px';
+                label.style.zIndex = '9999';
+                label.style.fontSize = '12px';
+                label.className = 'modal-highlight-label';
+                modal.appendChild(label);
+                
+                logToConsole(`   Modal ${index + 1}: #${modal.id} highlighted`);
+            });
+            
+            setTimeout(() => {
+                modals.forEach(modal => {
+                    modal.classList.remove('highlighted');
+                    const label = modal.querySelector('.modal-highlight-label');
+                    if (label) label.remove();
+                });
+                logToConsole('👁️ Highlights removed', 'info');
+            }, 5000);
+        }
+        
+        function simulateClick(buttonId) {
+            logToConsole(`🖱️ SIMULATING CLICK on button: ${buttonId}`, 'warn');
+            
+            const button = document.getElementById(buttonId);
+            if (!button) {
+                logToConsole(`❌ Button ${buttonId} not found!`, 'error');
+                return;
+            }
+            
+            const target = button.getAttribute('data-bs-target');
+            logToConsole(`   Button text: "${button.textContent.trim()}"`);
+            logToConsole(`   Button target: "${target}"`);
+            
+            // Create real click event
+            const clickEvent = new MouseEvent('click', {
+                bubbles: true,
+                cancelable: true,
+                view: window
+            });
+            
+            logToConsole('   Dispatching click event...');
+            button.dispatchEvent(clickEvent);
+            
+            // Check what modal is now open
+            setTimeout(() => {
+                const openModal = document.querySelector('.modal.show');
+                if (openModal) {
+                    const title = openModal.querySelector('.modal-title')?.textContent?.trim();
+                    logToConsole(`   ✅ Result: Modal #${openModal.id} opened`, 'success');
+                    logToConsole(`   📝 Title: "${title}"`);
+                    
+                    if (openModal.id !== target.replace('#', '')) {
+                        logToConsole(`   🚨 WRONG MODAL OPENED! Expected ${target} but got #${openModal.id}`, 'error');
+                    }
+                } else {
+                    logToConsole(`   ❌ No modal appears to be open`, 'error');
+                }
+            }, 100);
+        }
+        
+        // Auto-initialize
+        setTimeout(() => {
+            logToConsole('🎯 BROWSER DEBUG SIMULATION READY');
+            logToConsole('👤 Click "Debug Modal Targeting" to analyze the issue');
+            debugModalTargeting();
+        }, 1000);
+    </script>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.2/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- COPY OF NUCLEAR FIX FROM base.html for testing -->
+    <script>
+        // Simplified version of nuclear fix for testing
+        document.addEventListener('click', function(event) {
+            const trigger = event.target.closest('[data-bs-toggle="modal"]');
+            if (trigger) {
+                logToConsole('🚫 NUCLEAR FIX INTERCEPTED CLICK!', 'warn');
+                event.preventDefault();
+                event.stopImmediatePropagation();
+                event.stopPropagation();
+                
+                const targetSelector = trigger.getAttribute('data-bs-target');
+                logToConsole(`   🎯 Target selector: ${targetSelector}`);
+                
+                // This is where the bug might be!
+                const targetModal = document.querySelector(targetSelector);
+                if (targetModal) {
+                    logToConsole(`   ✅ Found modal: #${targetModal.id}`);
+                    logToConsole(`   📝 Modal title: "${targetModal.querySelector('.modal-title')?.textContent?.trim()}"`);
+                    
+                    // Show modal directly
+                    targetModal.style.display = 'block';
+                    targetModal.classList.add('show');
+                    targetModal.setAttribute('aria-hidden', 'false');
+                    document.body.classList.add('modal-open');
+                    
+                    logToConsole('   ✅ Modal shown via nuclear fix', 'success');
+                } else {
+                    logToConsole(`   ❌ Modal not found for selector: ${targetSelector}`, 'error');
+                }
+                
+                return false;
+            }
+        }, true);
+        
+        logToConsole('✅ Nuclear fix loaded and active');
+    </script>
+</body>
+</html>
