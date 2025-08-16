@@ -1,0 +1,248 @@
+{% extends "base.html" %}
+
+{% block title %}Contact #{{ submission.id }} - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-envelope me-2"></i>Contact #{{ submission.id }}</h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="#">Support</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('admin_contact_list') }}">Contact</a></li>
+            <li class="breadcrumb-item active">#{{ submission.id }}</li>
+        </ol>
+    </nav>
+</div>
+
+<div class="row">
+    <!-- Contact Details -->
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Contact Information
+                    {% if submission.status == 'new' %}
+                        <span class="badge bg-danger ms-2">NEW</span>
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Name:</strong></div>
+                    <div class="col-sm-9">{{ submission.get_full_name() }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Email:</strong></div>
+                    <div class="col-sm-9">
+                        <a href="mailto:{{ submission.email }}">{{ submission.email }}</a>
+                    </div>
+                </div>
+                {% if submission.company %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Company:</strong></div>
+                    <div class="col-sm-9">{{ submission.company }}</div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Subject:</strong></div>
+                    <div class="col-sm-9">
+                        <span class="badge bg-secondary">{{ submission.get_subject_display() }}</span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Newsletter:</strong></div>
+                    <div class="col-sm-9">
+                        {% if submission.subscribe_newsletter %}
+                            <span class="badge bg-success">Subscribed</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not Subscribed</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-sm-3"><strong>Submitted:</strong></div>
+                    <div class="col-sm-9">{{ submission.created_at.strftime('%Y-%m-%d %H:%M:%S UTC') }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Message -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-comment me-2"></i>Message</h5>
+            </div>
+            <div class="card-body">
+                <div class="bg-light p-3 rounded">
+                    {{ submission.message|replace('\n', '<br>')|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Notes -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-sticky-note me-2"></i>Admin Notes</h5>
+            </div>
+            <div class="card-body">
+                {% if submission.admin_notes %}
+                    <div class="alert alert-info">
+                        {{ submission.admin_notes|replace('\n', '<br>')|safe }}
+                    </div>
+                {% else %}
+                    <p class="text-muted">No admin notes yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Status & Actions -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-cog me-2"></i>Status & Actions</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('admin_contact_update', submission_id=submission.id) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Status</label>
+                        <select name="status" class="form-select">
+                            <option value="new" {% if submission.status == 'new' %}selected{% endif %}>New</option>
+                            <option value="read" {% if submission.status == 'read' %}selected{% endif %}>Read</option>
+                            <option value="responded" {% if submission.status == 'responded' %}selected{% endif %}>Responded</option>
+                            <option value="resolved" {% if submission.status == 'resolved' %}selected{% endif %}>Resolved</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Priority</label>
+                        <select name="priority" class="form-select">
+                            <option value="low" {% if submission.priority == 'low' %}selected{% endif %}>Low</option>
+                            <option value="normal" {% if submission.priority == 'normal' %}selected{% endif %}>Normal</option>
+                            <option value="high" {% if submission.priority == 'high' %}selected{% endif %}>High</option>
+                            <option value="urgent" {% if submission.priority == 'urgent' %}selected{% endif %}>Urgent</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Admin Notes</label>
+                        <textarea name="admin_notes" class="form-control" rows="4" placeholder="Add notes about this contact...">{{ submission.admin_notes or '' }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="response_sent" value="1" 
+                                   {% if submission.response_sent %}checked{% endif %}>
+                            <label class="form-check-label">
+                                Response sent to customer
+                            </label>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-save me-2"></i>Update Contact
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <strong>Current Status:</strong>
+                    {% if submission.status == 'new' %}
+                        <span class="badge bg-danger">New</span>
+                    {% elif submission.status == 'read' %}
+                        <span class="badge bg-warning">Read</span>
+                    {% elif submission.status == 'responded' %}
+                        <span class="badge bg-info">Responded</span>
+                    {% elif submission.status == 'resolved' %}
+                        <span class="badge bg-success">Resolved</span>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-2">
+                    <strong>Priority:</strong>
+                    {% if submission.priority == 'urgent' %}
+                        <span class="badge bg-danger">Urgent</span>
+                    {% elif submission.priority == 'high' %}
+                        <span class="badge bg-warning">High</span>
+                    {% elif submission.priority == 'normal' %}
+                        <span class="badge bg-secondary">Normal</span>
+                    {% elif submission.priority == 'low' %}
+                        <span class="badge bg-light text-dark">Low</span>
+                    {% endif %}
+                </div>
+
+                {% if submission.assigned_user %}
+                <div class="mb-2">
+                    <strong>Assigned to:</strong>
+                    <span class="badge bg-primary">{{ submission.assigned_user.username }}</span>
+                </div>
+                {% endif %}
+
+                {% if submission.response_sent and submission.response_at %}
+                <div class="mb-2">
+                    <strong>Response sent:</strong>
+                    <small>{{ submission.response_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+                {% endif %}
+
+                <div class="mb-2">
+                    <strong>Last updated:</strong>
+                    <small>{{ submission.updated_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+            </div>
+            <div class="card-body d-grid gap-2">
+                <a href="mailto:{{ submission.email }}?subject=Re: {{ submission.get_subject_display() }}" 
+                   class="btn btn-outline-primary">
+                    <i class="fas fa-reply me-2"></i>Reply via Email
+                </a>
+                <a href="{{ url_for('admin_contact_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Technical Info (for debugging) -->
+{% if submission.ip_address or submission.user_agent %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="fas fa-code me-2"></i>Technical Information</h6>
+            </div>
+            <div class="card-body">
+                {% if submission.ip_address %}
+                <div class="row mb-2">
+                    <div class="col-sm-2"><strong>IP Address:</strong></div>
+                    <div class="col-sm-10"><code>{{ submission.ip_address }}</code></div>
+                </div>
+                {% endif %}
+                {% if submission.user_agent %}
+                <div class="row">
+                    <div class="col-sm-2"><strong>User Agent:</strong></div>
+                    <div class="col-sm-10"><small class="text-muted">{{ submission.user_agent }}</small></div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1027,6 +1027,69 @@ class InfrastructureAlert(db.Model):
     server = db.relationship('InfrastructureServer', backref='alerts')
     domain = db.relationship('DomainMapping', backref='alerts')
 
+class ContactSubmission(db.Model):
+    """Contact form submissions"""
+    __tablename__ = 'contact_submissions'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(50), nullable=False)
+    last_name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(100), nullable=False)
+    company = db.Column(db.String(100))
+    subject = db.Column(db.String(50), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    subscribe_newsletter = db.Column(db.Boolean, default=False)
+    
+    # Admin tracking
+    status = db.Column(db.String(20), default='new')  # new, read, responded, resolved
+    priority = db.Column(db.String(20), default='normal')  # low, normal, high, urgent
+    assigned_to = db.Column(db.Integer, db.ForeignKey('saas_users.id'))
+    admin_notes = db.Column(db.Text)
+    response_sent = db.Column(db.Boolean, default=False)
+    response_at = db.Column(db.DateTime)
+    
+    # IP and browser info for security
+    ip_address = db.Column(db.String(45))
+    user_agent = db.Column(db.String(500))
+    
+    # Timestamps
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relationships
+    assigned_user = db.relationship('SaasUser', backref='assigned_contacts')
+    
+    def get_full_name(self):
+        """Get the full name of the contact"""
+        return f"{self.first_name} {self.last_name}"
+    
+    def get_subject_display(self):
+        """Get human-readable subject"""
+        subject_map = {
+            'sales': 'Sales Inquiry',
+            'support': 'Technical Support',
+            'billing': 'Billing Question',
+            'partnership': 'Partnership',
+            'other': 'Other'
+        }
+        return subject_map.get(self.subject, self.subject.title())
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'full_name': self.get_full_name(),
+            'email': self.email,
+            'company': self.company,
+            'subject': self.get_subject_display(),
+            'message': self.message,
+            'status': self.status,
+            'priority': self.priority,
+            'assigned_to': self.assigned_user.username if self.assigned_user else None,
+            'response_sent': self.response_sent,
+            'created_at': self.created_at.isoformat(),
+            'updated_at': self.updated_at.isoformat()
+        }
+
 # Import UserNotification at the end to avoid circular import issues
 try:
     from user_notifications import UserNotification

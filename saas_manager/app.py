@@ -4462,11 +4462,187 @@ def about():
     """About page"""
     return render_template('pages/about.html')
 
-@app.route('/contact')
+@app.route('/contact', methods=['GET', 'POST'])
 def contact():
-    """Contact page"""
+    """Contact page with form submission"""
+    if request.method == 'POST':
+        try:
+            # Import the model here to avoid circular imports
+            from models import ContactSubmission
+            
+            # Get form data
+            first_name = request.form.get('firstName', '').strip()
+            last_name = request.form.get('lastName', '').strip()
+            email = request.form.get('email', '').strip()
+            company = request.form.get('company', '').strip()
+            subject = request.form.get('subject', '').strip()
+            message = request.form.get('message', '').strip()
+            subscribe = bool(request.form.get('subscribe'))
+            
+            # Basic validation
+            if not all([first_name, last_name, email, subject, message]):
+                flash('Please fill in all required fields.', 'error')
+                return render_template('pages/contact.html')
+            
+            # Create contact submission
+            contact_submission = ContactSubmission(
+                first_name=first_name,
+                last_name=last_name,
+                email=email,
+                company=company or None,
+                subject=subject,
+                message=message,
+                subscribe_newsletter=subscribe,
+                ip_address=request.remote_addr,
+                user_agent=request.user_agent.string[:500] if request.user_agent else None
+            )
+            
+            # Save to database
+            db.session.add(contact_submission)
+            db.session.commit()
+            
+            # Log the submission
+            logger.info(f"New contact submission from {email} (ID: {contact_submission.id})")
+            
+            flash('Thank you for your message! We\'ll get back to you within 24 hours.', 'success')
+            return redirect(url_for('contact'))
+            
+        except Exception as e:
+            logger.error(f"Error processing contact form: {str(e)}", exc_info=True)
+            db.session.rollback()
+            flash('There was an error sending your message. Please try again.', 'error')
+            return render_template('pages/contact.html')
+    
     return render_template('pages/contact.html')
 
+# Admin Support Routes for Contact Submissions
+@app.route('/admin/support/contact')
+@login_required
+def admin_contact_list():
+    """Admin interface to view contact form submissions"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        from models import ContactSubmission
+        
+        # Get filter parameters
+        status_filter = request.args.get('status', 'all')
+        priority_filter = request.args.get('priority', 'all')
+        subject_filter = request.args.get('subject', 'all')
+        page = request.args.get('page', 1, type=int)
+        per_page = 25
+        
+        # Build query
+        query = ContactSubmission.query
+        
+        if status_filter != 'all':
+            query = query.filter(ContactSubmission.status == status_filter)
+        if priority_filter != 'all':
+            query = query.filter(ContactSubmission.priority == priority_filter)
+        if subject_filter != 'all':
+            query = query.filter(ContactSubmission.subject == subject_filter)
+        
+        # Order by created_at descending (newest first)
+        query = query.order_by(ContactSubmission.created_at.desc())
+        
+        # Paginate
+        submissions = query.paginate(
+            page=page,
+            per_page=per_page,
+            error_out=False
+        )
+        
+        # Get summary stats
+        stats = {
+            'total': ContactSubmission.query.count(),
+            'new': ContactSubmission.query.filter_by(status='new').count(),
+            'read': ContactSubmission.query.filter_by(status='read').count(),
+            'responded': ContactSubmission.query.filter_by(status='responded').count(),
+            'resolved': ContactSubmission.query.filter_by(status='resolved').count(),
+        }
+        
+        return render_template('admin/support/contact_list.html', 
+                             submissions=submissions, 
+                             stats=stats,
+                             status_filter=status_filter,
+                             priority_filter=priority_filter,
+                             subject_filter=subject_filter)
+        
+    except Exception as e:
+        logger.error(f"Error loading contact submissions: {str(e)}", exc_info=True)
+        flash('Error loading contact submissions.', 'error')
+        return redirect(url_for('dashboard'))
+
+@app.route('/admin/support/contact/<int:submission_id>')
+@login_required
+def admin_contact_detail(submission_id):
+    """View detailed contact submission"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        from models import ContactSubmission
+        
+        submission = ContactSubmission.query.get_or_404(submission_id)
+        
+        # Mark as read if it's new
+        if submission.status == 'new':
+            submission.status = 'read'
+            db.session.commit()
+        
+        return render_template('admin/support/contact_detail.html', submission=submission)
+        
+    except Exception as e:
+        logger.error(f"Error loading contact submission {submission_id}: {str(e)}", exc_info=True)
+        flash('Error loading contact submission.', 'error')
+        return redirect(url_for('admin_contact_list'))
+
+@app.route('/admin/support/contact/<int:submission_id>/update', methods=['POST'])
+@login_required
+def admin_contact_update(submission_id):
+    """Update contact submission status and notes"""
+    if not current_user.is_admin:
+        flash('Access denied. Admin privileges required.', 'error')
+        return redirect(url_for('dashboard'))
+    
+    try:
+        from models import ContactSubmission
+        
+        submission = ContactSubmission.query.get_or_404(submission_id)
+        
+        # Get form data
+        status = request.form.get('status')
+        priority = request.form.get('priority')
+        admin_notes = request.form.get('admin_notes', '').strip()
+        response_sent = bool(request.form.get('response_sent'))
+        
+        # Update submission
+        if status and status in ['new', 'read', 'responded', 'resolved']:
+            submission.status = status
+        if priority and priority in ['low', 'normal', 'high', 'urgent']:
+            submission.priority = priority
+        if admin_notes:
+            submission.admin_notes = admin_notes
+        if response_sent:
+            submission.response_sent = True
+            if not submission.response_at:
+                submission.response_at = datetime.utcnow()
+        
+        submission.assigned_to = current_user.id
+        
+        db.session.commit()
+        
+        flash('Contact submission updated successfully.', 'success')
+        return redirect(url_for('admin_contact_detail', submission_id=submission_id))
+        
+    except Exception as e:
+        logger.error(f"Error updating contact submission {submission_id}: {str(e)}", exc_info=True)
+        db.session.rollback()
+        flash('Error updating contact submission.', 'error')
+        return redirect(url_for('admin_contact_detail', submission_id=submission_id))
 
 # Modal fix testing routes
 @app.route('/test-modal-fix')

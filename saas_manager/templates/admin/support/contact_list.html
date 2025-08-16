@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Submissions - Admin{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-envelope me-2"></i>Contact Submissions</h2>
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li class="breadcrumb-item"><a href="#">Support</a></li>
+            <li class="breadcrumb-item active">Contact</li>
+        </ol>
+    </nav>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-2">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.total }}</h4>
+                <small>Total</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-danger text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.new }}</h4>
+                <small>New</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.read }}</h4>
+                <small>Read</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.responded }}</h4>
+                <small>Responded</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-2">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <h4>{{ stats.resolved }}</h4>
+                <small>Resolved</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="GET" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Status</option>
+                    <option value="new" {% if status_filter == 'new' %}selected{% endif %}>New</option>
+                    <option value="read" {% if status_filter == 'read' %}selected{% endif %}>Read</option>
+                    <option value="responded" {% if status_filter == 'responded' %}selected{% endif %}>Responded</option>
+                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Priority</label>
+                <select name="priority" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if priority_filter == 'all' %}selected{% endif %}>All Priorities</option>
+                    <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Low</option>
+                    <option value="normal" {% if priority_filter == 'normal' %}selected{% endif %}>Normal</option>
+                    <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>High</option>
+                    <option value="urgent" {% if priority_filter == 'urgent' %}selected{% endif %}>Urgent</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Subject</label>
+                <select name="subject" class="form-select" onchange="this.form.submit()">
+                    <option value="all" {% if subject_filter == 'all' %}selected{% endif %}>All Subjects</option>
+                    <option value="sales" {% if subject_filter == 'sales' %}selected{% endif %}>Sales Inquiry</option>
+                    <option value="support" {% if subject_filter == 'support' %}selected{% endif %}>Technical Support</option>
+                    <option value="billing" {% if subject_filter == 'billing' %}selected{% endif %}>Billing Question</option>
+                    <option value="partnership" {% if subject_filter == 'partnership' %}selected{% endif %}>Partnership</option>
+                    <option value="other" {% if subject_filter == 'other' %}selected{% endif %}>Other</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <a href="{{ url_for('admin_contact_list') }}" class="btn btn-outline-secondary">
+                    <i class="fas fa-times me-1"></i>Clear Filters
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Contact Submissions Table -->
+<div class="card">
+    <div class="card-body">
+        {% if submissions.items %}
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Company</th>
+                        <th>Subject</th>
+                        <th>Status</th>
+                        <th>Priority</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for submission in submissions.items %}
+                    <tr>
+                        <td><strong>#{{ submission.id }}</strong></td>
+                        <td>
+                            {{ submission.get_full_name() }}
+                            {% if submission.status == 'new' %}
+                                <span class="badge bg-danger ms-1">NEW</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ submission.email }}</td>
+                        <td>{{ submission.company or '-' }}</td>
+                        <td>
+                            <span class="badge bg-secondary">{{ submission.get_subject_display() }}</span>
+                        </td>
+                        <td>
+                            {% if submission.status == 'new' %}
+                                <span class="badge bg-danger">New</span>
+                            {% elif submission.status == 'read' %}
+                                <span class="badge bg-warning">Read</span>
+                            {% elif submission.status == 'responded' %}
+                                <span class="badge bg-info">Responded</span>
+                            {% elif submission.status == 'resolved' %}
+                                <span class="badge bg-success">Resolved</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if submission.priority == 'urgent' %}
+                                <span class="badge bg-danger">Urgent</span>
+                            {% elif submission.priority == 'high' %}
+                                <span class="badge bg-warning">High</span>
+                            {% elif submission.priority == 'normal' %}
+                                <span class="badge bg-secondary">Normal</span>
+                            {% elif submission.priority == 'low' %}
+                                <span class="badge bg-light text-dark">Low</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <small>{{ submission.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('admin_contact_detail', submission_id=submission.id) }}" 
+                               class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye"></i> View
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if submissions.pages > 1 %}
+        <div class="d-flex justify-content-between align-items-center mt-3">
+            <div>
+                Showing {{ (submissions.page - 1) * submissions.per_page + 1 }} to 
+                {{ submissions.page * submissions.per_page if submissions.page * submissions.per_page < submissions.total else submissions.total }} 
+                of {{ submissions.total }} entries
+            </div>
+            <nav>
+                <ul class="pagination mb-0">
+                    {% if submissions.has_prev %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_contact_list', page=submissions.prev_num, status=status_filter, priority=priority_filter, subject=subject_filter) }}">Previous</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for page_num in submissions.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != submissions.page %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('admin_contact_list', page=page_num, status=status_filter, priority=priority_filter, subject=subject_filter) }}">{{ page_num }}</a>
+                                </li>
+                            {% else %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                            {% endif %}
+                        {% else %}
+                            <li class="page-item disabled">
+                                <span class="page-link">…</span>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if submissions.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for('admin_contact_list', page=submissions.next_num, status=status_filter, priority=priority_filter, subject=subject_filter) }}">Next</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% else %}
+        <div class="text-center py-4">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5>No contact submissions found</h5>
+            <p class="text-muted">No contact submissions match your current filters.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
